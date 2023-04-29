@@ -76,34 +76,6 @@ struct is_printable<_Tp,
 {
 };
 
-inline std::string escapeString(const string_view sv)
-{
-    std::string result;
-    result.reserve(sv.size());
-    for (auto ch : sv)
-    {
-        if (ch == '\n')
-            result += "\\n";
-        else if (ch == '\r')
-            result += "\\r";
-        else if (ch == '\t')
-            result += "\\t";
-        else if (ch == '\b')
-            result += "\\b";
-        else if (ch == '\\')
-            result += "\\\\";
-        else if (ch == '"')
-            result += "\"";
-        else if (ch == '\v')
-            result += "\\v";
-        else if (ch == '\a')
-            result += "\\a";
-        else
-            result.push_back(ch);
-    }
-    return result;
-}
-
 DROGON_EXPORT std::string prettifyString(const string_view sv,
                                          size_t maxLength = 120);
 
@@ -174,6 +146,7 @@ inline std::string attemptPrint(T&& v)
 template <>
 inline std::string attemptPrint(const std::nullptr_t& v)
 {
+    (void)v;
     return "nullptr";
 }
 
@@ -430,282 +403,21 @@ DROGON_EXPORT int run(int argc, char** argv);
 }  // namespace test
 }  // namespace drogon
 
-#define ERROR_MSG(func_name, expr)                                    \
-    drogon::test::printErr()                                          \
-        << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"  \
-        << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__              \
-        << " \x1B[0;31m FAILED:\x1B[0m\n"                             \
-        << "  \033[0;34m"                                             \
-        << drogon::test::internal::stringifyFuncCall(func_name, expr) \
+#define ERROR_MSG(func_name, expr, codeloc)                            \
+    drogon::test::printErr()                                           \
+        << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"   \
+        << "\x1B[0;37m↳ " << codeloc << " \x1B[0;31m FAILED:\x1B[0m\n" \
+        << "  \033[0;34m"                                              \
+        << drogon::test::internal::stringifyFuncCall(func_name, expr)  \
         << "\x1B[0m\n"
 
-#define PASSED_MSG(func_name, expr)                                   \
-    drogon::test::print()                                             \
-        << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"  \
-        << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__              \
-        << " \x1B[0;32m PASSED:\x1B[0m\n"                             \
-        << "  \033[0;34m"                                             \
-        << drogon::test::internal::stringifyFuncCall(func_name, expr) \
+#define PASSED_MSG(func_name, expr, codeloc)                           \
+    drogon::test::print()                                              \
+        << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"   \
+        << "\x1B[0;37m↳ " << codeloc << " \x1B[0;32m PASSED:\x1B[0m\n" \
+        << "  \033[0;34m"                                              \
+        << drogon::test::internal::stringifyFuncCall(func_name, expr)  \
         << "\x1B[0m\n"
-
-#define SET_TEST_SUCCESS__ \
-    do                     \
-    {                      \
-        TEST_FLAG_ = true; \
-    } while (0);
-
-#define TEST_INTERNAL__(func_name,                          \
-                        expr,                               \
-                        eval,                               \
-                        on_exception,                       \
-                        on_non_standard_exception,          \
-                        on_leaving)                         \
-    do                                                      \
-    {                                                       \
-        bool TEST_FLAG_ = false;                            \
-        using drogon::test::internal::stringifyFuncCall;    \
-        using drogon::test::printErr;                       \
-        drogon::test::internal::numAssertions++;            \
-        try                                                 \
-        {                                                   \
-            eval;                                           \
-        }                                                   \
-        catch (const std::exception& e)                     \
-        {                                                   \
-            (void)e;                                        \
-            on_exception;                                   \
-        }                                                   \
-        catch (...)                                         \
-        {                                                   \
-            on_non_standard_exception;                      \
-        }                                                   \
-        if (TEST_FLAG_)                                     \
-            drogon::test::internal::numCorrectAssertions++; \
-        else                                                \
-            TEST_CTX->setFailed();                          \
-        on_leaving;                                         \
-    } while (0);
-
-#define EVAL_AND_CHECK_TRUE__(func_name, expr)                       \
-    do                                                               \
-    {                                                                \
-        bool drresult__;                                             \
-        std::string drexpansion__;                                   \
-        DROGON_TEST_START_SUPRESSION_                                \
-        DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_                    \
-        std::tie(drresult__, drexpansion__) =                        \
-            (drogon::test::internal::Decomposer() <= expr).result(); \
-        DROGON_TEST_END_SUPRESSION_                                  \
-        if (!drresult__)                                             \
-        {                                                            \
-            ERROR_MSG(func_name, #expr)                              \
-                << "With expansion\n"                                \
-                << "  \033[0;33m" << drexpansion__ << "\x1B[0m\n\n"; \
-        }                                                            \
-        else                                                         \
-            SET_TEST_SUCCESS__;                                      \
-    } while (0);
-
-#define PRINT_UNEXPECTED_EXCEPTION__(func_name, expr)         \
-    do                                                        \
-    {                                                         \
-        ERROR_MSG(func_name, expr)                            \
-            << "An unexpected exception is thrown. what():\n" \
-            << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";   \
-    } while (0);
-
-#define PRINT_PASSED__(func_name, expr)                                 \
-    do                                                                  \
-    {                                                                   \
-        if (drogon::test::internal::printSuccessfulTests && TEST_FLAG_) \
-        {                                                               \
-            PASSED_MSG(func_name, expr) << "\n";                        \
-        }                                                               \
-    } while (0);
-
-#define RETURN_ON_FAILURE__ \
-    do                      \
-    {                       \
-        if (!TEST_FLAG_)    \
-            return;         \
-    } while (0);
-
-#define CO_RETURN_ON_FAILURE__ \
-    do                         \
-    {                          \
-        if (!TEST_FLAG_)       \
-            co_return;         \
-    } while (0);
-
-#define DIE_ON_FAILURE__                                                \
-    do                                                                  \
-    {                                                                   \
-        using namespace drogon::test;                                   \
-        if (!TEST_FLAG_)                                                \
-        {                                                               \
-            printTestStats();                                           \
-            printErr() << "Force exiting due to a mandation failed.\n"; \
-            exit(1);                                                    \
-        }                                                               \
-    } while (0);
-
-#define PRINT_NONSTANDARD_EXCEPTION__(func_name, expr)        \
-    do                                                        \
-    {                                                         \
-        ERROR_MSG(func_name, expr)                            \
-            << "Unexpected unknown exception is thrown.\n\n"; \
-    } while (0);
-
-#define EVAL__(expr) \
-    do               \
-    {                \
-        expr;        \
-    } while (0);
-
-#define NOTHING__ \
-    {             \
-    }
-
-#define PRINT_ERR_NOEXCEPTION__(expr, func_name)                     \
-    do                                                               \
-    {                                                                \
-        if (!TEST_FLAG_)                                             \
-            ERROR_MSG(func_name, expr)                               \
-                << "With expecitation\n"                             \
-                << "  Expected to throw an exception. But none are " \
-                   "thrown.\n\n";                                    \
-    } while (0);
-
-#define PRINT_ERR_WITHEXCEPTION__(expr, func_name)                   \
-    do                                                               \
-    {                                                                \
-        if (!TEST_FLAG_)                                             \
-            ERROR_MSG(func_name, expr)                               \
-                << "With expecitation\n"                             \
-                << "  Should to not throw an exception. But one is " \
-                   "thrown.\n\n";                                    \
-    } while (0);
-
-#define PRINT_ERR_BAD_EXCEPTION__(                                             \
-    expr, func_name, excep_type, exceptionThrown, correctExceptionType)        \
-    do                                                                         \
-    {                                                                          \
-        assert((exceptionThrown && correctExceptionType) || !exceptionThrown); \
-        if (exceptionThrown == true && correctExceptionType == false)          \
-        {                                                                      \
-            ERROR_MSG(func_name, expr)                                         \
-                << "With expecitation\n"                                       \
-                << "  Exception have been throw but not of type \033[0;33m"    \
-                << #excep_type << "\033[0m.\n\n";                              \
-        }                                                                      \
-        else if (exceptionThrown == false)                                     \
-        {                                                                      \
-            ERROR_MSG(func_name, expr)                                         \
-                << "With expecitation\n"                                       \
-                << "  A \033[0;33m" << #excep_type                             \
-                << "\033[0m exception is expected. But nothing was thrown"     \
-                << "\033[0m.\n\n";                                             \
-        }                                                                      \
-    } while (0);
-
-#define CHECK_INTERNAL__(expr, func_name, on_leave)                      \
-    do                                                                   \
-    {                                                                    \
-        TEST_INTERNAL__(func_name,                                       \
-                        expr,                                            \
-                        EVAL_AND_CHECK_TRUE__(func_name, expr),          \
-                        PRINT_UNEXPECTED_EXCEPTION__(func_name, #expr),  \
-                        PRINT_NONSTANDARD_EXCEPTION__(func_name, #expr), \
-                        on_leave PRINT_PASSED__(func_name, #expr));      \
-    } while (0)
-
-#define CHECK_THROWS_INTERNAL__(expr, func_name, on_leave)              \
-    do                                                                  \
-    {                                                                   \
-        TEST_INTERNAL__(func_name,                                      \
-                        expr,                                           \
-                        EVAL__(expr),                                   \
-                        SET_TEST_SUCCESS__,                             \
-                        SET_TEST_SUCCESS__,                             \
-                        PRINT_ERR_NOEXCEPTION__(#expr, func_name)       \
-                            on_leave PRINT_PASSED__(func_name, #expr)); \
-    } while (0)
-
-#define CHECK_THROWS_AS_INTERNAL__(expr, func_name, except_type, on_leave)    \
-    do                                                                        \
-    {                                                                         \
-        bool exceptionThrown = false;                                         \
-        TEST_INTERNAL__(                                                      \
-            func_name,                                                        \
-            expr,                                                             \
-            EVAL__(expr),                                                     \
-            {                                                                 \
-                exceptionThrown = true;                                       \
-                if (dynamic_cast<const except_type*>(&e) != nullptr)          \
-                    SET_TEST_SUCCESS__;                                       \
-            },                                                                \
-            { exceptionThrown = true; },                                      \
-            PRINT_ERR_BAD_EXCEPTION__(#expr ", " #except_type,                \
-                                      func_name,                              \
-                                      except_type,                            \
-                                      exceptionThrown,                        \
-                                      TEST_FLAG_)                             \
-                on_leave PRINT_PASSED__(func_name, #expr ", " #except_type)); \
-    } while (0)
-
-#define CHECK_NOTHROW_INTERNAL__(expr, func_name, on_leave)             \
-    do                                                                  \
-    {                                                                   \
-        TEST_INTERNAL__(func_name,                                      \
-                        expr,                                           \
-                        EVAL__(expr) SET_TEST_SUCCESS__,                \
-                        NOTHING__,                                      \
-                        NOTHING__,                                      \
-                        PRINT_ERR_WITHEXCEPTION__(#expr, func_name)     \
-                            on_leave PRINT_PASSED__(func_name, #expr)); \
-    } while (0)
-
-#define CHECK(expr) CHECK_INTERNAL__(expr, "CHECK", NOTHING__)
-#define CHECK_THROWS(expr) \
-    CHECK_THROWS_INTERNAL__(expr, "CHECK_THROWS", NOTHING__)
-#define CHECK_NOTHROW(expr) \
-    CHECK_NOTHROW_INTERNAL__(expr, "CHECK_NOTHROW", NOTHING__)
-#define CHECK_THROWS_AS(expr, except_type) \
-    CHECK_THROWS_AS_INTERNAL__(expr, "CHECK_THROWS_AS", except_type, NOTHING__)
-
-#define REQUIRE(expr) CHECK_INTERNAL__(expr, "REQUIRE", RETURN_ON_FAILURE__)
-#define REQUIRE_THROWS(expr) \
-    CHECK_THROWS_INTERNAL__(expr, "REQUIRE_THROWS", RETURN_ON_FAILURE__)
-#define REQUIRE_NOTHROW(expr) \
-    CHECK_NOTHROW_INTERNAL__(expr, "REQUIRE_NOTHROW", RETURN_ON_FAILURE__)
-#define REQUIRE_THROWS_AS(expr, except_type)        \
-    CHECK_THROWS_AS_INTERNAL__(expr,                \
-                               "REQUIRE_THROWS_AS", \
-                               except_type,         \
-                               RETURN_ON_FAILURE__)
-
-#define CO_REQUIRE(expr) \
-    CHECK_INTERNAL__(expr, "CO_REQUIRE", CO_RETURN_ON_FAILURE__)
-#define CO_REQUIRE_THROWS(expr) \
-    CHECK_THROWS_INTERNAL__(expr, "CO_REQUIRE_THROWS", CO_RETURN_ON_FAILURE__)
-#define CO_REQUIRE_NOTHROW(expr) \
-    CHECK_NOTHROW_INTERNAL__(expr, "CO_REQUIRE_NOTHROW", CO_RETURN_ON_FAILURE__)
-#define CO_REQUIRE_THROWS_AS(expr, except_type)        \
-    CHECK_THROWS_AS_INTERNAL__(expr,                   \
-                               "CO_REQUIRE_THROWS_AS", \
-                               except_type,            \
-                               CO_RETURN_ON_FAILURE__)
-
-#define MANDATE(expr) CHECK_INTERNAL__(expr, "MANDATE", DIE_ON_FAILURE__)
-#define MANDATE_THROWS(expr) \
-    CHECK_THROWS_INTERNAL__(expr, "MANDATE_THROWS", DIE_ON_FAILURE__)
-#define MANDATE_NOTHROW(expr) \
-    CHECK_NOTHROW_INTERNAL__(expr, "MANDATE_NOTHROW", DIE_ON_FAILURE__)
-#define MANDATE_THROWS_AS(expr, except_type)        \
-    CHECK_THROWS_AS_INTERNAL__(expr,                \
-                               "MANDATE_THROWS_AS", \
-                               except_type,         \
-                               DIE_ON_FAILURE__)
 
 #define STATIC_REQUIRE(expr)                            \
     do                                                  \
@@ -722,7 +434,7 @@ DROGON_EXPORT int run(int argc, char** argv);
 #define FAIL(...)                                                       \
     do                                                                  \
     {                                                                   \
-        using namespace drogon::test;                                   \
+        using namespace ::drogon::test;                                 \
         TEST_CTX->setFailed();                                          \
         printErr() << "\x1B[1;37mIn test case " << TEST_CTX->fullname() \
                    << "\n"                                              \
@@ -736,7 +448,7 @@ DROGON_EXPORT int run(int argc, char** argv);
 #define FAULT(...)                                                 \
     do                                                             \
     {                                                              \
-        using namespace drogon::test;                              \
+        using namespace ::drogon::test;                            \
         FAIL(__VA_ARGS__);                                         \
         printTestStats();                                          \
         printErr() << "Force exiting due to a FAULT statement.\n"; \
@@ -758,6 +470,252 @@ DROGON_EXPORT int run(int argc, char** argv);
                 << "  \033[0;34mSUCCESS()\x1B[0m\n\n";                       \
         drogon::test::internal::numAssertions++;                             \
         drogon::test::internal::numCorrectAssertions++;                      \
+    } while (0)
+
+namespace drogon::test::internal
+{
+bool DROGON_EXPORT
+check_internal(std::string func_name,
+               std::string expr,
+               const std::shared_ptr<drogon::test::CaseBase>& TEST_CTX,
+               std::function<std::pair<bool, std::string>()> functor,
+               std::string codeloc);
+bool DROGON_EXPORT
+throws_internal(std::string func_name,
+                std::string expr,
+                const std::shared_ptr<drogon::test::CaseBase>& TEST_CTX,
+                std::function<void()> functor,
+                std::string codeloc);
+bool DROGON_EXPORT
+nothrow_internal(std::string func_name,
+                 std::string expr,
+                 const std::shared_ptr<drogon::test::CaseBase>& TEST_CTX,
+                 std::function<void()> functor,
+                 std::string codeloc);
+bool DROGON_EXPORT
+throws_as_internal(std::string func_name,
+                   std::string expr,
+                   const std::shared_ptr<drogon::test::CaseBase>& TEST_CTX,
+                   std::function<void()> functor,
+                   std::string codeloc,
+                   bool (*validator)(std::exception*));
+[[noreturn]] void DROGON_EXPORT mandateExit();
+}  // namespace drogon::test::internal
+
+#define DRTEST_MAKE_FUNCTOR(expr)                                       \
+    [&] {                                                               \
+        DROGON_TEST_START_SUPRESSION_                                   \
+        DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_                       \
+        return (drogon::test::internal::Decomposer() <= expr).result(); \
+        DROGON_TEST_END_SUPRESSION_                                     \
+    }
+
+#define DRTEST_MAKE_SIMPLE_FUNCTOR(expr)           \
+    [&] {                                          \
+        DROGON_TEST_START_SUPRESSION_              \
+        DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_ \
+        expr;                                      \
+        DROGON_TEST_END_SUPRESSION_                \
+    }
+
+#define PRINT_PASSED__(func_name, expr, codeloc)          \
+    do                                                    \
+    {                                                     \
+        if (drogon::test::internal::printSuccessfulTests) \
+        {                                                 \
+            PASSED_MSG(func_name, expr, codeloc) << "\n"; \
+        }                                                 \
+    } while (0);
+
+#define DRCODE_LOCATION__ __FILE__ ":" DROGON_TEST_STRINGIFY(__LINE__)
+#define CHECK(expr)                                                     \
+    ::drogon::test::internal::check_internal("CHECK",                   \
+                                             #expr,                     \
+                                             TEST_CTX,                  \
+                                             DRTEST_MAKE_FUNCTOR(expr), \
+                                             DRCODE_LOCATION__)
+#define CHECK_THROWS(expr)                                                \
+    ::drogon::test::internal::throws_internal("CHECK_THROWS",             \
+                                              #expr,                      \
+                                              TEST_CTX,                   \
+                                              DRTEST_MAKE_SIMPLE_FUNCTOR( \
+                                                  expr),                  \
+                                              DRCODE_LOCATION__)
+#define CHECK_NOTHROW(expr)                                                \
+    ::drogon::test::internal::nothrow_internal("CHECK_NOTHROW",            \
+                                               #expr,                      \
+                                               TEST_CTX,                   \
+                                               DRTEST_MAKE_SIMPLE_FUNCTOR( \
+                                                   expr),                  \
+                                               DRCODE_LOCATION__)
+#define CHECK_THROWS_AS(expr, expect_type)                   \
+    ::drogon::test::internal::throws_as_internal(            \
+        "CHECK_THROWS",                                      \
+        #expr,                                               \
+        TEST_CTX,                                            \
+        DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                    \
+        DRCODE_LOCATION__,                                   \
+        +[](std::exception* e) {                             \
+            return dynamic_cast<expect_type*>(e) != nullptr; \
+        })
+
+#define REQUIRE(expr)                                                     \
+    do                                                                    \
+    {                                                                     \
+        bool ok =                                                         \
+            ::drogon::test::internal::check_internal("REQUIRE",           \
+                                                     #expr,               \
+                                                     TEST_CTX,            \
+                                                     DRTEST_MAKE_FUNCTOR( \
+                                                         expr),           \
+                                                     DRCODE_LOCATION__);  \
+        if (!ok)                                                          \
+            return;                                                       \
+    } while (0)
+#define REQUIRE_THROWS(expr)                                 \
+    do                                                       \
+    {                                                        \
+        bool ok = ::drogon::test::internal::throws_internal( \
+            "REQUIRE_THROWS",                                \
+            #expr,                                           \
+            TEST_CTX,                                        \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                \
+            DRCODE_LOCATION__);                              \
+        if (!ok)                                             \
+            return;                                          \
+    } while (0)
+#define REQUIRE_NOTHROW(expr)                                 \
+    do                                                        \
+    {                                                         \
+        bool ok = ::drogon::test::internal::nothrow_internal( \
+            "REQUIRE_NOTHROW",                                \
+            #expr,                                            \
+            TEST_CTX,                                         \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                 \
+            DRCODE_LOCATION__);                               \
+        if (!ok)                                              \
+            return;                                           \
+    } while (0)
+#define REQUIRE_THROWS_AS(expr, expect_type)                     \
+    do                                                           \
+    {                                                            \
+        bool ok = ::drogon::test::internal::throws_as_internal(  \
+            "REQUIRE_THROWS",                                    \
+            #expr,                                               \
+            TEST_CTX,                                            \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                    \
+            DRCODE_LOCATION__,                                   \
+            +[](std::exception* e) {                             \
+                return dynamic_cast<expect_type*>(e) != nullptr; \
+            });                                                  \
+        if (!ok)                                                 \
+            return;                                              \
+    } while (0)
+
+#define CO_REQUIRE(expr)                                                  \
+    do                                                                    \
+    {                                                                     \
+        bool ok =                                                         \
+            ::drogon::test::internal::check_internal("REQUIRE",           \
+                                                     #expr,               \
+                                                     TEST_CTX,            \
+                                                     DRTEST_MAKE_FUNCTOR( \
+                                                         expr),           \
+                                                     DRCODE_LOCATION__);  \
+        if (!ok)                                                          \
+            co_return;                                                    \
+    } while (0)
+#define CO_REQUIRE_THROWS(expr)                              \
+    do                                                       \
+    {                                                        \
+        bool ok = ::drogon::test::internal::throws_internal( \
+            "REQUIRE_THROWS",                                \
+            #expr,                                           \
+            TEST_CTX,                                        \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                \
+            DRCODE_LOCATION__);                              \
+        if (!ok)                                             \
+            co_return;                                       \
+    } while (0)
+#define CO_REQUIRE_NOTHROW(expr)                              \
+    do                                                        \
+    {                                                         \
+        bool ok = ::drogon::test::internal::nothrow_internal( \
+            "REQUIRE_NOTHROW",                                \
+            #expr,                                            \
+            TEST_CTX,                                         \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                 \
+            DRCODE_LOCATION__);                               \
+        if (!ok)                                              \
+            co_return;                                        \
+    } while (0)
+#define CO_REQUIRE_THROWS_AS(expr, expect_type)                  \
+    do                                                           \
+    {                                                            \
+        bool ok = ::drogon::test::internal::throws_as_internal(  \
+            "REQUIRE_THROWS",                                    \
+            #expr,                                               \
+            TEST_CTX,                                            \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                    \
+            DRCODE_LOCATION__,                                   \
+            +[](std::exception* e) {                             \
+                return dynamic_cast<expect_type*>(e) != nullptr; \
+            });                                                  \
+        if (!ok)                                                 \
+            co_return;                                           \
+    } while (0)
+
+#define MANDATE(expr)                                                     \
+    do                                                                    \
+    {                                                                     \
+        bool ok =                                                         \
+            ::drogon::test::internal::check_internal("MANDATE",           \
+                                                     #expr,               \
+                                                     TEST_CTX,            \
+                                                     DRTEST_MAKE_FUNCTOR( \
+                                                         expr),           \
+                                                     DRCODE_LOCATION__);  \
+        if (!ok)                                                          \
+            ::drogon::test::internal::mandateExit();                      \
+    } while (0)
+#define MANDATE_THROWS(expr)                                 \
+    do                                                       \
+    {                                                        \
+        bool ok = ::drogon::test::internal::throws_internal( \
+            "MANDATE_THROWS",                                \
+            #expr,                                           \
+            TEST_CTX,                                        \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                \
+            DRCODE_LOCATION__);                              \
+        if (!ok)                                             \
+            ::drogon::test::internal::mandateExit();         \
+    } while (0)
+#define MANDATE_NOTHROW(expr)                                 \
+    do                                                        \
+    {                                                         \
+        bool ok = ::drogon::test::internal::nothrow_internal( \
+            "MANDATE_NOTHROW",                                \
+            #expr,                                            \
+            TEST_CTX,                                         \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                 \
+            DRCODE_LOCATION__);                               \
+        if (!ok)                                              \
+            ::drogon::test::internal::mandateExit();          \
+    } while (0)
+#define MANDATE_THROWS_AS(expr, expect_type)                     \
+    do                                                           \
+    {                                                            \
+        bool ok = ::drogon::test::internal::throws_as_internal(  \
+            "MANDATE_THROWS",                                    \
+            #expr,                                               \
+            TEST_CTX,                                            \
+            DRTEST_MAKE_SIMPLE_FUNCTOR(expr),                    \
+            DRCODE_LOCATION__,                                   \
+            +[](std::exception* e) {                             \
+                return dynamic_cast<expect_type*>(e) != nullptr; \
+            });                                                  \
+        if (!ok)                                                 \
+            ::drogon::test::internal::mandateExit();             \
     } while (0)
 
 #define DROGON_TEST_CLASS_NAME_(test_name) \
