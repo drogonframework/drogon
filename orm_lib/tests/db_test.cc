@@ -45,7 +45,7 @@ DROGON_TEST(PostgreTest)
 {
     auto &clientPtr = postgreClient;
 
-    // Test bugfix
+    // Test bugfix #1588
     // PgBatchConnection.cc did not report error message to application
     try
     {
