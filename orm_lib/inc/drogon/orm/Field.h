@@ -172,7 +172,7 @@ inline drogon::string_view Field::as<drogon::string_view>() const
 {
     auto first = result_.getValue(row_, column_);
     auto length = result_.getLength(row_, column_);
-    return drogon::string_view(first, length);
+    return {first, length};
 }
 
 template <>

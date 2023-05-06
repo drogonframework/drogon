@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
     std::thread thr([&]() {
         app()
-            .setSSLFiles("server.pem", "server.pem")
+            .setSSLFiles("server.crt", "server.key")
             .addListener("0.0.0.0", 8855, true)
             .enableSession();
         app().getLoop()->queueInLoop([&p1]() { p1.set_value(); });
@@ -68,6 +68,7 @@ int main(int argc, char **argv)
     });
 
     f1.get();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
     int testStatus = test::run(argc, argv);
     app().getLoop()->queueInLoop([]() { app().quit(); });
     thr.join();

@@ -17,30 +17,27 @@
 #include "TransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
 #include <drogon/config.h>
+#include <drogon/drogon.h>
+#include <drogon/orm/DbClient.h>
+#include <drogon/orm/Exception.h>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/Channel.h>
 #include <exception>
+#include <memory>
+#include <thread>
+#include <vector>
+#include <unordered_set>
+
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
 #endif
 #if USE_MYSQL
 #include "mysql_impl/MysqlConnection.h"
 #endif
-#include "TransactionImpl.h"
-#include <drogon/drogon.h>
-#include <drogon/orm/DbClient.h>
-#include <drogon/orm/Exception.h>
-#include <iostream>
-#include <memory>
-#include <sstream>
-#include <stdio.h>
+
 #ifndef _WIN32
-#include <sys/select.h>
 #include <unistd.h>
 #endif
-#include <thread>
-#include <trantor/net/EventLoop.h>
-#include <trantor/net/Channel.h>
-#include <unordered_set>
-#include <vector>
 
 using namespace drogon::orm;
 
@@ -303,7 +300,7 @@ void DbClientLockFree::makeTrans(
     std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
 {
     std::weak_ptr<DbClientLockFree> weakThis = shared_from_this();
-    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(
+    auto trans = std::make_shared<TransactionImpl>(
         type_, conn, std::function<void(bool)>(), [weakThis, conn]() {
             auto thisPtr = weakThis.lock();
             if (!thisPtr)
@@ -345,7 +342,7 @@ void DbClientLockFree::makeTrans(
                     break;
                 }
             }
-        }));
+        });
     transSet_.insert(conn);
     trans->doBegin();
     if (timeout_ > 0.0)

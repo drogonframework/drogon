@@ -14,17 +14,22 @@
 
 #pragma once
 
-#include "impl_forwards.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
 #include <json/json.h>
+#include <functional>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <regex>
 #include <string>
 #include <vector>
-#include <functional>
-#include <limits>
+#include "impl_forwards.h"
+
+namespace trantor
+{
+class EventLoopThreadPool;
+}
 
 namespace drogon
 {
@@ -52,6 +57,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     PluginBase *getPlugin(const std::string &name) override;
+    void addPlugins(const Json::Value &configs);
+    void addPlugin(const std::string &name,
+                   const std::vector<std::string> &dependencies,
+                   const Json::Value &config);
     HttpAppFramework &addListener(
         const std::string &ip,
         uint16_t port,
@@ -221,6 +230,21 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         useSession_ = false;
         return *this;
     }
+
+    HttpAppFramework &registerSessionStartAdvice(
+        const AdviceStartSessionCallback &advice) override
+    {
+        sessionStartAdvices_.emplace_back(advice);
+        return *this;
+    }
+
+    HttpAppFramework &registerSessionDestroyAdvice(
+        const AdviceDestroySessionCallback &advice) override
+    {
+        sessionDestroyAdvices_.emplace_back(advice);
+        return *this;
+    }
+
     const std::string &getDocumentRoot() const override
     {
         return rootPath_;
@@ -289,6 +313,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                                  const std::string &logfileBaseName,
                                  size_t logfileSize) override;
     HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) override;
+    HttpAppFramework &setLogLocalTime(bool on) override;
     HttpAppFramework &enableSendfile(bool sendFile) override
     {
         useSendfile_ = sendFile;
@@ -410,6 +435,17 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return running_;
     }
 
+    HttpAppFramework &setJsonParserStackLimit(size_t limit) noexcept override
+    {
+        jsonStackLimit_ = limit;
+        return *this;
+    }
+
+    size_t getJsonParserStackLimit() const noexcept override
+    {
+        return jsonStackLimit_;
+    }
+
     HttpAppFramework &setUnicodeEscapingInJson(bool enable) noexcept override
     {
         usingUnicodeEscaping_ = enable;
@@ -513,10 +549,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     bool supportSSL() const override
     {
-#ifdef OpenSSL_FOUND
-        return true;
-#endif
-        return false;
+        return trantor::utils::tlsBackend() != "None";
     }
 
     size_t getCurrentThreadIndex() const override
@@ -619,6 +652,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::atomic_bool routersInit_{false};
 
     size_t threadNum_{1};
+    std::unique_ptr<trantor::EventLoopThreadPool> ioLoopThreadPool_;
+
 #ifndef _WIN32
     std::vector<std::string> libFilePaths_;
     std::string libFileOutputPath_;
@@ -643,6 +678,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t logfileSize_{100000000};
     size_t keepaliveRequestsNumber_{0};
     size_t pipeliningRequestsNumber_{0};
+    size_t jsonStackLimit_{1000};
     bool useSendfile_{true};
     bool useGzip_{true};
     bool useBrotli_{false};
@@ -657,8 +693,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::function<void()> termSignalHandler_{[]() { app().quit(); }};
     std::function<void()> intSignalHandler_{[]() { app().quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
+    std::vector<AdviceStartSessionCallback> sessionStartAdvices_;
+    std::vector<AdviceDestroySessionCallback> sessionDestroyAdvices_;
     std::shared_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
+    Json::Value jsonRuntimeConfig_;
     HttpResponsePtr custom404_;
     std::function<HttpResponsePtr(HttpStatusCode)> customErrorHandler_ =
         &defaultErrorHandler;

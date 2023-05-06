@@ -74,6 +74,7 @@ static trantor::InetAddress parseAddress(const std::string& addr)
     }
     catch (const std::exception& ex)
     {
+        (void)ex;
         LOG_ERROR << "Error in ipv4 address: " + addr;
         port = 0;
     }
@@ -150,6 +151,28 @@ void RealIpResolver::initAndStart(const Json::Value& config)
 
 void RealIpResolver::shutdown()
 {
+}
+
+const trantor::InetAddress& RealIpResolver::GetRealAddr(
+    const HttpRequestPtr& req)
+{
+    auto* plugin = app().getPlugin<drogon::plugin::RealIpResolver>();
+    if (!plugin)
+    {
+        return req->getPeerAddr();
+    }
+    return plugin->getRealAddr(req);
+}
+
+const trantor::InetAddress& RealIpResolver::getRealAddr(
+    const HttpRequestPtr& req) const
+{
+    const std::shared_ptr<Attributes>& attributesPtr = req->getAttributes();
+    if (!attributesPtr->find(attributeKey_))
+    {
+        return req->getPeerAddr();
+    }
+    return attributesPtr->get<trantor::InetAddress>(attributeKey_);
 }
 
 bool RealIpResolver::matchCidr(const trantor::InetAddress& addr) const

@@ -25,6 +25,7 @@
 #include <drogon/UploadFile.h>
 #include <json/json.h>
 #include <trantor/net/InetAddress.h>
+#include <trantor/net/Certificate.h>
 #include <trantor/utils/Date.h>
 #include <memory>
 #include <string>
@@ -148,21 +149,27 @@ class DROGON_EXPORT HttpRequest
     virtual const std::string &getCookie(const std::string &field) const = 0;
 
     /// Get all headers of the request
-    virtual const std::unordered_map<std::string, std::string> &headers()
-        const = 0;
+    virtual const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &headers() const = 0;
 
     /// Get all headers of the request
-    const std::unordered_map<std::string, std::string> &getHeaders() const
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &getHeaders() const
     {
         return headers();
     }
 
     /// Get all cookies of the request
-    virtual const std::unordered_map<std::string, std::string> &cookies()
-        const = 0;
+    virtual const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &cookies() const = 0;
 
     /// Get all cookies of the request
-    const std::unordered_map<std::string, std::string> &getCookies() const
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &getCookies() const
     {
         return cookies();
     }
@@ -267,11 +274,14 @@ class DROGON_EXPORT HttpRequest
     }
 
     /// Get parameters of the request.
-    virtual const std::unordered_map<std::string, std::string> &parameters()
-        const = 0;
+    virtual const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &parameters() const = 0;
 
     /// Get parameters of the request.
-    const std::unordered_map<std::string, std::string> &getParameters() const
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &getParameters() const
     {
         return parameters();
     }
@@ -330,6 +340,13 @@ class DROGON_EXPORT HttpRequest
     const trantor::Date &getCreationDate() const
     {
         return creationDate();
+    }
+
+    // Return the peer certificate (if any)
+    virtual const trantor::CertificatePtr &peerCertificate() const = 0;
+    const trantor::CertificatePtr &getPeerCertificate() const
+    {
+        return peerCertificate();
     }
 
     /// Get the Json object of the request

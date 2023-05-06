@@ -31,9 +31,10 @@ namespace plugin
             "log_file": "access.log",
             "log_size_limit": 0,
             "use_local_time": true,
+            "log_index": 0,
             // "show_microseconds": true,
             // "custom_time_format": "",
-            "log_index": 0
+            // "use_real_ip": false
       }
    }
    @endcode
@@ -85,6 +86,9 @@ namespace plugin
  * show_microseconds is true. For detailed information about formats, please
  * refer to cpp reference about strftime().
  *
+ * use_real_ip: Log the real ip of peer. This option only takes effects when
+ * set to true and RealIpResolver is enabled. False by default.
+ *
  * Enable the plugin by adding the configuration to the list of plugins in the
  * configuration file.
  *
@@ -105,6 +109,7 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     bool showMicroseconds_{true};
     bool useCustomTimeFormat_{false};
     std::string timeFormat_;
+    static bool useRealIp_;
 
     using LogFunction = std::function<void(trantor::LogStream &,
                                            const drogon::HttpRequestPtr &,

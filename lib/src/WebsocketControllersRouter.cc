@@ -21,11 +21,7 @@
 #include <drogon/HttpFilter.h>
 #include <drogon/WebSocketController.h>
 #include <drogon/config.h>
-#ifdef OpenSSL_FOUND
-#include <openssl/sha.h>
-#else
-#include "ssl_funcs/Sha1.h"
-#endif
+#include <trantor/utils/Utilities.h>
 using namespace drogon;
 
 void WebsocketControllersRouter::registerWebSocketController(
@@ -91,6 +87,95 @@ void WebsocketControllersRouter::registerWebSocketController(
     }
 }
 
+void WebsocketControllersRouter::doPreHandlingAdvices(
+    const WebSocketControllerRouterItem &routerItem,
+    std::string &wsKey,
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
+{
+    if (req->method() == Options)
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+        std::string methods = "OPTIONS,";
+        if (routerItem.binders_[Get] && routerItem.binders_[Get]->isCORS_)
+        {
+            methods.append("GET,HEAD,");
+        }
+        if (routerItem.binders_[Post] && routerItem.binders_[Post]->isCORS_)
+        {
+            methods.append("POST,");
+        }
+        if (routerItem.binders_[Put] && routerItem.binders_[Put]->isCORS_)
+        {
+            methods.append("PUT,");
+        }
+        if (routerItem.binders_[Delete] && routerItem.binders_[Delete]->isCORS_)
+        {
+            methods.append("DELETE,");
+        }
+        if (routerItem.binders_[Patch] && routerItem.binders_[Patch]->isCORS_)
+        {
+            methods.append("PATCH,");
+        }
+        methods.resize(methods.length() - 1);
+        resp->addHeader("ALLOW", methods);
+        auto &origin = req->getHeader("Origin");
+        if (origin.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+        }
+        else
+        {
+            resp->addHeader("Access-Control-Allow-Origin", origin);
+        }
+        resp->addHeader("Access-Control-Allow-Methods", methods);
+        auto &headers = req->getHeaderBy("access-control-request-headers");
+        if (!headers.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Headers", headers);
+        }
+        callback(resp);
+        return;
+    }
+    if (!preHandlingObservers_.empty())
+    {
+        for (auto &observer : preHandlingObservers_)
+        {
+            observer(req);
+        }
+    }
+    if (preHandlingAdvices_.empty())
+    {
+        doControllerHandler(
+            routerItem, wsKey, req, std::move(callback), wsConnPtr);
+    }
+    else
+    {
+        auto callbackPtr =
+            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+                std::move(callback));
+        doAdvicesChain(
+            preHandlingAdvices_,
+            0,
+            req,
+            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+                [callbackPtr](const HttpResponsePtr &resp) {
+                    (*callbackPtr)(resp);
+                }),
+            [this,
+             &routerItem,
+             wsKey = std::move(wsKey),
+             req,
+             callbackPtr,
+             wsConnPtr]() mutable {
+                doControllerHandler(
+                    routerItem, wsKey, req, std::move(*callbackPtr), wsConnPtr);
+            });
+    }
+}
+
 void WebsocketControllersRouter::route(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
@@ -149,7 +234,7 @@ void WebsocketControllersRouter::route(
                                                  wsConnPtr,
                                                  &ctrlInfo,
                                                  this]() mutable {
-                                                    doControllerHandler(
+                                                    doPreHandlingAdvices(
                                                         ctrlInfo,
                                                         wsKey,
                                                         req,
@@ -159,7 +244,7 @@ void WebsocketControllersRouter::route(
                 }
                 else
                 {
-                    doControllerHandler(
+                    doPreHandlingAdvices(
                         ctrlInfo, wsKey, req, std::move(callback), wsConnPtr);
                 }
                 return;
@@ -169,46 +254,47 @@ void WebsocketControllersRouter::route(
                 auto callbackPtr = std::make_shared<
                     std::function<void(const HttpResponsePtr &)>>(
                     std::move(callback));
-                doAdvicesChain(
-                    postRoutingAdvices_,
-                    0,
-                    req,
-                    callbackPtr,
-                    [callbackPtr,
-                     &filters,
-                     req,
-                     &ctrlInfo,
-                     this,
-                     wsKey = std::move(wsKey),
-                     wsConnPtr]() mutable {
-                        if (!filters.empty())
-                        {
-                            filters_function::doFilters(
-                                filters,
+                doAdvicesChain(postRoutingAdvices_,
+                               0,
+                               req,
+                               callbackPtr,
+                               [callbackPtr,
+                                &filters,
                                 req,
-                                callbackPtr,
-                                [this,
-                                 wsKey = std::move(wsKey),
-                                 callbackPtr,
-                                 wsConnPtr = std::move(wsConnPtr),
-                                 req,
-                                 &ctrlInfo]() mutable {
-                                    doControllerHandler(ctrlInfo,
-                                                        wsKey,
-                                                        req,
-                                                        std::move(*callbackPtr),
-                                                        wsConnPtr);
-                                });
-                        }
-                        else
-                        {
-                            doControllerHandler(ctrlInfo,
-                                                wsKey,
-                                                req,
-                                                std::move(*callbackPtr),
-                                                wsConnPtr);
-                        }
-                    });
+                                &ctrlInfo,
+                                this,
+                                wsKey = std::move(wsKey),
+                                wsConnPtr]() mutable {
+                                   if (!filters.empty())
+                                   {
+                                       filters_function::doFilters(
+                                           filters,
+                                           req,
+                                           callbackPtr,
+                                           [this,
+                                            wsKey = std::move(wsKey),
+                                            callbackPtr,
+                                            wsConnPtr = std::move(wsConnPtr),
+                                            req,
+                                            &ctrlInfo]() mutable {
+                                               doPreHandlingAdvices(
+                                                   ctrlInfo,
+                                                   wsKey,
+                                                   req,
+                                                   std::move(*callbackPtr),
+                                                   wsConnPtr);
+                                           });
+                                   }
+                                   else
+                                   {
+                                       doPreHandlingAdvices(ctrlInfo,
+                                                            wsKey,
+                                                            req,
+                                                            std::move(
+                                                                *callbackPtr),
+                                                            wsConnPtr);
+                                   }
+                               });
             }
             return;
         }
@@ -247,63 +333,20 @@ void WebsocketControllersRouter::doControllerHandler(
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
-    if (req->method() == Options)
-    {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-        std::string methods = "OPTIONS,";
-        if (routerItem.binders_[Get] && routerItem.binders_[Get]->isCORS_)
-        {
-            methods.append("GET,HEAD,");
-        }
-        if (routerItem.binders_[Post] && routerItem.binders_[Post]->isCORS_)
-        {
-            methods.append("POST,");
-        }
-        if (routerItem.binders_[Put] && routerItem.binders_[Put]->isCORS_)
-        {
-            methods.append("PUT,");
-        }
-        if (routerItem.binders_[Delete] && routerItem.binders_[Delete]->isCORS_)
-        {
-            methods.append("DELETE,");
-        }
-        if (routerItem.binders_[Patch] && routerItem.binders_[Patch]->isCORS_)
-        {
-            methods.append("PATCH,");
-        }
-        methods.resize(methods.length() - 1);
-        resp->addHeader("ALLOW", methods);
-
-        auto &origin = req->getHeader("Origin");
-        if (origin.empty())
-        {
-            resp->addHeader("Access-Control-Allow-Origin", "*");
-        }
-        else
-        {
-            resp->addHeader("Access-Control-Allow-Origin", origin);
-        }
-        resp->addHeader("Access-Control-Allow-Methods", methods);
-        auto &headers = req->getHeaderBy("access-control-request-headers");
-        if (!headers.empty())
-        {
-            resp->addHeader("Access-Control-Allow-Headers", headers);
-        }
-        callback(resp);
-        return;
-    }
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-    unsigned char accKey[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()),
-         wsKey.length(),
-         accKey);
-    auto base64Key = utils::base64Encode(accKey, SHA_DIGEST_LENGTH);
+    unsigned char accKey[20];
+    auto sha1 = trantor::utils::sha1(wsKey.c_str(), wsKey.length());
+    memcpy(accKey, &sha1, sizeof(sha1));
+    auto base64Key = utils::base64Encode(accKey, sizeof(accKey));
     auto resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k101SwitchingProtocols);
     resp->addHeader("Upgrade", "websocket");
     resp->addHeader("Connection", "Upgrade");
     resp->addHeader("Sec-WebSocket-Accept", base64Key);
+    for (auto &advice : postHandlingAdvices_)
+    {
+        advice(req, resp);
+    }
     callback(resp);
     auto ctrlPtr = routerItem.binders_[req->method()]->controller_;
     wsConnPtr->setMessageCallback(

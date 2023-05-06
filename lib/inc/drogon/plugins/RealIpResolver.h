@@ -8,6 +8,7 @@
 
 #include <drogon/plugins/Plugin.h>
 #include <trantor/net/InetAddress.h>
+#include <drogon/HttpRequest.h>
 #include <vector>
 
 namespace drogon
@@ -49,7 +50,12 @@ class DROGON_EXPORT RealIpResolver : public drogon::Plugin<RealIpResolver>
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 
+    static const trantor::InetAddress &GetRealAddr(
+        const drogon::HttpRequestPtr &req);
+
   private:
+    const trantor::InetAddress &getRealAddr(
+        const drogon::HttpRequestPtr &req) const;
     bool matchCidr(const trantor::InetAddress &addr) const;
 
     struct CIDR

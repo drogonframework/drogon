@@ -14,6 +14,7 @@
 #pragma once
 
 #include <drogon/utils/optional.h>
+#include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/Logger.h>
 #include <algorithm>
@@ -186,15 +187,6 @@ struct [[nodiscard]] Task
         std::exception_ptr exception_;
         std::coroutine_handle<> continuation_;
     };
-    bool await_ready() const
-    {
-        return !coro_ || coro_.done();
-    }
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaiting)
-    {
-        coro_.promise().setContinuation(awaiting);
-        return coro_;
-    }
 
     auto operator co_await() const &noexcept
     {
@@ -321,15 +313,7 @@ struct [[nodiscard]] Task<void>
         std::exception_ptr exception_;
         std::coroutine_handle<> continuation_;
     };
-    bool await_ready()
-    {
-        return coro_.done();
-    }
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaiting)
-    {
-        coro_.promise().setContinuation(awaiting);
-        return coro_;
-    }
+
     auto operator co_await() const &noexcept
     {
         struct awaiter
@@ -495,7 +479,7 @@ struct AsyncTask
 /// coroutines
 // The user is responsible to fill in `await_suspend()` and constructors.
 template <typename T = void>
-struct CallbackAwaiter
+struct CallbackAwaiter : public trantor::NonCopyable
 {
     bool await_ready() noexcept
     {
@@ -537,7 +521,7 @@ struct CallbackAwaiter
 };
 
 template <>
-struct CallbackAwaiter<void>
+struct CallbackAwaiter<void> : public trantor::NonCopyable
 {
     bool await_ready() noexcept
     {
@@ -673,6 +657,74 @@ struct [[nodiscard]] TimerAwaiter : CallbackAwaiter<void>
     trantor::EventLoop *loop_;
     double delay_;
 };
+
+struct [[nodiscard]] LoopAwaiter : CallbackAwaiter<void>
+{
+    LoopAwaiter(trantor::EventLoop *workLoop,
+                std::function<void()> &&taskFunc,
+                trantor::EventLoop *resumeLoop = nullptr)
+        : workLoop_(workLoop),
+          resumeLoop_(resumeLoop),
+          taskFunc_(std::move(taskFunc))
+    {
+        assert(workLoop);
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        workLoop_->queueInLoop([handle, this]() {
+            try
+            {
+                taskFunc_();
+                if (resumeLoop_ && resumeLoop_ != workLoop_)
+                    resumeLoop_->queueInLoop([handle]() { handle.resume(); });
+                else
+                    handle.resume();
+            }
+            catch (...)
+            {
+                setException(std::current_exception());
+                if (resumeLoop_ && resumeLoop_ != workLoop_)
+                    resumeLoop_->queueInLoop([handle]() { handle.resume(); });
+                else
+                    handle.resume();
+            }
+        });
+    }
+
+  private:
+    trantor::EventLoop *workLoop_{nullptr};
+    trantor::EventLoop *resumeLoop_{nullptr};
+    std::function<void()> taskFunc_;
+};
+
+struct [[nodiscard]] SwitchThreadAwaiter : CallbackAwaiter<void>
+{
+    explicit SwitchThreadAwaiter(trantor::EventLoop *loop) : loop_(loop)
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        loop_->runInLoop([handle]() { handle.resume(); });
+    }
+
+  private:
+    trantor::EventLoop *loop_;
+};
+struct [[nodiscard]] EndAwaiter : CallbackAwaiter<void>
+{
+    EndAwaiter(trantor::EventLoop *loop) : loop_(loop)
+    {
+        assert(loop);
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        loop_->runOnQuit([handle]() { handle.resume(); });
+    }
+
+  private:
+    trantor::EventLoop *loop_{nullptr};
+};
+
 }  // namespace internal
 
 inline internal::TimerAwaiter sleepCoro(
@@ -680,14 +732,36 @@ inline internal::TimerAwaiter sleepCoro(
     const std::chrono::duration<double> &delay) noexcept
 {
     assert(loop);
-    return internal::TimerAwaiter(loop, delay);
+    return {loop, delay};
 }
 
 inline internal::TimerAwaiter sleepCoro(trantor::EventLoop *loop,
                                         double delay) noexcept
 {
     assert(loop);
-    return internal::TimerAwaiter(loop, delay);
+    return {loop, delay};
+}
+
+inline internal::LoopAwaiter queueInLoopCoro(
+    trantor::EventLoop *workLoop,
+    std::function<void()> taskFunc,
+    trantor::EventLoop *resumeLoop = nullptr)
+{
+    assert(workLoop);
+    return {workLoop, std::move(taskFunc), resumeLoop};
+}
+
+inline internal::SwitchThreadAwaiter switchThreadCoro(
+    trantor::EventLoop *loop) noexcept
+{
+    assert(loop);
+    return internal::SwitchThreadAwaiter{loop};
+}
+
+inline internal::EndAwaiter untilQuit(trantor::EventLoop *loop)
+{
+    assert(loop);
+    return {loop};
 }
 
 template <typename T, typename = std::void_t<>>
@@ -741,6 +815,56 @@ std::function<void()> async_func(Coro &&coro)
     return [coro = std::forward<Coro>(coro)]() mutable {
         async_run(std::move(coro));
     };
+}
+namespace internal
+{
+template <typename T>
+struct [[nodiscard]] EventLoopAwaiter : public drogon::CallbackAwaiter<T>
+{
+    EventLoopAwaiter(std::function<T()> &&task, trantor::EventLoop *loop)
+        : task_(std::move(task)), loop_(loop)
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        loop_->queueInLoop([this, handle]() {
+            try
+            {
+                if constexpr (!std::is_same_v<T, void>)
+                {
+                    this->setValue(task_());
+                    handle.resume();
+                }
+                else
+                {
+                    task_();
+                    handle.resume();
+                }
+            }
+            catch (const std::exception &err)
+            {
+                LOG_ERROR << err.what();
+                this->setException(std::current_exception());
+                handle.resume();
+            }
+        });
+    }
+
+  private:
+    std::function<T()> task_;
+    trantor::EventLoop *loop_;
+};
+}  // namespace internal
+
+/**
+ * @brief Run a task in a given event loop and returns a resumable object that
+ * can be co_awaited in a coroutine.
+ */
+template <typename T>
+inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
+                                                     std::function<T()> task)
+{
+    return internal::EventLoopAwaiter<T>(std::move(task), loop);
 }
 
 }  // namespace drogon

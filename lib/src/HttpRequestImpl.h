@@ -21,6 +21,7 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/InetAddress.h>
+#include <trantor/net/Certificate.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/NonCopyable.h>
@@ -74,6 +75,7 @@ class HttpRequestImpl : public HttpRequest
         contentTypeString_.clear();
         keepAlive_ = true;
         jsonParsingErrorPtr_.reset();
+        peerCertificate_.reset();
     }
     trantor::EventLoop *getLoop()
     {
@@ -137,8 +139,9 @@ class HttpRequestImpl : public HttpRequest
         pathEncode_ = pathEncode;
     }
 
-    const std::unordered_map<std::string, std::string> &parameters()
-        const override
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &parameters() const override
     {
         parseParametersOnce();
         return parameters_;
@@ -230,6 +233,11 @@ class HttpRequestImpl : public HttpRequest
         return creationDate_;
     }
 
+    const trantor::CertificatePtr &peerCertificate() const override
+    {
+        return peerCertificate_;
+    }
+
     void setCreationDate(const trantor::Date &date)
     {
         creationDate_ = date;
@@ -243,6 +251,11 @@ class HttpRequestImpl : public HttpRequest
     void setLocalAddr(const trantor::InetAddress &local)
     {
         local_ = local;
+    }
+
+    void setPeerCertificate(const trantor::CertificatePtr &cert)
+    {
+        peerCertificate_ = cert;
     }
 
     void addHeader(const char *start, const char *colon, const char *end);
@@ -291,12 +304,16 @@ class HttpRequestImpl : public HttpRequest
         return defaultVal;
     }
 
-    const std::unordered_map<std::string, std::string> &headers() const override
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &headers() const override
     {
         return headers_;
     }
 
-    const std::unordered_map<std::string, std::string> &cookies() const override
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &cookies() const override
     {
         return cookies_;
     }
@@ -541,15 +558,22 @@ class HttpRequestImpl : public HttpRequest
     bool pathEncode_{true};
     string_view matchedPathPattern_{""};
     std::string query_;
-    std::unordered_map<std::string, std::string> headers_;
-    std::unordered_map<std::string, std::string> cookies_;
-    mutable std::unordered_map<std::string, std::string> parameters_;
+    std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            headers_;
+    std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            cookies_;
+    mutable std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            parameters_;
     mutable std::shared_ptr<Json::Value> jsonPtr_;
     SessionPtr sessionPtr_;
     mutable AttributesPtr attributesPtr_;
     trantor::InetAddress peer_;
     trantor::InetAddress local_;
     trantor::Date creationDate_;
+    trantor::CertificatePtr peerCertificate_;
     std::unique_ptr<CacheFile> cacheFilePtr_;
     mutable std::unique_ptr<std::string> jsonParsingErrorPtr_;
     std::unique_ptr<std::string> expectPtr_;

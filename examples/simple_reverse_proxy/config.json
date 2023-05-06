@@ -4,8 +4,8 @@
     /*
     //ssl: The global ssl files setting
     "ssl": {
-        "cert": "../../trantor/trantor/tests/server.pem",
-        "key": "../../trantor/trantor/tests/server.pem"
+        "cert": "../../trantor/trantor/tests/server.crt",
+        "key": "../../trantor/trantor/tests/server.key"
     },*/
     "listeners": [{
         //address: Ip address,0.0.0.0 by default

@@ -158,7 +158,7 @@ int main()
     if (app().supportSSL())
     {
         drogon::app()
-            .setSSLFiles("server.pem", "server.pem")
+            .setSSLFiles("server.crt", "server.key")
             .addListener("0.0.0.0", 8849, true);
     }
     // Class function example
@@ -318,6 +318,12 @@ int main()
             return resp;
         }
         return nullResp;
+    });
+    app().registerSessionStartAdvice([](const std::string &sessionId) {
+        LOG_DEBUG << "session start:" << sessionId;
+    });
+    app().registerSessionDestroyAdvice([](const std::string &sessionId) {
+        LOG_DEBUG << "session destroy:" << sessionId;
     });
     // Output information of all handlers
     auto handlerInfo = app().getHandlersInfo();

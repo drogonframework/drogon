@@ -130,7 +130,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         removeHeaderBy(key);
     }
 
-    const std::unordered_map<std::string, std::string> &headers() const override
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &headers() const override
     {
         return headers_;
     }
@@ -200,7 +202,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return defaultCookie;
     }
 
-    const std::unordered_map<std::string, Cookie> &cookies() const override
+    const std::
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
+            &cookies() const override
     {
         return cookies_;
     }
@@ -311,6 +315,14 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     const SendfileRange &sendfileRange() const override
     {
         return sendfileRange_;
+    }
+    const trantor::CertificatePtr &peerCertificate() const override
+    {
+        return peerCertificate_;
+    }
+    void setPeerCertificate(const trantor::CertificatePtr &cert)
+    {
+        peerCertificate_ = cert;
     }
     void setSendfile(const std::string &filename)
     {
@@ -446,8 +458,11 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         statusMessage_ = string_view{message, messageLength};
     }
 
-    std::unordered_map<std::string, std::string> headers_;
-    std::unordered_map<std::string, Cookie> cookies_;
+    std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            headers_;
+    std::unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
+        cookies_;
 
     int customStatusCode_{-1};
     HttpStatusCode statusCode_{kUnknown};
@@ -465,6 +480,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 
     std::shared_ptr<trantor::MsgBuffer> fullHeaderString_;
+    trantor::CertificatePtr peerCertificate_;
     mutable std::shared_ptr<trantor::MsgBuffer> httpString_;
     mutable size_t datePos_{static_cast<size_t>(-1)};
     mutable int64_t httpStringDate_{-1};

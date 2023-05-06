@@ -132,12 +132,14 @@ echo "Hello, world!" >>hello.csp
 
 cd ../build
 if [ $os = "windows" ]; then
-  conan install $src_dir -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
-  cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=conan_paths.cmake -DCMAKE_INSTALL_PREFIX=$src_dir/install"
-  cmake .. $cmake_gen
+  cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=$src_dir/conan_toolchain.cmake \
+                        -DCMAKE_PREFIX_PATH=$src_dir/install \
+                        -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
+                        -DCMAKE_CXX_STANDARD=17"
 else
-  cmake .. $cmake_gen -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG='-g -O1 -fsanitize=address -fno-omit-frame-pointer'
+  cmake_gen="$cmake_gen -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG='-g -O1 -fsanitize=address -fno-omit-frame-pointer'"
 fi
+cmake .. $cmake_gen
 
 if [ $? -ne 0 ]; then
     echo "Failed to run CMake for example project"
@@ -184,13 +186,21 @@ if [ "$1" = "-t" ]; then
         fi
     fi
     if [ -f "./orm_lib/tests/pipeline_test" ]; then
-            echo "Test pipeline mode"
-            ./orm_lib/tests/pipeline_test -s
-            if [ $? -ne 0 ]; then
-                echo "Error in testing"
-                exit -1
-            fi
+        echo "Test pipeline mode"
+        ./orm_lib/tests/pipeline_test -s
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
         fi
+    fi
+    if [ -f "./orm_lib/tests/db_listener_test" ]; then
+        echo "Test DbListener"
+        ./orm_lib/tests/db_listener_test -s
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
+        fi
+    fi
     if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
         echo "Test redis"
         ./nosql_lib/redis/tests/redis_test -s

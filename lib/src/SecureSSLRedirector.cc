@@ -12,25 +12,43 @@ using namespace drogon::plugin;
 
 void SecureSSLRedirector::initAndStart(const Json::Value &config)
 {
-    if (config.isMember("ssl_redirect_exempt") &&
-        config["ssl_redirect_exempt"].isArray())
+    if (config.isMember("ssl_redirect_exempt"))
     {
-        std::string regexString;
-        for (auto &exempt : config["ssl_redirect_exempt"])
+        if (config["ssl_redirect_exempt"].isArray())
         {
-            assert(exempt.isString());
-            regexString.append("(").append(exempt.asString()).append(")|");
+            std::string regexString;
+            for (auto &exempt : config["ssl_redirect_exempt"])
+            {
+                assert(exempt.isString());
+                regexString.append("(").append(exempt.asString()).append(")|");
+            }
+            if (!regexString.empty())
+            {
+                regexString.resize(regexString.length() - 1);
+                exemptPegex_ = std::regex(regexString);
+                regexFlag_ = true;
+            }
         }
-        if (!regexString.empty())
+        else if (config["ssl_redirect_exempt"].isString())
         {
-            regexString.resize(regexString.length() - 1);
-            exemptPegex_ = std::regex(regexString);
+            exemptPegex_ = std::regex(config["ssl_redirect_exempt"].asString());
             regexFlag_ = true;
+        }
+        else
+        {
+            LOG_ERROR
+                << "ssl_redirect_exempt must be a string or string array!";
         }
     }
     secureHost_ = config.get("secure_ssl_host", "").asString();
-    app().registerSyncAdvice([this](const HttpRequestPtr &req) {
-        return this->redirectingAdvice(req);
+    std::weak_ptr<SecureSSLRedirector> weakPtr = shared_from_this();
+    app().registerSyncAdvice([weakPtr](const HttpRequestPtr &req) {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+        {
+            return HttpResponsePtr{};
+        }
+        return thisPtr->redirectingAdvice(req);
     });
 }
 

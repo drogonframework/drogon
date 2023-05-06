@@ -79,7 +79,7 @@ class Session
             {
                 if (typeid(T) == it->second.type())
                 {
-                    return optional<T>{*(any_cast<T>(&(it->second)))};
+                    return *(any_cast<T>(&(it->second)));
                 }
                 else
                 {
@@ -87,7 +87,7 @@ class Session
                 }
             }
         }
-        return optional<T>{};
+        return nullopt;
     }
     /**
      * @brief Modify or visit the data identified by the key parameter.

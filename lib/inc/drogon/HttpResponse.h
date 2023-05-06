@@ -15,10 +15,12 @@
 
 #include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
+#include <trantor/net/Certificate.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/HttpViewData.h>
+#include <drogon/utils/Utilities.h>
 #include <json/json.h>
 #include <memory>
 #include <string>
@@ -190,11 +192,14 @@ class DROGON_EXPORT HttpResponse
     virtual void removeHeader(std::string key) = 0;
 
     /// Get all headers of the response
-    virtual const std::unordered_map<std::string, std::string> &headers()
-        const = 0;
+    virtual const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &headers() const = 0;
 
     /// Get all headers of the response
-    const std::unordered_map<std::string, std::string> &getHeaders() const
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &getHeaders() const
     {
         return headers();
     }
@@ -222,10 +227,14 @@ class DROGON_EXPORT HttpResponse
     virtual const Cookie &getCookie(const std::string &key) const = 0;
 
     /// Get all cookies.
-    virtual const std::unordered_map<std::string, Cookie> &cookies() const = 0;
+    virtual const std::
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
+            &cookies() const = 0;
 
     /// Get all cookies.
-    const std::unordered_map<std::string, Cookie> &getCookies() const
+    const std::
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
+            &getCookies() const
     {
         return cookies();
     }
@@ -327,6 +336,16 @@ class DROGON_EXPORT HttpResponse
      * @param flag
      */
     virtual void setPassThrough(bool flag) = 0;
+
+    /**
+     * @brief Get the certificate of the peer, if any.
+     * @return The certificate of the peer. nullptr is none.
+     */
+    virtual const trantor::CertificatePtr &peerCertificate() const = 0;
+    const trantor::CertificatePtr &getPeerCertificate() const
+    {
+        return peerCertificate();
+    }
 
     /* The following methods are a series of factory methods that help users
      * create response objects. */

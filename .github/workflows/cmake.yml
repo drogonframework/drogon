@@ -9,7 +9,7 @@ on:
 jobs:
   windows:
     name: windows/msvc - ${{ matrix.link }}
-    runs-on: windows-latest
+    runs-on: windows-2019
     strategy:
       fail-fast: false
       matrix:
@@ -29,21 +29,25 @@ jobs:
 
       - name: Install conan packages
         working-directory: ./build
-        run: conan install .. -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
+        run: |
+          conan profile detect
+          conan install .. -s compiler="msvc" -sbuild_type=Debug --build=missing -s compiler.cppstd=17
 
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-          cmake ..                                     \
-            -DCMAKE_BUILD_TYPE=Debug                   \
-            -DBUILD_TESTING=on                         \
-            -DBUILD_SHARED_LIBS=$shared                \
-            -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" \
-            -DBUILD_CTL=ON                             \
-            -DBUILD_EXAMPLES=ON                        \
-            -DCMAKE_INSTALL_PREFIX=../install
+          cmake ..                                         \
+            -DCMAKE_BUILD_TYPE=Debug                       \
+            -DBUILD_TESTING=on                             \
+            -DBUILD_SHARED_LIBS=$shared                    \
+            -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
+            -DBUILD_CTL=ON                                 \
+            -DBUILD_EXAMPLES=ON                            \
+            -DCMAKE_INSTALL_PREFIX=../install              \
+            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             \
+            -DCMAKE_CXX_STANDARD=17
 
       - name: Build
         run: cmake --build build --target install --parallel

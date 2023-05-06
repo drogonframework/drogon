@@ -1,4 +1,7 @@
 link_libraries(${PROJECT_NAME})
+if(WIN32)
+  link_libraries(iphlpapi)
+endif(WIN32)
 
 add_executable(redis_test
         redis_test.cc
@@ -7,3 +10,11 @@ add_executable(redis_test
 set_property(TARGET redis_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET redis_test PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET redis_test PROPERTY CXX_EXTENSIONS OFF)
+
+add_executable(redis_subscriber_test
+        redis_subscriber_test.cc
+        )
+
+set_property(TARGET redis_subscriber_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET redis_subscriber_test PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET redis_subscriber_test PROPERTY CXX_EXTENSIONS OFF)

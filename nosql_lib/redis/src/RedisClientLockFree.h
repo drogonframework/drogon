@@ -14,6 +14,7 @@
 #pragma once
 
 #include "RedisConnection.h"
+#include "RedisSubscriberImpl.h"
 #include <drogon/nosql/RedisClient.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoopThreadPool.h>
@@ -26,6 +27,8 @@ namespace drogon
 {
 namespace nosql
 {
+class RedisConnection;
+using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
 class RedisClientLockFree final
     : public RedisClient,
       public trantor::NonCopyable,
@@ -43,6 +46,7 @@ class RedisClientLockFree final
                           string_view command,
                           ...) noexcept override;
     ~RedisClientLockFree() override;
+    std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override;
     RedisTransactionPtr newTransaction() override
     {
         LOG_ERROR
@@ -68,7 +72,6 @@ class RedisClientLockFree final
     std::unordered_set<RedisConnectionPtr> connections_;
     std::vector<RedisConnectionPtr> readyConnections_;
     size_t connectionPos_{0};
-    RedisConnectionPtr newConnection();
     const trantor::InetAddress serverAddr_;
     const std::string username_;
     const std::string password_;
@@ -77,6 +80,10 @@ class RedisClientLockFree final
     std::list<std::shared_ptr<std::function<void(const RedisConnectionPtr &)>>>
         tasks_;
     double timeout_{-1.0};
+
+    RedisConnectionPtr newConnection();
+    RedisConnectionPtr newSubscribeConnection(
+        const std::shared_ptr<RedisSubscriberImpl> &);
     std::shared_ptr<RedisTransaction> makeTransaction(
         const RedisConnectionPtr &connPtr);
     void handleNextTask(const RedisConnectionPtr &connPtr);

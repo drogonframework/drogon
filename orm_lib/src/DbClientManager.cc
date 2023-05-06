@@ -173,7 +173,7 @@ void DbClientManager::createDbClient(const std::string &dbType,
     info.timeout_ = timeout;
     info.autoBatch_ = autoBatch;
 
-    if (type == "postgresql")
+    if (type == "postgresql" || type == "postgres")
     {
 #if USE_POSTGRESQL
         info.dbType_ = orm::ClientType::PostgreSQL;

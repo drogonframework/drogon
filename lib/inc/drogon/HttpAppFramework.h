@@ -13,14 +13,15 @@
  */
 
 #pragma once
-
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
 #include <drogon/exports.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/CacheMap.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpBinder.h>
-#include <drogon/IntranetIpFilter.h>
-#include <drogon/LocalHostFilter.h>
+#include <drogon/HttpFilter.h>
 #include <drogon/MultiPart.h>
 #include <drogon/NotFound.h>
 #include <drogon/drogon_callbacks.h>
@@ -52,8 +53,8 @@ const char banner[] =
     " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
     "                 |___/             \n";
 
-std::string getVersion();
-std::string getGitCommit();
+DROGON_EXPORT std::string getVersion();
+DROGON_EXPORT std::string getGitCommit();
 
 class HttpControllerBase;
 class HttpSimpleControllerBase;
@@ -65,7 +66,34 @@ using ExceptionHandler =
 using DefaultHandler =
     std::function<void(const HttpRequestPtr &,
                        std::function<void(const HttpResponsePtr &)> &&)>;
+#ifdef __cpp_impl_coroutine
+class HttpAppFramework;
+namespace internal
+{
+struct [[nodiscard]] ForwardAwaiter
+    : public CallbackAwaiter<drogon::HttpResponsePtr>
+{
+  public:
+    ForwardAwaiter(drogon::HttpRequestPtr &&req,
+                   std::string &&host,
+                   double timeout,
+                   HttpAppFramework &app)
+        : req_(std::move(req)),
+          host_(std::move(host)),
+          timeout_(timeout),
+          app_(app)
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle) noexcept;
 
+  private:
+    drogon::HttpRequestPtr req_;
+    std::string host_;
+    double timeout_;
+    HttpAppFramework &app_;
+};
+}  // namespace internal
+#endif
 class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 {
   public:
@@ -648,7 +676,21 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         std::function<void(const HttpResponsePtr &)> &&callback,
         const std::string &hostString = "",
         double timeout = 0) = 0;
-
+#ifdef __cpp_impl_coroutine
+    /**
+     * @brief Forward the http request, this is the coroutine version of the
+     * above method.
+     */
+    internal::ForwardAwaiter forwardCoro(HttpRequestPtr req,
+                                         std::string hostString = "",
+                                         double timeout = 0)
+    {
+        return internal::ForwardAwaiter(std::move(req),
+                                        std::move(hostString),
+                                        timeout,
+                                        *this);
+    }
+#endif
     /// Get information about the handlers registered to drogon
     /**
      * @return
@@ -688,6 +730,25 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setSSLConfigCommands(
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
+
+    /// Add plugins
+    /**
+     * @param configs The plugins array
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void addPlugins(const Json::Value &configs) = 0;
+
+    /// Add a plugin
+    /**
+     * @param name Name of the plugin
+     * @param dependencies Names of plugins this plugin depends on
+     * @param config Custom config for the plugin
+     */
+    virtual void addPlugin(const std::string &name,
+                           const std::vector<std::string> &dependencies,
+                           const Json::Value &config) = 0;
 
     /// Add a listener for http or https service
     /**
@@ -745,6 +806,20 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     {
         return enableSession((size_t)timeout.count(), sameSite);
     }
+
+    /// Register an advice called when starting a new session.
+    /**
+     * @param advice is called with the session id.
+     */
+    virtual HttpAppFramework &registerSessionStartAdvice(
+        const AdviceStartSessionCallback &advice) = 0;
+
+    /// Register an advice called when destroying a session.
+    /**
+     * @param advice is called with the session id.
+     */
+    virtual HttpAppFramework &registerSessionDestroyAdvice(
+        const AdviceDestroySessionCallback &advice) = 0;
 
     /// Disable sessions supporting.
     /**
@@ -915,6 +990,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * This operation can be performed by an option in the configuration file.
      */
     virtual HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) = 0;
+
+    /// Set the log time display
+    /**
+     * @param on is true to display local time, false to display UTC time. The
+     * Default value is false.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setLogLocalTime(bool on) = 0;
 
     /// Enable the sendfile system call in linux.
     /**
@@ -1170,7 +1255,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /// Set the HTML file that a directory would resolve to by default, default
     /// is "index.html"
     /**
-     * @brief Sets the page which would the server load in if it detects that
+     * @brief Set the page which would the server load in if it detects that
      * the user requested a directory
      *
      * @note
@@ -1224,6 +1309,21 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual nosql::RedisClientPtr getFastRedisClient(
         const std::string &name = "default") = 0;
 
+    /**
+     * @brief Set the maximum stack depth of the json parser when reading a json
+     * string, the default value is 1000.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setJsonParserStackLimit(
+        size_t limit) noexcept = 0;
+
+    /**
+     * @brief Get the maximum stack depth of the json parser when reading a json
+     * string.
+     */
+    virtual size_t getJsonParserStackLimit() const noexcept = 0;
     /**
      * @brief This method is to enable or disable the unicode escaping (\u) in
      * the json string of HTTP responses or requests. it works (disable
@@ -1411,5 +1511,21 @@ inline HttpAppFramework &app()
 {
     return HttpAppFramework::instance();
 }
-
+#ifdef __cpp_impl_coroutine
+namespace internal
+{
+inline void ForwardAwaiter::await_suspend(
+    std::coroutine_handle<> handle) noexcept
+{
+    app_.forward(
+        req_,
+        [this, handle](const drogon::HttpResponsePtr &resp) {
+            setValue(resp);
+            handle.resume();
+        },
+        host_,
+        timeout_);
+}
+}  // namespace internal
+#endif
 }  // namespace drogon

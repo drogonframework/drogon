@@ -5,8 +5,8 @@
     //ssl:The global SSL settings. "key" and "cert" are the path to the SSL key and certificate. While
     //    "conf" is an array of 1 or 2-element tuples that supplies file style options for `SSL_CONF_cmd`.
     "ssl": {
-        "cert": "../../trantor/trantor/tests/server.pem",
-        "key": "../../trantor/trantor/tests/server.pem",
+        "cert": "../../trantor/trantor/tests/server.crt",
+        "key": "../../trantor/trantor/tests/server.key",
         "conf": [
             //["Options", "-SessionTicket"], 
             //["Options", "Compression"]
@@ -145,7 +145,9 @@
             "xap",
             "apk",
             "cur",
-            "xml"
+            "xml",
+            "svg",
+            "webp"
         ],
         // mime: A dictionary that extends the internal MIME type support. Maps extensions into new MIME types
         // note: This option only adds MIME to the sever. `file_types` above have to be set for the server to serve them.
@@ -193,6 +195,8 @@
         //files is the path where the csp files locate. If the path isn't prefixed with /, it is relative 
         //path of the current working directory.
         "dynamic_views_output_path": "",
+        //json_parser_stack_limit: 1000 by default, the maximum number of stack depth when reading a json string by the jsoncpp library.
+        "json_parser_stack_limit": 1000,
         //enable_unicode_escaping_in_json: true by default, enable unicode escaping in json.
         "enable_unicode_escaping_in_json": true,
         //float_precision_in_json: set precision of float number in json. 
@@ -216,7 +220,9 @@
             "log_size_limit": 100000000,
             //log_level: "DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
             //The TRACE level is only valid when built in DEBUG mode.
-            "log_level": "DEBUG"
+            "log_level": "DEBUG",
+            //display_local_time: false by default, if true, the log time is displayed in local time
+            "display_local_time": false
         },
         //run_as_daemon: False by default
         "run_as_daemon": false,
@@ -287,7 +293,12 @@
         //One can set it to "1024", "1k", "10M", "1G", etc. Setting it to "" means no limit.
         "client_max_websocket_message_size": "128K",
         //reuse_port: Defaults to false, users can run multiple processes listening on the same port at the same time.
-        "reuse_port": false
+        "reuse_port": false,
+        // enabled_compresed_request: Defaults to false. If true the server will automatically decompress compressed request bodies.
+        // Currently only gzip and br are supported. Note: max_memory_body_size and max_body_size applies twice for compressed requests.
+        // Once when receiving and once when decompressing. i.e. if the decompressed body is larger than max_body_size, the request
+        // will be rejected.
+        "enabled_compresed_request": false
     },
     //plugins: Define all plugins running in the application
     "plugins": [

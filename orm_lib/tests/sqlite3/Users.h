@@ -24,7 +24,6 @@
 #include <stdint.h>
 #include <iostream>
 
-using namespace drogon::orm;
 namespace drogon
 {
 namespace orm
@@ -51,6 +50,7 @@ class Users
         static const std::string _avatar_id;
         static const std::string _salt;
         static const std::string _admin;
+        static const std::string _create_time;
     };
 
     const static int primaryKeyNumber;
@@ -68,7 +68,8 @@ class Users
      * @note If the SQL is not a style of 'select * from table_name ...' (select
      * all columns by an asterisk), please set the offset to -1.
      */
-    explicit Users(const Row &r, const ssize_t indexOffset = 0) noexcept;
+    explicit Users(const drogon::orm::Row &r,
+                   const ssize_t indexOffset = 0) noexcept;
 
     /**
      * @brief constructor
@@ -115,6 +116,9 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<uint64_t> &getId() const noexcept;
+    /// Set the value of the column id
+    void setId(const uint64_t &pId) noexcept;
+    void setIdToNull() noexcept;
 
     /**  For column user_id  */
     /// Get the value of the column user_id, returns the default value if the
@@ -212,9 +216,20 @@ class Users
     void setAdmin(std::string &&pAdmin) noexcept;
     void setAdminToNull() noexcept;
 
+    /**  For column create_time  */
+    /// Get the value of the column create_time, returns the default value if
+    /// the column is null
+    const ::trantor::Date &getValueOfCreateTime() const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
+    const std::shared_ptr<::trantor::Date> &getCreateTime() const noexcept;
+    /// Set the value of the column create_time
+    void setCreateTime(const ::trantor::Date &pCreateTime) noexcept;
+    void setCreateTimeToNull() noexcept;
+
     static size_t getColumnNumber() noexcept
     {
-        return 9;
+        return 10;
     }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
@@ -223,9 +238,9 @@ class Users
         const std::vector<std::string> &pMasqueradingVector) const;
     /// Relationship interfaces
   private:
-    friend Mapper<Users>;
+    friend drogon::orm::Mapper<Users>;
 #ifdef __cpp_impl_coroutine
-    friend CoroMapper<Users>;
+    friend drogon::orm::CoroMapper<Users>;
 #endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
@@ -242,6 +257,7 @@ class Users
     std::shared_ptr<std::string> avatarId_;
     std::shared_ptr<std::string> salt_;
     std::shared_ptr<std::string> admin_;
+    std::shared_ptr<::trantor::Date> createTime_;
     struct MetaData
     {
         const std::string colName_;
@@ -253,7 +269,7 @@ class Users
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[9] = {false};
+    bool dirtyFlag_[10] = {false};
 
   public:
     static const std::string &sqlForFindingByPrimaryKey()
@@ -314,6 +330,15 @@ class Users
             sql += "admin,";
             ++parametersCount;
         }
+        if (!dirtyFlag_[8])
+        {
+            needSelection = true;
+        }
+        if (dirtyFlag_[9])
+        {
+            sql += "create_time,";
+            ++parametersCount;
+        }
         if (parametersCount > 0)
         {
             sql[sql.length() - 1] = ')';
@@ -351,6 +376,10 @@ class Users
             sql.append("?,");
         }
         if (dirtyFlag_[8])
+        {
+            sql.append("?,");
+        }
+        if (dirtyFlag_[9])
         {
             sql.append("?,");
         }

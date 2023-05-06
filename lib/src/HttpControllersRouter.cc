@@ -490,7 +490,8 @@ void HttpControllersRouter::route(
         for (auto &item : ctrlVector_)
         {
             auto const &ctrlRegex = item.regex_;
-            if (std::regex_match(req->path(), result, ctrlRegex))
+            if (item.binders_[req->method()] &&
+                std::regex_match(req->path(), result, ctrlRegex))
             {
                 routerItemPtr = &item;
                 break;

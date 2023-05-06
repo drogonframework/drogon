@@ -20,16 +20,23 @@
 #include <sstream>
 #include <thread>
 #include <trantor/utils/Logger.h>
-#if !defined(_WIN32) || defined(__MINGW32__)
+#if !defined(_WIN32)
 #include <unistd.h>
 #define os_access access
 #else
 #include <io.h>
+#ifndef __MINGW32__
 #define os_access _waccess
 #define R_OK 04
 #define W_OK 02
+#else
+#define os_access access
 #endif
+#endif
+
 #include <drogon/utils/Utilities.h>
+#include "filesystem.h"
+#include "ConfigAdapterManager.h"
 
 using namespace drogon;
 static bool bytesSize(std::string &sizeStr, size_t &size)
@@ -97,6 +104,7 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
         return true;
     }
 }
+
 ConfigLoader::ConfigLoader(const std::string &configFile)
 {
     if (os_access(drogon::utils::toNativePath(configFile).c_str(), 0) != 0)
@@ -109,14 +117,21 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
                                  configFile);
     }
     configFile_ = configFile;
+    auto pos = configFile.find_last_of('.');
+    if (pos == std::string::npos)
+    {
+        throw std::runtime_error("Invalid config file name!");
+    }
+    auto ext = configFile.substr(pos + 1);
+    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                         std::ifstream::in);
+    // get the content of the infile
+    std::string content((std::istreambuf_iterator<char>(infile)),
+                        std::istreambuf_iterator<char>());
     try
     {
-        std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
-                             std::ifstream::in);
-        if (infile)
-        {
-            infile >> configJsonRoot_;
-        }
+        configJsonRoot_ =
+            ConfigAdapterManager::instance().getJson(content, std::move(ext));
     }
     catch (std::exception &e)
     {
@@ -162,6 +177,8 @@ static void loadLogSetting(const Json::Value &log)
     {
         trantor::Logger::setLogLevel(trantor::Logger::kWarn);
     }
+    auto localTime = log.get("display_local_time", false).asBool();
+    trantor::Logger::setDisplayLocalTime(localTime);
 }
 static void loadControllers(const Json::Value &controllers)
 {
@@ -372,6 +389,8 @@ static void loadApp(const Json::Value &app)
         }
     }
 #endif
+    auto stackLimit = app.get("json_parser_stack_limit", 1000).asUInt64();
+    drogon::app().setJsonParserStackLimit(stackLimit);
     auto unicodeEscaping =
         app.get("enable_unicode_escaping_in_json", true).asBool();
     drogon::app().setUnicodeEscapingInJson(unicodeEscaping);
@@ -381,7 +400,8 @@ static void loadApp(const Json::Value &app)
         auto precisionLength = precision.get("precision", 0).asUInt64();
         auto precisionType =
             precision.get("precision_type", "significant").asString();
-        drogon::app().setFloatPrecisionInJson(precisionLength, precisionType);
+        drogon::app().setFloatPrecisionInJson((unsigned int)precisionLength,
+                                              precisionType);
     }
     // log
     loadLogSetting(app["log"]);

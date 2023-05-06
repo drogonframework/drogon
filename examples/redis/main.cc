@@ -1,5 +1,4 @@
 #include <drogon/drogon.h>
-#include <drogon/nosql/RedisClient.h>
 
 int main()
 {

@@ -1,8 +1,6 @@
 ![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
 
-[![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
-![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
+[![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)](https://github.com/drogonframework/drogon/actions)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
@@ -187,11 +185,13 @@ class User : public drogon::HttpController<User>
 
 另外，你可以發現前面所有的處理函數接口都是異步的，處理器的回應是通過回調對象回傳的。這種設計是出於對高性能的考慮，因為在異步模式下，可以使用少量的執行序（比如和處理器核心數相等的執行序）處理大量的並發請求。
 
-編譯上述的所有源文件後，我們得到了一個非常簡單的web應用程式，這是一個不錯的開始。 **請瀏覽[wiki](https://github.com/an-tao/drogon/wiki/CHN-01-概述)或者[doxiz](https://doxiz.com/drogon/master/overview/)以獲取更多的信息**
+編譯上述的所有源文件後，我們得到了一個非常簡單的web應用程式，這是一個不錯的開始。 **請瀏覽[wiki](https://github.com/an-tao/drogon/wiki/CHN-01-概述)**
 
 ## 貢獻方式
 
 歡迎您的貢獻。請閱讀[貢獻指南](CONTRIBUTING.md)以獲取更多的信息。
+
+<a href="https://github.com/drogonframework/drogon/graphs/contributors"><img src="https://contributors-svg.opencollective.com/drogon/contributors.svg?width=890&button=false" alt="Code contributors" /></a>
 
 ## QQ交流群：1137909452
 

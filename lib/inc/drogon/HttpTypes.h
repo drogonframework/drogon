@@ -160,6 +160,7 @@ enum class ReqResult
     Timeout,
     HandshakeError,
     InvalidCertificate,
+    EncryptionFailure,
 };
 
 enum class WebSocketMessageType
@@ -190,6 +191,8 @@ inline string_view to_string_view(drogon::ReqResult result)
             return "Handshake error";
         case ReqResult::InvalidCertificate:
             return "Invalid certificate";
+        case ReqResult::EncryptionFailure:
+            return "Unrecoverable encryption failure";
         default:
             return "Unknown error";
     }
@@ -197,7 +200,8 @@ inline string_view to_string_view(drogon::ReqResult result)
 
 inline std::string to_string(drogon::ReqResult result)
 {
-    return to_string_view(result).data();
+    auto sv = to_string_view(result);
+    return std::string(sv.data(), sv.size());
 }
 
 inline std::ostream &operator<<(std::ostream &out, drogon::ReqResult result)

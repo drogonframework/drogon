@@ -13,52 +13,44 @@
  */
 
 #include "HttpAppFrameworkImpl.h"
-#include "HttpRequestImpl.h"
-#include "HttpClientImpl.h"
-#include "HttpResponseImpl.h"
-#include "HttpUtils.h"
-#include "WebSocketConnectionImpl.h"
-#include "StaticFileRouter.h"
-#include "HttpSimpleControllersRouter.h"
-#include "HttpControllersRouter.h"
-#include "WebsocketControllersRouter.h"
-#include "AOPAdvice.h"
-#include "ConfigLoader.h"
-#include "HttpServer.h"
-#include "PluginsManager.h"
-#include "ListenerManager.h"
-#include "SharedLibManager.h"
-#include "SessionManager.h"
-#include "DbClientManager.h"
-#include "RedisClientManager.h"
-#include <drogon/config.h>
-#include <algorithm>
-#include <drogon/version.h>
-#include <drogon/CacheMap.h>
 #include <drogon/DrClassMap.h>
-#include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpTypes.h>
-#include <drogon/Session.h>
 #include <drogon/utils/Utilities.h>
-#include "filesystem.h"
-#include <trantor/utils/AsyncFileLogger.h>
+#include <drogon/version.h>
 #include <json/json.h>
+#include <trantor/utils/AsyncFileLogger.h>
+#include <algorithm>
+#include "AOPAdvice.h"
+#include "ConfigLoader.h"
+#include "DbClientManager.h"
+#include "HttpClientImpl.h"
+#include "HttpControllersRouter.h"
+#include "HttpRequestImpl.h"
+#include "HttpResponseImpl.h"
+#include "HttpServer.h"
+#include "HttpSimpleControllersRouter.h"
+#include "HttpUtils.h"
+#include "ListenerManager.h"
+#include "PluginsManager.h"
+#include "RedisClientManager.h"
+#include "SessionManager.h"
+#include "SharedLibManager.h"
+#include "StaticFileRouter.h"
+#include "WebSocketConnectionImpl.h"
+#include "WebsocketControllersRouter.h"
+#include "filesystem.h"
 
-#include <fstream>
 #include <iostream>
 #include <memory>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
-#include <tuple>
 
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #ifndef _WIN32
 #include <sys/wait.h>
-#include <sys/file.h>
-#include <uuid.h>
 #include <unistd.h>
 #define os_access access
 #elif !defined(_WIN32) || defined(__MINGW32__)
@@ -92,7 +84,10 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
                                           postHandlingAdvices_)),
       websockCtrlsRouterPtr_(
           new WebsocketControllersRouter(postRoutingAdvices_,
-                                         postRoutingObservers_)),
+                                         postRoutingObservers_,
+                                         preHandlingAdvices_,
+                                         preHandlingObservers_,
+                                         postHandlingAdvices_)),
       listenerManagerPtr_(new ListenerManager),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
@@ -353,6 +348,34 @@ PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
 {
     return pluginsManagerPtr_->getPlugin(name);
 }
+void HttpAppFrameworkImpl::addPlugin(
+    const std::string &name,
+    const std::vector<std::string> &dependencies,
+    const Json::Value &config)
+{
+    assert(!isRunning());
+    Json::Value pluginConfig;
+    pluginConfig["name"] = name;
+    Json::Value deps(Json::arrayValue);
+    for (const auto dep : dependencies)
+    {
+        deps.append(dep);
+    }
+    pluginConfig["dependencies"] = deps;
+    pluginConfig["config"] = config;
+    auto &plugins = jsonRuntimeConfig_["plugins"];
+    plugins.append(pluginConfig);
+}
+void HttpAppFrameworkImpl::addPlugins(const Json::Value &configs)
+{
+    assert(!isRunning());
+    assert(configs.isArray());
+    auto &plugins = jsonRuntimeConfig_["plugins"];
+    for (const auto config : configs)
+    {
+        plugins.append(config);
+    }
+}
 HttpAppFramework &HttpAppFrameworkImpl::addListener(
     const std::string &ip,
     uint16_t port,
@@ -429,6 +452,11 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogLevel(
     trantor::Logger::LogLevel level)
 {
     trantor::Logger::setLogLevel(level);
+    return *this;
+}
+HttpAppFramework &HttpAppFrameworkImpl::setLogLocalTime(bool on)
+{
+    trantor::Logger::setDisplayLocalTime(on);
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setSSLConfigCommands(
@@ -535,8 +563,20 @@ void HttpAppFrameworkImpl::run()
                                                libFileOutputPath_);
     }
 #endif
+
+    // Create IO threads
+    ioLoopThreadPool_ =
+        std::make_unique<trantor::EventLoopThreadPool>(threadNum_,
+                                                       "DrogonIoLoop");
+    std::vector<trantor::EventLoop *> ioLoops = ioLoopThreadPool_->getLoops();
+    for (size_t i = 0; i < threadNum_; ++i)
+    {
+        ioLoops[i]->setIndex(i);
+    }
+    getLoop()->setIndex(threadNum_);
+
     // Create all listeners.
-    auto ioLoops = listenerManagerPtr_->createListeners(
+    listenerManagerPtr_->createListeners(
         [this](const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback) {
             onAsyncRequest(req, std::move(callback));
@@ -551,15 +591,10 @@ void HttpAppFrameworkImpl::run()
         sslCertPath_,
         sslKeyPath_,
         sslConfCmds_,
-        threadNum_,
+        ioLoops,
         syncAdvices_,
         preSendingAdvices_);
-    assert(ioLoops.size() == threadNum_);
-    for (size_t i = 0; i < threadNum_; ++i)
-    {
-        ioLoops[i]->setIndex(i);
-    }
-    getLoop()->setIndex(threadNum_);
+
     // A fast database client instance should be created in the main event
     // loop, so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());
@@ -568,12 +603,30 @@ void HttpAppFrameworkImpl::run()
     if (useSession_)
     {
         sessionManagerPtr_ =
-            std::make_unique<SessionManager>(getLoop(), sessionTimeout_);
+            std::make_unique<SessionManager>(getLoop(),
+                                             sessionTimeout_,
+                                             sessionStartAdvices_,
+                                             sessionDestroyAdvices_);
     }
     // now start running!!
     running_ = true;
     // Initialize plugins
-    const auto &pluginConfig = jsonConfig_["plugins"];
+    auto &pluginConfig = jsonConfig_["plugins"];
+    const auto &runtumePluginConfig = jsonRuntimeConfig_["plugins"];
+    if (!pluginConfig.isNull())
+    {
+        if (!runtumePluginConfig.isNull() && runtumePluginConfig.isArray())
+        {
+            for (const auto &plugin : runtumePluginConfig)
+            {
+                pluginConfig.append(plugin);
+            }
+        }
+    }
+    else
+    {
+        jsonConfig_["plugins"] = runtumePluginConfig;
+    }
     if (!pluginConfig.isNull())
     {
         pluginsManagerPtr_->initializeAllPlugins(pluginConfig,
@@ -598,6 +651,12 @@ void HttpAppFrameworkImpl::run()
         // Let listener event loops run when everything is ready.
         listenerManagerPtr_->startListening();
     });
+    // start all loops
+    // TODO: when should IOLoops start?
+    // In before, IOLoops are started in `listenerManagerPtr_->startListening()`
+    // It should be fine for them to start anywhere before `startListening()`.
+    // However, we should consider other components.
+    ioLoopThreadPool_->start();
     getLoop()->loop();
 }
 
@@ -872,8 +931,19 @@ trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
 
 trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(size_t id) const
 {
-    assert(listenerManagerPtr_);
-    return listenerManagerPtr_->getIOLoop(id);
+    if (!ioLoopThreadPool_)
+    {
+        LOG_WARN << "Please call getIOLoop() after drogon::app().run()";
+        return nullptr;
+    }
+    auto n = ioLoopThreadPool_->size();
+    if (id >= n)
+    {
+        LOG_TRACE << "Loop id (" << id << ") out of range [0-" << n << ").";
+        id %= n;
+        LOG_TRACE << "Rounded to : " << id;
+    }
+    return ioLoopThreadPool_->getLoop(id);
 }
 
 HttpAppFramework &HttpAppFramework::instance()
@@ -1017,6 +1087,7 @@ void HttpAppFrameworkImpl::quit()
         getLoop()->queueInLoop([this]() {
             // Release members in the reverse order of initialization
             listenerManagerPtr_->stopListening();
+            listenerManagerPtr_.reset();
             websockCtrlsRouterPtr_.reset();
             staticFileRouterPtr_.reset();
             httpSimpleCtrlsRouterPtr_.reset();
@@ -1024,11 +1095,13 @@ void HttpAppFrameworkImpl::quit()
             pluginsManagerPtr_.reset();
             redisClientManagerPtr_.reset();
             dbClientManagerPtr_.reset();
-            // TODO: let HttpAppFrameworkImpl manage IO loops
-            // and reset listenerManagerPtr_ before IO loops quit.
-            listenerManagerPtr_->stopIoLoops();
-            listenerManagerPtr_.reset();
+            running_ = false;
             getLoop()->quit();
+            for (trantor::EventLoop *loop : ioLoopThreadPool_->getLoops())
+            {
+                loop->quit();
+            }
+            ioLoopThreadPool_->wait();
         });
     }
 }

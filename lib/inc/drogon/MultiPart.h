@@ -33,34 +33,34 @@ class HttpFileImpl;
 class DROGON_EXPORT HttpFile
 {
   public:
-    HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr);
+    explicit HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr) noexcept;
     /// Return the file name;
-    const std::string &getFileName() const;
+    const std::string &getFileName() const noexcept;
 
     /// Return the file extension;
     /// Note: After the HttpFile object is destroyed, do not use this
     /// string_view object.
-    string_view getFileExtension() const;
+    string_view getFileExtension() const noexcept;
 
     /// Return the name of the item in multiple parts.
-    const std::string &getItemName() const;
+    const std::string &getItemName() const noexcept;
 
     /// Return the type of file.
-    FileType getFileType() const;
+    FileType getFileType() const noexcept;
 
     /// Set the file name, usually called by the MultiPartParser parser.
-    void setFileName(const std::string &fileName);
+    void setFileName(const std::string &fileName) noexcept;
 
     /// Set the contents of the file, usually called by the MultiPartParser
     /// parser.
-    void setFile(const char *data, size_t length);
+    void setFile(const char *data, size_t length) noexcept;
 
     /// Save the file to the file system.
     /**
      * The folder saving the file is app().getUploadPath().
      * The full path is app().getUploadPath()+"/"+this->getFileName()
      */
-    int save() const;
+    int save() const noexcept;
 
     /// Save the file to @param path
     /**
@@ -69,7 +69,7 @@ class DROGON_EXPORT HttpFile
      * otherwise the file is saved as
      * app().getUploadPath()+"/"+path+"/"+this->getFileName()
      */
-    int save(const std::string &path) const;
+    int save(const std::string &path) const noexcept;
 
     /// Save the file to file system with a new name
     /**
@@ -77,14 +77,14 @@ class DROGON_EXPORT HttpFile
      * the full path is app().getUploadPath()+"/"+filename, otherwise the file
      * is saved as the filename
      */
-    int saveAs(const std::string &fileName) const;
+    int saveAs(const std::string &fileName) const noexcept;
 
     /**
      * @brief return the content of the file.
      *
      * @return string_view
      */
-    string_view fileContent() const
+    string_view fileContent() const noexcept
     {
         return string_view{fileData(), fileLength()};
     }
@@ -92,6 +92,8 @@ class DROGON_EXPORT HttpFile
     /// Return the file length.
     size_t fileLength() const noexcept;
 
+    /// Return the content-type of the file.
+    drogon::ContentType getContentType() const noexcept;
     /**
      * @brief return the pointer of the file data.
      *
@@ -105,7 +107,10 @@ class DROGON_EXPORT HttpFile
     const char *fileData() const noexcept;
 
     /// Return the md5 string of the file
-    std::string getMd5() const;
+    std::string getMd5() const noexcept;
+
+    /// Return the content transfer encoding of the file.
+    const std::string &getContentTransferEncoding() const noexcept;
 
   private:
     std::shared_ptr<HttpFileImpl> implPtr_;

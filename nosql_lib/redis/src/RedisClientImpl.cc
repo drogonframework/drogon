@@ -12,15 +12,19 @@
  *
  */
 
+#include "RedisConnection.h"
 #include "RedisClientImpl.h"
+#include "RedisSubscriberImpl.h"
 #include "RedisTransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
+
 using namespace drogon::nosql;
+
 std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     const trantor::InetAddress &serverAddress,
     size_t connectionNumber,
     const std::string &password,
-    const unsigned int db,
+    unsigned int db,
     const std::string &username)
 {
     auto client = std::make_shared<RedisClientImpl>(
@@ -58,6 +62,7 @@ void RedisClientImpl::init()
         });
     }
 }
+
 RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 {
     auto conn = std::make_shared<RedisConnection>(
@@ -105,6 +110,63 @@ RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
         {
             thisPtr->handleNextTask(connPtr);
         }
+    });
+    return conn;
+}
+
+RedisConnectionPtr RedisClientImpl::newSubscribeConnection(
+    trantor::EventLoop *loop,
+    const std::shared_ptr<RedisSubscriberImpl> &subscriber)
+{
+    auto conn = std::make_shared<RedisConnection>(
+        serverAddr_, username_, password_, db_, loop);
+    std::weak_ptr<RedisClientImpl> weakThis = shared_from_this();
+    std::weak_ptr<RedisSubscriberImpl> weakSub(subscriber);
+    conn->setConnectCallback([weakThis, weakSub](RedisConnectionPtr &&conn) {
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
+        auto subPtr = weakSub.lock();
+
+        std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
+        if (subPtr)
+        {
+            subPtr->setConnection(conn);
+            subPtr->subscribeAll();
+        }
+        else
+        {
+            thisPtr->connections_.erase(conn);
+        }
+    });
+    conn->setDisconnectCallback([weakThis, weakSub](RedisConnectionPtr &&conn) {
+        // assert(status == REDIS_CONNECTED);
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
+        std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
+        thisPtr->connections_.erase(conn);
+        auto subPtr = weakSub.lock();
+        if (!subPtr)
+            return;
+        subPtr->clearConnection();
+
+        auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
+        assert(loop);
+        loop->runAfter(2.0, [thisPtr, loop, subPtr]() {
+            std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
+            thisPtr->connections_.insert(
+                thisPtr->newSubscribeConnection(loop, subPtr));
+        });
+    });
+    conn->setIdleCallback([weakThis, weakSub](const RedisConnectionPtr &) {
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
+        auto subPtr = weakSub.lock();
+        if (!subPtr)
+            return;
+        subPtr->subscribeNext();
     });
     return conn;
 }
@@ -411,4 +473,16 @@ void RedisClientImpl::execCommandAsyncWithTimeout(
         tasks_.emplace_back(bfCbPtr);
     }
     timeoutFlagPtr->runTimer();
+}
+
+std::shared_ptr<RedisSubscriber> RedisClientImpl::newSubscriber() noexcept
+{
+    auto subscriber = std::make_shared<RedisSubscriberImpl>();
+    auto loop = loops_.getNextLoop();
+    loop->queueInLoop([this, loop, subscriber]() {
+        std::lock_guard<std::mutex> lock(connectionsMutex_);
+        connections_.insert(newSubscribeConnection(loop, subscriber));
+    });
+
+    return subscriber;
 }

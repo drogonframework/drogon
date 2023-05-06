@@ -1,4 +1,7 @@
 link_libraries(${PROJECT_NAME})
+if(WIN32)
+  link_libraries(iphlpapi)
+endif(WIN32)
 set(UNITTEST_SOURCES
     unittests/main.cc
     unittests/Base64Test.cc
@@ -14,14 +17,14 @@ set(UNITTEST_SOURCES
     unittests/OStringStreamTest.cc
     unittests/PubSubServiceUnittest.cc
     unittests/Sha1Test.cc
-    ../src/ssl_funcs/Sha1.cc
     unittests/FileTypeTest.cc
     unittests/DrObjectTest.cc
     unittests/HttpFullDateTest.cc
     unittests/MainLoopTest.cc
     unittests/CacheMapTest.cc
     unittests/StringOpsTest.cc
-    unittests/ControllerCreationTest.cc)
+    unittests/ControllerCreationTest.cc
+    unittests/MultiPartParserTest.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cc)
@@ -72,6 +75,7 @@ if (BUILD_CTL)
   if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     set(INTEGRATION_TEST_SERVER_SOURCES
         ${INTEGRATION_TEST_SERVER_SOURCES}
+        integration_test/server/CoroFilter.cpp
         integration_test/server/api_v1_CoroTest.cc)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -94,7 +98,8 @@ if (BUILD_CTL)
             ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/test.md
             ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/index.html.gz
             ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/中文.txt
-            ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.pem
+            ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.crt
+            ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.key
             $<TARGET_FILE_DIR:integration_test_server>)
   add_custom_command(
     TARGET integration_test_server POST_BUILD
