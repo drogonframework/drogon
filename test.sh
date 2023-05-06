@@ -137,7 +137,7 @@ if [ $os = "windows" ]; then
                         -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
                         -DCMAKE_CXX_STANDARD=17"
 else
-  cmake_gen="$cmake_gen -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG='-g -O1 -fsanitize=address -fno-omit-frame-pointer'"
+  cmake_gen="$cmake_gen -DCMAKE_BUILD_TYPE=Debug"
 fi
 cmake .. $cmake_gen
 
