@@ -200,11 +200,6 @@ void *SharedLibManager::compileAndLoadLib(const std::string &sourceFile,
 {
     LOG_TRACE << "src:" << sourceFile;
     std::string cmd = COMPILER_COMMAND;
-    auto pos = cmd.rfind('/');
-    if (pos != std::string::npos)
-    {
-        cmd = cmd.substr(pos + 1);
-    }
     cmd.append(" ")
         .append(sourceFile)
         .append(" ")
@@ -215,7 +210,7 @@ void *SharedLibManager::compileAndLoadLib(const std::string &sourceFile,
         cmd.append(" -shared -fPIC -undefined dynamic_lookup -o ");
     else
         cmd.append(" -shared -fPIC --no-gnu-unique -o ");
-    pos = sourceFile.rfind('.');
+    auto pos = sourceFile.rfind('.');
     auto soFile = sourceFile.substr(0, pos);
     soFile.append(".so");
     cmd.append(soFile);
