@@ -508,7 +508,7 @@ static void loadApp(const Json::Value &app)
         }
     }
     bool enableCompressedRequests =
-        app.get("enabled_compresed_request", false).asBool();
+        app.get("enabled_compressed_request", false).asBool();
     drogon::app().enableCompressedRequest(enableCompressedRequests);
 }
 static void loadDbClients(const Json::Value &dbClients)
