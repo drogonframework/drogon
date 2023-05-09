@@ -44,6 +44,18 @@ DbClientPtr postgreClient;
 DROGON_TEST(PostgreTest)
 {
     auto &clientPtr = postgreClient;
+
+    // Test bugfix #1588
+    // PgBatchConnection.cc did not report error message to application
+    try
+    {
+        clientPtr->execSqlSync("select * from t_not_exists");
+    }
+    catch (const DrogonDbException &e)
+    {
+        MANDATE(!std::string{e.base().what()}.empty());
+    }
+
     // Prepare the test environment
     *clientPtr << "DROP TABLE IF EXISTS USERS" >> [TEST_CTX,
                                                    clientPtr](const Result &r) {
