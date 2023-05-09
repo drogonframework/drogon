@@ -1,7 +1,6 @@
 #pragma once
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
-#include <drogon/utils/string_view.h>
 #include <drogon/exports.h>
 
 #include <memory>
@@ -9,6 +8,7 @@
 #include <sstream>
 #include <atomic>
 #include <cstddef>
+#include <string_view>
 /**
  * @brief Drogon Test is a minimal effort test framework developed because the
  * major C++ test frameworks doesn't handle async programs well. Drogon Test's
@@ -76,7 +76,7 @@ struct is_printable<_Tp,
 {
 };
 
-inline std::string escapeString(const string_view sv)
+inline std::string escapeString(const std::string_view sv)
 {
     std::string result;
     result.reserve(sv.size());
@@ -104,7 +104,7 @@ inline std::string escapeString(const string_view sv)
     return result;
 }
 
-DROGON_EXPORT std::string prettifyString(const string_view sv,
+DROGON_EXPORT std::string prettifyString(const std::string_view sv,
                                          size_t maxLength = 120);
 
 #ifdef __cpp_fold_expressions
@@ -151,7 +151,7 @@ struct AttemptPrintViaStream<true>
 
 struct StringPrinter
 {
-    std::string operator()(const string_view& v)
+    std::string operator()(const std::string_view& v)
     {
         return prettifyString(v);
     }
@@ -165,7 +165,7 @@ inline std::string attemptPrint(T&& v)
 
     // Poor man's if constexpr because SFINAE don't disambiguate between
     // possible resolutions
-    return typename std::conditional<std::is_convertible<T, string_view>::value,
+    return typename std::conditional<std::is_convertible<T, std::string_view>::value,
                                      internal::StringPrinter,
                                      DefaultPrinter>::type()(v);
 }

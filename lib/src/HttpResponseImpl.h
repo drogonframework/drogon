@@ -25,6 +25,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <atomic>
 #include <unordered_map>
 
@@ -363,7 +364,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                 utils::gzipDecompress(bodyPtr_->data(), bodyPtr_->length());
             removeHeaderBy("content-encoding");
             bodyPtr_ =
-                std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+                std::make_shared<HttpMessageStringBody>(std::move(gunzipBody));
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
@@ -376,7 +377,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                 utils::brotliDecompress(bodyPtr_->data(), bodyPtr_->length());
             removeHeaderBy("content-encoding");
             bodyPtr_ =
-                std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+                std::make_shared<HttpMessageStringBody>(std::move(gunzipBody));
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
@@ -402,12 +403,12 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                 if (pos != std::string::npos)
                 {
                     contentType_ = parseContentType(
-                        string_view(contentTypeString.data(), pos));
+                        std::string_view(contentTypeString.data(), pos));
                 }
                 else
                 {
                     contentType_ =
-                        parseContentType(string_view(contentTypeString));
+                        parseContentType(std::string_view(contentTypeString));
                 }
 
                 if (contentType_ == CT_NONE)
@@ -433,7 +434,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         contentType_ = type;
         flagForParsingContentType_ = true;
 
-        string_view sv(typeString, typeStringLength);
+        std::string_view sv(typeString, typeStringLength);
         bool haveHeader = sv.find("content-type: ") == 0;
         bool haveCRLF = sv.rfind("\r\n") == sv.size() - 2;
 
@@ -442,7 +443,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             endOffset += 14;
         if (haveCRLF)
             endOffset += 2;
-        setContentType(string_view{typeString + (haveHeader ? 14 : 0),
+        setContentType(std::string_view{typeString + (haveHeader ? 14 : 0),
                                    typeStringLength - endOffset});
     }
 
@@ -455,7 +456,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         assert(code >= 0);
         customStatusCode_ = code;
-        statusMessage_ = string_view{message, messageLength};
+        statusMessage_ = std::string_view{message, messageLength};
     }
 
     std::
@@ -466,7 +467,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     int customStatusCode_{-1};
     HttpStatusCode statusCode_{kUnknown};
-    string_view statusMessage_;
+    std::string_view statusMessage_;
 
     trantor::Date creationDate_;
     Version version_{Version::kHttp11};
@@ -491,12 +492,12 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<std::string> jsonParsingErrorPtr_;
     mutable std::string contentTypeString_{"text/html; charset=utf-8"};
     bool passThrough_{false};
-    void setContentType(const string_view &contentType)
+    void setContentType(const std::string_view &contentType)
     {
         contentTypeString_ =
             std::string(contentType.data(), contentType.size());
     }
-    void setStatusMessage(const string_view &message)
+    void setStatusMessage(const std::string_view &message)
     {
         statusMessage_ = message;
     }

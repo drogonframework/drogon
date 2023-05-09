@@ -17,6 +17,7 @@
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/utils/Utilities.h>
 #include <future>
+#include <string_view>
 #include <regex>
 #if USE_MYSQL
 #include <mysql.h>
@@ -132,7 +133,7 @@ SqlBinder::~SqlBinder()
         exec();
     }
 }
-SqlBinder &SqlBinder::operator<<(const drogon::string_view &str)
+SqlBinder &SqlBinder::operator<<(const std::string_view &str)
 {
     auto obj = std::make_shared<std::string>(str.data(), str.length());
     parameters_.push_back(obj->data());

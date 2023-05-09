@@ -15,12 +15,12 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/string_view.h>
 #include <drogon/utils/any.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <stdarg.h>
 #include <stdio.h>
@@ -142,12 +142,12 @@ class DROGON_EXPORT HttpViewData
        @endcode
      */
     static std::string htmlTranslate(const char *str, size_t length);
-    static std::string htmlTranslate(const string_view &str)
+    static std::string htmlTranslate(const std::string_view &str)
     {
         return htmlTranslate(str.data(), str.length());
     }
 
-    static bool needTranslation(const string_view &str)
+    static bool needTranslation(const std::string_view &str)
     {
         for (auto const &c : str)
         {

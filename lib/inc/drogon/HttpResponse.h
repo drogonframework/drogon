@@ -14,7 +14,6 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/string_view.h>
 #include <trantor/net/Certificate.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
@@ -24,6 +23,7 @@
 #include <json/json.h>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace drogon
 {
@@ -107,7 +107,7 @@ class DROGON_EXPORT HttpResponse
     /// Set the status code of the response.
     virtual void setStatusCode(HttpStatusCode code) = 0;
 
-    void setCustomStatusCode(int code, string_view message = string_view{})
+    void setCustomStatusCode(int code, std::string_view message = std::string_view{})
     {
         setCustomStatusCode(code, message.data(), message.length());
     }
@@ -142,7 +142,7 @@ class DROGON_EXPORT HttpResponse
     /// Set the content-type string, The string may contain the header name and
     /// CRLF. Or just the MIME type For example, "content-type: text/plain\r\n"
     /// or "text/plain"
-    void setContentTypeString(const string_view &typeString)
+    void setContentTypeString(const std::string_view &typeString)
     {
         setContentTypeString(typeString.data(), typeString.size());
     }
@@ -151,7 +151,7 @@ class DROGON_EXPORT HttpResponse
     /// may contain the header name and CRLF. Or just the MIME type
     /// For example, "content-type: text/plain\r\n" or "text/plain"
     void setContentTypeCodeAndCustomString(ContentType type,
-                                           const string_view &typeString)
+                                           const std::string_view &typeString)
     {
         setContentTypeCodeAndCustomString(type,
                                           typeString.data(),
@@ -260,13 +260,13 @@ class DROGON_EXPORT HttpResponse
     }
 
     /// Get the response body.
-    string_view body() const
+    std::string_view body() const
     {
-        return string_view{getBodyData(), getBodyLength()};
+        return std::string_view{getBodyData(), getBodyLength()};
     }
 
     /// Get the response body.
-    string_view getBody() const
+    std::string_view getBody() const
     {
         return body();
     }

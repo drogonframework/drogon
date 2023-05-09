@@ -18,7 +18,6 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/string_view.h>
 #include <drogon/orm/ArrayParser.h>
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
@@ -26,6 +25,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 #ifdef __linux__
 #include <arpa/inet.h>
@@ -168,7 +168,7 @@ DROGON_EXPORT char *Field::as<char *>() const;
 template <>
 DROGON_EXPORT std::vector<char> Field::as<std::vector<char>>() const;
 template <>
-inline drogon::string_view Field::as<drogon::string_view>() const
+inline std::string_view Field::as<std::string_view>() const
 {
     auto first = result_.getValue(row_, column_);
     auto length = result_.getLength(row_, column_);

@@ -1,6 +1,6 @@
-#include <drogon/utils/string_view.h>
 #include <drogon/utils/Utilities.h>
 #include <iostream>
+#include <string>
 #include <drogon/drogon_test.h>
 
 DROGON_TEST(URLCodec)

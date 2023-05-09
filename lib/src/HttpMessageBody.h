@@ -13,9 +13,9 @@
  */
 
 #pragma once
-#include <drogon/utils/string_view.h>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace drogon
 {
@@ -44,7 +44,7 @@ class HttpMessageBody
     {
         return 0;
     }
-    virtual string_view getString() const = 0;
+    virtual std::string_view getString() const = 0;
     virtual void append(const char * /*buf*/, size_t /*len*/)
     {
     }
@@ -82,9 +82,9 @@ class HttpMessageStringBody : public HttpMessageBody
     {
         return body_.length();
     }
-    string_view getString() const override
+    std::string_view getString() const override
     {
-        return string_view{body_.data(), body_.length()};
+        return std::string_view{body_.data(), body_.length()};
     }
     void append(const char *buf, size_t len) override
     {
@@ -114,13 +114,13 @@ class HttpMessageStringViewBody : public HttpMessageBody
     {
         return body_.length();
     }
-    string_view getString() const override
+    std::string_view getString() const override
     {
         return body_;
     }
 
   private:
-    string_view body_;
+    std::string_view body_;
 };
 
 }  // namespace drogon

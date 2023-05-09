@@ -15,10 +15,10 @@
 
 #include <drogon/exports.h>
 #include <drogon/utils/optional.h>
-#include <drogon/utils/string_view.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
 #include <string>
+#include <string_view>
 #include <limits>
 
 namespace drogon
@@ -299,7 +299,7 @@ class DROGON_EXPORT Cookie
      * @brief Converts a string value to its associated enum class SameSite
      * value
      */
-    static SameSite convertString2SameSite(const string_view &sameSite)
+    static SameSite convertString2SameSite(const std::string_view &sameSite)
     {
         if (sameSite == "Lax")
         {
@@ -329,33 +329,33 @@ class DROGON_EXPORT Cookie
      * @brief Converts an enum class SameSite value to its associated string
      * value
      */
-    static const string_view &convertSameSite2String(SameSite sameSite)
+    static const std::string_view &convertSameSite2String(SameSite sameSite)
     {
         switch (sameSite)
         {
             case SameSite::kLax:
             {
-                static string_view sv{"Lax"};
+                static std::string_view sv{"Lax"};
                 return sv;
             }
             case SameSite::kStrict:
             {
-                static string_view sv{"Strict"};
+                static std::string_view sv{"Strict"};
                 return sv;
             }
             case SameSite::kNone:
             {
-                static string_view sv{"None"};
+                static std::string_view sv{"None"};
                 return sv;
             }
             case SameSite::kNull:
             {
-                static string_view sv{"Null"};
+                static std::string_view sv{"Null"};
                 return sv;
             }
         }
         {
-            static string_view sv{"UNDEFINED"};
+            static std::string_view sv{"UNDEFINED"};
             return sv;
         }
     }

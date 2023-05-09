@@ -16,10 +16,10 @@
 #include "PostgreSQLResultImpl.h"
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
 #include <trantor/utils/Logger.h>
 #include <memory>
 #include <stdio.h>
+#include <string_view>
 
 using namespace drogon;
 using namespace drogon::orm;
@@ -188,7 +188,7 @@ void PgConnection::pgPoll()
 }
 
 void PgConnection::execSqlInLoop(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -362,7 +362,7 @@ void PgConnection::doAfterPreparing()
 {
     isPreparingStatement_ = false;
     auto r = preparedStatements_.insert(std::string{sql_});
-    preparedStatementsMap_[string_view{r.first->data(), r.first->length()}] =
+    preparedStatementsMap_[std::string_view{r.first->data(), r.first->length()}] =
         statementName_;
     if (PQsendQueryPrepared(connectionPtr_.get(),
                             statementName_.c_str(),

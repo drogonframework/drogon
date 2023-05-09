@@ -26,6 +26,7 @@
 #include <functional>
 #include <future>
 #include <string>
+#include <string_view>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 
@@ -223,7 +224,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     {
         return internal::SqlBinder(sql, N - 1, *this, type_);
     }
-    internal::SqlBinder operator<<(const string_view &sql)
+    internal::SqlBinder operator<<(const std::string_view &sql)
     {
         return internal::SqlBinder(sql.data(), sql.length(), *this, type_);
     }

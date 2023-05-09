@@ -16,6 +16,7 @@
 #include "RedisConnection.h"
 #include <drogon/nosql/RedisClient.h>
 #include <memory>
+#include <string_view>
 
 namespace drogon
 {
@@ -32,7 +33,7 @@ class RedisTransactionImpl final
                  RedisExceptionCallback &&exceptionCallback) override;
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
-                          string_view command,
+                          std::string_view command,
                           ...) noexcept override;
     std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override
     {

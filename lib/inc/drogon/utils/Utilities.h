@@ -18,9 +18,9 @@
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Funcs.h>
 #include <trantor/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <set>
 #include <limits>
@@ -118,7 +118,7 @@ inline std::string urlDecode(const std::string &szToDecode)
     auto begin = szToDecode.data();
     return urlDecode(begin, begin + szToDecode.length());
 }
-inline std::string urlDecode(const string_view &szToDecode)
+inline std::string urlDecode(const std::string_view &szToDecode)
 {
     auto begin = szToDecode.data();
     return urlDecode(begin, begin + szToDecode.length());

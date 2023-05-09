@@ -90,16 +90,13 @@ include(cmake/ParseAndAddDrogonTests.cmake)
 include(CheckIncludeFileCXX)
 
 check_include_file_cxx(any HAS_ANY)
-check_include_file_cxx(string_view HAS_STRING_VIEW)
 check_include_file_cxx(coroutine HAS_COROUTINE)
 if (NOT "${CMAKE_CXX_STANDARD}" STREQUAL "")
     set(DROGON_CXX_STANDARD ${CMAKE_CXX_STANDARD})
-elseif (HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE)
+elseif (HAS_ANY AND HAS_COROUTINE)
     set(DROGON_CXX_STANDARD 20)
-elseif (HAS_ANY AND HAS_STRING_VIEW)
-    set(DROGON_CXX_STANDARD 17)
 else ()
-    set(DROGON_CXX_STANDARD 14)
+    set(DROGON_CXX_STANDARD 17)
 endif ()
 if(USE_SUBMODULE)
     target_include_directories(
@@ -147,16 +144,7 @@ endif()
 
 # Check for C++ filesystem support
 set(NEED_BOOST_FS 0)
-if (DROGON_CXX_STANDARD EQUAL 14)
-    # With C++14, use Boost to support any and string_view
-    message(STATUS "use c++14")
-    find_package(Boost 1.61.0 REQUIRED)
-    message(STATUS "Using Boost filesystem, string_view and any")
-    message(STATUS "Boost include dir: " ${Boost_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
-    list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
-    set(NEED_BOOST_FS 1)
-elseif (DROGON_CXX_STANDARD EQUAL 17)
+if (DROGON_CXX_STANDARD EQUAL 17)
     # With C++17, use Boost if std::filesystem::path is missing
     message(STATUS "use c++17")
 
@@ -721,7 +709,6 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/HttpConstraint.h
     lib/inc/drogon/utils/optional.h
     lib/inc/drogon/utils/OStringStream.h
-    lib/inc/drogon/utils/string_view.h
     lib/inc/drogon/utils/Utilities.h)
 install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)

@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <functional>
 #include <iostream>
 #include <list>
@@ -44,7 +45,7 @@ class PgConnection : public DbConnection,
                  const std::string &connInfo,
                  bool autoBatch);
 
-    void execSql(string_view &&sql,
+    void execSql(std::string_view &&sql,
                  size_t paraNum,
                  std::vector<const char *> &&parameters,
                  std::vector<int> &&length,
@@ -114,7 +115,7 @@ class PgConnection : public DbConnection,
     void handleClosed();
 
     void execSqlInLoop(
-        string_view &&sql,
+        std::string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
@@ -130,7 +131,7 @@ class PgConnection : public DbConnection,
     int flush();
     void handleFatalError();
     std::set<std::string> preparedStatements_;
-    string_view sql_;
+    std::string_view sql_;
 #if LIBPQ_SUPPORTS_BATCH_MODE
     void handleFatalError(bool clearAll, bool isAbortPipeline = false);
     std::list<std::shared_ptr<SqlCmd>> batchCommandsForWaitingResults_;
@@ -140,10 +141,10 @@ class PgConnection : public DbConnection,
     bool sendBatchEnd_{false};
     bool autoBatch_{false};
     unsigned int batchCount_{0};
-    std::unordered_map<string_view, std::pair<std::string, bool>>
+    std::unordered_map<std::string_view, std::pair<std::string, bool>>
         preparedStatementsMap_;
 #else
-    std::unordered_map<string_view, std::string> preparedStatementsMap_;
+    std::unordered_map<std::string_view, std::string> preparedStatementsMap_;
 #endif
 
     MessageCallback messageCallback_;

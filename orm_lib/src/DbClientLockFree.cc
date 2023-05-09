@@ -27,6 +27,7 @@
 #include <thread>
 #include <vector>
 #include <unordered_set>
+#include <string_view>
 
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
@@ -123,7 +124,7 @@ void DbClientLockFree::execSql(
                 (transSet_.empty() || transSet_.find(conn) == transSet_.end()))
             {
                 conn->execSql(
-                    string_view{sql, sqlLength},
+                    std::string_view{sql, sqlLength},
                     paraNum,
                     std::move(parameters),
                     std::move(length),
@@ -153,7 +154,7 @@ void DbClientLockFree::execSql(
                      transSet_.find(conn) == transSet_.end()))
                 {
                     conn->execSql(
-                        string_view{sql, sqlLength},
+                        std::string_view{sql, sqlLength},
                         paraNum,
                         std::move(parameters),
                         std::move(length),
@@ -185,7 +186,7 @@ void DbClientLockFree::execSql(
                 if (transSet_.empty() ||
                     transSet_.find(conn) == transSet_.end())
                 {
-                    conn->execSql(string_view{sql, sqlLength},
+                    conn->execSql(std::string_view{sql, sqlLength},
                                   paraNum,
                                   std::move(parameters),
                                   std::move(length),
@@ -211,7 +212,7 @@ void DbClientLockFree::execSql(
 
     // LOG_TRACE << "Push query to buffer";
     sqlCmdBuffer_.emplace_back(std::make_shared<SqlCmd>(
-        string_view{sql, sqlLength},
+        std::string_view{sql, sqlLength},
         paraNum,
         std::move(parameters),
         std::move(length),
@@ -554,7 +555,7 @@ void DbClientLockFree::execSqlWithTimeout(
                 (transSet_.empty() || transSet_.find(conn) == transSet_.end()))
             {
                 conn->execSql(
-                    string_view{sql, sqlLength},
+                    std::string_view{sql, sqlLength},
                     paraNum,
                     std::move(parameters),
                     std::move(length),
@@ -587,7 +588,7 @@ void DbClientLockFree::execSqlWithTimeout(
                      transSet_.find(conn) == transSet_.end()))
                 {
                     conn->execSql(
-                        string_view{sql, sqlLength},
+                        std::string_view{sql, sqlLength},
                         paraNum,
                         std::move(parameters),
                         std::move(length),
@@ -622,7 +623,7 @@ void DbClientLockFree::execSqlWithTimeout(
                 if (transSet_.empty() ||
                     transSet_.find(conn) == transSet_.end())
                 {
-                    conn->execSql(string_view{sql, sqlLength},
+                    conn->execSql(std::string_view{sql, sqlLength},
                                   paraNum,
                                   std::move(parameters),
                                   std::move(length),
@@ -648,7 +649,7 @@ void DbClientLockFree::execSqlWithTimeout(
 
     // LOG_TRACE << "Push query to buffer";
     auto cmdPtr = std::make_shared<SqlCmd>(
-        string_view{sql, sqlLength},
+        std::string_view{sql, sqlLength},
         paraNum,
         std::move(parameters),
         std::move(length),

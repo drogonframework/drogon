@@ -21,7 +21,6 @@
 #include <drogon/orm/ResultIterator.h>
 #include <drogon/orm/Row.h>
 #include <drogon/orm/RowIterator.h>
-#include <drogon/utils/string_view.h>
 #include <drogon/utils/optional.h>
 #include <json/writer.h>
 #include <trantor/utils/Logger.h>
@@ -35,6 +34,7 @@
 #include <sstream>
 #include <string.h>
 #include <string>
+#include <string_view>
 #include <vector>
 #ifdef _WIN32
 #include <winsock2.h>
@@ -437,14 +437,14 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     {
         return operator<<(std::string(str));
     }
-    self &operator<<(const drogon::string_view &str);
-    self &operator<<(drogon::string_view &&str)
+    self &operator<<(const std::string_view &str);
+    self &operator<<(std::string_view &&str)
     {
-        return operator<<((const drogon::string_view &)str);
+        return operator<<((const std::string_view &)str);
     }
-    self &operator<<(drogon::string_view &str)
+    self &operator<<(std::string_view &str)
     {
-        return operator<<((const drogon::string_view &)str);
+        return operator<<((const std::string_view &)str);
     }
     self &operator<<(const std::string &str);
     self &operator<<(std::string &str)

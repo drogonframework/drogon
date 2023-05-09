@@ -19,6 +19,7 @@
 #include <drogon/utils/Utilities.h>
 #include <fstream>
 #include <iostream>
+#include <string_view>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -75,21 +76,21 @@ void HttpRequestImpl::parseParameters() const
     auto input = queryView();
     if (!input.empty())
     {
-        string_view::size_type pos = 0;
+        std::string_view::size_type pos = 0;
         while ((input[pos] == '?' || isspace(input[pos])) &&
                pos < input.length())
         {
             ++pos;
         }
         auto value = input.substr(pos);
-        while ((pos = value.find('&')) != string_view::npos)
+        while ((pos = value.find('&')) != std::string_view::npos)
         {
             auto coo = value.substr(0, pos);
             auto epos = coo.find('=');
-            if (epos != string_view::npos)
+            if (epos != std::string_view::npos)
             {
                 auto key = coo.substr(0, epos);
-                string_view::size_type cpos = 0;
+                std::string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
                     ++cpos;
                 key = key.substr(cpos);
@@ -104,10 +105,10 @@ void HttpRequestImpl::parseParameters() const
         {
             auto &coo = value;
             auto epos = coo.find('=');
-            if (epos != string_view::npos)
+            if (epos != std::string_view::npos)
             {
                 auto key = coo.substr(0, epos);
-                string_view::size_type cpos = 0;
+                std::string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
                     ++cpos;
                 key = key.substr(cpos);
@@ -129,21 +130,21 @@ void HttpRequestImpl::parseParameters() const
     if (type.empty() ||
         type.find("application/x-www-form-urlencoded") != std::string::npos)
     {
-        string_view::size_type pos = 0;
+        std::string_view::size_type pos = 0;
         while ((input[pos] == '?' || isspace(input[pos])) &&
                pos < input.length())
         {
             ++pos;
         }
         auto value = input.substr(pos);
-        while ((pos = value.find('&')) != string_view::npos)
+        while ((pos = value.find('&')) != std::string_view::npos)
         {
             auto coo = value.substr(0, pos);
             auto epos = coo.find('=');
-            if (epos != string_view::npos)
+            if (epos != std::string_view::npos)
             {
                 auto key = coo.substr(0, epos);
-                string_view::size_type cpos = 0;
+                std::string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
                     ++cpos;
                 key = key.substr(cpos);
@@ -158,10 +159,10 @@ void HttpRequestImpl::parseParameters() const
         {
             auto &coo = value;
             auto epos = coo.find('=');
-            if (epos != string_view::npos)
+            if (epos != std::string_view::npos)
             {
                 auto key = coo.substr(0, epos);
-                string_view::size_type cpos = 0;
+                std::string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
                     ++cpos;
                 key = key.substr(cpos);
@@ -629,7 +630,7 @@ const char *HttpRequestImpl::methodString() const
 bool HttpRequestImpl::setMethod(const char *start, const char *end)
 {
     assert(method_ == Invalid);
-    string_view m(start, end - start);
+    std::string_view m(start, end - start);
     switch (m.length())
     {
         case 3:
@@ -800,7 +801,7 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli() noexcept
     auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
     std::unique_ptr<CacheFile> cacheFileHolder;
     std::string contentHolder;
-    string_view compressed;
+    std::string_view compressed;
     if (cacheFilePtr_)
     {
         cacheFileHolder = std::move(cacheFilePtr_);
@@ -872,7 +873,7 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyGzip() noexcept
     auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
     std::unique_ptr<CacheFile> cacheFileHolder;
     std::string contentHolder;
-    string_view compressed;
+    std::string_view compressed;
     if (cacheFilePtr_)
     {
         cacheFileHolder = std::move(cacheFilePtr_);

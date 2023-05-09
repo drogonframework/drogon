@@ -15,11 +15,11 @@
 #include "Sqlite3Connection.h"
 #include "Sqlite3ResultImpl.h"
 #include <drogon/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
 #include <cctype>
 #include <exception>
 #include <mutex>
 #include <regex>
+#include <string_view>
 
 using namespace drogon;
 using namespace drogon::orm;
@@ -27,7 +27,7 @@ using namespace drogon::orm;
 std::once_flag Sqlite3Connection::once_;
 
 void Sqlite3Connection::onError(
-    const string_view &sql,
+    const std::string_view &sql,
     const std::function<void(const std::exception_ptr &)> &exceptCallback)
 {
     auto exceptPtr = std::make_exception_ptr(
@@ -91,7 +91,7 @@ void Sqlite3Connection::init()
 }
 
 void Sqlite3Connection::execSql(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -115,7 +115,7 @@ void Sqlite3Connection::execSql(
 }
 
 void Sqlite3Connection::execSqlInQueue(
-    const string_view &sql,
+    const std::string_view &sql,
     size_t paraNum,
     const std::vector<const char *> &parameters,
     const std::vector<int> &length,
@@ -259,7 +259,7 @@ void Sqlite3Connection::execSqlInQueue(
     if (paraNum > 0 && newStmt)
     {
         auto r = stmts_.insert(std::string{sql});
-        stmtsMap_[string_view{r.first->data(), r.first->length()}] = stmtPtr;
+        stmtsMap_[std::string_view{r.first->data(), r.first->length()}] = stmtPtr;
     }
     rcb(Result(std::move(resultPtr)));
     idleCb_();

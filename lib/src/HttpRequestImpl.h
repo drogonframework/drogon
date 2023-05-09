@@ -27,6 +27,7 @@
 #include <trantor/utils/NonCopyable.h>
 #include <algorithm>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <unordered_map>
 #include <assert.h>
@@ -172,7 +173,7 @@ class HttpRequestImpl : public HttpRequest
         query_ = query;
     }
 
-    string_view bodyView() const
+    std::string_view bodyView() const
     {
         if (cacheFilePtr_)
         {
@@ -201,12 +202,12 @@ class HttpRequestImpl : public HttpRequest
 
     void reserveBodySize(size_t length);
 
-    string_view queryView() const
+    std::string_view queryView() const
     {
         return query_;
     }
 
-    string_view contentView() const
+    std::string_view contentView() const
     {
         if (cacheFilePtr_)
             return cacheFilePtr_->getStringView();
@@ -517,12 +518,12 @@ class HttpRequestImpl : public HttpRequest
                 if (pos != std::string::npos)
                 {
                     contentType_ = parseContentType(
-                        string_view(contentTypeString.data(), pos));
+                        std::string_view(contentTypeString.data(), pos));
                 }
                 else
                 {
                     contentType_ =
-                        parseContentType(string_view(contentTypeString));
+                        parseContentType(std::string_view(contentTypeString));
                 }
 
                 if (contentType_ == CT_NONE)
@@ -556,7 +557,7 @@ class HttpRequestImpl : public HttpRequest
     Version version_{Version::kUnknown};
     std::string path_;
     bool pathEncode_{true};
-    string_view matchedPathPattern_{""};
+    std::string_view matchedPathPattern_{""};
     std::string query_;
     std::
         unordered_map<std::string, std::string, utils::internal::SafeStringHash>

@@ -32,6 +32,7 @@
 #include <zlib.h>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <mutex>
 #include <algorithm>
 #include <array>
@@ -1185,7 +1186,7 @@ std::string secureRandomString(size_t size)
         return std::string();
 
     std::string ret(size, 0);
-    const string_view chars =
+    const std::string_view chars =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz"

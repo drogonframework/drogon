@@ -19,7 +19,6 @@
 #include <drogon/orm/CoroMapper.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/DbTypes.h>
-#include <drogon/utils/string_view.h>
 #include <drogon/orm/QueryBuilder.h>
 #include <trantor/utils/Logger.h>
 
@@ -27,6 +26,7 @@
 #include <chrono>
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -253,7 +253,7 @@ DROGON_TEST(PostgreTest)
             FAULT("postgresql - DbClient asynchronous interface(4) what():",
                   e.base().what());
         },
-        drogon::string_view("pg1"),
+        std::string_view("pg1"),
         "postgresql1");
     /// 2.4 delete
     clientPtr->execSqlAsync(
@@ -2039,17 +2039,17 @@ DROGON_TEST(SQLite3Test)
     /// 3.2 insert,(string_view)
     try
     {
-        drogon::string_view sv("pg1");
-        drogon::string_view sv1("postgresql1");
-        drogon::string_view sv2("123");
+        std::string_view sv("pg1");
+        std::string_view sv1("postgresql1");
+        std::string_view sv2("123");
         auto r = clientPtr->execSqlSync(
             "insert into users  "
             "(user_id,user_name,password,org_name,create_time) "
             "values(?,?,?,?,?)",
             sv,
-            (const drogon::string_view &)sv1,
+            (const std::string_view &)sv1,
             std::move(sv2),
-            drogon::string_view("default"),
+            std::string_view("default"),
             trantor::Date::now());
         MANDATE(r.affectedRows() == 1UL);
     }

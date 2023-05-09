@@ -19,6 +19,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <string_view>
 
 using namespace drogon;
 
@@ -148,7 +149,7 @@ void HttpFile::setFileName(const std::string &fileName) noexcept
     implPtr_->setFileName(fileName);
 }
 
-string_view HttpFile::getFileExtension() const noexcept
+std::string_view HttpFile::getFileExtension() const noexcept
 {
     return implPtr_->getFileExtension();
 }

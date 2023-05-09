@@ -22,6 +22,7 @@
 #include <memory>
 #include <cstdio>
 #include <string>
+#include <string_view>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
 
@@ -693,7 +694,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
     }
 
     LOG_TRACE << "reponse(no body):"
-              << string_view{httpString->peek(), httpString->readableBytes()};
+              << std::string_view{httpString->peek(), httpString->readableBytes()};
     if (bodyPtr_)
         httpString->append(bodyPtr_->data(), bodyPtr_->length());
     if (expriedTime_ >= 0)
@@ -873,7 +874,7 @@ void HttpResponseImpl::clear()
 {
     statusCode_ = kUnknown;
     version_ = Version::kHttp11;
-    statusMessage_ = string_view{};
+    statusMessage_ = std::string_view{};
     fullHeaderString_.reset();
     jsonParsingErrorPtr_.reset();
     sendfileName_.clear();

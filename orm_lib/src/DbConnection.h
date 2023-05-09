@@ -16,7 +16,6 @@
 
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
-#include <drogon/utils/string_view.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
@@ -25,6 +24,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <string>
+#include <string_view>
 
 namespace drogon
 {
@@ -47,7 +47,7 @@ enum class ConnectStatus
 
 struct SqlCmd
 {
-    string_view sql_;
+    std::string_view sql_;
     size_t parametersNumber_;
     std::vector<const char *> parameters_;
     std::vector<int> lengths_;
@@ -58,7 +58,7 @@ struct SqlCmd
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool isChanging_{false};
 #endif
-    SqlCmd(string_view &&sql,
+    SqlCmd(std::string_view &&sql,
            size_t paraNum,
            std::vector<const char *> &&parameters,
            std::vector<int> &&length,
@@ -98,7 +98,7 @@ class DbConnection : public trantor::NonCopyable
         idleCb_ = cb;
     }
     virtual void execSql(
-        string_view &&sql,
+        std::string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,

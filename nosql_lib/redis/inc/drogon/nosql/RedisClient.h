@@ -17,12 +17,12 @@
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/nosql/RedisException.h>
 #include <drogon/nosql/RedisSubscriber.h>
-#include <drogon/utils/string_view.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
 #include <memory>
 #include <functional>
 #include <future>
+#include <string_view>
 #ifdef __cpp_impl_coroutine
 #include <drogon/utils/coroutine.h>
 #endif
@@ -123,7 +123,7 @@ class DROGON_EXPORT RedisClient
      */
     virtual void execCommandAsync(RedisResultCallback &&resultCallback,
                                   RedisExceptionCallback &&exceptionCallback,
-                                  string_view command,
+                                  std::string_view command,
                                   ...) noexcept = 0;
 
     /**
@@ -157,7 +157,7 @@ class DROGON_EXPORT RedisClient
      */
     template <typename T, typename... Args>
     T execCommandSync(std::function<T(const RedisResult &)> &&processFunc,
-                      string_view command,
+                      std::string_view command,
                       Args &&...args)
     {
         std::shared_ptr<std::promise<T>> pro(new std::promise<T>);
@@ -254,7 +254,7 @@ class DROGON_EXPORT RedisClient
        @endcode
      */
     template <typename... Arguments>
-    internal::RedisAwaiter execCommandCoro(string_view command,
+    internal::RedisAwaiter execCommandCoro(std::string_view command,
                                            Arguments... args)
     {
         return internal::RedisAwaiter(

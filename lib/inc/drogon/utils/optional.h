@@ -13,19 +13,10 @@
  */
 
 #pragma once
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
 #include <optional>
-#else
-#include <boost/optional.hpp>
-#endif
 
 namespace drogon
 {
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
 using std::nullopt;
 using std::optional;
-#else
-const boost::none_t nullopt = boost::none;
-using boost::optional;
-#endif
 }  // namespace drogon

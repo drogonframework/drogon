@@ -7,7 +7,7 @@
 
 English | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md)
 ### Overview
-**Drogon** is a C++14/17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like.
+**Drogon** is a C++17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like.
 
 Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, OpenBSD, HaikuOS, and Windows. Its main features are as follows:
 

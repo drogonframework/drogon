@@ -24,6 +24,7 @@
 #include <memory>
 #include <mysql.h>
 #include <string>
+#include <string_view>
 
 namespace drogon
 {
@@ -39,7 +40,7 @@ class MysqlConnection : public DbConnection,
     ~MysqlConnection()
     {
     }
-    void execSql(string_view &&sql,
+    void execSql(std::string_view &&sql,
                  size_t paraNum,
                  std::vector<const char *> &&parameters,
                  std::vector<int> &&length,
@@ -113,7 +114,7 @@ class MysqlConnection : public DbConnection,
         }
     };
     void execSqlInLoop(
-        string_view &&sql,
+        std::string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,

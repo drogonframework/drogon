@@ -21,6 +21,7 @@
 #include <memory>
 #include <algorithm>
 #include <stdio.h>
+#include <string_view>
 
 using namespace drogon::orm;
 
@@ -34,7 +35,7 @@ Result makeResult(std::shared_ptr<PGresult> &&r = nullptr)
     return Result(std::make_shared<PostgreSQLResultImpl>(std::move(r)));
 }
 
-bool checkSql(const string_view &sql_)
+bool checkSql(const std::string_view &sql_)
 {
     if (sql_.length() > 1024)
         return true;
@@ -214,7 +215,7 @@ void PgConnection::pgPoll()
 }
 
 void PgConnection::execSqlInLoop(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -467,7 +468,7 @@ void PgConnection::handleRead()
             {
                 auto r = preparedStatements_.insert(
                     std::string{cmd->sql_.data(), cmd->sql_.length()});
-                preparedStatementsMap_[string_view{r.first->c_str(),
+                preparedStatementsMap_[std::string_view{r.first->c_str(),
                                                    r.first->length()}] = {
                     std::move(cmd->preparingStatement_), cmd->isChanging_};
                 cmd->preparingStatement_.clear();
@@ -485,7 +486,7 @@ void PgConnection::handleRead()
         {
             auto r = preparedStatements_.insert(
                 std::string{cmd->sql_.data(), cmd->sql_.length()});
-            preparedStatementsMap_[string_view{r.first->c_str(),
+            preparedStatementsMap_[std::string_view{r.first->c_str(),
                                                r.first->length()}] = {
                 std::move(cmd->preparingStatement_), cmd->isChanging_};
             cmd->preparingStatement_.clear();

@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include <drogon/utils/string_view.h>
 #include <trantor/utils/NonCopyable.h>
 #include <string>
+#include <string_view>
 #include <stdio.h>
 
 namespace drogon
@@ -31,11 +31,11 @@ class CacheFile : public trantor::NonCopyable
         append(data.data(), data.length());
     }
     void append(const char *data, size_t length);
-    string_view getStringView()
+    std::string_view getStringView()
     {
         if (data())
-            return string_view(data_, dataLength_);
-        return string_view();
+            return std::string_view(data_, dataLength_);
+        return std::string_view();
     }
 
   private:

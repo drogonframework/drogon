@@ -19,6 +19,7 @@
 #include <memory>
 #include <iomanip>
 #include <stdlib.h>
+#include <string_view>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -37,7 +38,7 @@ std::string press::detail()
            "http://localhost:8080/index.html\n";
 }
 
-void outputErrorAndExit(const string_view &err)
+void outputErrorAndExit(const std::string_view &err)
 {
     std::cout << err << std::endl;
     exit(1);

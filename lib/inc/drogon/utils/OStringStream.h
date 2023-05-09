@@ -14,8 +14,8 @@
 
 #pragma once
 #include <string>
+#include <string_view>
 #include <sstream>
-#include <drogon/utils/string_view.h>
 
 namespace drogon
 {
@@ -71,12 +71,12 @@ class OStringStream
         buffer_.append(buf, N - 1);
         return *this;
     }
-    OStringStream& operator<<(const string_view& str)
+    OStringStream& operator<<(const std::string_view& str)
     {
         buffer_.append(str.data(), str.length());
         return *this;
     }
-    OStringStream& operator<<(string_view&& str)
+    OStringStream& operator<<(std::string_view&& str)
     {
         buffer_.append(str.data(), str.length());
         return *this;
