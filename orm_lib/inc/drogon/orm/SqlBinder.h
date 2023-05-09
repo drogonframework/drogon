@@ -63,10 +63,12 @@ template <typename T>
 constexpr T htonT(T value) noexcept
 {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-    char *ptr = reinterpret_cast<char *>(&value);
-    std::reverse(ptr, ptr + sizeof(T));
-#endif
+    return (std::reverse(reinterpret_cast<char *>(&value),
+                         reinterpret_cast<char *>(&value) + sizeof(T)),
+            value);
+#else
     return value;
+#endif
 }
 inline uint64_t htonll(uint64_t value)
 {
