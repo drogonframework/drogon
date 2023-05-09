@@ -144,9 +144,8 @@ inline std::string attemptPrint(T&& v)
 
 // Specializations to reduce template construction
 template <>
-inline std::string attemptPrint(const std::nullptr_t& v)
+inline std::string attemptPrint(const std::nullptr_t&)
 {
-    (void)v;
     return "nullptr";
 }
 
