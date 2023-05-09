@@ -13,19 +13,10 @@
  */
 
 #pragma once
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
 #include <any>
-#else
-#include <boost/any.hpp>
-#endif
 
 namespace drogon
 {
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
 using std::any;
 using std::any_cast;
-#else
-using boost::any;
-using boost::any_cast;
-#endif
 }  // namespace drogon

@@ -30,11 +30,7 @@ namespace drogon
 {
 namespace orm
 {
-#if __cplusplus >= 201703L | defined _WIN32
 using SharedMutex = std::shared_mutex;
-#else
-using SharedMutex = std::shared_timed_mutex;
-#endif
 
 enum class ConnectStatus
 {

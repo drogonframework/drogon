@@ -36,11 +36,7 @@ class Topic : public trantor::NonCopyable
 {
   public:
     using MessageHandler = std::function<void(const MessageType &)>;
-#if __cplusplus >= 201703L | defined _WIN32
     using SharedMutex = std::shared_mutex;
-#else
-    using SharedMutex = std::shared_timed_mutex;
-#endif
     /**
      * @brief Publish a message, every subscriber in the topic will receive the
      * message.
@@ -130,11 +126,7 @@ class PubSubService : public trantor::NonCopyable
   public:
     using MessageHandler =
         std::function<void(const std::string &, const MessageType &)>;
-#if __cplusplus >= 201703L | defined _WIN32
     using SharedMutex = std::shared_mutex;
-#else
-    using SharedMutex = std::shared_timed_mutex;
-#endif
 
     /**
      * @brief Publish a message to a topic. The message will be broadcasted to

@@ -107,25 +107,11 @@ inline std::string escapeString(const std::string_view sv)
 DROGON_EXPORT std::string prettifyString(const std::string_view sv,
                                          size_t maxLength = 120);
 
-#ifdef __cpp_fold_expressions
 template <typename... Args>
 inline void outputReason(Args&&... args)
 {
     (std::cout << ... << std::forward<Args>(args));
 }
-#else
-template <typename Head>
-inline void outputReason(Head&& head)
-{
-    std::cout << std::forward<Head>(head);
-}
-template <typename Head, typename... Tail>
-inline void outputReason(Head&& head, Tail&&... tail)
-{
-    std::cout << std::forward<Head>(head);
-    outputReason(std::forward<Tail>(tail)...);
-}
-#endif
 
 template <bool P>
 struct AttemptPrintViaStream
