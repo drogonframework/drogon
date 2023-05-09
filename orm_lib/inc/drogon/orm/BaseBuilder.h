@@ -25,10 +25,6 @@
 #include <utility>
 #include <vector>
 
-#ifdef __cpp_impl_coroutine
-#include <drogon/utils/coroutine.h>
-#endif
-
 #define unimplemented() assert(false && "unimplemented")
 
 namespace drogon
@@ -289,42 +285,6 @@ class BaseBuilder
         binder.exec();
         return prom->get_future();
     }
-
-#ifdef __cpp_impl_coroutine
-    struct [[nodiscard]] BuilderAwaiter : public CallbackAwaiter<ResultType>
-    {
-        BuilderAwaiter(internal::SqlBinder&& binder)
-            : binder_(std::move(binder))
-        {
-        }
-
-        void await_suspend(std::coroutine_handle<> handle)
-        {
-            binder_ >> [handle, this](const drogon::orm::Result& result) {
-                this->setValue(convert_result(result));
-                handle.resume();
-            };
-            binder_ >> [handle, this](const std::exception_ptr& e) {
-                this->setException(e);
-                handle.resume();
-            };
-            binder_.exec();
-        }
-
-      private:
-        internal::SqlBinder binder_;
-    };
-
-    inline BuilderAwaiter execCoro(const DbClientPtr& client)
-    {
-        auto binder = *client << gen_sql(client->type());
-        for (const std::string& a : gen_args())
-        {
-            binder << a;
-        }
-        return {std::move(binder)};
-    }
-#endif
 };
 }  // namespace orm
 }  // namespace drogon
