@@ -167,7 +167,6 @@ void PgConnection::pgPoll()
 {
     loop_->assertInLoopThread();
     auto connStatus = PQconnectPoll(connectionPtr_.get());
-
     switch (connStatus)
     {
         case PGRES_POLLING_FAILED:
@@ -362,7 +361,6 @@ void PgConnection::sendBatchedSql()
                 return;
             }
         }
-
         if (autoBatch_ && sendBatchEnd_)
         {
             sendBatchEnd_ = false;
@@ -370,6 +368,13 @@ void PgConnection::sendBatchedSql()
             {
                 return;
             }
+            if (flush())
+            {
+                return;
+            }
+        }
+        else
+        {
             if (flush())
             {
                 return;
