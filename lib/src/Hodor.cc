@@ -1,5 +1,8 @@
 #include <drogon/plugins/Hodor.h>
 #include <drogon/plugins/RealIpResolver.h>
+#include <netinet/in.h>
+#include <cstring>
+#include "trantor/net/InetAddress.h"
 
 using namespace drogon::plugin;
 Hodor::LimitStrategy Hodor::makeLimitStrategy(const Json::Value &config)
@@ -200,19 +203,29 @@ bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
     }
     return true;
 }
+void extractIp(const trantor::InetAddress &from, std::string &to)
+{
+    if (from.isIpV6())
+    {
+        static constexpr auto bytes = sizeof(in6_addr);
+        to.resize(bytes);
+        std::memcpy(&to[0], from.ip6NetEndian(), bytes);
+        return;
+    }
+    const auto ip = from.ipNetEndian();
+    static constexpr auto bytes = sizeof(ip);
+    to.resize(bytes);
+    std::memcpy(&to[0], &ip, bytes);
+}
 void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                           drogon::AdviceCallback &&adviceCallback,
                           drogon::AdviceChainCallback &&chainCallback)
 {
     std::string ip;
-    if (useRealIpResolver_)
-    {
-        ip = drogon::plugin::RealIpResolver::GetRealAddr(req).toIp();
-    }
-    else
-    {
-        ip = req->peerAddr().toIp();
-    }
+    extractIp(useRealIpResolver_
+                  ? drogon::plugin::RealIpResolver::GetRealAddr(req)
+                  : req->peerAddr(),
+              ip);
     optional<std::string> userId;
     if (userIdGetter_)
     {
