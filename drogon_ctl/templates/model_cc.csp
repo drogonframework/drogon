@@ -79,6 +79,21 @@ else
 const std::string [[className]]::Cols::_{%col.colName_%} = "{%col.colName_%}";
 <%c++
 }%>
+
+<%c++
+if (cols.size() > 1)
+{%>
+const std::string [[className]]::columnsList = "{%cols[0].colName_%},"
+<%c++
+for (size_t i=1;i<cols.size()-1;i++)
+{%>
+                                       "{%cols[i].colName_%}, "
+<%c++}%>
+                                       "{%cols[cols.size()-1].colName_%}";
+<%c++}else{%>
+const std::string [[className]]::columnsList = "{%cols[0].colName_%}";
+<%c++}%>
+
 <%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
 const std::string [[className]]::primaryKeyName = "[[primaryKeyName]]";
 <%c++}else{%>

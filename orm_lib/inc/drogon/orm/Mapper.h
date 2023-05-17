@@ -760,7 +760,7 @@ class Mapper
 template <typename T>
 inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
 {
-    std::string sql = "select * from ";
+    std::string sql = "select " + T::columnsList + " from ";
     sql += T::tableName;
     bool hasParameters = false;
     if (criteria)
@@ -817,7 +817,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
                                const SingleRowCallback &rcb,
                                const ExceptionCallback &ecb) noexcept
 {
-    std::string sql = "select * from ";
+    std::string sql = "select " + T::columnsList + " from ";
     sql += T::tableName;
     bool hasParameters = false;
     if (criteria)
@@ -872,7 +872,7 @@ template <typename T>
 inline std::future<T> Mapper<T>::findFutureOne(
     const Criteria &criteria) noexcept
 {
-    std::string sql = "select * from ";
+    std::string sql = "select " + T::columnsList + " from ";
     sql += T::tableName;
     bool hasParameters = false;
     if (criteria)
@@ -931,7 +931,7 @@ template <typename T>
 inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
     false)
 {
-    std::string sql = "select * from ";
+    std::string sql = "select " + T::columnsList + " from ";
     sql += T::tableName;
     bool hasParameters = false;
     if (criteria)
@@ -983,7 +983,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
                               const MultipleRowsCallback &rcb,
                               const ExceptionCallback &ecb) noexcept
 {
-    std::string sql = "select * from ";
+    std::string sql = "select " + T::columnsList + " from ";
     sql += T::tableName;
     bool hasParameters = false;
     if (criteria)
@@ -1031,7 +1031,7 @@ template <typename T>
 inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
     const Criteria &criteria) noexcept
 {
-    std::string sql = "select * from ";
+    std::string sql = "select " + T::columnsList + " from ";
     sql += T::tableName;
     bool hasParameters = false;
     if (criteria)

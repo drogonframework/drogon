@@ -242,7 +242,7 @@ class CoroMapper : public Mapper<T>
     {
         auto lb = [this, criteria](SingleRowCallback &&callback,
                                    ExceptPtrCallback &&errCallback) {
-            std::string sql = "select * from ";
+            std::string sql = "select " + T::columnsList + " from ";
             sql += T::tableName;
             bool hasParameters = false;
             if (criteria)
@@ -302,7 +302,7 @@ class CoroMapper : public Mapper<T>
     {
         auto lb = [this, criteria](MultipleRowsCallback &&callback,
                                    ExceptPtrCallback &&errCallback) {
-            std::string sql = "select * from ";
+            std::string sql = "select " + T::columnsList + " from ";
             sql += T::tableName;
             bool hasParameters = false;
             if (criteria)
