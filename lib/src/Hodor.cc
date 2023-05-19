@@ -204,15 +204,10 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                           drogon::AdviceCallback &&adviceCallback,
                           drogon::AdviceChainCallback &&chainCallback)
 {
-    std::string ip;
-    if (useRealIpResolver_)
-    {
-        ip = drogon::plugin::RealIpResolver::GetRealAddr(req).toIp();
-    }
-    else
-    {
-        ip = req->peerAddr().toIp();
-    }
+    auto ip =
+        (useRealIpResolver_ ? drogon::plugin::RealIpResolver::GetRealAddr(req)
+                            : req->peerAddr())
+            .toIpNetEndian();
     optional<std::string> userId;
     if (userIdGetter_)
     {
