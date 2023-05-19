@@ -2,7 +2,7 @@
  *  @file SlashRemover.h
  *  @author Mis1eader
  *
- *  Copyright 2018, Mis1eader.  All rights reserved.
+ *  Copyright 2023, Mis1eader.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
