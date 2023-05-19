@@ -302,6 +302,7 @@ set(DROGON_SOURCES
     lib/src/SlidingWindowRateLimiter.cc
     lib/src/TokenBucketRateLimiter.cc
     lib/src/Hodor.cc
+    lib/src/SlashRemover.cc
     lib/src/drogon_test.cc
     lib/src/ConfigAdapterManager.cc
     lib/src/JsonConfigAdapter.cc
@@ -731,6 +732,7 @@ set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/AccessLogger.h
     lib/inc/drogon/plugins/RealIpResolver.h
     lib/inc/drogon/plugins/Hodor.h
+    lib/inc/drogon/plugins/SlashRemover.h
     lib/inc/drogon/plugins/GlobalFilters.h)
 
 install(FILES ${DROGON_PLUGIN_HEADERS}

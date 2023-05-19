@@ -31,6 +31,7 @@
 #include <drogon/plugins/AccessLogger.h>
 #include <drogon/plugins/RealIpResolver.h>
 #include <drogon/plugins/Hodor.h>
+#include <drogon/plugins/SlashRemover.h>
 #include <drogon/plugins/GlobalFilters.h>
 #include <drogon/IntranetIpFilter.h>
 #include <drogon/LocalHostFilter.h>
