@@ -11,7 +11,7 @@ using std::string;
 #define TRAILING_SLASH_REGEX "^.+\\/$"
 #define DUPLICATE_SLASH_REGEX "^.+\\/{2}.*$"
 
-bool removeTrailingSlashes(string& url)
+static bool removeTrailingSlashes(string& url)
 {
     // If only contains '/', it will return -1, and added with 1 it will be 0,
     // hence empty, meaning root
@@ -23,7 +23,7 @@ bool removeTrailingSlashes(string& url)
     }
     return false;
 }
-void removeDuplicateSlashes(string& url)
+static void removeDuplicateSlashes(string& url)
 {
     size_t a = 0;
     for (size_t b = 1, len = url.size(); b < len; ++b)
@@ -34,7 +34,7 @@ void removeDuplicateSlashes(string& url)
     }
     url.resize(a + 1);
 }
-void removeExcessiveSlashes(string& url)
+static void removeExcessiveSlashes(string& url)
 {
     if (url[url.size() - 1] ==
             '/' &&  // This check is so we don't search if there is no trailing
@@ -46,7 +46,7 @@ void removeExcessiveSlashes(string& url)
     removeDuplicateSlashes(url);
 }
 
-void trailingSlashRemover(
+static void trailingSlashRemover(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback)
 {
@@ -54,7 +54,7 @@ void trailingSlashRemover(
     removeTrailingSlashes(redirectedPath);
     callback(HttpResponse::newRedirectionResponse(redirectedPath));
 }
-void duplicateSlashRemover(
+static void duplicateSlashRemover(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback)
 {
@@ -62,7 +62,7 @@ void duplicateSlashRemover(
     removeDuplicateSlashes(redirectedPath);
     callback(HttpResponse::newRedirectionResponse(redirectedPath));
 }
-void excessiveSlashRemover(
+static void excessiveSlashRemover(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback)
 {
