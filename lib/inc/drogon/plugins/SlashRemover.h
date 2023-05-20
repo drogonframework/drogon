@@ -30,10 +30,10 @@ namespace drogon::plugin
      "dependencies": [],
      "config": {
         // If true, it removes all trailing slashes, e.g.
-example.com/ -> example.com
+///home// -> ///home
         "remove_trailing_slashes": true,
         // If true, it removes all duplicate slashes, e.g.
-example.com///home -> example.com/home
+///home// -> /home/
         "remove_duplicate_slashes": true,
         // If true, redirects the request, otherwise forwards
 internally.
