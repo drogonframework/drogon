@@ -109,12 +109,12 @@ void SlashRemover::initAndStart(const Json::Value& config)
         {
             app().registerHandlerViaRegex(
                 TRAILING_SLASH_REGEX,
-                redirect_ ? [](const HttpRequestPtr& req,
-                   std::function<void(const HttpResponsePtr&)>&& callback) {
-                    trailingSlashRemover(req, std::move(callback));
-                } : [](const HttpRequestPtr& req,
-                   std::function<void(const HttpResponsePtr&)>&& callback) {
-                    trailingSlashRemoverForward(req, std::move(callback));
+                [this](const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
+                    if (redirect_)
+                        trailingSlashRemover(req, std::move(callback));
+                    else
+                        trailingSlashRemoverForward(req, std::move(callback));
                 });
             break;
         }
@@ -122,12 +122,12 @@ void SlashRemover::initAndStart(const Json::Value& config)
         {
             app().registerHandlerViaRegex(
                 DUPLICATE_SLASH_REGEX,
-                redirect_ ? [](const HttpRequestPtr& req,
-                   std::function<void(const HttpResponsePtr&)>&& callback) {
-                    duplicateSlashRemover(req, std::move(callback));
-                } : [](const HttpRequestPtr& req,
-                   std::function<void(const HttpResponsePtr&)>&& callback) {
-                    duplicateSlashRemoverForward(req, std::move(callback));
+                [this](const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
+                    if (redirect_)
+                        duplicateSlashRemover(req, std::move(callback));
+                    else
+                        duplicateSlashRemoverForward(req, std::move(callback));
                 });
             break;
         }
@@ -135,12 +135,12 @@ void SlashRemover::initAndStart(const Json::Value& config)
         {
             app().registerHandlerViaRegex(
                 TRAILING_SLASH_REGEX "|" DUPLICATE_SLASH_REGEX,
-                redirect_ ? [](const HttpRequestPtr& req,
-                   std::function<void(const HttpResponsePtr&)>&& callback) {
-                    excessiveSlashRemover(req, std::move(callback));
-                } : [](const HttpRequestPtr& req,
-                   std::function<void(const HttpResponsePtr&)>&& callback) {
-                    excessiveSlashRemoverForward(req, std::move(callback));
+                [this](const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
+                    if (redirect_)
+                        excessiveSlashRemover(req, std::move(callback));
+                    else
+                        excessiveSlashRemoverForward(req, std::move(callback));
                 });
             break;
         }
