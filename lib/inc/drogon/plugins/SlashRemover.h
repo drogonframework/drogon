@@ -34,7 +34,9 @@ example.com/ -> example.com
         "remove_trailing_slashes": true,
         // If true, it removes all duplicate slashes, e.g.
 example.com///home -> example.com/home
-        "remove_duplicate_slashes": true
+        "remove_duplicate_slashes": true,
+                // If true, redirects the request, otherwise forwards
+internally. "redirect": true
      }
   }
   @endcode
@@ -52,7 +54,6 @@ class DROGON_EXPORT SlashRemover : public drogon::Plugin<SlashRemover>
     void shutdown() override;
 
   private:
-    bool trailingSlashes_{true};
-    bool duplicateSlashes_{true};
+    bool trailingSlashes_{true}, duplicateSlashes_{true}, redirect_{true};
 };
 }  // namespace drogon::plugin

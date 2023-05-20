@@ -54,6 +54,15 @@ static void trailingSlashRemover(
     removeTrailingSlashes(redirectedPath);
     callback(HttpResponse::newRedirectionResponse(redirectedPath));
 }
+static void trailingSlashRemoverForward(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback)
+{
+    string redirectedPath = req->path();
+    removeTrailingSlashes(redirectedPath);
+    req->setPath(redirectedPath);
+    app().forward(req, std::move(callback));
+}
 static void duplicateSlashRemover(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback)
@@ -61,6 +70,15 @@ static void duplicateSlashRemover(
     string redirectedPath = req->path();
     removeDuplicateSlashes(redirectedPath);
     callback(HttpResponse::newRedirectionResponse(redirectedPath));
+}
+static void duplicateSlashRemoverForward(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback)
+{
+    string redirectedPath = req->path();
+    removeDuplicateSlashes(redirectedPath);
+    req->setPath(redirectedPath);
+    app().forward(req, std::move(callback));
 }
 static void excessiveSlashRemover(
     const HttpRequestPtr& req,
@@ -70,20 +88,33 @@ static void excessiveSlashRemover(
     removeExcessiveSlashes(redirectedPath);
     callback(HttpResponse::newRedirectionResponse(redirectedPath));
 }
+static void excessiveSlashRemoverForward(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback)
+{
+    string redirectedPath = req->path();
+    removeExcessiveSlashes(redirectedPath);
+    req->setPath(redirectedPath);
+    app().forward(req, std::move(callback));
+}
 
 void SlashRemover::initAndStart(const Json::Value& config)
 {
     trailingSlashes_ = config.get("remove_trailing_slashes", true).asBool();
     duplicateSlashes_ = config.get("remove_duplicate_slashes", true).asBool();
+    redirect_ = config.get("redirect", true).asBool();
     switch ((trailingSlashes_ << 0) | (duplicateSlashes_ << 1))
     {
         case 1 << 0:
         {
             app().registerHandlerViaRegex(
                 TRAILING_SLASH_REGEX,
-                [](const HttpRequestPtr& req,
+                redirect_ ? [](const HttpRequestPtr& req,
                    std::function<void(const HttpResponsePtr&)>&& callback) {
                     trailingSlashRemover(req, std::move(callback));
+                } : [](const HttpRequestPtr& req,
+                   std::function<void(const HttpResponsePtr&)>&& callback) {
+                    trailingSlashRemoverForward(req, std::move(callback));
                 });
             break;
         }
@@ -91,9 +122,12 @@ void SlashRemover::initAndStart(const Json::Value& config)
         {
             app().registerHandlerViaRegex(
                 DUPLICATE_SLASH_REGEX,
-                [](const HttpRequestPtr& req,
+                redirect_ ? [](const HttpRequestPtr& req,
                    std::function<void(const HttpResponsePtr&)>&& callback) {
                     duplicateSlashRemover(req, std::move(callback));
+                } : [](const HttpRequestPtr& req,
+                   std::function<void(const HttpResponsePtr&)>&& callback) {
+                    duplicateSlashRemoverForward(req, std::move(callback));
                 });
             break;
         }
@@ -101,9 +135,12 @@ void SlashRemover::initAndStart(const Json::Value& config)
         {
             app().registerHandlerViaRegex(
                 TRAILING_SLASH_REGEX "|" DUPLICATE_SLASH_REGEX,
-                [](const HttpRequestPtr& req,
+                redirect_ ? [](const HttpRequestPtr& req,
                    std::function<void(const HttpResponsePtr&)>&& callback) {
                     excessiveSlashRemover(req, std::move(callback));
+                } : [](const HttpRequestPtr& req,
+                   std::function<void(const HttpResponsePtr&)>&& callback) {
+                    excessiveSlashRemoverForward(req, std::move(callback));
                 });
             break;
         }
