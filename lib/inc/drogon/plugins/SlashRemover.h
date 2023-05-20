@@ -35,8 +35,9 @@ example.com/ -> example.com
         // If true, it removes all duplicate slashes, e.g.
 example.com///home -> example.com/home
         "remove_duplicate_slashes": true,
-                // If true, redirects the request, otherwise forwards
-internally. "redirect": true
+        // If true, redirects the request, otherwise forwards
+internally.
+        "redirect": true
      }
   }
   @endcode
