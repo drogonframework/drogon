@@ -8,8 +8,8 @@ using namespace drogon;
 using namespace plugin;
 using std::string;
 
-#define TRAILING_SLASH_REGEX "^.+\\/$"
-#define DUPLICATE_SLASH_REGEX "^.+\\/{2}.*$"
+#define TRAILING_SLASH_REGEX ".+\\/$"
+#define DUPLICATE_SLASH_REGEX ".*\\/{2}.*"
 
 static bool removeTrailingSlashes(string& url)
 {
