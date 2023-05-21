@@ -46,107 +46,46 @@ static void removeExcessiveSlashes(string& url)
     removeDuplicateSlashes(url);
 }
 
-static void trailingSlashRemover(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback)
+static void redirect(const HttpRequestPtr& req,
+                     std::function<void(const HttpResponsePtr&)>&& callback,
+                     const string& newPath)
 {
-    string redirectedPath = req->path();
-    removeTrailingSlashes(redirectedPath);
-    callback(HttpResponse::newRedirectionResponse(redirectedPath));
+    callback(HttpResponse::newRedirectionResponse(newPath));
 }
-static void trailingSlashRemoverForward(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback)
+static void forward(const HttpRequestPtr& req,
+                    std::function<void(const HttpResponsePtr&)>&& callback,
+                    const string& newPath)
 {
-    string redirectedPath = req->path();
-    removeTrailingSlashes(redirectedPath);
-    req->setPath(redirectedPath);
+    req->setPath(newPath);
     app().forward(req, std::move(callback));
 }
-static void duplicateSlashRemover(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback)
-{
-    string redirectedPath = req->path();
-    removeDuplicateSlashes(redirectedPath);
-    callback(HttpResponse::newRedirectionResponse(redirectedPath));
-}
-static void duplicateSlashRemoverForward(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback)
-{
-    string redirectedPath = req->path();
-    removeDuplicateSlashes(redirectedPath);
-    req->setPath(redirectedPath);
-    app().forward(req, std::move(callback));
-}
-static void excessiveSlashRemover(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback)
-{
-    string redirectedPath = req->path();
-    removeExcessiveSlashes(redirectedPath);
-    callback(HttpResponse::newRedirectionResponse(redirectedPath));
-}
-static void excessiveSlashRemoverForward(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback)
-{
-    string redirectedPath = req->path();
-    removeExcessiveSlashes(redirectedPath);
-    req->setPath(redirectedPath);
-    app().forward(req, std::move(callback));
-}
+
+static void (*removerFunctions[])(string&) = {
+    (void (*)(string&))removeTrailingSlashes,
+    removeDuplicateSlashes,
+    removeExcessiveSlashes,
+};
 
 void SlashRemover::initAndStart(const Json::Value& config)
 {
     trailingSlashes_ = config.get("remove_trailing_slashes", true).asBool();
     duplicateSlashes_ = config.get("remove_duplicate_slashes", true).asBool();
     redirect_ = config.get("redirect", true).asBool();
-    switch ((trailingSlashes_ << 0) | (duplicateSlashes_ << 1))
-    {
-        case 1 << 0:
-        {
-            app().registerHandlerViaRegex(
-                TRAILING_SLASH_REGEX,
-                [this](const HttpRequestPtr& req,
-                       std::function<void(const HttpResponsePtr&)>&& callback) {
-                    if (redirect_)
-                        trailingSlashRemover(req, std::move(callback));
-                    else
-                        trailingSlashRemoverForward(req, std::move(callback));
-                });
-            break;
-        }
-        case 1 << 1:
-        {
-            app().registerHandlerViaRegex(
-                DUPLICATE_SLASH_REGEX,
-                [this](const HttpRequestPtr& req,
-                       std::function<void(const HttpResponsePtr&)>&& callback) {
-                    if (redirect_)
-                        duplicateSlashRemover(req, std::move(callback));
-                    else
-                        duplicateSlashRemoverForward(req, std::move(callback));
-                });
-            break;
-        }
-        case (1 << 0) | (1 << 1):
-        {
-            app().registerHandlerViaRegex(
-                TRAILING_SLASH_REGEX "|" DUPLICATE_SLASH_REGEX,
-                [this](const HttpRequestPtr& req,
-                       std::function<void(const HttpResponsePtr&)>&& callback) {
-                    if (redirect_)
-                        excessiveSlashRemover(req, std::move(callback));
-                    else
-                        excessiveSlashRemoverForward(req, std::move(callback));
-                });
-            break;
-        }
-        default:
-            return;
-    }
+    if (!trailingSlashes_ && !duplicateSlashes_)
+        return;
+    const uint8_t removerFunctionIndex =
+        ((trailingSlashes_ << 0) | (duplicateSlashes_ << 1)) - 1;
+    const auto removerFunction = removerFunctions[removerFunctionIndex];
+    const auto actionFunction = redirect_ ? redirect : forward;
+    app().registerHandlerViaRegex(
+        TRAILING_SLASH_REGEX,
+        [removerFunction, actionFunction](
+            const HttpRequestPtr& req,
+            std::function<void(const HttpResponsePtr&)>&& callback) {
+            string newPath = req->path();
+            removerFunction(newPath);
+            actionFunction(req, std::move(callback), newPath);
+        });
 }
 
 void SlashRemover::shutdown()
