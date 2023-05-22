@@ -14,6 +14,7 @@ using namespace drogon_ctl;
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
+#include <drogon/orm/BaseBuilder.h>
 #ifdef __cpp_impl_coroutine
 #include <drogon/orm/CoroMapper.h>
 #endif
@@ -303,6 +304,10 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 %>
   private:
     friend drogon::orm::Mapper<[[className]]>;
+    friend drogon::orm::BaseBuilder<[[className]], true, true>;
+    friend drogon::orm::BaseBuilder<[[className]], true, false>;
+    friend drogon::orm::BaseBuilder<[[className]], false, true>;
+    friend drogon::orm::BaseBuilder<[[className]], false, false>;
 #ifdef __cpp_impl_coroutine
     friend drogon::orm::CoroMapper<[[className]]>;
 #endif
