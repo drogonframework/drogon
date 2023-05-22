@@ -688,6 +688,7 @@ install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS
     orm_lib/inc/drogon/orm/ArrayParser.h
+    orm_lib/inc/drogon/orm/BaseBuilder.h
     orm_lib/inc/drogon/orm/Criteria.h
     orm_lib/inc/drogon/orm/DbClient.h
     orm_lib/inc/drogon/orm/DbListener.h
