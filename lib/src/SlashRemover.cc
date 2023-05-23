@@ -25,8 +25,11 @@ static inline bool removeTrailingSlashes(string& url)
 }
 static inline void removeDuplicateSlashes(string& url)
 {
-    size_t a = 0;
-    for (size_t b = 1, len = url.size(); b < len; ++b)
+    size_t a = 1, len = url.size();
+    for (; a < len && (url[a - 1] != '/' || url[a] != '/'); ++a)
+    {
+    }
+    for (size_t b = --a + 1; b < len; ++b)
     {
         const char c = url[b];
         if (c != '/' || url[a] != '/')
