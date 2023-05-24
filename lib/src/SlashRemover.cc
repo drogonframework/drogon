@@ -11,6 +11,13 @@ using std::string;
 #define TRAILING_SLASH_REGEX ".+\\/$"
 #define DUPLICATE_SLASH_REGEX ".*\\/{2,}.*"
 
+enum removeSlashMode : uint8_t
+{
+    trailing = 1 << 0,
+    duplicate = 1 << 1,
+    both = trailing | duplicate,
+};
+
 inline constexpr const char* regexes[] = {
     TRAILING_SLASH_REGEX,
     DUPLICATE_SLASH_REGEX,
@@ -33,21 +40,22 @@ static inline void removeDuplicateSlashes(string& url)
 {
     size_t a = 1, len = url.size();
     for (; a < len && (url[a - 1] != '/' || url[a] != '/'); ++a)
-    {
-    }
-    for (size_t b = --a + 1; b < len; ++b)
+        ;
+    for (size_t b = a--; b < len; ++b)
     {
         const char c = url[b];
         if (c != '/' || url[a] != '/')
-            url[++a] = c;
+        {
+            ++a;
+            url[a] = c;
+        }
     }
     url.resize(a + 1);
 }
 static inline void removeExcessiveSlashes(string& url)
 {
-    if (url[url.size() - 1] ==
-            '/' &&  // This check is so we don't search if there is no trailing
-                    // slash to begin with
+    if (url.back() == '/' &&  // This check is so we don't search if there is no
+                              // trailing slash to begin with
         removeTrailingSlashes(
             url))  // If it is root path, we don't need to check for duplicates
         return;
@@ -60,25 +68,25 @@ void SlashRemover::initAndStart(const Json::Value& config)
     trailingSlashes_ = config.get("remove_trailing_slashes", true).asBool();
     duplicateSlashes_ = config.get("remove_duplicate_slashes", true).asBool();
     redirect_ = config.get("redirect", true).asBool();
-    const uint8_t removerFunctionMask =
-        (trailingSlashes_ << 0) | (duplicateSlashes_ << 1);
-    if (!removerFunctionMask)
+    const uint8_t removeMode =
+        (trailingSlashes_ * trailing) | (duplicateSlashes_ * duplicate);
+    if (!removeMode)
         return;
     app().registerHandlerViaRegex(
-        [removerFunctionMask,
         regexes[removeMode - 1],
+        [removeMode,
          this](const HttpRequestPtr& req,
                std::function<void(const HttpResponsePtr&)>&& callback) {
             string newPath = req->path();
-            switch (removerFunctionMask)
+            switch (removeMode)
             {
-                case 1 << 0:
+                case trailing:
                     removeTrailingSlashes(newPath);
                     break;
-                case 1 << 1:
+                case duplicate:
                     removeDuplicateSlashes(newPath);
                     break;
-                case (1 << 0) | (1 << 1):
+                case both:
                 default:
                     removeExcessiveSlashes(newPath);
                     break;
