@@ -25,7 +25,7 @@ set(UNITTEST_SOURCES
     unittests/StringOpsTest.cc
     unittests/ControllerCreationTest.cc
     unittests/MultiPartParserTest.cc
-	unittests/SlashRemoverTest.cc)
+    unittests/SlashRemoverTest.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cc)
