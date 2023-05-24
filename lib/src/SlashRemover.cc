@@ -11,6 +11,12 @@ using std::string;
 #define TRAILING_SLASH_REGEX ".+\\/$"
 #define DUPLICATE_SLASH_REGEX ".*\\/{2,}.*"
 
+inline constexpr const char* regexes[] = {
+    TRAILING_SLASH_REGEX,
+    DUPLICATE_SLASH_REGEX,
+    TRAILING_SLASH_REGEX "|" DUPLICATE_SLASH_REGEX,
+};
+
 static inline bool removeTrailingSlashes(string& url)
 {
     // If only contains '/', it will return -1, and added with 1 it will be 0,
@@ -59,8 +65,8 @@ void SlashRemover::initAndStart(const Json::Value& config)
     if (!removerFunctionMask)
         return;
     app().registerHandlerViaRegex(
-        TRAILING_SLASH_REGEX,
         [removerFunctionMask,
+        regexes[removeMode - 1],
          this](const HttpRequestPtr& req,
                std::function<void(const HttpResponsePtr&)>&& callback) {
             string newPath = req->path();
