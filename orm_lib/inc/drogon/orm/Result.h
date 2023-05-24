@@ -60,6 +60,7 @@ class DROGON_EXPORT Result
     explicit Result(ResultImplPtr ptr) : resultPtr_(std::move(ptr))
     {
     }
+    Result() noexcept = default;
     Result(const Result &r) noexcept = default;
     Result(Result &&) noexcept = default;
     Result &operator=(const Result &r) noexcept;
