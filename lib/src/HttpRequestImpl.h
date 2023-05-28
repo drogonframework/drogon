@@ -60,6 +60,7 @@ class HttpRequestImpl : public HttpRequest
         cookies_.clear();
         flagForParsingParameters_ = false;
         path_.clear();
+        originalPath_.clear();
         pathEncode_ = true;
         matchedPathPattern_ = "";
         query_.clear();
@@ -121,6 +122,7 @@ class HttpRequestImpl : public HttpRequest
     {
         if (utils::needUrlDecoding(start, end))
         {
+            originalPath_.append(start, end);
             path_ = utils::urlDecode(start, end);
         }
         else
@@ -160,6 +162,11 @@ class HttpRequestImpl : public HttpRequest
     const std::string &path() const override
     {
         return path_;
+    }
+
+    const std::string &getOriginalPath() const override
+    {
+        return originalPath_.empty() ? path_ : originalPath_;
     }
 
     void setQuery(const char *start, const char *end)
@@ -555,6 +562,7 @@ class HttpRequestImpl : public HttpRequest
     HttpMethod method_{Invalid};
     Version version_{Version::kUnknown};
     std::string path_;
+    std::string originalPath_;
     bool pathEncode_{true};
     string_view matchedPathPattern_{""};
     std::string query_;
