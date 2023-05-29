@@ -31,6 +31,9 @@ using std::string_view;
 using boost::string_view;
 #endif
 }  // namespace drogon
+
+#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+#else
 namespace trantor
 {
 inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
@@ -39,6 +42,7 @@ inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
     return ls;
 }
 }  // namespace trantor
+#endif
 
 #if __cplusplus < 201703L && !(defined _MSC_VER && _MSC_VER > 1900)
 namespace drogon

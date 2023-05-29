@@ -3,6 +3,11 @@
 #include <future>
 #include <iostream>
 
+#ifdef __linux__
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#endif
+
 using namespace drogon;
 
 int nth_resp = 0;
@@ -12,6 +17,28 @@ int main()
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     {
         auto client = HttpClient::newHttpClient("http://www.baidu.com");
+        client->setSockOptCallback([](int fd) {
+            std::cout << "setSockOptCallback" << std::endl;
+#ifdef __linux__
+            int optval = 10;
+            ::setsockopt(fd,
+                         SOL_TCP,
+                         TCP_KEEPCNT,
+                         &optval,
+                         static_cast<socklen_t>(sizeof optval));
+            ::setsockopt(fd,
+                         SOL_TCP,
+                         TCP_KEEPIDLE,
+                         &optval,
+                         static_cast<socklen_t>(sizeof optval));
+            ::setsockopt(fd,
+                         SOL_TCP,
+                         TCP_KEEPINTVL,
+                         &optval,
+                         static_cast<socklen_t>(sizeof optval));
+#endif
+        });
+
         auto req = HttpRequest::newHttpRequest();
         req->setMethod(drogon::Get);
         req->setPath("/s");

@@ -163,6 +163,17 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     }
 #endif
 
+    /// Set socket options(before connect)
+    /**
+     * It needs to be called before client->sendRequest()
+     * auto client = HttpClient::newHttpClient("http://www.baidu.com");
+     * client->setSockOptCallback([](int fd) {});
+     * auto req = HttpRequest::newHttpRequest();
+     * client->sendRequest(req, [](ReqResult result, const HttpResponsePtr&
+     * response) {});
+     */
+    virtual void setSockOptCallback(std::function<void(int)> cb) = 0;
+
     /// Set the pipelining depth, which is the number of requests that are not
     /// responding.
     /**
