@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #include <tuple>
 #else
 #include <utility>
@@ -29,7 +29,7 @@ constexpr decltype(auto) apply_impl(F &&f, Tuple &&t, std::index_sequence<I...>)
 
 namespace drogon
 {
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 using std::apply;
 #else
 template <typename F, typename Tuple>

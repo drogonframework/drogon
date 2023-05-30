@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #include <string_view>
 #else
 #include <stdint.h>
@@ -25,12 +25,14 @@
 
 namespace drogon
 {
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 using std::string_view;
 #else
 using boost::string_view;
 #endif
 }  // namespace drogon
+
+#if __cplusplus < 201703L && !(defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 namespace trantor
 {
 inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
@@ -39,8 +41,6 @@ inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
     return ls;
 }
 }  // namespace trantor
-
-#if __cplusplus < 201703L && !(defined _MSC_VER && _MSC_VER > 1900)
 namespace drogon
 {
 #ifndef _MSC_VER
