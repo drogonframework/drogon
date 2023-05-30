@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #include <optional>
 #else
 #include <boost/optional.hpp>
@@ -21,7 +21,7 @@
 
 namespace drogon
 {
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 using std::nullopt;
 using std::optional;
 #else
