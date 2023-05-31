@@ -689,9 +689,19 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/HttpConstraint.h
     lib/inc/drogon/utils/OStringStream.h
-    lib/inc/drogon/utils/Utilities.h)
+    lib/inc/drogon/utils/Utilities.h
+    lib/inc/drogon/utils/monitoring.h)
 install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
+
+set(DROGON_MONITORING_HEADERS
+    lib/inc/drogon/monitoring/Counter.h
+    lib/inc/drogon/monitoring/Metric.h
+    lib/inc/drogon/monitoring/Registry.h
+    lib/inc/drogon/monitoring/Collector.h
+    lib/inc/drogon/monitoring/Sample.h)
+install(FILES ${DROGON_MONITORING_HEADERS}
+    DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/monitoring)
 
 set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/Plugin.h
