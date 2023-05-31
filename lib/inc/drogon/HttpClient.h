@@ -163,14 +163,18 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     }
 #endif
 
-    /// Set socket options(before connect)
+    /// Set socket options(before connecting)
     /**
-     * It needs to be called before client->sendRequest()
-     * auto client = HttpClient::newHttpClient("http://www.baidu.com");
-     * client->setSockOptCallback([](int fd) {});
-     * auto req = HttpRequest::newHttpRequest();
-     * client->sendRequest(req, [](ReqResult result, const HttpResponsePtr&
-     * response) {});
+     * @brief Set the callback which is called before connecting to the
+     * server. The callback is used to set socket options on the socket fd.
+     *
+     * @code
+       auto client = HttpClient::newHttpClient("http://www.baidu.com");
+       client->setSockOptCallback([](int fd) {});
+       auto req = HttpRequest::newHttpRequest();
+       client->sendRequest(req, [](ReqResult result, const HttpResponsePtr&
+       response) {});
+       @endcode
      */
     virtual void setSockOptCallback(std::function<void(int)> cb) = 0;
 
@@ -290,7 +294,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * @note this method has no effect if the HTTP client is communicating via
      * unencrypted HTTP
      * @code
-     * addSSLConfigs({{"-dhparam", "/path/to/dhparam"}, {"-strict", ""}});
+       addSSLConfigs({{"-dhparam", "/path/to/dhparam"}, {"-strict", ""}});
      * @endcode
      */
     virtual void addSSLConfigs(
