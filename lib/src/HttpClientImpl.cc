@@ -53,7 +53,13 @@ void HttpClientImpl::createTcpClient()
 
     auto thisPtr = shared_from_this();
     std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
-
+    tcpClientPtr_->setSockOptCallback([weakPtr](int fd) {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        if (thisPtr->sockOptCallback_)
+            thisPtr->sockOptCallback_(fd);
+    });
     tcpClientPtr_->setConnectionCallback(
         [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
             auto thisPtr = weakPtr.lock();
