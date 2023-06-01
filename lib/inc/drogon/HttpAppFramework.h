@@ -979,7 +979,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setLogPath(
         const std::string &logPath,
         const std::string &logfileBaseName = "",
-        size_t logSize = 100000000) = 0;
+        size_t logSize = 100000000,
+        size_t maxFiles = 0) = 0;
 
     /// Set the log level
     /**

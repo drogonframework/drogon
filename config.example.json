@@ -218,6 +218,9 @@
             //log_size_limit: 100000000 bytes by default,
             //When the log file size reaches "log_size_limit", the log file is switched.
             "log_size_limit": 100000000,
+            //max_files: 0 by default,
+            //When the number of old log files exceeds "max_files", the oldest file will be deleted. 0 means never delete.
+            "max_files": 0,
             //log_level: "DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
             //The TRACE level is only valid when built in DEBUG mode.
             "log_level": "DEBUG",

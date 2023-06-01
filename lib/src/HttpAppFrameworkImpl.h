@@ -311,7 +311,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
     HttpAppFramework &setLogPath(const std::string &logPath,
                                  const std::string &logfileBaseName,
-                                 size_t logfileSize) override;
+                                 size_t logfileSize,
+                                 size_t maxFiles) override;
     HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) override;
     HttpAppFramework &setLogLocalTime(bool on) override;
     HttpAppFramework &enableSendfile(bool sendFile) override
@@ -676,6 +677,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::string logPath_;
     std::string logfileBaseName_;
     size_t logfileSize_{100000000};
+    size_t logfileMaxNum_{0};
     size_t keepaliveRequestsNumber_{0};
     size_t pipeliningRequestsNumber_{0};
     size_t jsonStackLimit_{1000};
