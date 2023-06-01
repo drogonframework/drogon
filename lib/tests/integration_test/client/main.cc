@@ -1049,6 +1049,14 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
 #if defined(__cpp_impl_coroutine)
     async_run([client, TEST_CTX]() -> Task<> {
         // Test coroutine requests
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/api/v1/corotest/get");
+            auto [result, resp] = co_await client->sendRequestCoro<
+                std::pair<drogon::ReqResult, drogon::HttpResponsePtr>>(req);
+            CHECK(drogon::to_string_view(result) == "OK");
+            CHECK(resp->getBody() == "DEADBEEF");
+        }
         try
         {
             auto req = HttpRequest::newHttpRequest();

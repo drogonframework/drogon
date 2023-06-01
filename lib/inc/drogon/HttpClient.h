@@ -37,7 +37,8 @@ using HttpClientPtr = std::shared_ptr<HttpClient>;
 #ifdef __cpp_impl_coroutine
 namespace internal
 {
-struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
+template <typename T>
+struct HttpRespAwaiter : public CallbackAwaiter<T>
 {
     HttpRespAwaiter(HttpClient *client, HttpRequestPtr req, double timeout)
         : client_(client), req_(std::move(req)), timeout_(timeout)
@@ -156,10 +157,13 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      *
      * @return internal::HttpRespAwaiter. Await on it to get the response
      */
-    internal::HttpRespAwaiter sendRequestCoro(HttpRequestPtr req,
-                                              double timeout = 0)
+    template <typename T = HttpResponsePtr>
+        requires std::is_same_v<T, HttpResponsePtr> ||
+        std::is_same_v<T, std::pair<ReqResult, HttpResponsePtr>>
+            internal::HttpRespAwaiter<T> sendRequestCoro(HttpRequestPtr req,
+                                                         double timeout = 0)
     {
-        return internal::HttpRespAwaiter(this, std::move(req), timeout);
+        return internal::HttpRespAwaiter<T>(this, std::move(req), timeout);
     }
 #endif
 
@@ -346,23 +350,33 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 };
 
 #ifdef __cpp_impl_coroutine
-inline void internal::HttpRespAwaiter::await_suspend(
+template <typename T>
+inline void internal::HttpRespAwaiter<T>::await_suspend(
     std::coroutine_handle<> handle)
 {
     assert(client_ != nullptr);
     assert(req_ != nullptr);
     client_->sendRequest(
         req_,
-        [handle = std::move(handle), this](ReqResult result,
-                                           const HttpResponsePtr &resp) {
-            if (result == ReqResult::Ok)
-                setValue(resp);
+        [handle = std::move(handle),
+         this](ReqResult result, const HttpResponsePtr &http_response_ptr) {
+            if constexpr (std::is_same_v<T, HttpResponsePtr>)
+            {
+                if (result == ReqResult::Ok)
+                {
+                    this->setValue(http_response_ptr);
+                }
+                else
+                {
+                    std::stringstream ss;
+                    ss << result;
+                    this->setException(
+                        std::make_exception_ptr(std::runtime_error(ss.str())));
+                }
+            }
             else
             {
-                std::stringstream ss;
-                ss << result;
-                setException(
-                    std::make_exception_ptr(std::runtime_error(ss.str())));
+                this->setValue(std::make_pair(result, http_response_ptr));
             }
             handle.resume();
         },
