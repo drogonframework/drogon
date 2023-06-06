@@ -342,7 +342,7 @@ inline void internal::RedisTransactionAwaiter::await_suspend(
 {
     assert(client_ != nullptr);
     client_->newTransactionAsync(
-        [this, &handle](const std::shared_ptr<RedisTransaction> &transaction) {
+        [this, handle](const std::shared_ptr<RedisTransaction> &transaction) {
             if (transaction == nullptr)
                 setException(std::make_exception_ptr(RedisException(
                     RedisErrorCode::kTimeout,
