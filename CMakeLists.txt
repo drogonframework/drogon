@@ -695,13 +695,13 @@ install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
 
 set(DROGON_MONITORING_HEADERS
-    lib/inc/drogon/monitoring/Counter.h
-    lib/inc/drogon/monitoring/Metric.h
-    lib/inc/drogon/monitoring/Registry.h
-    lib/inc/drogon/monitoring/Collector.h
-    lib/inc/drogon/monitoring/Sample.h
-    lib/inc/drogon/monitoring/Gauge.h
-    lib/inc/drogon/monitoring/Histogram.h)
+    lib/inc/drogon/utils/monitoring/Counter.h
+    lib/inc/drogon/utils/monitoring/Metric.h
+    lib/inc/drogon/utils/monitoring/Registry.h
+    lib/inc/drogon/utils/monitoring/Collector.h
+    lib/inc/drogon/utils/monitoring/Sample.h
+    lib/inc/drogon/utils/monitoring/Gauge.h
+    lib/inc/drogon/utils/monitoring/Histogram.h)
 install(FILES ${DROGON_MONITORING_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/monitoring)
 
