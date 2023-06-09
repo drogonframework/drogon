@@ -427,7 +427,8 @@ HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(Json::Value &&data)
 HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     const std::string &logPath,
     const std::string &logfileBaseName,
-    size_t logfileSize)
+    size_t logfileSize,
+    size_t maxFiles)
 {
     if (logPath.empty())
         return *this;
@@ -446,6 +447,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     logPath_ = logPath;
     logfileBaseName_ = logfileBaseName;
     logfileSize_ = logfileSize;
+    logfileMaxNum_ = maxFiles;
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setLogLevel(
@@ -1211,6 +1213,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
             asyncFileLoggerPtr_->setFileName(baseName, ".log", logPath_);
             asyncFileLoggerPtr_->startLogging();
             asyncFileLoggerPtr_->setFileSizeLimit(logfileSize_);
+            asyncFileLoggerPtr_->setMaxFiles(logfileMaxNum_);
             trantor::Logger::setOutputFunction(
                 [loggerPtr = asyncFileLoggerPtr_](const char *msg,
                                                   const uint64_t len) {
