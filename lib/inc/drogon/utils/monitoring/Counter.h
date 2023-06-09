@@ -27,7 +27,6 @@ namespace monitoring
 class Counter : public Metric
 {
   public:
-
     Counter(const std::string &name,
             const std::vector<std::string> &labelNames,
             const std::string &labelValues) noexcept(false)
@@ -69,4 +68,3 @@ class Counter : public Metric
 };
 }  // namespace monitoring
 }  // namespace drogon
-

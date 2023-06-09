@@ -699,7 +699,9 @@ set(DROGON_MONITORING_HEADERS
     lib/inc/drogon/monitoring/Metric.h
     lib/inc/drogon/monitoring/Registry.h
     lib/inc/drogon/monitoring/Collector.h
-    lib/inc/drogon/monitoring/Sample.h)
+    lib/inc/drogon/monitoring/Sample.h
+    lib/inc/drogon/monitoring/Gauge.h
+    lib/inc/drogon/monitoring/Histogram.h)
 install(FILES ${DROGON_MONITORING_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/monitoring)
 

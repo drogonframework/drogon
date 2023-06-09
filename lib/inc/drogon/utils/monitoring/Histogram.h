@@ -1,6 +1,6 @@
 /**
  *
- *  CompositeMetric.h
+ *  Histogram.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -32,11 +32,11 @@ class Histogram : public Metric
   public:
     using TimeBucket = T;
     Histogram(const std::string &name,
-                    const std::vector<std::string> &labelNames,
-                    const std::string &labelValues,
-                    const std::chrono::duration<double> &maxAge,
-                    uint64_t timeBucketsCount,
-                    trantor::EventLoop *loop = nullptr) noexcept(false)
+              const std::vector<std::string> &labelNames,
+              const std::string &labelValues,
+              const std::chrono::duration<double> &maxAge,
+              uint64_t timeBucketsCount,
+              trantor::EventLoop *loop = nullptr) noexcept(false)
         : Metric(name, labelNames, labelValues),
           timeBucketCount_(timeBucketsCount)
     {
