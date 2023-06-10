@@ -5,33 +5,39 @@ using std::string;
 
 DROGON_TEST(SlashRemoverTest)
 {
-    const string url = "///home//page//", root = "///";
+    const string url = "///home//page//", urlNoTrail = "///home//page",
+                 urlNoDup = "/home/page/", urlNoExcess = "/home/page",
+                 root = "///", rootNoExcess = "/";
 
     string cleanUrl = url;
     removeTrailingSlashes(cleanUrl);
-    CHECK(cleanUrl == "///home//page");
+    CHECK(cleanUrl == urlNoTrail);
 
     cleanUrl = url;
     removeDuplicateSlashes(cleanUrl);
-    CHECK(cleanUrl == "/home/page/");
+    CHECK(cleanUrl == urlNoDup);
 
     cleanUrl = url;
     removeExcessiveSlashes(cleanUrl);
-    CHECK(cleanUrl == "/home/page");
+    CHECK(cleanUrl == urlNoExcess);
 
-    cleanUrl = "///home//page";
+    cleanUrl = urlNoTrail;
     removeExcessiveSlashes(cleanUrl);
-    CHECK(cleanUrl == "/home/page");
+    CHECK(cleanUrl == urlNoExcess);
 
-    cleanUrl = "/home/page/";
+    cleanUrl = urlNoDup;
     removeExcessiveSlashes(cleanUrl);
-    CHECK(cleanUrl == "/home/page");
+    CHECK(cleanUrl == urlNoExcess);
 
     cleanUrl = root;
     removeTrailingSlashes(cleanUrl);
-    CHECK(cleanUrl == "/");
+    CHECK(cleanUrl == rootNoExcess);
 
     cleanUrl = root;
     removeDuplicateSlashes(cleanUrl);
-    CHECK(cleanUrl == "/");
+    CHECK(cleanUrl == rootNoExcess);
+
+    cleanUrl = root;
+    removeExcessiveSlashes(cleanUrl);
+    CHECK(cleanUrl == rootNoExcess);
 }
