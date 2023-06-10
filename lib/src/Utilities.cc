@@ -389,9 +389,11 @@ std::string getUuid()
 
 std::string base64Encode(const unsigned char *bytes_to_encode,
                          unsigned int in_len,
-                         bool url_safe)
+                         bool url_safe,
+                         bool padded)
 {
     std::string ret;
+    ret.reserve(padded ? ((in_len + 3 - 1) / 3) * 4 : (in_len * 8 + 6 - 1) / 6);
     int i = 0;
     unsigned char char_array_3[3];
     unsigned char char_array_4[4];
@@ -431,12 +433,19 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
         for (int j = 0; (j < i + 1); ++j)
             ret += charSet[char_array_4[j]];
 
-        while ((i++ < 3))
-            ret += '=';
+        if (padded)
+            while ((i++ < 3))
+                ret += '=';
     }
     return ret;
 }
 
+std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
+                                 unsigned int in_len,
+                                 bool url_safe)
+{
+    return base64Encode(bytes_to_encode, in_len, url_safe, false);
+}
 std::vector<char> base64DecodeToVector(const std::string &encoded_string)
 {
     auto in_len = encoded_string.size();

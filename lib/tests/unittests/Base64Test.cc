@@ -11,6 +11,16 @@ DROGON_TEST(Base64)
     CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw==");
     CHECK(decoded == in);
 
+    SUBSECTION(Unpadded)
+    {
+        std::string in{"drogon framework"};
+        auto encoded = drogon::utils::base64EncodeUnpadded(
+            (const unsigned char *)in.data(), (unsigned int)in.length());
+        auto decoded = drogon::utils::base64Decode(encoded);
+        CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw");
+        CHECK(decoded == in);
+    }
+
     SUBSECTION(LongString)
     {
         std::string in;
@@ -38,6 +48,16 @@ DROGON_TEST(Base64)
                                         true);
         auto decoded = drogon::utils::base64Decode(encoded);
         CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw==");
+        CHECK(decoded == in);
+    }
+
+    SUBSECTION(UnpaddedURLSafe)
+    {
+        std::string in{"drogon framework"};
+        auto encoded = drogon::utils::base64EncodeUnpadded(
+            (const unsigned char *)in.data(), (unsigned int)in.length(), true);
+        auto decoded = drogon::utils::base64Decode(encoded);
+        CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw");
         CHECK(decoded == in);
     }
 
