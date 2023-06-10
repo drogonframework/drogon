@@ -26,14 +26,13 @@ inline constexpr const char* regexes[] = {
 
 static inline bool removeTrailingSlashes(string& url)
 {
-    // If only contains '/', it will return -1, and added with 1 it will be 0,
-    // hence empty, meaning root
-    url.resize(url.find_last_not_of('/') + 1);
-    if (url.empty())  // Root
+    const auto notSlashIndex = url.find_last_not_of('/');
+    if (notSlashIndex == string::npos)  // Root
     {
-        url = '/';
+        url.resize(1);
         return true;
     }
+    url.resize(notSlashIndex + 1);
     return false;
 }
 static inline void removeDuplicateSlashes(string& url)
