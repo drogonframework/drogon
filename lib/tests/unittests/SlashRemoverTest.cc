@@ -5,19 +5,19 @@ using std::string;
 
 DROGON_TEST(SlashRemoverTest)
 {
-    const string url = "///home//", root = "///";
+    const string url = "///home//page//", root = "///";
 
     string cleanUrl = url;
     removeTrailingSlashes(cleanUrl);
-    CHECK(cleanUrl == "///home");
+    CHECK(cleanUrl == "///home//page");
 
     cleanUrl = url;
     removeDuplicateSlashes(cleanUrl);
-    CHECK(cleanUrl == "/home/");
+    CHECK(cleanUrl == "/home/page/");
 
     cleanUrl = url;
     removeExcessiveSlashes(cleanUrl);
-    CHECK(cleanUrl == "/home");
+    CHECK(cleanUrl == "/home/page");
 
     cleanUrl = root;
     removeTrailingSlashes(cleanUrl);
