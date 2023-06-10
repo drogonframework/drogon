@@ -19,6 +19,14 @@ DROGON_TEST(SlashRemoverTest)
     removeExcessiveSlashes(cleanUrl);
     CHECK(cleanUrl == "/home/page");
 
+    cleanUrl = "///home//page";
+    removeExcessiveSlashes(cleanUrl);
+    CHECK(cleanUrl == "/home/page");
+
+    cleanUrl = "/home/page/";
+    removeExcessiveSlashes(cleanUrl);
+    CHECK(cleanUrl == "/home/page");
+
     cleanUrl = root;
     removeTrailingSlashes(cleanUrl);
     CHECK(cleanUrl == "/");
