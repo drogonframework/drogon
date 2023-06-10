@@ -277,7 +277,8 @@ set(DROGON_SOURCES
     lib/src/drogon_test.cc
     lib/src/ConfigAdapterManager.cc
     lib/src/JsonConfigAdapter.cc
-    lib/src/YamlConfigAdapter.cc)
+    lib/src/YamlConfigAdapter.cc
+    lib/src/Histogram.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h

@@ -13,6 +13,7 @@
  */
 
 #pragma once
+#include <drogon/exports.h>
 #include <drogon/utils/monitoring/Metric.h>
 #include <drogon/utils/string_view.h>
 #include <trantor/net/EventLoopThread.h>
@@ -26,19 +27,26 @@ namespace monitoring
 /**
  * This class is used to collect samples for a counter metric.
  * */
-template <typename T>
-class Histogram : public Metric
+class DROGON_EXPORT Histogram : public Metric
 {
   public:
-    using TimeBucket = T;
+    struct TimeBucket
+    {
+        std::vector<uint64_t> buckets;
+        uint64_t count{0};
+        double sum{0};
+    };
     Histogram(const std::string &name,
               const std::vector<std::string> &labelNames,
               const std::string &labelValues,
+              const std::vector<double> &bucketBoundaries,
               const std::chrono::duration<double> &maxAge,
               uint64_t timeBucketsCount,
               trantor::EventLoop *loop = nullptr) noexcept(false)
         : Metric(name, labelNames, labelValues),
-          timeBucketCount_(timeBucketsCount)
+          maxAge_(maxAge),
+          timeBucketCount_(timeBucketsCount),
+          bucketBoundaries_(bucketBoundaries)
     {
         if (loop == nullptr)
         {
@@ -57,11 +65,20 @@ class Histogram : public Metric
                 throw std::runtime_error(
                     "timeBucketsCount must be greater than 0");
             }
-            timerId_ = loopPtr_->runEvery(maxAge / timeBucketsCount,
-                                          [this]() { rotateTimeBuckets(); });
+        }
+        timeBuckets_.emplace_back();
+        // check the bucket boundaries are sorted
+        for (size_t i = 1; i < bucketBoundaries.size(); i++)
+        {
+            if (bucketBoundaries[i] <= bucketBoundaries[i - 1])
+            {
+                throw std::runtime_error(
+                    "The bucket boundaries must be sorted");
+            }
         }
     }
-    virtual void observe(double value) = 0;
+    void observe(double value);
+    std::vector<Sample> collect() const override;
     ~Histogram() override
     {
         if (timerId_ != trantor::InvalidTimerId)
@@ -69,29 +86,29 @@ class Histogram : public Metric
             loopPtr_->invalidateTimer(timerId_);
         }
     }
-
-  protected:
-    double sum_{0};
-    uint64_t count_{0};
-    virtual void observe(double value, TimeBucket &timeBucket) = 0;
-    virtual T newTimeBucket() = 0;
+    static string_view type()
+    {
+        return "histogram";
+    }
 
   private:
     std::deque<TimeBucket> timeBuckets_;
     std::unique_ptr<trantor::EventLoopThread> loopThreadPtr_;
     trantor::EventLoop *loopPtr_{nullptr};
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
+    std::chrono::duration<double> maxAge_;
     trantor::TimerId timerId_{trantor::InvalidTimerId};
     size_t timeBucketCount_{0};
+    const std::vector<double> bucketBoundaries_;
     void rotateTimeBuckets()
     {
         std::lock_guard<std::mutex> guard(mutex_);
-        timeBuckets_.emplace_back(newTimeBucket());
+        TimeBucket bucket;
+        bucket.buckets.resize(bucketBoundaries_.size() + 1);
+        timeBuckets_.emplace_back(std::move(bucket));
         if (timeBuckets_.size() > timeBucketCount_)
         {
             auto expiredTimeBucket = timeBuckets_.front();
-            sum_ -= expiredTimeBucket.sum_;
-            count_ -= expiredTimeBucket.count_;
             timeBuckets_.erase(timeBuckets_.begin());
         }
     }

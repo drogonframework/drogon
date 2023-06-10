@@ -27,7 +27,7 @@ namespace monitoring
 /**
  * This class is used to collect samples for a metric.
  * */
-class Metric : std::enable_shared_from_this<Metric>
+class Metric : public std::enable_shared_from_this<Metric>
 {
   public:
     /**
