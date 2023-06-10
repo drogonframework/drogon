@@ -101,7 +101,14 @@ DROGON_EXPORT std::string getUuid();
 /// Encode the string to base64 format.
 DROGON_EXPORT std::string base64Encode(const unsigned char *bytes_to_encode,
                                        unsigned int in_len,
-                                       bool url_safe = false);
+                                       bool url_safe = false,
+                                       bool padded = true);
+
+/// Encode the string to base64 format with no padding.
+DROGON_EXPORT std::string base64EncodeUnpadded(
+    const unsigned char *bytes_to_encode,
+    unsigned int in_len,
+    bool url_safe = false);
 
 /// Decode the base64 format string.
 DROGON_EXPORT std::string base64Decode(const std::string &encoded_string);
