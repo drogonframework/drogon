@@ -387,13 +387,18 @@ std::string getUuid()
 #endif
 }
 
+size_t base64EncodedLength(unsigned int in_len, bool padded)
+{
+    return padded ? ((in_len + 3 - 1) / 3) * 4 : (in_len * 8 + 6 - 1) / 6;
+}
+
 std::string base64Encode(const unsigned char *bytes_to_encode,
                          unsigned int in_len,
                          bool url_safe,
                          bool padded)
 {
     std::string ret;
-    ret.reserve(padded ? ((in_len + 3 - 1) / 3) * 4 : (in_len * 8 + 6 - 1) / 6);
+    ret.reserve(base64EncodedLength(in_len, padded));
     int i = 0;
     unsigned char char_array_3[3];
     unsigned char char_array_4[4];
@@ -430,11 +435,11 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
             ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
         char_array_4[3] = char_array_3[2] & 0x3f;
 
-        for (int j = 0; (j < i + 1); ++j)
+        for (int j = 0; (j <= i); ++j)
             ret += charSet[char_array_4[j]];
 
         if (padded)
-            while ((i++ < 3))
+            while ((++i < 4))
                 ret += '=';
     }
     return ret;
@@ -446,6 +451,12 @@ std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
 {
     return base64Encode(bytes_to_encode, in_len, url_safe, false);
 }
+
+size_t base64DecodedLength(unsigned int in_len, uint8_t padding)
+{
+    return ((in_len - padding) * 3) / 4;
+}
+
 std::vector<char> base64DecodeToVector(const std::string &encoded_string)
 {
     auto in_len = encoded_string.size();
@@ -453,7 +464,8 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
     int in_{0};
     char char_array_4[4], char_array_3[3];
     std::vector<char> ret;
-    ret.reserve(in_len);
+    ret.reserve(base64DecodedLength(
+        in_len, in_len - (encoded_string.find_last_not_of('=') + 1)));
 
     while (in_len-- && (encoded_string[in_] != '=') &&
            isBase64(encoded_string[in_]))
@@ -495,7 +507,8 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
             ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
         char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-        for (int j = 0; (j < i - 1); ++j)
+        --i;
+        for (int j = 0; (j < i); ++j)
             ret.push_back(char_array_3[j]);
     }
 
@@ -509,6 +522,8 @@ std::string base64Decode(const std::string &encoded_string)
     int in_{0};
     unsigned char char_array_4[4], char_array_3[3];
     std::string ret;
+    ret.reserve(base64DecodedLength(
+        in_len, in_len - (encoded_string.find_last_not_of('=') + 1)));
 
     while (in_len-- && (encoded_string[in_] != '=') &&
            isBase64(encoded_string[in_]))
@@ -549,7 +564,8 @@ std::string base64Decode(const std::string &encoded_string)
             ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
         char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-        for (int j = 0; (j < i - 1); ++j)
+        --i;
+        for (int j = 0; (j < i); ++j)
             ret += char_array_3[j];
     }
 
