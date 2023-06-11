@@ -122,9 +122,11 @@ DROGON_EXPORT size_t base64DecodedLength(unsigned int in_len,
                                          uint8_t padding = 0);
 
 /// Decode the base64 format string.
-DROGON_EXPORT std::string base64Decode(const std::string &encoded_string);
+DROGON_EXPORT std::string base64Decode(const std::string &encoded_string,
+                                       bool *out_valid = nullptr);
 DROGON_EXPORT std::vector<char> base64DecodeToVector(
-    const std::string &encoded_string);
+    const std::string &encoded_string,
+    bool *out_valid = nullptr);
 
 /// Check if the string need decoding
 DROGON_EXPORT bool needUrlDecoding(const char *begin, const char *end);
