@@ -149,6 +149,14 @@ bool isInteger(const std::string &str)
     return true;
 }
 
+bool isBase64(const std::string &str)
+{
+    for (auto c : str)
+        if (!isBase64(c))
+            return false;
+    return true;
+}
+
 std::string genRandomString(int length)
 {
     static const char char_space[] =
