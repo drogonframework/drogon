@@ -33,6 +33,7 @@ namespace drogon
 {
 class DrObjectBase;
 using DrAllocFunc = std::function<DrObjectBase *()>;
+using DrSharedAllocFunc = std::function<std::shared_ptr<DrObjectBase>()>;
 
 /**
  * @brief A map class which can create DrObjects from names.
@@ -47,7 +48,8 @@ class DROGON_EXPORT DrClassMap
      * @param func The function which can create a new instance of the class.
      */
     static void registerClass(const std::string &className,
-                              const DrAllocFunc &func);
+                              const DrAllocFunc &func,
+                              const DrSharedAllocFunc &sharedFunc = nullptr);
 
     /**
      * @brief Create a new instance of the class named by className
@@ -60,11 +62,9 @@ class DROGON_EXPORT DrClassMap
     /**
      * @brief Get the shared_ptr instance of the class named by className
      */
-    template <typename T>
-    static std::shared_ptr<T> newSharedObject(const std::string &className)
-    {
-        return std::shared_ptr<T>(dynamic_cast<T *>(newObject(className)));
-    }
+    static std::shared_ptr<DrObjectBase> newSharedObject(
+        const std::string &className);
+
     /**
      * @brief Get the singleton object of the class named by className
      *
@@ -137,7 +137,8 @@ class DROGON_EXPORT DrClassMap
     }
 
   protected:
-    static std::unordered_map<std::string, DrAllocFunc> &getMap();
+    static std::unordered_map<std::string,
+                              std::pair<DrAllocFunc, DrSharedAllocFunc>>
+        &getMap();
 };
-
 }  // namespace drogon

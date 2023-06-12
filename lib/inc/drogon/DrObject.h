@@ -102,8 +102,12 @@ class DrObject : public virtual DrObjectBase
                                 void>::type
         registerClass()
         {
-            DrClassMap::registerClass(className(),
-                                      []() -> DrObjectBase * { return new T; });
+            DrClassMap::registerClass(
+                className(),
+                []() -> DrObjectBase * { return new T; },
+                []() -> std::shared_ptr<DrObjectBase> {
+                    return std::make_shared<T>();
+                });
         }
         template <typename D>
         typename std::enable_if<!std::is_default_constructible<D>::value,

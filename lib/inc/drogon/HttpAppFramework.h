@@ -199,7 +199,26 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         return pluginPtr;
     }
 
-    /// Get the plugin object registered in the framework
+    /// Get the shared_ptr plugin object registered in the framework
+    /**
+     * @note
+     * This method is usually called after the framework runs.
+     * Calling this method in the initAndStart() method of plugins is also
+     * valid.
+     */
+    template <typename T>
+    std::shared_ptr<T> getSharedPlugin()
+    {
+        static_assert(IsPlugin<T>::value,
+                      "The Template parameter must be a subclass of "
+                      "PluginBase");
+        assert(isRunning());
+        static auto pluginPtr =
+            std::dynamic_pointer_cast<T>(getSharedPlugin(T::classTypeName()));
+        return pluginPtr;
+    }
+
+    /// @brief the plugin object registered in the framework
     /**
      * @param name is the class name of the plugin.
      *
@@ -209,6 +228,17 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * valid.
      */
     virtual PluginBase *getPlugin(const std::string &name) = 0;
+
+    /**
+     * @brief Get the shared_ptr plugin object registered in the framework
+     *
+     * @note
+     * This method is usually called after the framework runs.
+     * Calling this method in the initAndStart() method of plugins is also
+     * valid.
+     */
+    virtual std::shared_ptr<PluginBase> getSharedPlugin(
+        const std::string &name) = 0;
 
     /* The following is a series of methods of AOP */
 
