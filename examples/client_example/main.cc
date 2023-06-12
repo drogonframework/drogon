@@ -18,7 +18,7 @@ int main()
     {
         auto client = HttpClient::newHttpClient("http://www.baidu.com");
         client->setSockOptCallback([](int fd) {
-            std::cout << "setSockOptCallback" << std::endl;
+            std::cout << "setSockOptCallback:" << fd << std::endl;
 #ifdef __linux__
             int optval = 10;
             ::setsockopt(fd,

@@ -58,6 +58,14 @@ class DROGON_EXPORT DrClassMap
     static DrObjectBase *newObject(const std::string &className);
 
     /**
+     * @brief Get the shared_ptr instance of the class named by className
+     */
+    template <typename T>
+    static std::shared_ptr<T> newSharedObject(const std::string &className)
+    {
+        return std::shared_ptr<T>(dynamic_cast<T *>(newObject(className)));
+    }
+    /**
      * @brief Get the singleton object of the class named by className
      *
      * @param className The name of the class
