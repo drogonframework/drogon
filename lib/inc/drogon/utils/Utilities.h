@@ -118,8 +118,7 @@ DROGON_EXPORT std::string base64EncodeUnpadded(
     bool url_safe = false);
 
 /// Get the decoded length of base64.
-DROGON_EXPORT size_t base64DecodedLength(unsigned int in_len,
-                                         uint8_t padding = 0);
+DROGON_EXPORT size_t base64DecodedLength(unsigned int in_len);
 
 /// Decode the base64 format string.
 DROGON_EXPORT std::string base64Decode(const std::string &encoded_string,

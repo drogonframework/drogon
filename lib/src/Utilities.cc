@@ -460,9 +460,9 @@ std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
     return base64Encode(bytes_to_encode, in_len, url_safe, false);
 }
 
-size_t base64DecodedLength(unsigned int in_len, uint8_t padding)
+size_t base64DecodedLength(unsigned int in_len)
 {
-    return ((in_len - padding) * 3) / 4;
+    return (in_len * 3) / 4;
 }
 
 std::vector<char> base64DecodeToVector(const std::string &encoded_string,
@@ -473,8 +473,7 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string,
     int in_{0};
     char char_array_4[4], char_array_3[3];
     std::vector<char> ret;
-    ret.reserve(base64DecodedLength(
-        in_len, in_len - (encoded_string.find_last_not_of('=') + 1)));
+    ret.reserve(base64DecodedLength(in_len));
 
     if (out_valid)
         *out_valid = true;
@@ -540,8 +539,7 @@ std::string base64Decode(const std::string &encoded_string, bool *out_valid)
     int in_{0};
     unsigned char char_array_4[4], char_array_3[3];
     std::string ret;
-    ret.reserve(base64DecodedLength(
-        in_len, in_len - (encoded_string.find_last_not_of('=') + 1)));
+    ret.reserve(base64DecodedLength(in_len));
 
     if (out_valid)
         *out_valid = true;
