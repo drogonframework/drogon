@@ -111,11 +111,29 @@ DROGON_EXPORT std::string base64Encode(const unsigned char *bytes_to_encode,
                                        bool url_safe = false,
                                        bool padded = true);
 
+/// Encode the string to base64 format.
+DROGON_EXPORT inline std::string base64Encode(const string_view &data,
+                                              bool url_safe = false,
+                                              bool padded = true)
+{
+    return base64Encode((unsigned char *)data.data(),
+                        data.size(),
+                        url_safe,
+                        padded);
+}
+
 /// Encode the string to base64 format with no padding.
 DROGON_EXPORT std::string base64EncodeUnpadded(
     const unsigned char *bytes_to_encode,
     unsigned int in_len,
     bool url_safe = false);
+
+/// Encode the string to base64 format with no padding.
+DROGON_EXPORT inline std::string base64Encode(const string_view &data,
+                                              bool url_safe = false)
+{
+    return base64Encode(data, url_safe, false);
+}
 
 /// Get the decoded length of base64.
 DROGON_EXPORT size_t base64DecodedLength(unsigned int in_len);
