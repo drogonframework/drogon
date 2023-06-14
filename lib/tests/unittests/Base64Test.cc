@@ -27,7 +27,7 @@ DROGON_TEST(Base64)
         {
             in.append(1, char(i));
         }
-        auto out = drogon::utils::base64Encode(in.data());
+        auto out = drogon::utils::base64Encode(in);
         auto out2 = drogon::utils::base64Decode(out);
         auto encoded = drogon::utils::base64Encode(in);
         auto decoded = drogon::utils::base64Decode(encoded);
