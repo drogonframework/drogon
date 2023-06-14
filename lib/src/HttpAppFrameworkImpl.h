@@ -57,6 +57,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     PluginBase *getPlugin(const std::string &name) override;
+    std::shared_ptr<PluginBase> getSharedPlugin(
+        const std::string &name) override;
     void addPlugins(const Json::Value &configs);
     void addPlugin(const std::string &name,
                    const std::vector<std::string> &dependencies,

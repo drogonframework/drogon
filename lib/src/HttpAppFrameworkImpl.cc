@@ -348,6 +348,12 @@ PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
 {
     return pluginsManagerPtr_->getPlugin(name);
 }
+
+std::shared_ptr<PluginBase> HttpAppFrameworkImpl::getSharedPlugin(
+    const std::string &name)
+{
+    return pluginsManagerPtr_->getSharedPlugin(name);
+}
 void HttpAppFrameworkImpl::addPlugin(
     const std::string &name,
     const std::vector<std::string> &dependencies,

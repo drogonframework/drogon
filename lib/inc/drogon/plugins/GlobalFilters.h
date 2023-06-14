@@ -39,7 +39,9 @@ class DROGON_EXPORT GlobalFilters
       public std::enable_shared_from_this<GlobalFilters>
 {
   public:
-    GlobalFilters() = default;
+    GlobalFilters()
+    {
+    }
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 
