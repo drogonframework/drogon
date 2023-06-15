@@ -465,7 +465,7 @@ size_t base64DecodedLength(unsigned int in_len)
     return (in_len * 3) / 4;
 }
 
-std::vector<char> base64DecodeToVector(const std::string &encoded_string)
+std::vector<char> base64DecodeToVector(string_view encoded_string)
 {
     auto in_len = encoded_string.size();
     int i = 0;
@@ -527,7 +527,7 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
     return ret;
 }
 
-std::string base64Decode(const std::string &encoded_string)
+std::string base64Decode(string_view encoded_string)
 {
     auto in_len = encoded_string.size();
     int i = 0;
