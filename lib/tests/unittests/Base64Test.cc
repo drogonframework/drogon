@@ -10,6 +10,20 @@ DROGON_TEST(Base64)
     CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw==");
     CHECK(decoded == in);
 
+    SUBSECTION(InvalidChars)
+    {
+        auto decoded =
+            drogon::utils::base64Decode("ZHJvZ2*9uIGZy**YW1ld2***9yaw*=*=");
+        CHECK(decoded == in);
+    }
+
+    SUBSECTION(InvalidCharsNoPadding)
+    {
+        auto decoded =
+            drogon::utils::base64Decode("ZHJvZ2*9uIGZy**YW1ld2***9yaw**");
+        CHECK(decoded == in);
+    }
+
     SUBSECTION(Unpadded)
     {
         std::string in{"drogon framework"};
