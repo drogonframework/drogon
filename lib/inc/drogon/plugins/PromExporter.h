@@ -13,6 +13,10 @@
 
 #pragma once
 #include <drogon/plugins/Plugin.h>
+#include <drogon/utils/monitoring/Registry.h>
+#include <memory>
+#include <mutex>
+
 namespace drogon
 {
 namespace plugin
@@ -31,8 +35,31 @@ namespace plugin
     }
     @endcode
  * */
-class DROGON_EXPORT PromExporter : public drogon::Plugin<PromExporter>
+class DROGON_EXPORT PromExporter
+    : public drogon::Plugin<PromExporter>,
+      public std::enable_shared_from_this<PromExporter>,
+      public drogon::monitoring::Registry
 {
+  public:
+    PromExporter()
+    {
+    }
+    void initAndStart(const Json::Value &config) override;
+    void shutdown() override
+    {
+    }
+    ~PromExporter() override
+    {
+    }
+    void registerCollector(
+        const std::shared_ptr<drogon::monitoring::CollectorBase> &collector)
+        override;
+
+  private:
+    std::mutex mutex_;
+    std::vector<std::shared_ptr<drogon::monitoring::CollectorBase>> collectors_;
+    std::string path_{"/metrics"};
+    std::string exportMetrics();
 };
 }  // namespace plugin
 }  // namespace drogon

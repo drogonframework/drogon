@@ -108,7 +108,10 @@ class Collector : public CollectorBase
     {
         registry.registerCollector(shared_from_this());
     }
-
+    const std::vector<std::string> &labelsNames() const
+    {
+        return labelsNames_;
+    }
   private:
     const std::string name_;
     const std::string help_;
