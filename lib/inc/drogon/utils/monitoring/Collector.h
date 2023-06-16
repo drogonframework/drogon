@@ -53,7 +53,6 @@ template <typename T>
 class Collector : public CollectorBase
 {
   public:
-
     Collector(const std::string &name,
               const std::string &help,
               const std::vector<std::string> &labelNames)
@@ -115,6 +114,7 @@ class Collector : public CollectorBase
     {
         return labelsNames_;
     }
+
   private:
     const std::string name_;
     const std::string help_;

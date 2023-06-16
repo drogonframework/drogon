@@ -71,7 +71,18 @@ std::string exportCollector(const std::shared_ptr<CollectorBase> &collector)
                 res.pop_back();
                 res.append("}");
             }
-            res.append(" ").append(std::to_string(sample.value)).append("\n");
+            res.append(" ").append(std::to_string(sample.value));
+            if (sample.timestamp.microSecondsSinceEpoch() > 0)
+            {
+                res.append(" ")
+                    .append(std::to_string(
+                        sample.timestamp.microSecondsSinceEpoch() / 1000))
+                    .append("\n");
+            }
+            else
+            {
+                res.append("\n");
+            }
         }
     }
     return res;
