@@ -347,14 +347,18 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 
 #ifdef __cpp_impl_coroutine
 
-class HttpException : public std::runtime_error
+class HttpException : public std::exception
 {
   public:
+    HttpException() = delete;
     explicit HttpException(ReqResult res)
-        : std::runtime_error(to_string_view(res).data()), resultCode_(res)
+        : resultCode_(res), message_(to_string_view(res))
     {
     }
-
+    const char *what() const noexcept override
+    {
+        return message_.data();
+    }
     ReqResult code() const
     {
         return resultCode_;
@@ -362,6 +366,7 @@ class HttpException : public std::runtime_error
 
   private:
     ReqResult resultCode_;
+    std::string_view message_;
 };
 
 inline void internal::HttpRespAwaiter::await_suspend(
