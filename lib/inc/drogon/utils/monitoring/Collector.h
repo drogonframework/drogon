@@ -15,6 +15,7 @@
 #pragma once
 #include <trantor/utils/Date.h>
 #include <drogon/utils/monitoring/Sample.h>
+#include <drogon/utils/monitoring/Metric.h>
 #include <drogon/utils/monitoring/Registry.h>
 #include <drogon/utils/string_view.h>
 #include <string>
@@ -28,11 +29,17 @@ namespace drogon
 {
 namespace monitoring
 {
+struct SamplesGroup
+{
+    std::shared_ptr<Metric> metric;
+    std::vector<Sample> samples;
+};
+
 class CollectorBase : public std::enable_shared_from_this<CollectorBase>
 {
   public:
     virtual ~CollectorBase() = default;
-    virtual std::vector<Sample> collect() const = 0;
+    virtual std::vector<SamplesGroup> collect() const = 0;
     virtual const std::string &name() const = 0;
     virtual const std::string &help() const = 0;
     virtual const string_view type() const = 0;
@@ -46,11 +53,7 @@ template <typename T>
 class Collector : public CollectorBase
 {
   public:
-    struct SamplesGroup
-    {
-        std::shared_ptr<T> metric;
-        std::vector<Sample> samples;
-    };
+
     Collector(const std::string &name,
               const std::string &help,
               const std::vector<std::string> &labelNames)

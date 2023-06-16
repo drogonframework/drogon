@@ -32,28 +32,49 @@ void PromExporter::initAndStart(const Json::Value &config)
 }
 std::string exportCollector(const std::shared_ptr<CollectorBase> &collector)
 {
-    auto samples = collector->collect();
+    auto sampleGroups = collector->collect();
     std::string res;
-    /*
-     # HELP process_max_fds Maximum number of open file descriptors.
-     # TYPE process_max_fds gauge
-     * */
-    res.append("# HELP ").append(collector->name()).append(" ").append(collector->help()).append("\n");
-    res.append("# TYPE ").append(collector->name()).append(" ").append(collector->type()).append("\n");
-    for(auto const &sample : samples)
+    res.append("# HELP ")
+        .append(collector->name())
+        .append(" ")
+        .append(collector->help())
+        .append("\n");
+    res.append("# TYPE ")
+        .append(collector->name())
+        .append(" ")
+        .append(collector->type())
+        .append("\n");
+    for (auto const &sampleGroup : sampleGroups)
     {
-        res.append(sample.name);
-        if(!sample.exLabels.empty()||collector->labelNames().size()>0
+        auto const &metricPtr = sampleGroup.metric;
+        auto const &samples = sampleGroup.samples;
+        for (auto &sample : samples)
         {
-            res.append("{");
-            for(auto const &label : sample.labels)
+            res.append(metricPtr->name());
+            if (!sample.exLabels.empty() || !metricPtr->labels().empty())
             {
-                res.append(label.first).append("=\"").append(label.second).append("\",");
+                res.append("{");
+                for (auto const &label : metricPtr->labels())
+                {
+                    res.append(label.first)
+                        .append("=\"")
+                        .append(label.second)
+                        .append("\",");
+                }
+                for (auto const &label : sample.exLabels)
+                {
+                    res.append(label.first)
+                        .append("=\"")
+                        .append(label.second)
+                        .append("\",");
+                }
+                res.pop_back();
+                res.append("}");
             }
-            res.pop_back();
-            res.append("}");
+            res.append(" ").append(std::to_string(sample.value)).append("\n");
         }
     }
+    return res;
 }
 std::string PromExporter::exportMetrics()
 {
