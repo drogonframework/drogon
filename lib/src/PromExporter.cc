@@ -30,7 +30,8 @@ void PromExporter::initAndStart(const Json::Value &config)
         {Get, Options},
         "PromExporter");
 }
-std::string exportCollector(const std::shared_ptr<CollectorBase> &collector)
+static std::string exportCollector(
+    const std::shared_ptr<CollectorBase> &collector)
 {
     auto sampleGroups = collector->collect();
     std::string res;
@@ -96,4 +97,11 @@ std::string PromExporter::exportMetrics()
         result.append(exportCollector(collector));
     }
     return result;
+}
+
+void PromExporter::registerCollector(
+    const std::shared_ptr<drogon::monitoring::CollectorBase> &collector)
+{
+    std::lock_guard<std::mutex> guard(mutex_);
+    collectors_.emplace_back(collector);
 }
