@@ -15,7 +15,7 @@
 #pragma once
 #include <drogon/utils/monitoring/Metric.h>
 #include <drogon/utils/string_view.h>
-#include <atomic>
+#include <mutex>
 
 namespace drogon
 {
@@ -29,7 +29,7 @@ class Counter : public Metric
   public:
     Counter(const std::string &name,
             const std::vector<std::string> &labelNames,
-            const std::string &labelValues) noexcept(false)
+            const std::vector<std::string> &labelValues) noexcept(false)
         : Metric(name, labelNames, labelValues)
     {
     }
@@ -37,7 +37,10 @@ class Counter : public Metric
     {
         Sample s;
         s.name = name_;
-        s.value = value_.load();
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            s.value = value_;
+        }
         return {s};
     }
     /**
@@ -45,17 +48,20 @@ class Counter : public Metric
      * */
     void increment()
     {
-        value_ += 1;
+        std::lock_guard<std::mutex> lock(mutex_);
+        value_++;
     }
     /**
      * Increment the counter by the given value.
      * */
     void increment(double value)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         value_ += value;
     }
     void reset()
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         value_ = 0;
     }
     static string_view type()
@@ -64,7 +70,8 @@ class Counter : public Metric
     }
 
   private:
-    std::atomic<double> value_{0};
+    mutable std::mutex mutex_;
+    double value_{0};
 };
 }  // namespace monitoring
 }  // namespace drogon

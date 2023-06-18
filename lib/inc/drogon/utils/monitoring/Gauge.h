@@ -31,7 +31,7 @@ class Gauge : public Metric
      * */
     Gauge(const std::string &name,
           const std::vector<std::string> &labelNames,
-          const std::string &labelValues) noexcept(false)
+          const std::vector<std::string> &labelValues) noexcept(false)
         : Metric(name, labelNames, labelValues)
     {
     }

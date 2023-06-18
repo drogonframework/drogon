@@ -38,7 +38,7 @@ class DROGON_EXPORT Histogram : public Metric
     };
     Histogram(const std::string &name,
               const std::vector<std::string> &labelNames,
-              const std::string &labelValues,
+              const std::vector<std::string> &labelValues,
               const std::vector<double> &bucketBoundaries,
               const std::chrono::duration<double> &maxAge,
               uint64_t timeBucketsCount,

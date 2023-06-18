@@ -77,7 +77,7 @@ class Collector : public CollectorBase
         }
         auto metric = std::make_shared<T>(name_, labelsNames_, labelValues);
         metrics_[labelValues] = metric;
-        return metric;
+        return metrics_[labelValues];
     }
     std::vector<SamplesGroup> collect() const override
     {
@@ -88,7 +88,7 @@ class Collector : public CollectorBase
             SamplesGroup samplesGroup;
             auto &metric = pair.second;
             samplesGroup.metric = metric;
-            auto metricSamples = metric.collect();
+            auto metricSamples = metric->collect();
             samplesGroup.samples = std::move(metricSamples);
             samples.emplace_back(std::move(samplesGroup));
         }

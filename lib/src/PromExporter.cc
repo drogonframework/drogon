@@ -9,6 +9,7 @@ using namespace drogon::plugin;
 void PromExporter::initAndStart(const Json::Value &config)
 {
     path_ = config.get("path", path_).asString();
+    LOG_ERROR << path_;
     auto &app = drogon::app();
     std::weak_ptr<PromExporter> weakPtr = shared_from_this();
     app.registerHandler(
@@ -39,12 +40,12 @@ static std::string exportCollector(
         .append(collector->name())
         .append(" ")
         .append(collector->help())
-        .append("\n");
+        .append("\r\n");
     res.append("# TYPE ")
         .append(collector->name())
         .append(" ")
         .append(collector->type())
-        .append("\n");
+        .append("\r\n");
     for (auto const &sampleGroup : sampleGroups)
     {
         auto const &metricPtr = sampleGroup.metric;
@@ -78,11 +79,11 @@ static std::string exportCollector(
                 res.append(" ")
                     .append(std::to_string(
                         sample.timestamp.microSecondsSinceEpoch() / 1000))
-                    .append("\n");
+                    .append("\r\n");
             }
             else
             {
-                res.append("\n");
+                res.append("\r\n");
             }
         }
     }

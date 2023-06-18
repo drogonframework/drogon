@@ -36,7 +36,7 @@ class Metric : public std::enable_shared_from_this<Metric>
 
     Metric(const std::string &name,
            const std::vector<std::string> &labelNames,
-           const std::string &labelValues) noexcept(false)
+           const std::vector<std::string> &labelValues) noexcept(false)
         : name_(name)
     {
         if (labelNames.size() != labelValues.size())

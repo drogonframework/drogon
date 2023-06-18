@@ -230,12 +230,18 @@ endif (BUILD_BROTLI)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
+    lib/src/AccessLogger.cc
     lib/src/CacheFile.cc
+    lib/src/ConfigAdapterManager.cc
     lib/src/ConfigLoader.cc
     lib/src/Cookie.cc
     lib/src/DrClassMap.cc
     lib/src/DrTemplateBase.cc
     lib/src/FiltersFunction.cc
+    lib/src/FixedWindowRateLimiter.cc
+    lib/src/GlobalFilters.cc
+    lib/src/Histogram.cc
+    lib/src/Hodor.cc
     lib/src/HttpAppFrameworkImpl.cc
     lib/src/HttpBinder.cc
     lib/src/HttpClientImpl.cc
@@ -251,34 +257,29 @@ set(DROGON_SOURCES
     lib/src/HttpUtils.cc
     lib/src/HttpViewData.cc
     lib/src/IntranetIpFilter.cc
+    lib/src/JsonConfigAdapter.cc
     lib/src/ListenerManager.cc
     lib/src/LocalHostFilter.cc
     lib/src/MultiPart.cc
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
+    lib/src/PromExporter.cc
     lib/src/RangeParser.cc
-    lib/src/SecureSSLRedirector.cc
-    lib/src/GlobalFilters.cc
-    lib/src/AccessLogger.cc
+    lib/src/RateLimiter.cc
     lib/src/RealIpResolver.cc
+    lib/src/SecureSSLRedirector.cc
     lib/src/SessionManager.cc
+    lib/src/SlashRemover.cc
+    lib/src/SlidingWindowRateLimiter.cc
     lib/src/StaticFileRouter.cc
     lib/src/TaskTimeoutFlag.cc
+    lib/src/TokenBucketRateLimiter.cc
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
     lib/src/WebsocketControllersRouter.cc
-    lib/src/RateLimiter.cc
-    lib/src/FixedWindowRateLimiter.cc
-    lib/src/SlidingWindowRateLimiter.cc
-    lib/src/TokenBucketRateLimiter.cc
-    lib/src/Hodor.cc
-    lib/src/SlashRemover.cc
-    lib/src/drogon_test.cc
-    lib/src/ConfigAdapterManager.cc
-    lib/src/JsonConfigAdapter.cc
     lib/src/YamlConfigAdapter.cc
-    lib/src/Histogram.cc)
+    lib/src/drogon_test.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
