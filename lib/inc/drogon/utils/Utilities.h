@@ -60,6 +60,9 @@ namespace utils
 /// Determine if the string is an integer
 DROGON_EXPORT bool isInteger(const std::string &str);
 
+/// Determine if the string is base64 encoded
+DROGON_EXPORT bool isBase64(const std::string &str);
+
 /// Generate random a string
 /**
  * @param length The string length
@@ -98,15 +101,46 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
 /// Get UUID string.
 DROGON_EXPORT std::string getUuid();
 
+/// Get the encoded length of base64.
+DROGON_EXPORT size_t base64EncodedLength(unsigned int in_len,
+                                         bool padded = true);
+
 /// Encode the string to base64 format.
 DROGON_EXPORT std::string base64Encode(const unsigned char *bytes_to_encode,
                                        unsigned int in_len,
-                                       bool url_safe = false);
+                                       bool url_safe = false,
+                                       bool padded = true);
+
+/// Encode the string to base64 format.
+inline std::string base64Encode(string_view data,
+                                bool url_safe = false,
+                                bool padded = true)
+{
+    return base64Encode((unsigned char *)data.data(),
+                        data.size(),
+                        url_safe,
+                        padded);
+}
+
+/// Encode the string to base64 format with no padding.
+DROGON_EXPORT std::string base64EncodeUnpadded(
+    const unsigned char *bytes_to_encode,
+    unsigned int in_len,
+    bool url_safe = false);
+
+/// Encode the string to base64 format with no padding.
+inline std::string base64EncodeUnpadded(string_view data, bool url_safe = false)
+{
+    return base64Encode(data, url_safe, false);
+}
+
+/// Get the decoded length of base64.
+DROGON_EXPORT size_t base64DecodedLength(unsigned int in_len);
 
 /// Decode the base64 format string.
-DROGON_EXPORT std::string base64Decode(const std::string &encoded_string);
+DROGON_EXPORT std::string base64Decode(string_view encoded_string);
 DROGON_EXPORT std::vector<char> base64DecodeToVector(
-    const std::string &encoded_string);
+    string_view encoded_string);
 
 /// Check if the string need decoding
 DROGON_EXPORT bool needUrlDecoding(const char *begin, const char *end);
