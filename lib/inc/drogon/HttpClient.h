@@ -151,7 +151,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      *
      * @param req
      * @param timeout In seconds. If the response is not received within the
-     * timeout, A `std::runtime_error` with the message "Timeout" is thrown.
+     * timeout, A `drogon::HttpException` with `ReqResult::Timeout` is thrown.
      * The zero value by default disables the timeout.
      *
      * @return internal::HttpRespAwaiter. Await on it to get the response
@@ -346,6 +346,29 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 };
 
 #ifdef __cpp_impl_coroutine
+
+class HttpException : public std::exception
+{
+  public:
+    HttpException() = delete;
+    explicit HttpException(ReqResult res)
+        : resultCode_(res), message_(to_string_view(res))
+    {
+    }
+    const char *what() const noexcept override
+    {
+        return message_.data();
+    }
+    ReqResult code() const
+    {
+        return resultCode_;
+    }
+
+  private:
+    ReqResult resultCode_;
+    std::string_view message_;
+};
+
 inline void internal::HttpRespAwaiter::await_suspend(
     std::coroutine_handle<> handle)
 {
@@ -353,17 +376,11 @@ inline void internal::HttpRespAwaiter::await_suspend(
     assert(req_ != nullptr);
     client_->sendRequest(
         req_,
-        [handle = std::move(handle), this](ReqResult result,
-                                           const HttpResponsePtr &resp) {
+        [handle, this](ReqResult result, const HttpResponsePtr &resp) {
             if (result == ReqResult::Ok)
                 setValue(resp);
             else
-            {
-                std::stringstream ss;
-                ss << result;
-                setException(
-                    std::make_exception_ptr(std::runtime_error(ss.str())));
-            }
+                setException(std::make_exception_ptr(HttpException(result)));
             handle.resume();
         },
         timeout_);
