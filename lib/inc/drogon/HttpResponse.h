@@ -353,6 +353,9 @@ class DROGON_EXPORT HttpResponse
     /// Create a normal response with a status code of 200ok and a content type
     /// of text/html.
     static HttpResponsePtr newHttpResponse();
+    /// Create a response with a status code and a content type
+    static HttpResponsePtr newHttpResponse(HttpStatusCode code,
+                                           ContentType type);
     /// Create a response which returns a 404 page.
     static HttpResponsePtr newNotFoundResponse();
     /// Create a response which returns a json object. Its content type is set

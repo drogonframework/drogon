@@ -71,6 +71,14 @@ HttpResponsePtr HttpResponse::newHttpResponse()
     return res;
 }
 
+HttpResponsePtr HttpResponse::newHttpResponse(HttpStatusCode code,
+                                              ContentType type)
+{
+    auto res = std::make_shared<HttpResponseImpl>(code, type);
+    doResponseCreateAdvices(res);
+    return res;
+}
+
 HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
