@@ -102,8 +102,10 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
 DROGON_EXPORT std::string getUuid();
 
 /// Get the encoded length of base64.
-DROGON_EXPORT size_t base64EncodedLength(unsigned int in_len,
-                                         bool padded = true);
+constexpr size_t base64EncodedLength(unsigned int in_len, bool padded = true)
+{
+    return padded ? ((in_len + 3 - 1) / 3) * 4 : (in_len * 8 + 6 - 1) / 6;
+}
 
 /// Encode the string to base64 format.
 DROGON_EXPORT std::string base64Encode(const unsigned char *bytes_to_encode,
@@ -135,7 +137,10 @@ inline std::string base64EncodeUnpadded(string_view data, bool url_safe = false)
 }
 
 /// Get the decoded length of base64.
-DROGON_EXPORT size_t base64DecodedLength(unsigned int in_len);
+constexpr size_t base64DecodedLength(unsigned int in_len)
+{
+    return (in_len * 3) / 4;
+}
 
 /// Decode the base64 format string.
 DROGON_EXPORT std::string base64Decode(string_view encoded_string);
