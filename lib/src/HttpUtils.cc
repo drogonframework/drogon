@@ -393,7 +393,7 @@ ContentType getContentType(const std::string &fileName)
         case 2:
         {
             if (extName == "js")
-                return CT_APPLICATION_X_JAVASCRIPT;
+                return CT_TEXT_JAVASCRIPT;
             return CT_APPLICATION_OCTET_STREAM;
         }
         case 3:
