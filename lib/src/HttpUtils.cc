@@ -569,6 +569,11 @@ const string_view &contentTypeToMime(ContentType contenttype)
             static string_view sv = "application/x-javascript; charset=utf-8";
             return sv;
         }
+        case CT_TEXT_JAVASCRIPT:
+        {
+            static string_view sv = "text/javascript; charset=utf-8";
+            return sv;
+        }
         case CT_TEXT_CSS:
         {
             static string_view sv = "text/css; charset=utf-8";
