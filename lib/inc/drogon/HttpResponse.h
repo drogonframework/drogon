@@ -361,6 +361,8 @@ class DROGON_EXPORT HttpResponse
     /// Create a response which returns a json object. Its content-type is set
     /// to application/json.
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
+    /// Create a response which returns a json object. Its content-type is set
+    /// to application/json.
     static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
     /// Create a response that returns a page rendered by a view named
     /// viewName.
