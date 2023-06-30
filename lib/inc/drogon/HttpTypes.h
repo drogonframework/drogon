@@ -214,4 +214,98 @@ inline trantor::LogStream &operator<<(trantor::LogStream &out,
 {
     return out << to_string_view(result);
 }
+
+inline string_view to_string_view(drogon::HttpMethod method)
+{
+    switch (method)
+    {
+        case HttpMethod::Get:
+            return "GET";
+        case HttpMethod::Post:
+            return "POST";
+        case HttpMethod::Head:
+            return "HEAD";
+        case HttpMethod::Put:
+            return "PUT";
+        case HttpMethod::Delete:
+            return "DELETE";
+        case HttpMethod::Options:
+            return "OPTIONS";
+        case HttpMethod::Patch:
+            return "PATCH";
+        case HttpMethod::Invalid:
+            return "INVALID";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+inline std::string to_string(drogon::HttpMethod method)
+{
+    auto sv = to_string_view(method);
+    return std::string(sv.data(), sv.size());
+}
+
+inline drogon::HttpMethod to_http_method(string_view m)
+{
+    switch (m.length())
+    {
+        case 3:
+            if (m == "GET")
+            {
+                return HttpMethod::Get;
+            }
+            else if (m == "PUT")
+            {
+                return HttpMethod::Put;
+            }
+            else
+            {
+                return HttpMethod::Invalid;
+            }
+        case 4:
+            if (m == "POST")
+            {
+                return HttpMethod::Post;
+            }
+            else if (m == "HEAD")
+            {
+                return HttpMethod::Head;
+            }
+            else
+            {
+                return HttpMethod::Invalid;
+            }
+        case 5:
+            if (m == "PATCH")
+            {
+                return HttpMethod::Patch;
+            }
+            else
+            {
+                return HttpMethod::Invalid;
+            }
+        case 6:
+            if (m == "DELETE")
+            {
+                return HttpMethod::Delete;
+            }
+            else
+            {
+                return HttpMethod::Invalid;
+            }
+        case 7:
+            if (m == "OPTIONS")
+            {
+                return HttpMethod::Options;
+            }
+            else
+            {
+                return HttpMethod::Invalid;
+            }
+        default:
+            return HttpMethod::Invalid;
+    }
+}
+
 }  // namespace drogon
