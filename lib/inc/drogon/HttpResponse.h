@@ -358,9 +358,11 @@ class DROGON_EXPORT HttpResponse
                                            ContentType type);
     /// Create a response which returns a 404 page.
     static HttpResponsePtr newNotFoundResponse();
-    /// Create a response which returns a json object. Its content type is set
-    /// to set/json.
+    /// Create a response which returns a json object. Its content-type is set
+    /// to application/json.
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
+    /// Create a response which returns a json object. Its content-type is set
+    /// to application/json.
     static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
     /// Create a response that returns a page rendered by a view named
     /// viewName.
