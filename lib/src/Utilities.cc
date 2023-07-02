@@ -139,7 +139,7 @@ static inline bool isBase64(unsigned char c)
     return false;
 }
 
-bool isInteger(const std::string &str)
+bool isInteger(string_view str)
 {
     for (auto const &c : str)
     {
@@ -149,7 +149,7 @@ bool isInteger(const std::string &str)
     return true;
 }
 
-bool isBase64(const std::string &str)
+bool isBase64(string_view str)
 {
     for (auto c : str)
         if (!isBase64(c))
