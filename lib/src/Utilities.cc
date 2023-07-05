@@ -141,15 +141,27 @@ static inline bool isBase64(unsigned char c)
 
 bool isInteger(const std::string &str)
 {
-    for (auto const &c : str)
-    {
-        if (c > '9' || c < '0')
+    for (auto c : str)
+        if (c < '0' || c > '9')
             return false;
-    }
+    return true;
+}
+bool isInteger(string_view str)
+{
+    for (auto c : str)
+        if (c < '0' || c > '9')
+            return false;
     return true;
 }
 
 bool isBase64(const std::string &str)
+{
+    for (auto c : str)
+        if (!isBase64(c))
+            return false;
+    return true;
+}
+bool isBase64(string_view str)
 {
     for (auto c : str)
         if (!isBase64(c))
