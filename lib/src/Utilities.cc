@@ -395,11 +395,6 @@ std::string getUuid()
 #endif
 }
 
-size_t base64EncodedLength(unsigned int in_len, bool padded)
-{
-    return padded ? ((in_len + 3 - 1) / 3) * 4 : (in_len * 8 + 6 - 1) / 6;
-}
-
 std::string base64Encode(const unsigned char *bytes_to_encode,
                          unsigned int in_len,
                          bool url_safe,
@@ -458,11 +453,6 @@ std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
                                  bool url_safe)
 {
     return base64Encode(bytes_to_encode, in_len, url_safe, false);
-}
-
-size_t base64DecodedLength(unsigned int in_len)
-{
-    return (in_len * 3) / 4;
 }
 
 std::vector<char> base64DecodeToVector(string_view encoded_string)
