@@ -25,6 +25,7 @@
 #include <Rpc.h>
 #include <direct.h>
 #include <io.h>
+#include <iomanip>
 #else
 #include <uuid.h>
 #include <unistd.h>
