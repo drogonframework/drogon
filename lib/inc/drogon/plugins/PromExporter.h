@@ -30,8 +30,23 @@ namespace plugin
       "dependencies": [],
       "config": {
          // The path of the metrics. the default value is "/metrics".
-         "path": "/metrics"
-         }
+         "path": "/metrics",
+         // The list of collectors.
+         "collectors":[
+            {
+               // The name of the collector.
+               "name": "http_requests_total",
+               // The help message of the collector.
+               "help": "The total number of http requests",
+               // The type of the collector. The default value is "counter".
+               // The other possible value is as following:
+               // "gauge", "histogram".
+               "type": "counter",
+               // The labels of the collector.
+               "labels": ["method", "status"]
+            }
+         ]
+      }
     }
     @endcode
  * */
@@ -54,10 +69,14 @@ class DROGON_EXPORT PromExporter
     void registerCollector(
         const std::shared_ptr<drogon::monitoring::CollectorBase> &collector)
         override;
+    std::shared_ptr<drogon::monitoring::CollectorBase> getCollector(
+        const std::string &name) const noexcept(false);
 
   private:
-    std::mutex mutex_;
-    std::vector<std::shared_ptr<drogon::monitoring::CollectorBase>> collectors_;
+    mutable std::mutex mutex_;
+    std::unordered_map<std::string,
+                       std::shared_ptr<drogon::monitoring::CollectorBase>>
+        collectors_;
     std::string path_{"/metrics"};
     std::string exportMetrics();
 };
