@@ -38,8 +38,9 @@ class Gauge : public Metric
     std::vector<Sample> collect() const override
     {
         Sample s;
+        std::lock_guard<std::mutex> lock(mutex_);
         s.name = name_;
-        s.value = value_.load();
+        s.value = value_;
         s.timestamp = timestamp_;
         return {s};
     }
@@ -48,14 +49,17 @@ class Gauge : public Metric
      * */
     void increment()
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         value_ += 1;
     }
     void decrement()
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         value_ -= 1;
     }
     void decrement(double value)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         value_ -= value;
     }
     /**
@@ -63,14 +67,17 @@ class Gauge : public Metric
      * */
     void increment(double value)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         value_ += value;
     }
     void reset()
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         value_ = 0;
     }
     void set(double value)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         value_ = value;
     }
     static string_view type()
@@ -79,11 +86,13 @@ class Gauge : public Metric
     }
     void setToCurrentTime()
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         timestamp_ = trantor::Date::now();
     }
 
   private:
-    std::atomic<double> value_{0};
+    mutable std::mutex mutex_;
+    double value_{0};
     trantor::Date timestamp_{0};
 };
 }  // namespace monitoring
