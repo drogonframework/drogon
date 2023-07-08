@@ -184,6 +184,18 @@ In addition, you can also find that all handler interfaces are in asynchronous m
 
 After compiling all of the above source files, we get a very simple web application. This is a good start. **For more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki/ENG-01-Overview)**
 
+## Cross-compilation
+
+Drogon supports cross-compilation, you should define the `CMAKE_SYSTEM_NAME` in toolchain file, for example:
+    
+```cmake
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+```
+
+You can disable building options for examples and drogon_ctl by settings `BUILD_EXAMPLES` and `BUILD_CTL` to `OFF` in the toolchain file.
+
+
 ## Contributions
 
 This project exists thanks to all the people who contribute code. 
