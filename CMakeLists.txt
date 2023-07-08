@@ -6,14 +6,9 @@ message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 
 # If your cross compile is failing, you should set
 # CMAKE_SYSTEM_NAME in your toolchain file
-if (NOT CMAKE_CROSSCOMPILING)
-    set(BUILD_PROGRAMS ON)
-else ()
-    set(BUILD_PROGRAMS OFF)
-endif ()
 
-option(BUILD_CTL "Build drogon_ctl" ${BUILD_PROGRAMS})
-option(BUILD_EXAMPLES "Build examples" ${BUILD_PROGRAMS})
+option(BUILD_CTL "Build drogon_ctl" ON)
+option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_SHARED_LIBS "Build drogon as a shared lib" OFF)
