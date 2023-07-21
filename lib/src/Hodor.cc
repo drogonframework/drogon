@@ -77,7 +77,7 @@ void Hodor::initAndStart(const Json::Value &config)
         config.get("rejection_message", "Too many requests").asString());
     rejectResponse_->setCloseConnection(true);
     limiterExpireTime_ =
-        (std::min)(static_cast<size_t>(
+        (std::max)(static_cast<size_t>(
                        config.get("limiter_expire_time", 600).asUInt()),
                    static_cast<size_t>(timeUnit_.count() * 3));
     limitStrategies_.emplace_back(makeLimitStrategy(config));
@@ -103,7 +103,7 @@ void Hodor::initAndStart(const Json::Value &config)
             limitStrategies_.emplace_back(makeLimitStrategy(subLimit));
         }
     }
-    app().registerPreHandlingAdvice([this](const HttpRequestPtr &req,
+    app().registerPreHandlingAdvice([this](const drogon::HttpRequestPtr &req,
                                            AdviceCallback &&acb,
                                            AdviceChainCallback &&accb) {
         onHttpRequest(req, std::move(acb), std::move(accb));
@@ -114,10 +114,11 @@ void Hodor::shutdown()
 {
     LOG_TRACE << "Hodor plugin is shutdown!";
 }
-bool Hodor::checkLimit(const HttpRequestPtr &req,
+
+bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
                        const LimitStrategy &strategy,
                        const std::string &ip,
-                       const optional<std::string> &userId)
+                       const drogon::optional<std::string> &userId)
 {
     if (strategy.regexFlag)
     {
@@ -203,15 +204,10 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                           drogon::AdviceCallback &&adviceCallback,
                           drogon::AdviceChainCallback &&chainCallback)
 {
-    std::string ip;
-    if (useRealIpResolver_)
-    {
-        ip = drogon::plugin::RealIpResolver::GetRealAddr(req).toIp();
-    }
-    else
-    {
-        ip = req->peerAddr().toIp();
-    }
+    auto ip =
+        (useRealIpResolver_ ? drogon::plugin::RealIpResolver::GetRealAddr(req)
+                            : req->peerAddr())
+            .toIpNetEndian();
     optional<std::string> userId;
     if (userIdGetter_)
     {

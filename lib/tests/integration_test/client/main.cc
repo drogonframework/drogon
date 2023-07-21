@@ -49,9 +49,10 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req->setMethod(drogon::Get);
         req->setPath("/");
         std::promise<int> waitCookie;
+        bool haveCert = false;
         auto f = waitCookie.get_future();
         client->sendRequest(req,
-                            [client, &waitCookie, TEST_CTX](
+                            [client, &waitCookie, &haveCert, TEST_CTX](
                                 ReqResult result, const HttpResponsePtr &resp) {
                                 REQUIRE(result == ReqResult::Ok);
 
@@ -61,8 +62,11 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                 sessionID = id;
                                 client->addCookie(id);
                                 waitCookie.set_value(1);
+
+                                haveCert = resp->peerCertificate() != nullptr;
                             });
         f.get();
+        CHECK(haveCert == client->secure());
     }
     else
         client->addCookie(sessionID);
@@ -1067,7 +1071,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test Coroutine exception
@@ -1080,7 +1084,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test Coroutine exception with co_return
@@ -1093,7 +1097,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test coroutine filter
@@ -1110,7 +1114,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test coroutine handler with parameters
@@ -1124,7 +1128,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
         try
         {
@@ -1136,7 +1140,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
     });
 #endif
@@ -1187,6 +1191,35 @@ DROGON_TEST(HttpsTest)
     REQUIRE(client->onDefaultPort() == false);
 
     doTest(client, TEST_CTX);
+}
+
+DROGON_TEST(HttpsTimeoutTest)
+{
+    if (!app().supportSSL())
+        return;
+
+    auto client = HttpClient::newHttpClient("https://127.0.0.1:8849",
+                                            app().getLoop(),
+                                            false,
+                                            false);
+    auto req = HttpRequest::newHttpRequest();
+    req->setPath("/api/v1/apitest/static");
+    req->setMethod(drogon::Get);
+    auto weakClient = std::weak_ptr<HttpClient>(client);
+    auto weakReq = std::weak_ptr<HttpRequest>(req);
+    client->sendRequest(
+        req,
+        [weakClient, weakReq, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+
+            app().getLoop()->queueInLoop([weakClient, weakReq, TEST_CTX]() {
+                CHECK(weakReq.expired());
+                CHECK(weakClient.expired());
+            });
+        },
+        60);
 }
 
 int main(int argc, char **argv)

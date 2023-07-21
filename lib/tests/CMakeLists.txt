@@ -17,7 +17,6 @@ set(UNITTEST_SOURCES
     unittests/OStringStreamTest.cc
     unittests/PubSubServiceUnittest.cc
     unittests/Sha1Test.cc
-    ../src/ssl_funcs/Sha1.cc
     unittests/FileTypeTest.cc
     unittests/DrObjectTest.cc
     unittests/HttpFullDateTest.cc
@@ -25,7 +24,8 @@ set(UNITTEST_SOURCES
     unittests/CacheMapTest.cc
     unittests/StringOpsTest.cc
     unittests/ControllerCreationTest.cc
-    unittests/MultiPartParserTest.cc)
+    unittests/MultiPartParserTest.cc
+    unittests/SlashRemoverTest.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cc)
@@ -99,7 +99,8 @@ if (BUILD_CTL)
             ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/test.md
             ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/index.html.gz
             ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/中文.txt
-            ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.pem
+            ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.crt
+            ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.key
             $<TARGET_FILE_DIR:integration_test_server>)
   add_custom_command(
     TARGET integration_test_server POST_BUILD

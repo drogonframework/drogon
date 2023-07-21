@@ -117,10 +117,21 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
                                  configFile);
     }
     configFile_ = configFile;
+    auto pos = configFile.find_last_of('.');
+    if (pos == std::string::npos)
+    {
+        throw std::runtime_error("Invalid config file name!");
+    }
+    auto ext = configFile.substr(pos + 1);
+    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                         std::ifstream::in);
+    // get the content of the infile
+    std::string content((std::istreambuf_iterator<char>(infile)),
+                        std::istreambuf_iterator<char>());
     try
     {
-        auto filename = drogon::utils::toNativePath(configFile);
-        configJsonRoot_ = ConfigAdapterManager::instance().getJson(configFile);
+        configJsonRoot_ =
+            ConfigAdapterManager::instance().getJson(content, std::move(ext));
     }
     catch (std::exception &e)
     {
@@ -143,11 +154,15 @@ static void loadLogSetting(const Json::Value &log)
     if (!log)
         return;
     auto logPath = log.get("log_path", "").asString();
-    if (logPath != "")
+    if (!logPath.empty())
     {
         auto baseName = log.get("logfile_base_name", "").asString();
         auto logSize = log.get("log_size_limit", 100000000).asUInt64();
-        HttpAppFrameworkImpl::instance().setLogPath(logPath, baseName, logSize);
+        auto maxFiles = log.get("max_files", 0).asUInt();
+        HttpAppFrameworkImpl::instance().setLogPath(logPath,
+                                                    baseName,
+                                                    logSize,
+                                                    maxFiles);
     }
     auto logLevel = log.get("log_level", "DEBUG").asString();
     if (logLevel == "TRACE")
@@ -497,7 +512,7 @@ static void loadApp(const Json::Value &app)
         }
     }
     bool enableCompressedRequests =
-        app.get("enabled_compresed_request", false).asBool();
+        app.get("enabled_compressed_request", false).asBool();
     drogon::app().enableCompressedRequest(enableCompressedRequests);
 }
 static void loadDbClients(const Json::Value &dbClients)

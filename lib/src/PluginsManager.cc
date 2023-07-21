@@ -88,16 +88,14 @@ void PluginsManager::initializeAllPlugins(
 }
 void PluginsManager::createPlugin(const std::string &pluginName)
 {
-    auto *p = DrClassMap::newObject(pluginName);
-    auto *pluginPtr = dynamic_cast<PluginBase *>(p);
+    auto pluginPtr = std::dynamic_pointer_cast<PluginBase>(
+        DrClassMap::newSharedObject(pluginName));
     if (!pluginPtr)
     {
-        if (p)
-            delete p;
         LOG_ERROR << "Plugin " << pluginName << " undefined!";
         return;
     }
-    pluginsMap_[pluginName].reset(pluginPtr);
+    pluginsMap_[pluginName] = pluginPtr;
 }
 PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
 {
@@ -105,6 +103,17 @@ PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
     if (iter != pluginsMap_.end())
     {
         return iter->second.get();
+    }
+    return nullptr;
+}
+
+std::shared_ptr<PluginBase> PluginsManager::getSharedPlugin(
+    const std::string &pluginName)
+{
+    auto iter = pluginsMap_.find(pluginName);
+    if (iter != pluginsMap_.end())
+    {
+        return iter->second;
     }
     return nullptr;
 }

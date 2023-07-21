@@ -19,6 +19,7 @@ option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_SHARED_LIBS "Build drogon as a shared lib" OFF)
 option(BUILD_DOC "Build Doxygen documentation" OFF)
 option(BUILD_BROTLI "Build Brotli" ON)
+option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
 
 include(CMakeDependentOption)
@@ -30,7 +31,7 @@ CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 8)
-set(DROGON_PATCH_VERSION 3)
+set(DROGON_PATCH_VERSION 4)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
@@ -211,14 +212,18 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
 # yamlcpp
-find_package(yaml-cpp QUIET)
-if(yaml-cpp_FOUND)
-message(STATUS "yaml-cpp found")
-target_link_libraries(${PROJECT_NAME} PUBLIC ${YAML_CPP_LIBRARIES})
-target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_YAML_CPP)
+if(BUILD_YAML_CONFIG)
+    find_package(yaml-cpp QUIET)
+    if(yaml-cpp_FOUND)
+    message(STATUS "yaml-cpp found")
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${YAML_CPP_LIBRARIES})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_YAML_CPP)
+    else()
+    message(STATUS "yaml-cpp not used")
+    endif(yaml-cpp_FOUND)
 else()
-message(STATUS "yaml-cpp not used")
-endif()
+    message(STATUS "yaml-cpp not used")
+endif(BUILD_YAML_CONFIG)
 
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
@@ -282,6 +287,7 @@ set(DROGON_SOURCES
     lib/src/PluginsManager.cc
     lib/src/RangeParser.cc
     lib/src/SecureSSLRedirector.cc
+    lib/src/GlobalFilters.cc
     lib/src/AccessLogger.cc
     lib/src/RealIpResolver.cc
     lib/src/SessionManager.cc
@@ -296,6 +302,7 @@ set(DROGON_SOURCES
     lib/src/SlidingWindowRateLimiter.cc
     lib/src/TokenBucketRateLimiter.cc
     lib/src/Hodor.cc
+    lib/src/SlashRemover.cc
     lib/src/drogon_test.cc
     lib/src/ConfigAdapterManager.cc
     lib/src/JsonConfigAdapter.cc
@@ -500,20 +507,6 @@ endif (BUILD_TESTING)
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 
-find_package(OpenSSL)
-if (OpenSSL_FOUND)
-    target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-else (OpenSSL_FOUND)
-    set(DROGON_SOURCES
-        ${DROGON_SOURCES}
-        lib/src/ssl_funcs/Md5.cc
-        lib/src/ssl_funcs/Sha1.cc)
-    set(private_headers
-        ${private_headers}
-        lib/src/ssl_funcs/Md5.h
-        lib/src/ssl_funcs/Sha1.h)
-endif (OpenSSL_FOUND)
-
 execute_process(COMMAND "git" rev-parse HEAD
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     OUTPUT_VARIABLE GIT_SHA1
@@ -639,7 +632,7 @@ if (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
     endif (DROGON_FOUND_SQLite3)
 endif (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
 
-set(COMPILER_COMMAND ${CMAKE_CXX_COMPILER})
+get_filename_component(COMPILER_COMMAND ${CMAKE_CXX_COMPILER} NAME)
 set(COMPILER_ID ${CMAKE_CXX_COMPILER_ID})
 
 if (CMAKE_BUILD_TYPE)
@@ -696,6 +689,7 @@ install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS
     orm_lib/inc/drogon/orm/ArrayParser.h
+    orm_lib/inc/drogon/orm/BaseBuilder.h
     orm_lib/inc/drogon/orm/Criteria.h
     orm_lib/inc/drogon/orm/DbClient.h
     orm_lib/inc/drogon/orm/DbListener.h
@@ -738,7 +732,10 @@ set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/SecureSSLRedirector.h
     lib/inc/drogon/plugins/AccessLogger.h
     lib/inc/drogon/plugins/RealIpResolver.h
-    lib/inc/drogon/plugins/Hodor.h)
+    lib/inc/drogon/plugins/Hodor.h
+    lib/inc/drogon/plugins/SlashRemover.h
+    lib/inc/drogon/plugins/GlobalFilters.h)
+
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
 

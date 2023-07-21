@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <fstream>
 
 namespace drogon
 {
@@ -10,7 +11,7 @@ class ConfigAdapter
 {
   public:
     virtual ~ConfigAdapter() = default;
-    virtual Json::Value getJson(const std::string &configFile) const
+    virtual Json::Value getJson(const std::string &content) const
         noexcept(false) = 0;
     virtual std::vector<std::string> getExtensions() const = 0;
 };

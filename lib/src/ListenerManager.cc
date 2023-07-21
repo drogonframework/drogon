@@ -58,12 +58,8 @@ void ListenerManager::addListener(
     bool useOldTLS,
     const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
 {
-#ifndef OpenSSL_FOUND
-    if (useSSL)
-    {
+    if (useSSL && !utils::supportsTls())
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
-    }
-#endif
     listeners_.emplace_back(
         ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
 }
@@ -83,15 +79,9 @@ void ListenerManager::createListeners(
     const WebSocketNewAsyncCallback &webSocketCallback,
     const ConnectionCallback &connectionCallback,
     size_t connectionTimeout,
-#ifdef OpenSSL_FOUND
     const std::string &globalCertFile,
     const std::string &globalKeyFile,
     const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
-#else
-    const std::string & /*globalCertFile*/,
-    const std::string & /*globalKeyFile*/,
-    const std::vector<std::pair<std::string, std::string>> & /*sslConfCmds*/,
-#endif
     const std::vector<trantor::EventLoop *> &ioLoops,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices,
@@ -132,9 +122,8 @@ void ListenerManager::createListeners(
                                              syncAdvices,
                                              preSendingAdvices);
 
-            if (listener.useSSL_)
+            if (listener.useSSL_ && utils::supportsTls())
             {
-#ifdef OpenSSL_FOUND
                 auto cert = listener.certFile_;
                 auto key = listener.keyFile_;
                 if (cert.empty())
@@ -152,8 +141,10 @@ void ListenerManager::createListeners(
                 std::copy(listener.sslConfCmds_.begin(),
                           listener.sslConfCmds_.end(),
                           std::back_inserter(cmds));
-                serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
-#endif
+                auto policy =
+                    trantor::TLSPolicy::defaultServerPolicy(cert, key);
+                policy->setConfCmds(cmds).setUseOldTLS(listener.useOldTLS_);
+                serverPtr->enableSSL(std::move(policy));
             }
             serverPtr->setHttpAsyncCallback(httpCallback);
             serverPtr->setNewWebsocketCallback(webSocketCallback);
@@ -179,9 +170,8 @@ void ListenerManager::createListeners(
                 "drogon",
                 syncAdvices,
                 preSendingAdvices);
-            if (listener.useSSL_)
+            if (listener.useSSL_ && utils::supportsTls())
             {
-#ifdef OpenSSL_FOUND
                 auto cert = listener.certFile_;
                 auto key = listener.keyFile_;
                 if (cert.empty())
@@ -196,11 +186,10 @@ void ListenerManager::createListeners(
                     exit(1);
                 }
                 auto cmds = sslConfCmds;
-                std::copy(listener.sslConfCmds_.begin(),
-                          listener.sslConfCmds_.end(),
-                          std::back_inserter(cmds));
-                serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
-#endif
+                auto policy =
+                    trantor::TLSPolicy::defaultServerPolicy(cert, key);
+                policy->setConfCmds(cmds).setUseOldTLS(listener.useOldTLS_);
+                serverPtr->enableSSL(std::move(policy));
             }
             serverPtr->setIoLoops(ioLoops);
             serverPtr->setHttpAsyncCallback(httpCallback);

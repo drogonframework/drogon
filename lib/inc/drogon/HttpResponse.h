@@ -15,6 +15,7 @@
 
 #include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
+#include <trantor/net/Certificate.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpTypes.h>
@@ -336,17 +337,32 @@ class DROGON_EXPORT HttpResponse
      */
     virtual void setPassThrough(bool flag) = 0;
 
+    /**
+     * @brief Get the certificate of the peer, if any.
+     * @return The certificate of the peer. nullptr is none.
+     */
+    virtual const trantor::CertificatePtr &peerCertificate() const = 0;
+    const trantor::CertificatePtr &getPeerCertificate() const
+    {
+        return peerCertificate();
+    }
+
     /* The following methods are a series of factory methods that help users
      * create response objects. */
 
     /// Create a normal response with a status code of 200ok and a content type
     /// of text/html.
     static HttpResponsePtr newHttpResponse();
+    /// Create a response with a status code and a content type
+    static HttpResponsePtr newHttpResponse(HttpStatusCode code,
+                                           ContentType type);
     /// Create a response which returns a 404 page.
     static HttpResponsePtr newNotFoundResponse();
-    /// Create a response which returns a json object. Its content type is set
-    /// to set/json.
+    /// Create a response which returns a json object. Its content-type is set
+    /// to application/json.
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
+    /// Create a response which returns a json object. Its content-type is set
+    /// to application/json.
     static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
     /// Create a response that returns a page rendered by a view named
     /// viewName.

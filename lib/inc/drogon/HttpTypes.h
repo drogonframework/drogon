@@ -102,7 +102,8 @@ enum ContentType
     CT_TEXT_PLAIN,
     CT_TEXT_HTML,
     CT_APPLICATION_X_FORM,
-    CT_APPLICATION_X_JAVASCRIPT,
+    CT_APPLICATION_X_JAVASCRIPT [[deprecated("use CT_TEXT_JAVASCRIPT")]],
+    CT_TEXT_JAVASCRIPT,
     CT_TEXT_CSS,
     CT_TEXT_XML,
     CT_APPLICATION_XML,
@@ -160,6 +161,7 @@ enum class ReqResult
     Timeout,
     HandshakeError,
     InvalidCertificate,
+    EncryptionFailure,
 };
 
 enum class WebSocketMessageType
@@ -190,6 +192,8 @@ inline string_view to_string_view(drogon::ReqResult result)
             return "Handshake error";
         case ReqResult::InvalidCertificate:
             return "Invalid certificate";
+        case ReqResult::EncryptionFailure:
+            return "Unrecoverable encryption failure";
         default:
             return "Unknown error";
     }

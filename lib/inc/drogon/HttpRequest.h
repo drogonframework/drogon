@@ -25,6 +25,7 @@
 #include <drogon/UploadFile.h>
 #include <json/json.h>
 #include <trantor/net/InetAddress.h>
+#include <trantor/net/Certificate.h>
 #include <trantor/utils/Date.h>
 #include <memory>
 #include <string>
@@ -210,6 +211,9 @@ class DROGON_EXPORT HttpRequest
     /// Get the path of the request.
     virtual const std::string &path() const = 0;
 
+    /// Get the original path of the request.(before url-decoding)
+    virtual const std::string &getOriginalPath() const = 0;
+
     /// Get the path of the request.
     const std::string &getPath() const
     {
@@ -339,6 +343,13 @@ class DROGON_EXPORT HttpRequest
     const trantor::Date &getCreationDate() const
     {
         return creationDate();
+    }
+
+    // Return the peer certificate (if any)
+    virtual const trantor::CertificatePtr &peerCertificate() const = 0;
+    const trantor::CertificatePtr &getPeerCertificate() const
+    {
+        return peerCertificate();
     }
 
     /// Get the Json object of the request

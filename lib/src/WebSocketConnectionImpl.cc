@@ -372,6 +372,7 @@ void WebSocketConnectionImpl::onNewMessage(
     const trantor::TcpConnectionPtr &connPtr,
     trantor::MsgBuffer *buffer)
 {
+    auto self = shared_from_this();
     while (buffer->readableBytes() > 0)
     {
         auto success = parser_.parse(buffer);
@@ -397,7 +398,7 @@ void WebSocketConnectionImpl::onNewMessage(
                 }
                 // LOG_TRACE << "new message received: " << message
                 //           << "\n(type=" << (int)type << ")";
-                messageCallback_(std::move(message), shared_from_this(), type);
+                messageCallback_(std::move(message), self, type);
             }
             else
             {

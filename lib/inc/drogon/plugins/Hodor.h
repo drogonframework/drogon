@@ -130,16 +130,16 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     size_t limiterExpireTime_{600};
     std::function<optional<std::string>(const drogon::HttpRequestPtr &)>
         userIdGetter_;
-    std::function<HttpResponsePtr(const HttpRequestPtr &)>
+    std::function<HttpResponsePtr(const drogon::HttpRequestPtr &)>
         rejectResponseFactory_;
 
-    void onHttpRequest(const HttpRequestPtr &,
+    void onHttpRequest(const drogon::HttpRequestPtr &,
                        AdviceCallback &&,
                        AdviceChainCallback &&);
-    bool checkLimit(const HttpRequestPtr &req,
+    bool checkLimit(const drogon::HttpRequestPtr &req,
                     const LimitStrategy &strategy,
                     const std::string &ip,
-                    const optional<std::string> &userId);
+                    const drogon::optional<std::string> &userId);
     HttpResponsePtr rejectResponse_;
 };
 }  // namespace plugin

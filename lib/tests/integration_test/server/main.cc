@@ -23,7 +23,10 @@ class A : public DrObjectBase
     {
         HttpViewData data;
         data.insert("title", std::string("ApiTest::get"));
-        std::unordered_map<std::string, std::string> para;
+        std::unordered_map<std::string,
+                           std::string,
+                           utils::internal::SafeStringHash>
+            para;
         para["int p1"] = std::to_string(p1);
         para["string p2"] = p2;
         para["string p3"] = p3;
@@ -43,7 +46,10 @@ class A : public DrObjectBase
     {
         HttpViewData data;
         data.insert("title", std::string("ApiTest::get"));
-        std::unordered_map<std::string, std::string> para;
+        std::unordered_map<std::string,
+                           std::string,
+                           utils::internal::SafeStringHash>
+            para;
         para["int p1"] = std::to_string(p1);
         para["string p2"] = p2;
         para["string p3"] = p3;
@@ -64,7 +70,10 @@ class B : public DrObjectBase
     {
         HttpViewData data;
         data.insert("title", std::string("ApiTest::get"));
-        std::unordered_map<std::string, std::string> para;
+        std::unordered_map<std::string,
+                           std::string,
+                           utils::internal::SafeStringHash>
+            para;
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
@@ -110,7 +119,10 @@ class Test : public HttpController<Test>
     {
         HttpViewData data;
         data.insert("title", std::string("ApiTest::get"));
-        std::unordered_map<std::string, std::string> para;
+        std::unordered_map<std::string,
+                           std::string,
+                           utils::internal::SafeStringHash>
+            para;
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
@@ -124,7 +136,10 @@ class Test : public HttpController<Test>
     {
         HttpViewData data;
         data.insert("title", std::string("ApiTest::get"));
-        std::unordered_map<std::string, std::string> para;
+        std::unordered_map<std::string,
+                           std::string,
+                           utils::internal::SafeStringHash>
+            para;
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
@@ -158,7 +173,7 @@ int main()
     if (app().supportSSL())
     {
         drogon::app()
-            .setSSLFiles("server.pem", "server.pem")
+            .setSSLFiles("server.crt", "server.key")
             .addListener("0.0.0.0", 8849, true);
     }
     // Class function example
@@ -183,7 +198,10 @@ int main()
         ) {
             HttpViewData data;
             data.insert("title", std::string("ApiTest::get"));
-            std::unordered_map<std::string, std::string> para;
+            std::unordered_map<std::string,
+                               std::string,
+                               utils::internal::SafeStringHash>
+                para;
             para["a"] = std::to_string(a);
             para["b"] = std::to_string(b);
             data.insert("parameters", para);

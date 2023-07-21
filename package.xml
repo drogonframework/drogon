@@ -1,0 +1,30 @@
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>drogon</name>
+
+    <version>1.8.4</version>
+
+    <description>Drogon: A C++14/17/20 based HTTP web application framework running on Linux/macOS/Unix/Windows.</description>
+
+    <maintainer email="antao2002@gmail.com">An Tao</maintainer>
+
+    <license>MIT</license>
+
+    <url type="repository">https://github.com/drogonframework/drogon</url>
+
+    <author email="antao2002@gmail.com">An Tao</author>
+
+    <buildtool_depend>cmake</buildtool_depend>
+
+    <depend>libjsoncpp-dev</depend>
+    <depend>uuid</depend>
+    <depend>zlib</depend>
+    <depend>openssl</depend>
+    <depend>libssl-dev</depend>
+    <depend>libsqlite3-dev</depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+
+</package>

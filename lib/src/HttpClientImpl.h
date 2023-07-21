@@ -105,6 +105,11 @@ class HttpClientImpl final : public HttpClient,
     void addSSLConfigs(const std::vector<std::pair<std::string, std::string>>
                            &sslConfCmds) override;
 
+    void setSockOptCallback(std::function<void(int)> cb)
+    {
+        sockOptCallback_ = std::move(cb);
+    }
+
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
@@ -141,6 +146,7 @@ class HttpClientImpl final : public HttpClient,
     std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     std::string clientCertPath_;
     std::string clientKeyPath_;
+    std::function<void(int)> sockOptCallback_;
 };
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
 }  // namespace drogon

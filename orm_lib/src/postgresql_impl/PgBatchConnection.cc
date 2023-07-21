@@ -167,7 +167,6 @@ void PgConnection::pgPoll()
 {
     loop_->assertInLoopThread();
     auto connStatus = PQconnectPoll(connectionPtr_.get());
-
     switch (connStatus)
     {
         case PGRES_POLLING_FAILED:
@@ -362,7 +361,6 @@ void PgConnection::sendBatchedSql()
                 return;
             }
         }
-
         if (autoBatch_ && sendBatchEnd_)
         {
             sendBatchEnd_ = false;
@@ -370,6 +368,13 @@ void PgConnection::sendBatchedSql()
             {
                 return;
             }
+            if (flush())
+            {
+                return;
+            }
+        }
+        else
+        {
             if (flush())
             {
                 return;
@@ -441,7 +446,7 @@ void PgConnection::handleRead()
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR ||
             type == PGRES_PIPELINE_ABORTED)
         {
-            handleFatalError(false);
+            handleFatalError(false, type == PGRES_PIPELINE_ABORTED);
             continue;
         }
         if (type == PGRES_PIPELINE_SYNC)
@@ -493,11 +498,14 @@ void PgConnection::doAfterPreparing()
 {
 }
 
-void PgConnection::handleFatalError(bool clearAll)
+void PgConnection::handleFatalError(bool clearAll, bool isAbortPipeline)
 {
-    LOG_ERROR << PQerrorMessage(connectionPtr_.get());
-    auto exceptPtr =
-        std::make_exception_ptr(Failure(PQerrorMessage(connectionPtr_.get())));
+    std::string errmsg =
+        isAbortPipeline
+            ? "Command didn't run because of an abort earlier in a pipeline"
+            : PQerrorMessage(connectionPtr_.get());
+    LOG_ERROR << errmsg;
+    auto exceptPtr = std::make_exception_ptr(Failure(errmsg));
     if (clearAll)
     {
         for (auto &cmd : batchCommandsForWaitingResults_)
@@ -522,19 +530,13 @@ void PgConnection::handleFatalError(bool clearAll)
         else if (!batchCommandsForWaitingResults_.empty())
         {
             auto &cmd = batchCommandsForWaitingResults_.front();
-            if (!cmd->preparingStatement_.empty())
-            {
-                cmd->preparingStatement_.clear();
-            }
-            else
-            {
-                cmd->exceptionCallback_(exceptPtr);
-                batchCommandsForWaitingResults_.pop_front();
-            }
+            cmd->exceptionCallback_(exceptPtr);
+            batchCommandsForWaitingResults_.pop_front();
         }
         else
         {
-            assert(false);
+            // PQsendPrepare failed, error message has already been reported
+            // Ignore PQsendQueryPrepared failure
         }
     }
 }

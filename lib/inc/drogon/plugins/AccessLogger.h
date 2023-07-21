@@ -77,6 +77,9 @@ namespace plugin
  * log_size_limit: 0 bytes by default, when the log file size reaches
  * "log_size_limit", the log file is switched. Zero value means never switch
  *
+ * max_files: 0 by default, when the number of old log files exceeds max_files,
+ * the oldest log file will be deleted. 0 means never delete.
+ *
  * log_index: The index of log output, 0 by default.
  *
  * show_microseconds: Whether print microsecond in time. True by default.

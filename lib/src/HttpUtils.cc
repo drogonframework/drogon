@@ -393,7 +393,7 @@ ContentType getContentType(const std::string &fileName)
         case 2:
         {
             if (extName == "js")
-                return CT_APPLICATION_X_JAVASCRIPT;
+                return CT_TEXT_JAVASCRIPT;
             return CT_APPLICATION_OCTET_STREAM;
         }
         case 3:
@@ -495,6 +495,7 @@ ContentType parseContentType(const string_view &contentType)
         {"application/xml", CT_APPLICATION_XML},
         {"application/json", CT_APPLICATION_JSON},
         {"application/x-javascript", CT_APPLICATION_X_JAVASCRIPT},
+        {"text/javascript", CT_TEXT_JAVASCRIPT},
         {"text/css", CT_TEXT_CSS},
         {"text/xml", CT_TEXT_XML},
         {"text/xsl", CT_TEXT_XSL},
@@ -567,6 +568,11 @@ const string_view &contentTypeToMime(ContentType contenttype)
         case CT_APPLICATION_X_JAVASCRIPT:
         {
             static string_view sv = "application/x-javascript; charset=utf-8";
+            return sv;
+        }
+        case CT_TEXT_JAVASCRIPT:
+        {
+            static string_view sv = "text/javascript; charset=utf-8";
             return sv;
         }
         case CT_TEXT_CSS:

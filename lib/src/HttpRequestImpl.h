@@ -21,6 +21,7 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/InetAddress.h>
+#include <trantor/net/Certificate.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/NonCopyable.h>
@@ -59,6 +60,7 @@ class HttpRequestImpl : public HttpRequest
         cookies_.clear();
         flagForParsingParameters_ = false;
         path_.clear();
+        originalPath_.clear();
         pathEncode_ = true;
         matchedPathPattern_ = "";
         query_.clear();
@@ -74,6 +76,7 @@ class HttpRequestImpl : public HttpRequest
         contentTypeString_.clear();
         keepAlive_ = true;
         jsonParsingErrorPtr_.reset();
+        peerCertificate_.reset();
     }
     trantor::EventLoop *getLoop()
     {
@@ -119,6 +122,7 @@ class HttpRequestImpl : public HttpRequest
     {
         if (utils::needUrlDecoding(start, end))
         {
+            originalPath_.append(start, end);
             path_ = utils::urlDecode(start, end);
         }
         else
@@ -158,6 +162,11 @@ class HttpRequestImpl : public HttpRequest
     const std::string &path() const override
     {
         return path_;
+    }
+
+    const std::string &getOriginalPath() const override
+    {
+        return originalPath_.empty() ? path_ : originalPath_;
     }
 
     void setQuery(const char *start, const char *end)
@@ -231,6 +240,11 @@ class HttpRequestImpl : public HttpRequest
         return creationDate_;
     }
 
+    const trantor::CertificatePtr &peerCertificate() const override
+    {
+        return peerCertificate_;
+    }
+
     void setCreationDate(const trantor::Date &date)
     {
         creationDate_ = date;
@@ -244,6 +258,11 @@ class HttpRequestImpl : public HttpRequest
     void setLocalAddr(const trantor::InetAddress &local)
     {
         local_ = local;
+    }
+
+    void setPeerCertificate(const trantor::CertificatePtr &cert)
+    {
+        peerCertificate_ = cert;
     }
 
     void addHeader(const char *start, const char *colon, const char *end);
@@ -543,6 +562,7 @@ class HttpRequestImpl : public HttpRequest
     HttpMethod method_{Invalid};
     Version version_{Version::kUnknown};
     std::string path_;
+    std::string originalPath_;
     bool pathEncode_{true};
     string_view matchedPathPattern_{""};
     std::string query_;
@@ -561,6 +581,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress peer_;
     trantor::InetAddress local_;
     trantor::Date creationDate_;
+    trantor::CertificatePtr peerCertificate_;
     std::unique_ptr<CacheFile> cacheFilePtr_;
     mutable std::unique_ptr<std::string> jsonParsingErrorPtr_;
     std::unique_ptr<std::string> expectPtr_;

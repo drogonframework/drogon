@@ -13,7 +13,9 @@
  */
 
 #pragma once
-
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
 #include <drogon/exports.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/CacheMap.h>
@@ -64,7 +66,34 @@ using ExceptionHandler =
 using DefaultHandler =
     std::function<void(const HttpRequestPtr &,
                        std::function<void(const HttpResponsePtr &)> &&)>;
+#ifdef __cpp_impl_coroutine
+class HttpAppFramework;
+namespace internal
+{
+struct [[nodiscard]] ForwardAwaiter
+    : public CallbackAwaiter<drogon::HttpResponsePtr>
+{
+  public:
+    ForwardAwaiter(drogon::HttpRequestPtr &&req,
+                   std::string &&host,
+                   double timeout,
+                   HttpAppFramework &app)
+        : req_(std::move(req)),
+          host_(std::move(host)),
+          timeout_(timeout),
+          app_(app)
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle) noexcept;
 
+  private:
+    drogon::HttpRequestPtr req_;
+    std::string host_;
+    double timeout_;
+    HttpAppFramework &app_;
+};
+}  // namespace internal
+#endif
 class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 {
   public:
@@ -170,7 +199,26 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         return pluginPtr;
     }
 
-    /// Get the plugin object registered in the framework
+    /// Get the shared_ptr plugin object registered in the framework
+    /**
+     * @note
+     * This method is usually called after the framework runs.
+     * Calling this method in the initAndStart() method of plugins is also
+     * valid.
+     */
+    template <typename T>
+    std::shared_ptr<T> getSharedPlugin()
+    {
+        static_assert(IsPlugin<T>::value,
+                      "The Template parameter must be a subclass of "
+                      "PluginBase");
+        assert(isRunning());
+        static auto pluginPtr =
+            std::dynamic_pointer_cast<T>(getSharedPlugin(T::classTypeName()));
+        return pluginPtr;
+    }
+
+    /// @brief the plugin object registered in the framework
     /**
      * @param name is the class name of the plugin.
      *
@@ -180,6 +228,17 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * valid.
      */
     virtual PluginBase *getPlugin(const std::string &name) = 0;
+
+    /**
+     * @brief Get the shared_ptr plugin object registered in the framework
+     *
+     * @note
+     * This method is usually called after the framework runs.
+     * Calling this method in the initAndStart() method of plugins is also
+     * valid.
+     */
+    virtual std::shared_ptr<PluginBase> getSharedPlugin(
+        const std::string &name) = 0;
 
     /* The following is a series of methods of AOP */
 
@@ -647,7 +706,21 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         std::function<void(const HttpResponsePtr &)> &&callback,
         const std::string &hostString = "",
         double timeout = 0) = 0;
-
+#ifdef __cpp_impl_coroutine
+    /**
+     * @brief Forward the http request, this is the coroutine version of the
+     * above method.
+     */
+    internal::ForwardAwaiter forwardCoro(HttpRequestPtr req,
+                                         std::string hostString = "",
+                                         double timeout = 0)
+    {
+        return internal::ForwardAwaiter(std::move(req),
+                                        std::move(hostString),
+                                        timeout,
+                                        *this);
+    }
+#endif
     /// Get information about the handlers registered to drogon
     /**
      * @return
@@ -687,6 +760,25 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setSSLConfigCommands(
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
+
+    /// Add plugins
+    /**
+     * @param configs The plugins array
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void addPlugins(const Json::Value &configs) = 0;
+
+    /// Add a plugin
+    /**
+     * @param name Name of the plugin
+     * @param dependencies Names of plugins this plugin depends on
+     * @param config Custom config for the plugin
+     */
+    virtual void addPlugin(const std::string &name,
+                           const std::vector<std::string> &dependencies,
+                           const Json::Value &config) = 0;
 
     /// Add a listener for http or https service
     /**
@@ -917,7 +1009,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setLogPath(
         const std::string &logPath,
         const std::string &logfileBaseName = "",
-        size_t logSize = 100000000) = 0;
+        size_t logSize = 100000000,
+        size_t maxFiles = 0) = 0;
 
     /// Set the log level
     /**
@@ -1449,5 +1542,21 @@ inline HttpAppFramework &app()
 {
     return HttpAppFramework::instance();
 }
-
+#ifdef __cpp_impl_coroutine
+namespace internal
+{
+inline void ForwardAwaiter::await_suspend(
+    std::coroutine_handle<> handle) noexcept
+{
+    app_.forward(
+        req_,
+        [this, handle](const drogon::HttpResponsePtr &resp) {
+            setValue(resp);
+            handle.resume();
+        },
+        host_,
+        timeout_);
+}
+}  // namespace internal
+#endif
 }  // namespace drogon
