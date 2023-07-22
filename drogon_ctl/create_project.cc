@@ -57,10 +57,15 @@ static void newGitIgFile(std::ofstream &gitFile)
     gitFile << templ->genText();
 }
 
-static void newConfigFile(std::ofstream &configFile)
+static void newConfigJsonFile(std::ofstream &configJsonFile)
 {
-    auto templ = DrTemplateBase::newTemplate("config");
-    configFile << templ->genText();
+    auto templ = DrTemplateBase::newTemplate("config_json");
+    configJsonFile << templ->genText();
+}
+static void newConfigYamlFile(std::ofstream &configYamlFile)
+{
+    auto templ = DrTemplateBase::newTemplate("config_yaml");
+    configYamlFile << templ->genText();
 }
 static void newModelConfigFile(std::ofstream &configFile)
 {
@@ -117,8 +122,10 @@ void create_project::createProject(const std::string &projectName)
 
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);
-    std::ofstream configFile("config.json", std::ofstream::out);
-    newConfigFile(configFile);
+    std::ofstream configJsonFile("config.json", std::ofstream::out);
+    newConfigJsonFile(configJsonFile);
+    std::ofstream configYamlFile("config.yaml", std::ofstream::out);
+    newConfigYamlFile(configYamlFile);
     std::ofstream modelConfigFile("models/model.json", std::ofstream::out);
     newModelConfigFile(modelConfigFile);
     std::ofstream testMainFile("test/test_main.cc", std::ofstream::out);
