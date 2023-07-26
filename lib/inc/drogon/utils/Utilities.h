@@ -129,10 +129,12 @@ inline std::string base64Encode(string_view data,
 }
 
 /// Encode the string to base64 format with no padding.
-DROGON_EXPORT std::string base64EncodeUnpadded(
-    const unsigned char *bytes_to_encode,
-    unsigned int in_len,
-    bool url_safe = false);
+inline std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
+                                        unsigned int in_len,
+                                        bool url_safe = false)
+{
+    return base64Encode(bytes_to_encode, in_len, url_safe, false);
+}
 
 /// Encode the string to base64 format with no padding.
 inline std::string base64EncodeUnpadded(string_view data, bool url_safe = false)
