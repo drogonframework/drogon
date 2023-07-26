@@ -139,13 +139,6 @@ static inline bool isBase64(unsigned char c)
     return false;
 }
 
-bool isInteger(const std::string &str)
-{
-    for (auto c : str)
-        if (c < '0' || c > '9')
-            return false;
-    return true;
-}
 bool isInteger(string_view str)
 {
     for (auto c : str)
@@ -154,13 +147,6 @@ bool isInteger(string_view str)
     return true;
 }
 
-bool isBase64(const std::string &str)
-{
-    for (auto c : str)
-        if (!isBase64(c))
-            return false;
-    return true;
-}
 bool isBase64(string_view str)
 {
     for (auto c : str)
@@ -458,13 +444,6 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
                 ret += '=';
     }
     return ret;
-}
-
-std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
-                                 unsigned int in_len,
-                                 bool url_safe)
-{
-    return base64Encode(bytes_to_encode, in_len, url_safe, false);
 }
 
 std::vector<char> base64DecodeToVector(string_view encoded_string)
