@@ -153,7 +153,7 @@ void Sqlite3Connection::execSqlInQueue(
             return;
         }
         if (!std::all_of(remaining, sql.data() + sql.size(), [](char ch) {
-                return std::isspace(ch);
+                return std::isspace(static_cast<unsigned char>(ch));
             }))
         {
             auto exceptPtr = std::make_exception_ptr(SqlError(

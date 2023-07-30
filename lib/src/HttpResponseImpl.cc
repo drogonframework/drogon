@@ -760,12 +760,13 @@ void HttpResponseImpl::addHeader(const char *start,
         return tolower(c);
     });
     ++colon;
-    while (colon < end && isspace(*colon))
+    while (colon < end && isspace(static_cast<unsigned char>(*colon)))
     {
         ++colon;
     }
     std::string value(colon, end);
-    while (!value.empty() && isspace(value[value.size() - 1]))
+    while (!value.empty() &&
+           isspace(static_cast<unsigned char>(value[value.size() - 1])))
     {
         value.resize(value.size() - 1);
     }
@@ -787,18 +788,20 @@ void HttpResponseImpl::addHeader(const char *start,
                 cookie_name = coo.substr(0, epos);
                 std::string::size_type cpos = 0;
                 while (cpos < cookie_name.length() &&
-                       isspace(cookie_name[cpos]))
+                       isspace(static_cast<unsigned char>(cookie_name[cpos])))
                     ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 ++epos;
-                while (epos < coo.length() && isspace(coo[epos]))
+                while (epos < coo.length() &&
+                       isspace(static_cast<unsigned char>(coo[epos])))
                     ++epos;
                 cookie_value = coo.substr(epos);
             }
             else
             {
                 std::string::size_type cpos = 0;
-                while (cpos < coo.length() && isspace(coo[cpos]))
+                while (cpos < coo.length() &&
+                       isspace(static_cast<unsigned char>(coo[cpos])))
                     ++cpos;
                 cookie_name = coo.substr(cpos);
             }
