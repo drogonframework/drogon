@@ -76,7 +76,8 @@ void HttpRequestImpl::parseParameters() const
     if (!input.empty())
     {
         string_view::size_type pos = 0;
-        while ((input[pos] == '?' || isspace(static_cast<unsigned char>(input[pos]))) &&
+        while ((input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))) &&
                pos < input.length())
         {
             ++pos;
@@ -90,7 +91,8 @@ void HttpRequestImpl::parseParameters() const
             {
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
-                while (cpos < key.length() && isspace(static_cast<unsigned char>(key[cpos])))
+                while (cpos < key.length() &&
+                       isspace(static_cast<unsigned char>(key[cpos])))
                     ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
@@ -108,7 +110,8 @@ void HttpRequestImpl::parseParameters() const
             {
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
-                while (cpos < key.length() && isspace(static_cast<unsigned char>(key[cpos])))
+                while (cpos < key.length() &&
+                       isspace(static_cast<unsigned char>(key[cpos])))
                     ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
@@ -130,7 +133,8 @@ void HttpRequestImpl::parseParameters() const
         type.find("application/x-www-form-urlencoded") != std::string::npos)
     {
         string_view::size_type pos = 0;
-        while ((input[pos] == '?' || isspace(static_cast<unsigned char>(input[pos]))) &&
+        while ((input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))) &&
                pos < input.length())
         {
             ++pos;
@@ -144,7 +148,8 @@ void HttpRequestImpl::parseParameters() const
             {
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
-                while (cpos < key.length() && isspace(static_cast<unsigned char>(key[cpos])))
+                while (cpos < key.length() &&
+                       isspace(static_cast<unsigned char>(key[cpos])))
                     ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
@@ -162,7 +167,8 @@ void HttpRequestImpl::parseParameters() const
             {
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
-                while (cpos < key.length() && isspace(static_cast<unsigned char>(key[cpos])))
+                while (cpos < key.length() &&
+                       isspace(static_cast<unsigned char>(key[cpos])))
                     ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
@@ -406,7 +412,8 @@ void HttpRequestImpl::addHeader(const char *start,
         ++colon;
     }
     std::string value(colon, end);
-    while (!value.empty() && isspace(static_cast<unsigned char>(value[value.size() - 1])))
+    while (!value.empty() &&
+           isspace(static_cast<unsigned char>(value[value.size() - 1])))
     {
         value.resize(value.size() - 1);
     }
