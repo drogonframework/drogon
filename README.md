@@ -184,6 +184,34 @@ In addition, you can also find that all handler interfaces are in asynchronous m
 
 After compiling all of the above source files, we get a very simple web application. This is a good start. **For more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki/ENG-01-Overview)**
 
+## Cross-compilation
+
+Drogon supports cross-compilation, you should define the `CMAKE_SYSTEM_NAME` in toolchain file, for example:
+    
+```cmake
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+```
+
+You can disable building options for examples and drogon_ctl by settings `BUILD_EXAMPLES` and `BUILD_CTL` to `OFF` in the toolchain file.
+
+## Building options
+
+Drogon provides some building options, you can enable or disable them by setting the corresponding variables to `ON` or `OFF` in the cmake command line, cmake file etc...
+
+| Option name | Description | Default value |
+| :--- | :--- | :--- |
+| BUILD_CTL | Build drogon_ctl | ON |
+| BUILD_EXAMPLES | Build examples | ON |
+| BUILD_ORM | Build orm | ON |
+| COZ_PROFILING | Use coz for profiling | OFF |
+| BUILD_SHARED_LIBS | Build drogon as a shared lib | OFF |
+| BUILD_DOC | Build Doxygen documentation | OFF |
+| BUILD_BROTLI | Build Brotli | ON |
+| BUILD_YAML_CONFIG | Build yaml config | ON |
+| USE_SUBMODULE | Use trantor as a submodule | ON |
+
+
 ## Contributions
 
 This project exists thanks to all the people who contribute code. 
