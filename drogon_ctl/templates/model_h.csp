@@ -85,6 +85,8 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 %>
     };
 
+    const static std::string columnsList;
+
     const static int primaryKeyNumber;
     const static std::string tableName;
     const static bool hasPrimaryKey;
@@ -343,14 +345,14 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 auto rdbms=@@.get<std::string>("rdbms");
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        static const std::string sql="select * from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static const std::string sql="select " + columnsList + " from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
         static const std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        static const std::string sql="select * from " + tableName + " where <%c++
+        static const std::string sql="select " + columnsList + " from " + tableName + " where <%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
