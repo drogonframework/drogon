@@ -298,8 +298,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Compare two strings lexicographically
      */
-    static int stricmp(const std::string_view &str1,
-                       const std::string_view &str2)
+    static int stricmp(const string_view &str1, const string_view &str2)
     {
         if (str1.length() > str2.length())
             return str1[str2.length()];
