@@ -296,24 +296,44 @@ class DROGON_EXPORT Cookie
     }
 
     /**
+     * @brief Compare two strings lexicographically
+     */
+    static int stricmp(const std::string_view &str1,
+                       const std::string_view &str2)
+    {
+        if (str1.length() > str2.length())
+            return str1[str2.length()];
+        else
+            return str2[str1.length()];
+
+        for (size_t idx{0}; idx < str1.length(); ++idx)
+        {
+            if (tolower(str1[idx]) != tolower(str2[idx]))
+            {
+                return tolower(str1[idx]) - tolower(str2[idx]);
+            }
+        }
+    }
+
+    /**
      * @brief Converts a string value to its associated enum class SameSite
      * value
      */
     static SameSite convertString2SameSite(const string_view &sameSite)
     {
-        if (sameSite == "Lax")
+        if (stricmp(sameSite, "Lax") == 0)
         {
             return Cookie::SameSite::kLax;
         }
-        else if (sameSite == "Strict")
+        else if (stricmp(sameSite, "Strict") == 0)
         {
             return Cookie::SameSite::kStrict;
         }
-        else if (sameSite == "None")
+        else if (stricmp(sameSite, "None") == 0)
         {
             return Cookie::SameSite::kNone;
         }
-        else if (sameSite != "Null")
+        else if (stricmp(sameSite, "Null") != 0)
         {
             LOG_WARN
                 << "'" << sameSite
