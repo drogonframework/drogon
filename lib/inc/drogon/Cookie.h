@@ -303,7 +303,7 @@ class DROGON_EXPORT Cookie
     {
         if (str1.length() > str2.length())
             return str1[str2.length()];
-        else
+        else if (str2.length() > str1.length())
             return str2[str1.length()];
 
         for (size_t idx{0}; idx < str1.length(); ++idx)
@@ -313,6 +313,7 @@ class DROGON_EXPORT Cookie
                 return tolower(str1[idx]) - tolower(str2[idx]);
             }
         }
+        return 0;
     }
 
     /**
