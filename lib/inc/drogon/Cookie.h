@@ -18,6 +18,7 @@
 #include <drogon/utils/string_view.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
+#include <cctype>
 #include <string>
 #include <limits>
 
@@ -296,7 +297,18 @@ class DROGON_EXPORT Cookie
     }
 
     /**
-     * @brief Compare two strings lexicographically
+     * @brief Compare two strings lexicographically ignoring the letter case
+     *
+     * @param str1 string to check its value
+     * @param str2 string to check against, written in lower case
+     *
+     * @note the function is optimized to check for cookie's samesite value
+     * where we check if the value equals to a specific value we already know in
+     * str2. so the function doesn't apply tolower to the second argument
+     * str2 as it's always in lower case.
+     *
+     * @return 0 if both strings are equall ignoring case or the difference
+     * between their mismatching characters in lower case.
      */
     static int stricmp(const string_view &str1, const string_view &str2)
     {
@@ -307,9 +319,11 @@ class DROGON_EXPORT Cookie
 
         for (size_t idx{0}; idx < str1.length(); ++idx)
         {
-            if (tolower(str1[idx]) != tolower(str2[idx]))
+            auto lowerChar{tolower(str1[idx])};
+
+            if (lowerChar != str2[idx])
             {
-                return tolower(str1[idx]) - tolower(str2[idx]);
+                return lowerChar - str2[idx];
             }
         }
         return 0;
@@ -321,19 +335,19 @@ class DROGON_EXPORT Cookie
      */
     static SameSite convertString2SameSite(const string_view &sameSite)
     {
-        if (stricmp(sameSite, "Lax") == 0)
+        if (stricmp(sameSite, "lax") == 0)
         {
             return Cookie::SameSite::kLax;
         }
-        else if (stricmp(sameSite, "Strict") == 0)
+        else if (stricmp(sameSite, "strict") == 0)
         {
             return Cookie::SameSite::kStrict;
         }
-        else if (stricmp(sameSite, "None") == 0)
+        else if (stricmp(sameSite, "none") == 0)
         {
             return Cookie::SameSite::kNone;
         }
-        else if (stricmp(sameSite, "Null") != 0)
+        else if (stricmp(sameSite, "null") != 0)
         {
             LOG_WARN
                 << "'" << sameSite
