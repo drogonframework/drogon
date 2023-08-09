@@ -297,7 +297,7 @@ class DROGON_EXPORT Cookie
     }
 
     /**
-     * @brief Compare two strings lexicographically ignoring the letter case
+     * @brief Compare two strings ignoring the their cases
      *
      * @param str1 string to check its value
      * @param str2 string to check against, written in lower case
@@ -307,20 +307,19 @@ class DROGON_EXPORT Cookie
      * str2. so the function doesn't apply tolower to the second argument
      * str2 as it's always in lower case.
      *
-     * @return 0 if both strings are equall ignoring case or the difference
-     * between their mismatching characters in lower case.
+     * @return 0 if both strings are equall ignoring case, negative value if lhs
+     * is smaller than rhs and vice versa
      */
     static int stricmp(const string_view &str1, const string_view &str2)
     {
         auto str1Len{str1.length()};
         auto str2Len{str2.length()};
-        size_t idx{0};
 
-        for (; idx < str1Len; ++idx)
+        if (str1Len != str2Len)
+            return str1Len - str2Len;
+
+        for (size_t idx{0}; idx < str1Len; ++idx)
         {
-            if (idx >= str2Len)
-                return tolower(str1[idx]);
-
             auto lowerChar{tolower(str1[idx])};
 
             if (lowerChar != str2[idx])
@@ -329,10 +328,6 @@ class DROGON_EXPORT Cookie
             }
         }
 
-        if (idx < str2Len)
-        {
-            return str2[idx];
-        }
         return 0;
     }
 
