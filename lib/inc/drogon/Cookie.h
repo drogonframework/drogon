@@ -312,19 +312,26 @@ class DROGON_EXPORT Cookie
      */
     static int stricmp(const string_view &str1, const string_view &str2)
     {
-        if (str1.length() > str2.length())
-            return tolower(str1[str2.length()]);
-        else if (str2.length() > str1.length())
-            return str2[str1.length()];
+        auto str1Len{str1.length()};
+        auto str2Len{str2.length()};
+        size_t idx{0};
 
-        for (size_t idx{0}; idx < str1.length(); ++idx)
+        for (; idx < str1Len; ++idx)
         {
+            if (idx >= str2Len)
+                return tolower(str1[idx]);
+
             auto lowerChar{tolower(str1[idx])};
 
             if (lowerChar != str2[idx])
             {
                 return lowerChar - str2[idx];
             }
+        }
+
+        if (idx < str2Len)
+        {
+            return str2[idx];
         }
         return 0;
     }
