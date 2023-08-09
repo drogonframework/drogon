@@ -313,7 +313,7 @@ class DROGON_EXPORT Cookie
     static int stricmp(const string_view &str1, const string_view &str2)
     {
         if (str1.length() > str2.length())
-            return str1[str2.length()];
+            return tolower(str1[str2.length()]);
         else if (str2.length() > str1.length())
             return str2[str1.length()];
 
