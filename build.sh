@@ -92,9 +92,9 @@ else
     make_flags="$make_flags -j$parallel"
 fi
 
-if [ "$1" = "-t" ]; then
+if [ "X$1" = "X-t" ]; then
     build_drogon 1
-elif [ "$1" = "-tshared" ]; then
+elif [ "X$1" = "X-tshared" ]; then
     build_drogon 2
 else
     build_drogon 0
