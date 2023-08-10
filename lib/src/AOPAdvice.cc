@@ -41,47 +41,31 @@ void doAdvicesChain(
              callbackPtr,
              &advices,
              missCallback = std::move(missCallback)]() mutable {
-                doAdvicesChain(advices,
-                               index + 1,
-                               req,
-                               callbackPtr,
-                               std::move(missCallback));
-            });
-    }
-    else
-    {
-        missCallback();
-    }
-}
-
-void doAdvicesChain(
-    const std::deque<std::function<void(const HttpRequestPtr &,
-                                        AdviceCallback &&,
-                                        AdviceChainCallback &&)>> &advices,
-    size_t index,
-    const HttpRequestImplPtr &req,
-    const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
-        &callbackPtr,
-    std::function<void()> &&missCallback)
-{
-    if (index < advices.size())
-    {
-        auto &advice = advices[index];
-        advice(
-            req,
-            [callbackPtr](const HttpResponsePtr &resp) {
-                (*callbackPtr)(resp);
-            },
-            [index,
-             req,
-             callbackPtr,
-             &advices,
-             missCallback = std::move(missCallback)]() mutable {
-                doAdvicesChain(advices,
-                               index + 1,
-                               req,
-                               callbackPtr,
-                               std::move(missCallback));
+                auto ioLoop = req->getLoop();
+                if (ioLoop && !ioLoop->isInLoopThread())
+                {
+                    ioLoop->queueInLoop(
+                        [index,
+                         req,
+                         callbackPtr,
+                         &advices,
+                         missCallback = std::move(missCallback)]() mutable {
+                            doAdvicesChain(advices,
+                                           index + 1,
+                                           req,
+                                           callbackPtr,
+                                           std::move(missCallback));
+                        });
+                    return;
+                }
+                else
+                {
+                    doAdvicesChain(advices,
+                                   index + 1,
+                                   req,
+                                   callbackPtr,
+                                   std::move(missCallback));
+                }
             });
     }
     else
