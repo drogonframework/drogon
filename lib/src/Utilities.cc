@@ -60,6 +60,7 @@ char *strptime(const char *s, const char *f, struct tm *tm)
     }
     return (char *)(s + input.tellg());
 }
+
 time_t timegm(struct tm *tm)
 {
     struct tm my_tm;
@@ -91,6 +92,7 @@ static const std::string urlBase64Chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789-_";
+
 class Base64CharMap
 {
   public:
@@ -115,6 +117,7 @@ class Base64CharMap
             index;
         charMap_[0] = char(0xff);
     }
+
     char getIndex(const char c) const noexcept
     {
         return charMap_[static_cast<int>(c)];
@@ -123,6 +126,7 @@ class Base64CharMap
   private:
     char charMap_[256]{0};
 };
+
 const static Base64CharMap base64CharMap;
 
 static inline bool isBase64(unsigned char c)
@@ -234,6 +238,7 @@ std::vector<char> hexToBinaryVector(const char *ptr, size_t length)
     }
     return ret;
 }
+
 std::string hexToBinaryString(const char *ptr, size_t length)
 {
     assert(length % 2 == 0);
@@ -569,6 +574,7 @@ std::string base64Decode(string_view encoded_string)
 
     return ret;
 }
+
 static std::string charToHex(char c)
 {
     std::string result;
@@ -584,6 +590,7 @@ static std::string charToHex(char c)
 
     return result;
 }
+
 std::string urlEncodeComponent(const std::string &src)
 {
     std::string result;
@@ -680,6 +687,7 @@ std::string urlEncodeComponent(const std::string &src)
 
     return result;
 }
+
 std::string urlEncode(const std::string &src)
 {
     std::string result;
@@ -782,12 +790,14 @@ std::string urlEncode(const std::string &src)
 
     return result;
 }
+
 bool needUrlDecoding(const char *begin, const char *end)
 {
     return std::find_if(begin, end, [](const char c) {
                return c == '+' || c == '%';
            }) != end;
 }
+
 std::string urlDecode(const char *begin, const char *end)
 {
     std::string result;
@@ -993,6 +1003,7 @@ char *getHttpFullDate(const trantor::Date &date)
                                    sizeof(lastTimeString));
     return lastTimeString;
 }
+
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
     static const std::array<const char *, 4> formats = {
@@ -1017,6 +1028,7 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
     LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
     return trantor::Date((std::numeric_limits<int64_t>::max)());
 }
+
 std::string formattedString(const char *format, ...)
 {
     std::string strBuffer(128, 0);
@@ -1104,6 +1116,7 @@ std::string brotliCompress(const char *data, const size_t ndata)
         ret.resize(encodedSize);
     return ret;
 }
+
 std::string brotliDecompress(const char *data, const size_t ndata)
 {
     if (ndata == 0)
@@ -1149,6 +1162,7 @@ std::string brotliCompress(const char * /*data*/, const size_t /*ndata*/)
                  "use brotliCompress()";
     abort();
 }
+
 std::string brotliDecompress(const char * /*data*/, const size_t /*ndata*/)
 {
     LOG_ERROR << "If you do not have the brotli package installed, you cannot "

@@ -2,6 +2,7 @@
 #include <drogon/HttpSimpleController.h>
 #include <drogon/IOThreadStorage.h>
 using namespace drogon;
+
 namespace example
 {
 class TestController : public drogon::HttpSimpleController<TestController>
@@ -17,6 +18,7 @@ class TestController : public drogon::HttpSimpleController<TestController>
     PATH_ADD("/Test", "nonFilter");
     PATH_ADD("/tpost", Post, Options);
     PATH_ADD("/slow", "TimeFilter", Get);
+
     PATH_LIST_END
     TestController()
     {

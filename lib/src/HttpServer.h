@@ -23,6 +23,7 @@
 #include "impl_forwards.h"
 
 struct CallbackParamPack;
+
 namespace drogon
 {
 class HttpServer : trantor::NonCopyable
@@ -49,39 +50,48 @@ class HttpServer : trantor::NonCopyable
     {
         httpAsyncCallback_ = cb;
     }
+
     void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
     {
         newWebsocketCallback_ = cb;
     }
+
     void setConnectionCallback(const trantor::ConnectionCallback &cb)
     {
         connectionCallback_ = cb;
     }
+
     void setIoLoopThreadPool(
         const std::shared_ptr<trantor::EventLoopThreadPool> &pool)
     {
         server_.setIoLoopThreadPool(pool);
     }
+
     void setIoLoopNum(int numThreads)
     {
         server_.setIoLoopNum(numThreads);
     }
+
     void setIoLoops(const std::vector<trantor::EventLoop *> &ioLoops)
     {
         server_.setIoLoops(ioLoops);
     }
+
     void kickoffIdleConnections(size_t timeout)
     {
         server_.kickoffIdleConnections(timeout);
     }
+
     trantor::EventLoop *getLoop()
     {
         return server_.getLoop();
     }
+
     std::vector<trantor::EventLoop *> getIoLoops()
     {
         return server_.getIoLoops();
     }
+
     void start();
     void stop();
 

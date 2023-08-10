@@ -41,14 +41,17 @@ struct CanConvertToString
         std::is_same<decltype(test<Type>(0)), yes>::value;
 };
 }  // namespace internal
+
 class OStringStream
 {
   public:
     OStringStream() = default;
+
     void reserve(size_t size)
     {
         buffer_.reserve(size);
     }
+
     template <typename T>
     std::enable_if_t<!internal::CanConvertToString<T>::value, OStringStream&>
     operator<<(T&& value)
@@ -58,6 +61,7 @@ class OStringStream
         buffer_.append(ss.str());
         return *this;
     }
+
     template <typename T>
     std::enable_if_t<internal::CanConvertToString<T>::value, OStringStream&>
     operator<<(T&& value)
@@ -65,17 +69,20 @@ class OStringStream
         buffer_.append(std::to_string(std::forward<T>(value)));
         return *this;
     }
+
     template <int N>
     OStringStream& operator<<(const char (&buf)[N])
     {
         buffer_.append(buf, N - 1);
         return *this;
     }
+
     OStringStream& operator<<(const string_view& str)
     {
         buffer_.append(str.data(), str.length());
         return *this;
     }
+
     OStringStream& operator<<(string_view&& str)
     {
         buffer_.append(str.data(), str.length());
@@ -87,6 +94,7 @@ class OStringStream
         buffer_.append(str);
         return *this;
     }
+
     OStringStream& operator<<(std::string&& str)
     {
         buffer_.append(std::move(str));
@@ -129,6 +137,7 @@ class OStringStream
     {
         return buffer_;
     }
+
     const std::string& str() const
     {
         return buffer_;

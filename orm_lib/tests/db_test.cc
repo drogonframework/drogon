@@ -42,6 +42,7 @@ void expFunction(const DrogonDbException &e)
 }
 #if USE_POSTGRESQL
 DbClientPtr postgreClient;
+
 DROGON_TEST(PostgreTest)
 {
     auto &clientPtr = postgreClient;
@@ -985,6 +986,7 @@ DROGON_TEST(PostgreTest)
 
 #if USE_MYSQL
 DbClientPtr mysqlClient;
+
 DROGON_TEST(MySQLTest)
 {
     auto &clientPtr = mysqlClient;
@@ -1754,6 +1756,7 @@ DROGON_TEST(MySQLTest)
 
 #if USE_SQLITE3
 DbClientPtr sqlite3Client;
+
 DROGON_TEST(SQLite3Test)
 {
     auto &clientPtr = sqlite3Client;
@@ -2592,6 +2595,7 @@ DROGON_TEST(SQLite3Test)
 #endif
 
 using namespace drogon;
+
 int main(int argc, char **argv)
 {
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);

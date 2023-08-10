@@ -16,6 +16,7 @@
 
 #include <drogon/orm/Result.h>
 #include <trantor/utils/NonCopyable.h>
+
 namespace drogon
 {
 namespace orm
@@ -40,11 +41,13 @@ class ResultImpl : public trantor::NonCopyable
     {
         return 0;
     }
+
     virtual int oid(RowSizeType column) const
     {
         (void)column;
         return 0;
     }
+
     virtual ~ResultImpl()
     {
     }

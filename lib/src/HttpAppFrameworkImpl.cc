@@ -198,41 +198,49 @@ HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
 #endif
     sessionManagerPtr_.reset();
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFilesCacheTime(int cacheTime)
 {
     staticFileRouterPtr_->setStaticFilesCacheTime(cacheTime);
     return *this;
 }
+
 int HttpAppFrameworkImpl::staticFilesCacheTime() const
 {
     return staticFileRouterPtr_->staticFilesCacheTime();
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setGzipStatic(bool useGzipStatic)
 {
     staticFileRouterPtr_->setGzipStatic(useGzipStatic);
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setBrStatic(bool useGzipStatic)
 {
     staticFileRouterPtr_->setBrStatic(useGzipStatic);
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setImplicitPageEnable(
     bool useImplicitPage)
 {
     staticFileRouterPtr_->setImplicitPageEnable(useImplicitPage);
     return *this;
 }
+
 bool HttpAppFrameworkImpl::isImplicitPageEnabled() const
 {
     return staticFileRouterPtr_->isImplicitPageEnabled();
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setImplicitPage(
     const std::string &implicitPageFile)
 {
     staticFileRouterPtr_->setImplicitPage(implicitPageFile);
     return *this;
 }
+
 const std::string &HttpAppFrameworkImpl::getImplicitPage() const
 {
     return staticFileRouterPtr_->getImplicitPage();
@@ -294,6 +302,7 @@ HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
                                                         filtersAndMethods);
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
@@ -344,6 +353,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
     threadNum_ = threadNum;
     return *this;
 }
+
 PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
 {
     return pluginsManagerPtr_->getPlugin(name);
@@ -354,6 +364,7 @@ std::shared_ptr<PluginBase> HttpAppFrameworkImpl::getSharedPlugin(
 {
     return pluginsManagerPtr_->getSharedPlugin(name);
 }
+
 void HttpAppFrameworkImpl::addPlugin(
     const std::string &name,
     const std::vector<std::string> &dependencies,
@@ -372,6 +383,7 @@ void HttpAppFrameworkImpl::addPlugin(
     auto &plugins = jsonRuntimeConfig_["plugins"];
     plugins.append(pluginConfig);
 }
+
 void HttpAppFrameworkImpl::addPlugins(const Json::Value &configs)
 {
     assert(!isRunning());
@@ -382,6 +394,7 @@ void HttpAppFrameworkImpl::addPlugins(const Json::Value &configs)
         plugins.append(config);
     }
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::addListener(
     const std::string &ip,
     uint16_t port,
@@ -396,18 +409,21 @@ HttpAppFramework &HttpAppFrameworkImpl::addListener(
         ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNum(
     size_t maxConnections)
 {
     maxConnectionNum_ = maxConnections;
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNumPerIP(
     size_t maxConnectionsPerIP)
 {
     maxConnectionNumPerIP_ = maxConnectionsPerIP;
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigFile(
     const std::string &fileName)
 {
@@ -416,6 +432,7 @@ HttpAppFramework &HttpAppFrameworkImpl::loadConfigFile(
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(const Json::Value &data)
 {
     ConfigLoader loader(data);
@@ -423,6 +440,7 @@ HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(const Json::Value &data)
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(Json::Value &&data)
 {
     ConfigLoader loader(std::move(data));
@@ -430,6 +448,7 @@ HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(Json::Value &&data)
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     const std::string &logPath,
     const std::string &logfileBaseName,
@@ -456,23 +475,27 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     logfileMaxNum_ = maxFiles;
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setLogLevel(
     trantor::Logger::LogLevel level)
 {
     trantor::Logger::setLogLevel(level);
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setLogLocalTime(bool on)
 {
     trantor::Logger::setDisplayLocalTime(on);
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setSSLConfigCommands(
     const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
 {
     sslConfCmds_ = sslConfCmds;
     return *this;
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
                                                     const std::string &keyPath)
 {
@@ -747,6 +770,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(
     uploadPath_ = utils::fromNativePath(fsUploadPath.native());
     return *this;
 }
+
 void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
 {
     if (useSession_)
@@ -762,6 +786,7 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
             sessionManagerPtr_->getSession(sessionId, needSetJsessionid));
     }
 }
+
 void HttpAppFrameworkImpl::onNewWebsockRequest(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
@@ -811,6 +836,7 @@ HttpAppFrameworkImpl::getHandlersInfo() const
     ret.insert(ret.end(), v.begin(), v.end());
     return ret;
 }
+
 void HttpAppFrameworkImpl::callCallback(
     const HttpRequestImplPtr &req,
     const HttpResponsePtr &resp,
@@ -882,6 +908,7 @@ void HttpAppFrameworkImpl::callCallback(
         }
     }
 }
+
 void HttpAppFrameworkImpl::onAsyncRequest(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
@@ -970,6 +997,7 @@ void HttpAppFrameworkImpl::forward(
             hostString,
             timeout);
 }
+
 void HttpAppFrameworkImpl::forward(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
@@ -1026,20 +1054,24 @@ orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
 {
     return dbClientManagerPtr_->getDbClient(name);
 }
+
 orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
 {
     return dbClientManagerPtr_->getFastDbClient(name);
 }
+
 nosql::RedisClientPtr HttpAppFrameworkImpl::getRedisClient(
     const std::string &name)
 {
     return redisClientManagerPtr_->getRedisClient(name);
 }
+
 nosql::RedisClientPtr HttpAppFrameworkImpl::getFastRedisClient(
     const std::string &name)
 {
     return redisClientManagerPtr_->getFastRedisClient(name);
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     const std::string &dbType,
     const std::string &host,
@@ -1088,6 +1120,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
         name, ip, port, username, password, connectionNum, isFast, timeout, db);
     return *this;
 }
+
 void HttpAppFrameworkImpl::quit()
 {
     if (getLoop()->isRunning())
@@ -1190,6 +1223,7 @@ std::vector<trantor::InetAddress> HttpAppFrameworkImpl::getListeners() const
 {
     return listenerManagerPtr_->getListeners();
 }
+
 HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
     DefaultHandler handler)
 {

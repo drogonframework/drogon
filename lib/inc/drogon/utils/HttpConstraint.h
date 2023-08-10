@@ -16,6 +16,7 @@
 
 #include <drogon/HttpTypes.h>
 #include <string>
+
 namespace drogon
 {
 namespace internal
@@ -34,22 +35,27 @@ class HttpConstraint
         : type_(ConstraintType::HttpMethod), method_(method)
     {
     }
+
     HttpConstraint(const std::string &filterName)
         : type_(ConstraintType::HttpFilter), filterName_(filterName)
     {
     }
+
     HttpConstraint(const char *filterName)
         : type_(ConstraintType::HttpFilter), filterName_(filterName)
     {
     }
+
     ConstraintType type() const
     {
         return type_;
     }
+
     HttpMethod getHttpMethod() const
     {
         return method_;
     }
+
     const std::string &getFilterName() const
     {
         return filterName_;

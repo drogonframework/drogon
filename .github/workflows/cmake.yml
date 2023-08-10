@@ -67,22 +67,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc'
+          - os: ubuntu-22.04
+            buildname: 'ubuntu-22.04/gcc'
             link: SHARED
             triplet: x64-linux
             compiler: gcc_64
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc'
+          - os: ubuntu-22.04
+            buildname: 'ubuntu-22.04/gcc'
             link: STATIC
             triplet: x64-linux
             compiler: gcc_64
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc-10'
+          - os: ubuntu-22.04
+            buildname: 'ubuntu-22.04/gcc-10'
             link: STATIC
             triplet: x64-linux
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/c++14'
+          - os: ubuntu-22.04
+            buildname: 'ubuntu-22.04/c++14'
             link: STATIC
             triplet: x64-linux
             compiler: gcc_64
@@ -114,17 +114,19 @@ jobs:
         sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
         sudo apt-get install -y libbrotli-dev
     - name: (Linux) Install gcc-10
-      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
+      if: matrix.buildname == 'ubuntu-22.04/gcc-10'
       run: sudo apt-get install -y gcc-10 g++-10
     - name: (Linux) Install boost
-      if: matrix.buildname == 'ubuntu-20.04/c++14'
+      if: matrix.buildname == 'ubuntu-22.04/c++14'
       run: |
         sudo apt-get update
         sudo apt-get -y install libboost-all-dev
 
     - name: (Linux) Install postgresql
-      if: matrix.os == 'ubuntu-20.04'
-      run: sudo apt-get -y install postgresql-all
+      if: matrix.os == 'ubuntu-22.04'
+      run: |
+        sudo apt-get --purge remove postgresql postgresql-doc postgresql-common postgresql-client-common
+        sudo apt-get -y install postgresql-all
 
     - name: Export `shared`
       run: |
@@ -134,7 +136,7 @@ jobs:
     - name: Create Build Environment & Configure Cmake
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
-      if: matrix.buildname != 'ubuntu-20.04/gcc-10' && matrix.buildname != 'ubuntu-20.04/c++14'
+      if: matrix.buildname != 'ubuntu-22.04/gcc-10' && matrix.buildname != 'ubuntu-22.04/c++14'
       run: |
         cmake -B build                   \
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
@@ -144,7 +146,7 @@ jobs:
     - name: Create Build Environment & Configure Cmake (gcc-10)
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
-      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
+      if: matrix.buildname == 'ubuntu-22.04/gcc-10'
       run: |
         cmake -B build                     \
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
@@ -158,7 +160,7 @@ jobs:
     - name: Create Build Environment & Configure Cmake (C++14)
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
-      if: matrix.buildname == 'ubuntu-20.04/C++14'
+      if: matrix.buildname == 'ubuntu-22.04/C++14'
       run: |
         cmake -B build                   \
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
@@ -202,7 +204,7 @@ jobs:
       run: ./test.sh -t
 
     - name: Lint
-      if: matrix.os == 'ubuntu-20.04'
+      if: matrix.os == 'ubuntu-22.04'
       run: |
         sudo apt install -y dos2unix
         ./format.sh && git diff --exit-code

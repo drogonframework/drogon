@@ -1,10 +1,12 @@
 #include "WebSocketTest.h"
 using namespace example;
+
 struct Subscriber
 {
     std::string chatRoomName_;
     drogon::SubscriberID id_;
 };
+
 void WebSocketTest::handleNewMessage(const WebSocketConnectionPtr &wsConnPtr,
                                      std::string &&message,
                                      const WebSocketMessageType &type)

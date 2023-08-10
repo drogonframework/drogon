@@ -39,11 +39,13 @@ const std::vector<typename Groups::MetaData> Groups::metaData_ = {
     {"text", "std::string", "varchar(255)", 0, 0, 0, 0},
     {"avatar", "std::vector<char>", "blob", 0, 0, 0, 0},
     {"is_default", "bool", "bool", 1, 0, 0, 0}};
+
 const std::string &Groups::getColumnName(size_t index) noexcept(false)
 {
     assert(index < metaData_.size());
     return metaData_[index].colName_;
 }
+
 Groups::Groups(const Row &r, const ssize_t indexOffset) noexcept
 {
     if (indexOffset < 0)
@@ -623,10 +625,12 @@ const uint64_t &Groups::getValueOfGroupId() const noexcept
         return *groupId_;
     return defaultValue;
 }
+
 const std::shared_ptr<uint64_t> &Groups::getGroupId() const noexcept
 {
     return groupId_;
 }
+
 const typename Groups::PrimaryKeyType &Groups::getPrimaryKey() const
 {
     assert(groupId_);
@@ -640,15 +644,18 @@ const std::string &Groups::getValueOfGroupName() const noexcept
         return *groupName_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Groups::getGroupName() const noexcept
 {
     return groupName_;
 }
+
 void Groups::setGroupName(const std::string &pGroupName) noexcept
 {
     groupName_ = std::make_shared<std::string>(pGroupName);
     dirtyFlag_[1] = true;
 }
+
 void Groups::setGroupName(std::string &&pGroupName) noexcept
 {
     groupName_ = std::make_shared<std::string>(std::move(pGroupName));
@@ -668,10 +675,12 @@ const uint64_t &Groups::getValueOfCreaterId() const noexcept
         return *createrId_;
     return defaultValue;
 }
+
 const std::shared_ptr<uint64_t> &Groups::getCreaterId() const noexcept
 {
     return createrId_;
 }
+
 void Groups::setCreaterId(const uint64_t &pCreaterId) noexcept
 {
     createrId_ = std::make_shared<uint64_t>(pCreaterId);
@@ -691,15 +700,18 @@ const std::string &Groups::getValueOfCreateTime() const noexcept
         return *createTime_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Groups::getCreateTime() const noexcept
 {
     return createTime_;
 }
+
 void Groups::setCreateTime(const std::string &pCreateTime) noexcept
 {
     createTime_ = std::make_shared<std::string>(pCreateTime);
     dirtyFlag_[3] = true;
 }
+
 void Groups::setCreateTime(std::string &&pCreateTime) noexcept
 {
     createTime_ = std::make_shared<std::string>(std::move(pCreateTime));
@@ -719,10 +731,12 @@ const uint64_t &Groups::getValueOfInviting() const noexcept
         return *inviting_;
     return defaultValue;
 }
+
 const std::shared_ptr<uint64_t> &Groups::getInviting() const noexcept
 {
     return inviting_;
 }
+
 void Groups::setInviting(const uint64_t &pInviting) noexcept
 {
     inviting_ = std::make_shared<uint64_t>(pInviting);
@@ -742,10 +756,12 @@ const uint64_t &Groups::getValueOfInvitingUserId() const noexcept
         return *invitingUserId_;
     return defaultValue;
 }
+
 const std::shared_ptr<uint64_t> &Groups::getInvitingUserId() const noexcept
 {
     return invitingUserId_;
 }
+
 void Groups::setInvitingUserId(const uint64_t &pInvitingUserId) noexcept
 {
     invitingUserId_ = std::make_shared<uint64_t>(pInvitingUserId);
@@ -765,15 +781,18 @@ const std::string &Groups::getValueOfAvatarId() const noexcept
         return *avatarId_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Groups::getAvatarId() const noexcept
 {
     return avatarId_;
 }
+
 void Groups::setAvatarId(const std::string &pAvatarId) noexcept
 {
     avatarId_ = std::make_shared<std::string>(pAvatarId);
     dirtyFlag_[6] = true;
 }
+
 void Groups::setAvatarId(std::string &&pAvatarId) noexcept
 {
     avatarId_ = std::make_shared<std::string>(std::move(pAvatarId));
@@ -793,10 +812,12 @@ const double &Groups::getValueOfUuu() const noexcept
         return *uuu_;
     return defaultValue;
 }
+
 const std::shared_ptr<double> &Groups::getUuu() const noexcept
 {
     return uuu_;
 }
+
 void Groups::setUuu(const double &pUuu) noexcept
 {
     uuu_ = std::make_shared<double>(pUuu);
@@ -816,15 +837,18 @@ const std::string &Groups::getValueOfText() const noexcept
         return *text_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Groups::getText() const noexcept
 {
     return text_;
 }
+
 void Groups::setText(const std::string &pText) noexcept
 {
     text_ = std::make_shared<std::string>(pText);
     dirtyFlag_[8] = true;
 }
+
 void Groups::setText(std::string &&pText) noexcept
 {
     text_ = std::make_shared<std::string>(std::move(pText));
@@ -844,6 +868,7 @@ const std::vector<char> &Groups::getValueOfAvatar() const noexcept
         return *avatar_;
     return defaultValue;
 }
+
 std::string Groups::getValueOfAvatarAsString() const noexcept
 {
     const static std::string defaultValue = std::string();
@@ -851,10 +876,12 @@ std::string Groups::getValueOfAvatarAsString() const noexcept
         return std::string(avatar_->data(), avatar_->size());
     return defaultValue;
 }
+
 const std::shared_ptr<std::vector<char>> &Groups::getAvatar() const noexcept
 {
     return avatar_;
 }
+
 void Groups::setAvatar(const std::vector<char> &pAvatar) noexcept
 {
     avatar_ = std::make_shared<std::vector<char>>(pAvatar);
@@ -882,10 +909,12 @@ const bool &Groups::getValueOfIsDefault() const noexcept
         return *isDefault_;
     return defaultValue;
 }
+
 const std::shared_ptr<bool> &Groups::getIsDefault() const noexcept
 {
     return isDefault_;
 }
+
 void Groups::setIsDefault(const bool &pIsDefault) noexcept
 {
     isDefault_ = std::make_shared<bool>(pIsDefault);
@@ -1158,6 +1187,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
         }
     }
 }
+
 Json::Value Groups::toJson() const
 {
     Json::Value ret;
@@ -1541,6 +1571,7 @@ bool Groups::validateJsonForCreation(const Json::Value &pJson, std::string &err)
     }
     return true;
 }
+
 bool Groups::validateMasqueradedJsonForCreation(
     const Json::Value &pJson,
     const std::vector<std::string> &pMasqueradingVector,
@@ -1685,6 +1716,7 @@ bool Groups::validateMasqueradedJsonForCreation(
     }
     return true;
 }
+
 bool Groups::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
 {
     if (pJson.isMember("group_id"))
@@ -1754,6 +1786,7 @@ bool Groups::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
     }
     return true;
 }
+
 bool Groups::validateMasqueradedJsonForUpdate(
     const Json::Value &pJson,
     const std::vector<std::string> &pMasqueradingVector,
@@ -1883,6 +1916,7 @@ bool Groups::validateMasqueradedJsonForUpdate(
     }
     return true;
 }
+
 bool Groups::validJsonOfField(size_t index,
                               const std::string &fieldName,
                               const Json::Value &pJson,

@@ -72,6 +72,7 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
     }
     return false;
 }
+
 bool HttpResponseParser::parseResponseOnClose()
 {
     if (status_ == HttpResponseParseStatus::kExpectClose)
@@ -81,6 +82,7 @@ bool HttpResponseParser::parseResponseOnClose()
     }
     return false;
 }
+
 // return false if any error
 bool HttpResponseParser::parseResponse(MsgBuffer *buf)
 {

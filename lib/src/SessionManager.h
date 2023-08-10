@@ -34,10 +34,12 @@ class SessionManager : public trantor::NonCopyable
         size_t timeout,
         const std::vector<AdviceStartSessionCallback> &startAdvices,
         const std::vector<AdviceDestroySessionCallback> &destroyAdvices);
+
     ~SessionManager()
     {
         sessionMapPtr_.reset();
     }
+
     SessionPtr getSession(const std::string &sessionID, bool needToSet);
     void changeSessionId(const SessionPtr &sessionPtr);
 

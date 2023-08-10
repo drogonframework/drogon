@@ -56,10 +56,12 @@ HttpResponsePtr toResponse(T &&)
               << DrClassMap::demangle(typeid(T).name());
     exit(1);
 }
+
 template <>
 HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson);
 template <>
 HttpResponsePtr toResponse(Json::Value &&pJson);
+
 template <>
 inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
 {
@@ -99,6 +101,7 @@ class DROGON_EXPORT HttpResponse
 
     /// Get the status code such as 200, 404
     virtual HttpStatusCode statusCode() const = 0;
+
     HttpStatusCode getStatusCode() const
     {
         return statusCode();
@@ -114,6 +117,7 @@ class DROGON_EXPORT HttpResponse
 
     /// Get the creation timestamp of the response.
     virtual const trantor::Date &creationDate() const = 0;
+
     const trantor::Date &getCreationDate() const
     {
         return creationDate();
@@ -157,6 +161,7 @@ class DROGON_EXPORT HttpResponse
                                           typeString.data(),
                                           typeString.length());
     }
+
     template <int N>
     void setContentTypeCodeAndCustomString(ContentType type,
                                            const char (&typeString)[N])
@@ -171,6 +176,7 @@ class DROGON_EXPORT HttpResponse
 
     /// Get the response content type.
     virtual ContentType contentType() const = 0;
+
     ContentType getContentType() const
     {
         return contentType();
@@ -274,6 +280,7 @@ class DROGON_EXPORT HttpResponse
     /// Return the string of http version of request, such as HTTP/1.0,
     /// HTTP/1.1, etc.
     virtual const char *versionString() const = 0;
+
     const char *getVersionString() const
     {
         return versionString();
@@ -302,6 +309,7 @@ class DROGON_EXPORT HttpResponse
 
     /// Get the expiration time of the response.
     virtual ssize_t expiredTime() const = 0;
+
     ssize_t getExpiredTime() const
     {
         return expiredTime();
@@ -311,6 +319,7 @@ class DROGON_EXPORT HttpResponse
     /// If the response is not in json format, then a empty shared_ptr is
     /// retured.
     virtual const std::shared_ptr<Json::Value> &jsonObject() const = 0;
+
     const std::shared_ptr<Json::Value> &getJsonObject() const
     {
         return jsonObject();
@@ -342,6 +351,7 @@ class DROGON_EXPORT HttpResponse
      * @return The certificate of the peer. nullptr is none.
      */
     virtual const trantor::CertificatePtr &peerCertificate() const = 0;
+
     const trantor::CertificatePtr &getPeerCertificate() const
     {
         return peerCertificate();
@@ -525,6 +535,7 @@ class DROGON_EXPORT HttpResponse
                                      const char *message,
                                      size_t messageLength) = 0;
 };
+
 template <>
 inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)
 {

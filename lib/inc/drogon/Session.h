@@ -32,6 +32,7 @@ class Session
 {
   public:
     using SessionMap = std::map<std::string, any>;
+
     /**
      * @brief Get the data identified by the key parameter.
      * @note if the data is not found, a default value is returned.
@@ -89,6 +90,7 @@ class Session
         }
         return nullopt;
     }
+
     /**
      * @brief Modify or visit the data identified by the key parameter.
      *
@@ -125,6 +127,7 @@ class Session
             sessionMap_.insert(std::make_pair(key, any(std::move(item))));
         }
     }
+
     /**
      * @brief Modify or visit the session data.
      *
@@ -219,6 +222,7 @@ class Session
         needToChange_ = true;
         needToSet_ = true;
     }
+
     Session() = delete;
 
   private:
@@ -229,6 +233,7 @@ class Session
     bool needToChange_{false};
     friend class SessionManager;
     friend class HttpAppFrameworkImpl;
+
     /**
      * @brief Constructor, usually called by the framework
      */
@@ -236,6 +241,7 @@ class Session
         : sessionId_(id), needToSet_(needToSet)
     {
     }
+
     /**
      * @brief Change the state of the session, usually called by the framework
      */
@@ -243,6 +249,7 @@ class Session
     {
         needToSet_ = false;
     }
+
     /**
      * @brief If the session ID needs to be changed.
      *
@@ -251,6 +258,7 @@ class Session
     {
         return needToChange_;
     }
+
     /**
      * @brief If the session ID needs to be set to the client through cookie,
      * return true
@@ -259,6 +267,7 @@ class Session
     {
         return needToSet_;
     }
+
     void setSessionId(const std::string &id)
     {
         std::lock_guard<std::mutex> lck(mutex_);

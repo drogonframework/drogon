@@ -29,6 +29,7 @@ namespace drogon
 namespace orm
 {
 static const unsigned int maxBatchCount = 256;
+
 Result makeResult(std::shared_ptr<PGresult> &&r = nullptr)
 {
     return Result(std::make_shared<PostgreSQLResultImpl>(std::move(r)));
@@ -75,6 +76,7 @@ int PgConnection::flush()
     }
     return ret;
 }
+
 PgConnection::PgConnection(trantor::EventLoop *loop,
                            const std::string &connInfo,
                            bool autoBatch)
@@ -238,6 +240,7 @@ void PgConnection::execSqlInLoop(
             [thisPtr = shared_from_this()]() { thisPtr->sendBatchedSql(); });
     }
 }
+
 int PgConnection::sendBatchEnd()
 {
     if (!PQpipelineSync(connectionPtr_.get()))
@@ -249,6 +252,7 @@ int PgConnection::sendBatchEnd()
     }
     return 1;
 }
+
 void PgConnection::sendBatchedSql()
 {
     if (isWorking_)

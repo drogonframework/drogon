@@ -26,6 +26,7 @@
 namespace drogon
 {
 class HttpFileImpl;
+
 /**
  * @brief This class represents a uploaded file by a HTTP request.
  *

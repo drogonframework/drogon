@@ -84,6 +84,7 @@ TransactionImpl::~TransactionImpl()
         }
     }
 }
+
 void TransactionImpl::execSqlInLoop(
     string_view &&sql,
     size_t paraNum,

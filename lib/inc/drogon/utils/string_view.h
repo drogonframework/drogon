@@ -31,6 +31,7 @@ using std::string_view;
 using boost::string_view;
 #endif
 }  // namespace drogon
+
 namespace trantor
 {
 inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
@@ -126,6 +127,7 @@ struct StringViewHasher<8>
         __b *= __mul;
         return __b;
     }
+
     template <class Size>
     inline static Size __loadword(const void *__p)
     {
@@ -231,6 +233,7 @@ struct StringViewHasher<8>
         size_t __r = __shift_mix((__vf + __ws) * __k2 + (__wf + __vs) * __k0);
         return __shift_mix(__r * __k0 + __vs) * __k2;
     }
+
     size_t operator()(const drogon::string_view &__str) const noexcept
     {
         size_t __len = __str.length();
@@ -310,6 +313,7 @@ struct ShortStringViewHasher
 };
 #endif
 }  // namespace drogon
+
 namespace std
 {
 template <>

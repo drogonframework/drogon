@@ -35,6 +35,7 @@ namespace orm
 {
 class Sqlite3Connection;
 using Sqlite3ConnectionPtr = std::shared_ptr<Sqlite3Connection>;
+
 class Sqlite3Connection : public DbConnection,
                           public std::enable_shared_from_this<Sqlite3Connection>
 {
@@ -51,11 +52,13 @@ class Sqlite3Connection : public DbConnection,
                  ResultCallback &&rcb,
                  std::function<void(const std::exception_ptr &)>
                      &&exceptCallback) override;
+
     void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
     {
         LOG_FATAL << "The mysql library does not support batch mode";
         exit(1);
     }
+
     void disconnect() override;
     void init();
 

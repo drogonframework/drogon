@@ -38,6 +38,7 @@ enum class ConnectStatus
     kConnected,
     kEnd
 };
+
 class RedisConnection : public trantor::NonCopyable,
                         public std::enable_shared_from_this<RedisConnection>
 {
@@ -47,24 +48,28 @@ class RedisConnection : public trantor::NonCopyable,
                     const std::string &password,
                     unsigned int db,
                     trantor::EventLoop *loop);
+
     void setConnectCallback(
         const std::function<void(std::shared_ptr<RedisConnection> &&)>
             &callback)
     {
         connectCallback_ = callback;
     }
+
     void setDisconnectCallback(
         const std::function<void(std::shared_ptr<RedisConnection> &&)>
             &callback)
     {
         disconnectCallback_ = callback;
     }
+
     void setIdleCallback(
         const std::function<void(const std::shared_ptr<RedisConnection> &)>
             &callback)
     {
         idleCallback_ = callback;
     }
+
     static std::string getFormattedCommand(const string_view &command,
                                            va_list ap) noexcept(false)
     {
@@ -89,6 +94,7 @@ class RedisConnection : public trantor::NonCopyable,
         free(cmd);
         return fullCommand;
     }
+
     void sendFormattedCommand(std::string &&command,
                               RedisResultCallback &&resultCallback,
                               RedisExceptionCallback &&exceptionCallback)
@@ -112,6 +118,7 @@ class RedisConnection : public trantor::NonCopyable,
                 });
         }
     }
+
     void sendvCommand(string_view command,
                       RedisResultCallback &&resultCallback,
                       RedisExceptionCallback &&exceptionCallback,
@@ -155,7 +162,9 @@ class RedisConnection : public trantor::NonCopyable,
         if (redisContext_ && status_ != ConnectStatus::kEnd)
             redisAsyncDisconnect(redisContext_);
     }
+
     void disconnect();
+
     void sendCommand(RedisResultCallback &&resultCallback,
                      RedisExceptionCallback &&exceptionCallback,
                      string_view command,
@@ -169,6 +178,7 @@ class RedisConnection : public trantor::NonCopyable,
                      args);
         va_end(args);
     }
+
     trantor::EventLoop *getLoop() const
     {
         return loop_;
@@ -212,6 +222,7 @@ class RedisConnection : public trantor::NonCopyable,
 
     void handleDisconnect();
 };
+
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
 }  // namespace nosql
 }  // namespace drogon

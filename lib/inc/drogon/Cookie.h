@@ -38,10 +38,12 @@ class DROGON_EXPORT Cookie
         : key_(key), value_(value)
     {
     }
+
     Cookie(std::string &&key, std::string &&value)
         : key_(std::move(key)), value_(std::move(value))
     {
     }
+
     Cookie() = default;
     enum class SameSite
     {
@@ -50,6 +52,7 @@ class DROGON_EXPORT Cookie
         kStrict,
         kNone
     };
+
     /**
      * @brief Set the Expires Date
      *
@@ -83,6 +86,7 @@ class DROGON_EXPORT Cookie
     {
         domain_ = domain;
     }
+
     void setDomain(std::string &&domain)
     {
         domain_ = std::move(domain);
@@ -95,6 +99,7 @@ class DROGON_EXPORT Cookie
     {
         path_ = path;
     }
+
     void setPath(std::string &&path)
     {
         path_ = std::move(path);
@@ -107,10 +112,12 @@ class DROGON_EXPORT Cookie
     {
         key_ = key;
     }
+
     void setKey(std::string &&key)
     {
         key_ = std::move(key);
     }
+
     /**
      * @brief Set the value of the cookie.
      */
@@ -118,10 +125,12 @@ class DROGON_EXPORT Cookie
     {
         value_ = value;
     }
+
     void setValue(std::string &&value)
     {
         value_ = std::move(value);
     }
+
     /**
      * @brief Set the max-age of the cookie.
      */
@@ -129,6 +138,7 @@ class DROGON_EXPORT Cookie
     {
         maxAge_ = value;
     }
+
     /**
      * @brief Set the same site of the cookie.
      */

@@ -35,6 +35,7 @@ Result makeResult(std::shared_ptr<PGresult> &&r = nullptr)
 
 }  // namespace orm
 }  // namespace drogon
+
 int PgConnection::flush()
 {
     auto ret = PQflush(connectionPtr_.get());
@@ -54,6 +55,7 @@ int PgConnection::flush()
     }
     return ret;
 }
+
 PgConnection::PgConnection(trantor::EventLoop *loop,
                            const std::string &connInfo,
                            bool)

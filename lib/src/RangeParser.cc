@@ -29,6 +29,7 @@ static constexpr size_t MAX_DIGIT = MAX_SIZE % 10;
     (static_cast<size_t>(base) > MAX_TEN || \
     (static_cast<size_t>(base) >= MAX_TEN && \
     static_cast<size_t>(digit) - '0' > MAX_DIGIT))
+
 // clang-format on
 
 /** Following formats are valid range header according to rfc7233`

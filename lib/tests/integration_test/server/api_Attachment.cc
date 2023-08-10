@@ -2,6 +2,7 @@
 #include <fstream>
 
 using namespace api;
+
 // add definition of your processing function here
 void Attachment::get(const HttpRequestPtr &req,
                      std::function<void(const HttpResponsePtr &)> &&callback)

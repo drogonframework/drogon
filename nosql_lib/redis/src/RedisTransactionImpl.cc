@@ -34,6 +34,7 @@ void RedisTransactionImpl::execute(RedisResultCallback &&resultCallback,
         std::move(exceptionCallback),
         "EXEC");
 }
+
 void RedisTransactionImpl::execCommandAsync(
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,

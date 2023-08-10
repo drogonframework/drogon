@@ -31,6 +31,7 @@ void registerCustomExtensionMime(const std::string &ext,
 const string_view fileNameToMime(const std::string &fileName);
 std::pair<ContentType, const string_view> fileNameToContentTypeAndMime(
     const std::string &filename);
+
 inline string_view getFileExtension(const std::string &fileName)
 {
     auto pos = fileName.rfind('.');
@@ -44,26 +45,31 @@ inline constexpr const char *contentLengthFormatString()
 {
     return "content-length: %d\r\n";
 }
+
 template <>
 inline constexpr const char *contentLengthFormatString<unsigned int>()
 {
     return "content-length: %u\r\n";
 }
+
 template <>
 inline constexpr const char *contentLengthFormatString<long>()
 {
     return "content-length: %ld\r\n";
 }
+
 template <>
 inline constexpr const char *contentLengthFormatString<unsigned long>()
 {
     return "content-length: %lu\r\n";
 }
+
 template <>
 inline constexpr const char *contentLengthFormatString<long long>()
 {
     return "content-length: %lld\r\n";
 }
+
 template <>
 inline constexpr const char *contentLengthFormatString<unsigned long long>()
 {

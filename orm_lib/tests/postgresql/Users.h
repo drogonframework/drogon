@@ -26,6 +26,7 @@
 #include <iostream>
 
 using namespace drogon::orm;
+
 namespace drogon
 {
 namespace orm
@@ -34,6 +35,7 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 }  // namespace orm
 }  // namespace drogon
+
 namespace drogon_model
 {
 namespace postgres
@@ -227,6 +229,7 @@ class Users
     {
         return 9;
     }
+
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -257,6 +260,7 @@ class Users
     std::shared_ptr<int32_t> id_;
     std::shared_ptr<std::string> salt_;
     std::shared_ptr<bool> admin_;
+
     struct MetaData
     {
         const std::string colName_;
@@ -267,6 +271,7 @@ class Users
         const bool isPrimaryKey_;
         const bool notNull_;
     };
+
     static const std::vector<MetaData> metaData_;
     bool dirtyFlag_[9] = {false};
 
@@ -284,6 +289,7 @@ class Users
             "delete from " + tableName + " where id = $1";
         return sql;
     }
+
     std::string sqlForInserting(bool &needSelection) const
     {
         std::string sql = "insert into " + tableName + " (";

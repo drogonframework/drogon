@@ -19,6 +19,7 @@
 #include <drogon/HttpTypes.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/NonCopyable.h>
+
 namespace drogon
 {
 enum class CloseCode
@@ -81,6 +82,7 @@ enum class CloseCode
        be verified).*/
     kTLSFailed = 1015
 };
+
 /**
  * @brief The WebSocket connection abstract class.
  *
@@ -217,5 +219,6 @@ class WebSocketConnection
   private:
     std::shared_ptr<void> contextPtr_;
 };
+
 using WebSocketConnectionPtr = std::shared_ptr<WebSocketConnection>;
 }  // namespace drogon

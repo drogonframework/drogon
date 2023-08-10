@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 using namespace drogon::orm;
+
 Field::Field(const Row &row, Row::SizeType columnNum) noexcept
     : row_(Result::SizeType(row.index_)),
       column_((long)columnNum),
@@ -54,18 +55,21 @@ std::string Field::as<std::string>() const
         return utils::hexToBinaryString(sv.data() + 2, sv.length() - 2);
     }
 }
+
 template <>
 const char *Field::as<const char *>() const
 {
     auto data_ = result_.getValue(row_, column_);
     return data_;
 }
+
 template <>
 char *Field::as<char *>() const
 {
     auto data_ = result_.getValue(row_, column_);
     return (char *)data_;
 }
+
 template <>
 std::vector<char> Field::as<std::vector<char>>() const
 {
@@ -89,6 +93,7 @@ const char *Field::c_str() const
 {
     return as<const char *>();
 }
+
 // template <>
 // std::vector<short> Field::as<std::vector<short>>() const
 // {

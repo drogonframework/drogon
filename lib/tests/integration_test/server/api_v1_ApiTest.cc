@@ -1,5 +1,6 @@
 #include "api_v1_ApiTest.h"
 using namespace api::v1;
+
 // add definition of your processing function here
 void ApiTest::rootGet(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback)
@@ -8,6 +9,7 @@ void ApiTest::rootGet(const HttpRequestPtr &req,
     res->setBody("ROOT Get!!!");
     callback(res);
 }
+
 void ApiTest::rootPost(const HttpRequestPtr &req,
                        std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -17,6 +19,7 @@ void ApiTest::rootPost(const HttpRequestPtr &req,
         callback(res);
     }).detach();
 }
+
 void ApiTest::get(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback,
                   int p1,
@@ -55,6 +58,7 @@ void ApiTest::your_method_name(
     auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
     callback(res);
 }
+
 void ApiTest::staticApi(const HttpRequestPtr &req,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -460,6 +464,7 @@ void ApiTest::regexTest(const HttpRequestPtr &req,
 }
 
 static std::mutex cacheTestMtx;
+
 void ApiTest::cacheTest(const HttpRequestPtr &req,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -476,6 +481,7 @@ void ApiTest::cacheTest(const HttpRequestPtr &req,
 }
 
 static std::mutex cacheTest2Mtx;
+
 void ApiTest::cacheTest2(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
@@ -495,6 +501,7 @@ void ApiTest::cacheTest2(
 }
 
 static std::mutex regexCacheApiMtx;
+
 void ApiTest::cacheTestRegex(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)

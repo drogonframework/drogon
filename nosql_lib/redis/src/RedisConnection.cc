@@ -22,6 +22,7 @@
 #endif
 
 using namespace drogon::nosql;
+
 RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
                                  const std::string &username,
                                  const std::string &password,
@@ -262,30 +263,35 @@ void RedisConnection::handleDisconnect()
     redisContext_->ev.cleanup = nullptr;
     redisContext_->ev.data = nullptr;
 }
+
 void RedisConnection::addWrite(void *userData)
 {
     auto thisPtr = static_cast<RedisConnection *>(userData);
     assert(thisPtr->channel_);
     thisPtr->channel_->enableWriting();
 }
+
 void RedisConnection::delWrite(void *userData)
 {
     auto thisPtr = static_cast<RedisConnection *>(userData);
     assert(thisPtr->channel_);
     thisPtr->channel_->disableWriting();
 }
+
 void RedisConnection::addRead(void *userData)
 {
     auto thisPtr = static_cast<RedisConnection *>(userData);
     assert(thisPtr->channel_);
     thisPtr->channel_->enableReading();
 }
+
 void RedisConnection::delRead(void *userData)
 {
     auto thisPtr = static_cast<RedisConnection *>(userData);
     assert(thisPtr->channel_);
     thisPtr->channel_->disableReading();
 }
+
 void RedisConnection::cleanup(void * /*userData*/)
 {
     LOG_TRACE << "cleanup";

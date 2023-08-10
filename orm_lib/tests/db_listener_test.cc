@@ -27,6 +27,7 @@ using namespace std::chrono_literals;
 
 #if USE_POSTGRESQL
 orm::DbClientPtr postgreClient;
+
 DROGON_TEST(ListenNotifyTest)
 {
     auto clientPtr = postgreClient;

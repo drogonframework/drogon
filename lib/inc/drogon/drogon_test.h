@@ -9,6 +9,7 @@
 #include <sstream>
 #include <atomic>
 #include <cstddef>
+
 /**
  * @brief Drogon Test is a minimal effort test framework developed because the
  * major C++ test frameworks doesn't handle async programs well. Drogon Test's
@@ -119,6 +120,7 @@ inline void outputReason(Head&& head)
 {
     std::cout << std::forward<Head>(head);
 }
+
 template <typename Head, typename... Tail>
 inline void outputReason(Head&& head, Tail&&... tail)
 {
@@ -225,6 +227,7 @@ struct Lhs
     Lhs(const T& lhs) : ref_(lhs)
     {
     }
+
     const T& ref_;
 
     template <typename RhsType>
@@ -348,13 +351,16 @@ class CaseBase : public trantor::NonCopyable
 {
   public:
     CaseBase() = default;
+
     CaseBase(const std::string& name) : name_(name)
     {
     }
+
     CaseBase(std::shared_ptr<CaseBase> parent, const std::string& name)
         : parent_(parent), name_(name)
     {
     }
+
     virtual ~CaseBase() = default;
 
     std::string fullname() const
@@ -421,6 +427,7 @@ struct TestCase : public CaseBase
     TestCase(const std::string& name) : CaseBase(name)
     {
     }
+
     virtual ~TestCase() = default;
     virtual void doTest_(std::shared_ptr<Case>) = 0;
 };

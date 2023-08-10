@@ -29,6 +29,7 @@ namespace nosql
 {
 class RedisConnection;
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
+
 class RedisClientLockFree final
     : public RedisClient,
       public trantor::NonCopyable,
@@ -47,6 +48,7 @@ class RedisClientLockFree final
                           ...) noexcept override;
     ~RedisClientLockFree() override;
     std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override;
+
     RedisTransactionPtr newTransaction() override
     {
         LOG_ERROR
@@ -56,6 +58,7 @@ class RedisClientLockFree final
         assert(0);
         return nullptr;
     }
+
     void newTransactionAsync(
         const std::function<void(const RedisTransactionPtr &)> &callback)
         override;

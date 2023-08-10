@@ -134,14 +134,17 @@ class HttpController : public DrObject<T>, public HttpControllerBase
                 T::initPathRouting();
         }
     };
+
     // use static value to register controller method in framework before
     // main();
     static methodRegistrator registrator_;
+
     virtual void *touch()
     {
         return &registrator_;
     }
 };
+
 template <typename T, bool AutoCreation>
 typename HttpController<T, AutoCreation>::methodRegistrator
     HttpController<T, AutoCreation>::registrator_;

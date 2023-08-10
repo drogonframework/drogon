@@ -30,18 +30,22 @@ class DbClientManager : public trantor::NonCopyable
 {
   public:
     void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
+
     DbClientPtr getDbClient(const std::string &name)
     {
         assert(dbClientsMap_.find(name) != dbClientsMap_.end());
         return dbClientsMap_[name];
     }
+
     ~DbClientManager();
+
     DbClientPtr getFastDbClient(const std::string &name)
     {
         auto iter = dbFastClientsMap_.find(name);
         assert(iter != dbFastClientsMap_.end());
         return iter->second.getThreadData();
     }
+
     void createDbClient(const std::string &dbType,
                         const std::string &host,
                         const unsigned short port,
@@ -59,6 +63,7 @@ class DbClientManager : public trantor::NonCopyable
 
   private:
     std::map<std::string, DbClientPtr> dbClientsMap_;
+
     struct DbInfo
     {
         std::string name_;
@@ -69,6 +74,7 @@ class DbClientManager : public trantor::NonCopyable
         double timeout_;
         bool autoBatch_;
     };
+
     std::vector<DbInfo> dbInfos_;
     std::map<std::string, IOThreadStorage<orm::DbClientPtr>> dbFastClientsMap_;
 };

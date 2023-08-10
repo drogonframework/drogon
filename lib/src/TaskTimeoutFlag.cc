@@ -21,6 +21,7 @@ TaskTimeoutFlag::TaskTimeoutFlag(trantor::EventLoop *loop,
     : loop_(loop), timeout_(timeout), timeoutFunc_(timeoutCallback)
 {
 }
+
 void TaskTimeoutFlag::runTimer()
 {
     std::weak_ptr<TaskTimeoutFlag> weakPtr = shared_from_this();
@@ -33,6 +34,7 @@ void TaskTimeoutFlag::runTimer()
         thisPtr->timeoutFunc_();
     });
 }
+
 bool TaskTimeoutFlag::done()
 {
     return isDone_.exchange(true);

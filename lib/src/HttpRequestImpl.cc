@@ -29,6 +29,7 @@
 #endif
 
 using namespace drogon;
+
 void HttpRequestImpl::parseJson() const
 {
     auto input = contentView();
@@ -70,6 +71,7 @@ void HttpRequestImpl::parseJson() const
             std::make_unique<std::string>("content type error");
     }
 }
+
 void HttpRequestImpl::parseParameters() const
 {
     auto input = queryView();

@@ -38,6 +38,7 @@ void create_project::handleCommand(std::vector<std::string> &parameters)
     auto pName = parameters[0];
     createProject(pName);
 }
+
 static void newCmakeFile(std::ofstream &cmakeFile,
                          const std::string &projectName)
 {
@@ -46,11 +47,13 @@ static void newCmakeFile(std::ofstream &cmakeFile,
     auto templ = DrTemplateBase::newTemplate("cmake.csp");
     cmakeFile << templ->genText(data);
 }
+
 static void newMainFile(std::ofstream &mainFile)
 {
     auto templ = DrTemplateBase::newTemplate("demoMain");
     mainFile << templ->genText();
 }
+
 static void newGitIgFile(std::ofstream &gitFile)
 {
     auto templ = DrTemplateBase::newTemplate("gitignore.csp");
@@ -62,21 +65,25 @@ static void newConfigJsonFile(std::ofstream &configJsonFile)
     auto templ = DrTemplateBase::newTemplate("config_json");
     configJsonFile << templ->genText();
 }
+
 static void newConfigYamlFile(std::ofstream &configYamlFile)
 {
     auto templ = DrTemplateBase::newTemplate("config_yaml");
     configYamlFile << templ->genText();
 }
+
 static void newModelConfigFile(std::ofstream &configFile)
 {
     auto templ = DrTemplateBase::newTemplate("model_json");
     configFile << templ->genText();
 }
+
 static void newTestMainFile(std::ofstream &mainFile)
 {
     auto templ = DrTemplateBase::newTemplate("test_main");
     mainFile << templ->genText();
 }
+
 static void newTestCmakeFile(std::ofstream &testCmakeFile,
                              const std::string &projectName)
 {
@@ -85,6 +92,7 @@ static void newTestCmakeFile(std::ofstream &testCmakeFile,
     auto templ = DrTemplateBase::newTemplate("test_cmake");
     testCmakeFile << templ->genText(data);
 }
+
 void create_project::createProject(const std::string &projectName)
 {
 #ifdef _WIN32

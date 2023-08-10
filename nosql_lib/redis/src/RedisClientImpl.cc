@@ -250,6 +250,7 @@ void RedisClientImpl::closeAll()
     readyConnections_.clear();
     connections_.clear();
 }
+
 void RedisClientImpl::newTransactionAsync(
     const std::function<void(const std::shared_ptr<RedisTransaction> &)>
         &callback)
@@ -376,6 +377,7 @@ void RedisClientImpl::handleNextTask(const RedisConnectionPtr &connPtr)
         (*taskPtr)(connPtr);
     }
 }
+
 void RedisClientImpl::execCommandAsyncWithTimeout(
     string_view command,
     RedisResultCallback &&resultCallback,

@@ -256,12 +256,14 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual size_t bytesReceived() const = 0;
 
     virtual std::string host() const = 0;
+
     std::string getHost() const
     {
         return host();
     }
 
     virtual uint16_t port() const = 0;
+
     uint16_t getPort() const
     {
         return port();
@@ -351,14 +353,17 @@ class HttpException : public std::exception
 {
   public:
     HttpException() = delete;
+
     explicit HttpException(ReqResult res)
         : resultCode_(res), message_(to_string_view(res))
     {
     }
+
     const char *what() const noexcept override
     {
         return message_.data();
     }
+
     ReqResult code() const
     {
         return resultCode_;

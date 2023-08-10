@@ -39,6 +39,7 @@
 #include "ConfigAdapterManager.h"
 
 using namespace drogon;
+
 static bool bytesSize(std::string &sizeStr, size_t &size)
 {
     if (sizeStr.empty())
@@ -139,16 +140,20 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
                                  ": " + e.what());
     }
 }
+
 ConfigLoader::ConfigLoader(const Json::Value &data) : configJsonRoot_(data)
 {
 }
+
 ConfigLoader::ConfigLoader(Json::Value &&data)
     : configJsonRoot_(std::move(data))
 {
 }
+
 ConfigLoader::~ConfigLoader()
 {
 }
+
 static void loadLogSetting(const Json::Value &log)
 {
     if (!log)
@@ -184,6 +189,7 @@ static void loadLogSetting(const Json::Value &log)
     auto localTime = log.get("display_local_time", false).asBool();
     trantor::Logger::setDisplayLocalTime(localTime);
 }
+
 static void loadControllers(const Json::Value &controllers)
 {
     if (!controllers)
@@ -240,6 +246,7 @@ static void loadControllers(const Json::Value &controllers)
         drogon::app().registerHttpSimpleController(path, ctrlName, constraints);
     }
 }
+
 static void loadApp(const Json::Value &app)
 {
     if (!app)
@@ -515,6 +522,7 @@ static void loadApp(const Json::Value &app)
         app.get("enabled_compressed_request", false).asBool();
     drogon::app().enableCompressedRequest(enableCompressedRequests);
 }
+
 static void loadDbClients(const Json::Value &dbClients)
 {
     if (!dbClients)
@@ -646,6 +654,7 @@ static void loadListeners(const Json::Value &listeners)
             addr, port, useSSL, cert, key, useOldTLS, sslConfCmds);
     }
 }
+
 static void loadSSL(const Json::Value &sslConf)
 {
     if (!sslConf)
@@ -670,6 +679,7 @@ static void loadSSL(const Json::Value &sslConf)
     }
     drogon::app().setSSLConfigCommands(sslConfCmds);
 }
+
 void ConfigLoader::load()
 {
     // std::cout<<configJsonRoot_<<std::endl;
