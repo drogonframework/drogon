@@ -47,11 +47,30 @@ static void doFilterChains(
              callbackPtr,
              &filters,
              missCallback = std::move(missCallback)]() mutable {
-                doFilterChains(filters,
-                               index + 1,
-                               req,
-                               callbackPtr,
-                               std::move(missCallback));
+                auto ioLoop = req->getLoop();
+                if (ioLoop && !ioLoop->isInLoopThread())
+                {
+                    ioLoop->queueInLoop([index,
+                                         req,
+                                         callbackPtr,
+                                         &filters,
+                                         missCallback = std::move(missCallback),
+                                         ioLoop]() mutable {
+                        doFilterChains(filters,
+                                       index + 1,
+                                       req,
+                                       callbackPtr,
+                                       std::move(missCallback));
+                    });
+                }
+                else
+                {
+                    doFilterChains(filters,
+                                   index + 1,
+                                   req,
+                                   callbackPtr,
+                                   std::move(missCallback));
+                }
             });
     }
     else
