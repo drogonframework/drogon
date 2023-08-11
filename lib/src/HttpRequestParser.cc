@@ -56,7 +56,7 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
     const char *space = std::find(start, end, ' ');
     if (space != end)
     {
-        const char* slash = std::find(start, space, '/');
+        const char *slash = std::find(start, space, '/');
         if (slash != start && slash + 1 < space && *(slash + 1) == '/')
         {
             // scheme precedents
