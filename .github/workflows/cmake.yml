@@ -172,8 +172,6 @@ jobs:
     - name: (macOS) Prepare for testing
       if: runner.os == 'macOS'
       run: |
-        cd $(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-services
-        cd ~
         brew tap homebrew/services
         brew services restart postgresql@14
         brew services start mariadb
