@@ -45,6 +45,34 @@ static std::string leftpad(const std::string& str, size_t len)
     return std::string(len - str.size(), ' ') + str;
 }
 
+inline std::string escapeString(const string_view sv)
+{
+    std::string result;
+    result.reserve(sv.size());
+    for (auto ch : sv)
+    {
+        if (ch == '\n')
+            result += "\\n";
+        else if (ch == '\r')
+            result += "\\r";
+        else if (ch == '\t')
+            result += "\\t";
+        else if (ch == '\b')
+            result += "\\b";
+        else if (ch == '\\')
+            result += "\\\\";
+        else if (ch == '"')
+            result += "\"";
+        else if (ch == '\v')
+            result += "\\v";
+        else if (ch == '\a')
+            result += "\\a";
+        else
+            result.push_back(ch);
+    }
+    return result;
+}
+
 std::string prettifyString(const string_view sv, size_t maxLength)
 {
     if (sv.size() <= maxLength)
@@ -52,6 +80,162 @@ std::string prettifyString(const string_view sv, size_t maxLength)
 
     const std::string msg = "...\" (truncated)";
     return "\"" + escapeString(sv.substr(0, maxLength)) + msg;
+}
+
+bool check_internal(std::string func_name,
+                    std::string expr,
+                    const std::shared_ptr<CaseBase>& TEST_CTX,
+                    std::function<std::pair<bool, std::string>()> functor,
+                    std::string codeloc)
+{
+    bool result = false;
+    std::string expansion;
+    try
+    {
+        std::tie(result, expansion) = functor();
+    }
+    catch (const std::exception& e)
+    {
+        result = false;
+        ERROR_MSG(func_name, expr, codeloc)
+            << "An unexpected exception is thrown. what():\n"
+            << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";
+    }
+    catch (...)
+    {
+        result = false;
+        ERROR_MSG(func_name, expr, codeloc)
+            << "Unexpected unknown exception is thrown.\n\n";
+    }
+
+    numAssertions++;
+    if (result)
+    {
+        numCorrectAssertions++;
+        PRINT_PASSED__(func_name, expr, codeloc);
+        return true;
+    }
+    else
+    {
+        TEST_CTX->setFailed();
+        ERROR_MSG(func_name, expr, codeloc)
+            << "With expansion\n"
+            << "  \033[0;33m" << expansion << "\x1B[0m\n\n";
+        return false;
+    }
+}
+
+bool throws_internal(std::string func_name,
+                     std::string expr,
+                     const std::shared_ptr<CaseBase>& TEST_CTX,
+                     std::function<void()> functor,
+                     std::string codeloc)
+{
+    try
+    {
+        functor();
+    }
+    catch (const std::exception& e)
+    {
+        PRINT_PASSED__(func_name, expr, codeloc);
+        return true;
+    }
+    catch (...)
+    {
+        PRINT_PASSED__(func_name, expr, codeloc);
+        return true;
+    }
+    ERROR_MSG(func_name, expr, codeloc)
+        << "With expecitation\n"
+        << "  Expected to throw an exception. But none are "
+           "thrown.\n\n";
+    TEST_CTX->setFailed();
+    return false;
+}
+
+bool nothrow_internal(std::string func_name,
+                      std::string expr,
+                      const std::shared_ptr<CaseBase>& TEST_CTX,
+                      std::function<void()> functor,
+                      std::string codeloc)
+{
+    try
+    {
+        functor();
+    }
+    catch (const std::exception& e)
+    {
+        ERROR_MSG(func_name, expr, codeloc)
+            << "With expecitation\n"
+            << "  Expected to not throw an exception. But one is "
+               "thrown. what():\n"
+            << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";
+        TEST_CTX->setFailed();
+        return false;
+    }
+    catch (...)
+    {
+        ERROR_MSG(func_name, expr, codeloc)
+            << "With expecitation\n"
+            << "  Expected to not throw an exception. But one is "
+               "thrown.\n\n";
+        TEST_CTX->setFailed();
+        return false;
+    }
+
+    PRINT_PASSED__(func_name, expr, codeloc);
+    return true;
+}
+
+bool throws_as_internal(std::string func_name,
+                        std::string expr,
+                        const std::shared_ptr<CaseBase>& TEST_CTX,
+                        std::function<void()> functor,
+                        std::string codeloc,
+                        bool (*validator)(std::exception*))
+{
+    try
+    {
+        functor();
+    }
+    catch (const std::exception& e)
+    {
+        if (validator(const_cast<std::exception*>(&e)))
+        {
+            PRINT_PASSED__(func_name, expr, codeloc);
+            return true;
+        }
+        ERROR_MSG(func_name, expr, codeloc)
+            << "With expecitation\n"
+            << "  Expected to throw an exception of type " << validator
+            << ". But one of type " << typeid(e).name()
+            << " is thrown. what():\n"
+            << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";
+        TEST_CTX->setFailed();
+        return false;
+    }
+    catch (...)
+    {
+        ERROR_MSG(func_name, expr, codeloc)
+            << "With expecitation\n"
+            << "  Expected to throw an exception of type " << validator
+            << ". But one of unknown type is thrown.\n\n";
+        TEST_CTX->setFailed();
+        return false;
+    }
+    ERROR_MSG(func_name, expr, codeloc)
+        << "With expecitation\n"
+        << "  Expected to throw an exception of type " << validator
+        << ". But none are thrown.\n\n";
+    TEST_CTX->setFailed();
+    return false;
+}
+
+void mandateExit()
+{
+    printTestStats();
+    printErr() << "Force exiting due to a mandation failed.\n";
+    exit(1);
 }
 
 }  // namespace internal
