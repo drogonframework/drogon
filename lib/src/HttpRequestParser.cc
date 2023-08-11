@@ -56,15 +56,25 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
     const char *space = std::find(start, end, ' ');
     if (space != end)
     {
-        const char *question = std::find(start, space, '?');
-        if (question != space)
+        const char *slash = std::find(start, space, '/');
+        if (slash != start && slash + 1 < space && *(slash + 1) == '/')
         {
-            request_->setPath(start, question);
-            request_->setQuery(question + 1, space);
+            // scheme precedents
+            slash = std::find(slash + 2, space, '/');
+        }
+        const char *question = std::find(slash, space, '?');
+        if (slash != space)
+        {
+            request_->setPath(slash, question);
         }
         else
         {
-            request_->setPath(start, space);
+            // An empty abs_path is equivalent to an abs_path of "/"
+            request_->setPath("/");
+        }
+        if (question != space)
+        {
+            request_->setQuery(question + 1, space);
         }
         start = space + 1;
         succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
