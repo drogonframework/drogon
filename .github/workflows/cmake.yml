@@ -100,10 +100,8 @@ jobs:
 
     - name: (macOS) Install dependencies
       if: runner.os == 'macOS'
-      run: |
-        brew install jsoncpp brotli zlib
-        brew install lz4 mariadb sqlite3 postgresql hiredis
-        brew install redis
+      # Already installed: brotli, zlib, postgresql@14, lz4, sqlite3
+      run: brew install jsoncpp mariadb hiredis redis
 
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
@@ -174,10 +172,8 @@ jobs:
     - name: (macOS) Prepare for testing
       if: runner.os == 'macOS'
       run: |
-        cd $(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-services
-        cd ~
         brew tap homebrew/services
-        brew services restart postgresql
+        brew services restart postgresql@14
         brew services start mariadb
         brew services start redis
         sleep 4
