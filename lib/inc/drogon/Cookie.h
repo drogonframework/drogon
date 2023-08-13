@@ -310,7 +310,7 @@ class DROGON_EXPORT Cookie
      * @return 0 if both strings are equall ignoring case, negative value if lhs
      * is smaller than rhs and vice versa
      */
-    static int stricmp(const string_view &str1, const string_view &str2)
+    static int stricmp(const string_view str1, const string_view str2)
     {
         auto str1Len{str1.length()};
         auto str2Len{str2.length()};
