@@ -47,6 +47,7 @@ class RedisConnection : public trantor::NonCopyable,
                     const std::string &password,
                     unsigned int db,
                     trantor::EventLoop *loop);
+    ~RedisConnection();
     void setConnectCallback(
         const std::function<void(std::shared_ptr<RedisConnection> &&)>
             &callback)
@@ -149,12 +150,6 @@ class RedisConnection : public trantor::NonCopyable,
     void sendSubscribe(const std::shared_ptr<SubscribeContext> &subCtx);
     void sendUnsubscribe(const std::shared_ptr<SubscribeContext> &subCtx);
 
-    ~RedisConnection()
-    {
-        LOG_TRACE << (int)status_;
-        if (redisContext_ && status_ != ConnectStatus::kEnd)
-            redisAsyncDisconnect(redisContext_);
-    }
     void disconnect();
     void sendCommand(RedisResultCallback &&resultCallback,
                      RedisExceptionCallback &&exceptionCallback,
@@ -181,7 +176,7 @@ class RedisConnection : public trantor::NonCopyable,
     const std::string password_;
     const unsigned int db_;
     trantor::EventLoop *loop_{nullptr};
-    std::unique_ptr<trantor::Channel> channel_{nullptr};
+    std::shared_ptr<trantor::Channel> channel_{nullptr};
     std::function<void(std::shared_ptr<RedisConnection> &&)> connectCallback_;
     std::function<void(std::shared_ptr<RedisConnection> &&)>
         disconnectCallback_;
