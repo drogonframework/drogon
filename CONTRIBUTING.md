@@ -9,7 +9,7 @@ contribute in an overall positive way.
 1. Fork, then clone the repository: `git clone
    git@github.com:your-username/drogon.git`
 1. Follow the [official installation steps on
-   DocsForge](https://drogon.docsforge.com/master/installation/). It’s best to
+   Github](https://drogonframework.github.io/drogon-docs/#/ENG-02-Installation). It’s best to
    make sure to have the `drogon_ctl` executable in your shell’s `PATH`
    environment variable in case you use a terminal.
 
