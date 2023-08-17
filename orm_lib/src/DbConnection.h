@@ -52,8 +52,10 @@ struct SqlCmd
     std::vector<const char *> parameters_;
     std::vector<int> lengths_;
     std::vector<int> formats_;
+    int resultFormat_{0};
     QueryCallback callback_;
     ExceptPtrCallback exceptionCallback_;
+    bool usePreparedStmt_{true};
     std::string preparingStatement_;
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool isChanging_{false};
@@ -63,15 +65,19 @@ struct SqlCmd
            std::vector<const char *> &&parameters,
            std::vector<int> &&length,
            std::vector<int> &&format,
+           int resultFormat,
            QueryCallback &&cb,
-           ExceptPtrCallback &&exceptCb)
+           ExceptPtrCallback &&exceptCb,
+           bool usePreparedStmt = true)
         : sql_(std::move(sql)),
           parametersNumber_(paraNum),
           parameters_(std::move(parameters)),
           lengths_(std::move(length)),
           formats_(std::move(format)),
+          resultFormat_(resultFormat),
           callback_(std::move(cb)),
-          exceptionCallback_(std::move(exceptCb))
+          exceptionCallback_(std::move(exceptCb)),
+          usePreparedStmt_(usePreparedStmt)
     {
     }
 };
@@ -97,14 +103,46 @@ class DbConnection : public trantor::NonCopyable
     {
         idleCb_ = cb;
     }
+
+    /**
+     * Parameters `resultFormat` and `usePreparedStmt` are only useful for
+     * postgresql.
+     * @param binaryResult decides the resultFormat argument for
+     * PQsendQueryPrepared or PQsendQueryParams. If true, resultFormat is 1,
+     * otherwise 0.
+     * @param usePreparedStmt whether use prepared statement or not.
+     */
     virtual void execSql(
         string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
         std::vector<int> &&format,
+        int resultFormat,
         ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt) = 0;
+
+    void execSql(
+        string_view &&sql,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback)
+    {
+        execSql(std::move(sql),
+                paraNum,
+                std::move(parameters),
+                std::move(length),
+                std::move(format),
+                0,
+                std::move(rcb),
+                std::move(exceptCallback),
+                true);
+    }
+
     virtual void batchSql(
         std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) = 0;
     virtual ~DbConnection()

@@ -220,7 +220,9 @@ void PgConnection::execSqlInLoop(
     std::vector<int> &&length,
     std::vector<int> &&format,
     ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&exceptCallback)
+    std::function<void(const std::exception_ptr &)> &&exceptCallback,
+    int resultFormat,
+    bool /* usePreparedStmt not supported in batch mode yet */)
 {
     LOG_TRACE << sql;
     isWorking_ = true;
@@ -230,6 +232,7 @@ void PgConnection::execSqlInLoop(
                                  std::move(parameters),
                                  std::move(length),
                                  std::move(format),
+                                 resultFormat,
                                  std::move(rcb),
                                  std::move(exceptCallback)));
     if (batchSqlCommands_.size() == 1 && !channel_.isWriting())
@@ -337,7 +340,7 @@ void PgConnection::sendBatchedSql()
                                 cmd->parameters_.data(),
                                 cmd->lengths_.data(),
                                 cmd->formats_.data(),
-                                0) == 0)
+                                cmd->resultFormat_) == 0)
         {
             isWorking_ = false;
             handleFatalError(true);

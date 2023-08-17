@@ -111,6 +111,16 @@ enum class Mode
     NonBlocking,
     Blocking
 };
+enum class ResultFormat
+{
+    Text = 0,
+    Binary = 1
+};
+enum class SqlOption
+{
+    DisablePreparedStmt
+};
+
 namespace internal
 {
 template <typename T>
@@ -307,6 +317,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           parameters_(std::move(that.parameters_)),
           lengths_(std::move(that.lengths_)),
           formats_(std::move(that.formats_)),
+          resultFormat_(that.resultFormat_),
           objs_(std::move(that.objs_)),
           mode_(that.mode_),
           callbackHolder_(std::move(that.callbackHolder_)),
@@ -315,6 +326,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           execed_(that.execed_),
           destructed_(that.destructed_),
           isExceptionPtr_(that.isExceptionPtr_),
+          usePreparedStmt_(that.usePreparedStmt_),
           type_(that.type_)
     {
         // set the execed_ to true to avoid the same sql being executed twice.
@@ -492,6 +504,43 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         mode_ = mode;
         return *this;
     }
+    self &operator<<(const ResultFormat &resultFormat)
+    {
+        resultFormat_ = resultFormat;
+        return *this;
+    }
+    self &operator<<(ResultFormat &resultFormat)
+    {
+        resultFormat_ = resultFormat;
+        return *this;
+    }
+    self &operator<<(ResultFormat &&resultFormat)
+    {
+        resultFormat_ = resultFormat;
+        return *this;
+    }
+    self &setSqlOption(SqlOption option)
+    {
+        switch (option)
+        {
+            case SqlOption::DisablePreparedStmt:
+                usePreparedStmt_ = false;
+                break;
+        }
+        return *this;
+    }
+    self &operator<<(const SqlOption &option)
+    {
+        return setSqlOption(option);
+    }
+    self &operator<<(SqlOption &option)
+    {
+        return setSqlOption(option);
+    }
+    self &operator<<(SqlOption &&option)
+    {
+        return setSqlOption(option);
+    }
     template <typename T>
     self &operator<<(const optional<T> &parameter)
     {
@@ -565,6 +614,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     std::vector<const char *> parameters_;
     std::vector<int> lengths_;
     std::vector<int> formats_;
+    ResultFormat resultFormat_{ResultFormat::Text};
     std::vector<std::shared_ptr<void>> objs_;
     Mode mode_{Mode::NonBlocking};
     std::shared_ptr<CallbackHolderBase> callbackHolder_;
@@ -573,6 +623,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     bool execed_{false};
     bool destructed_{false};
     bool isExceptionPtr_{false};
+    bool usePreparedStmt_{true};
     ClientType type_;
 };
 
