@@ -14,6 +14,7 @@
 #pragma once
 #include <drogon/plugins/Plugin.h>
 #include <drogon/utils/monitoring/Registry.h>
+#include <drogon/utils/monitoring/Collector.h>
 #include <memory>
 #include <mutex>
 
@@ -63,14 +64,25 @@ class DROGON_EXPORT PromExporter
     void shutdown() override
     {
     }
+
     ~PromExporter() override
     {
     }
+
     void registerCollector(
         const std::shared_ptr<drogon::monitoring::CollectorBase> &collector)
         override;
+
     std::shared_ptr<drogon::monitoring::CollectorBase> getCollector(
         const std::string &name) const noexcept(false);
+
+    template <typename T>
+    std::shared_ptr<drogon::monitoring::Collector<T>> getCollector(
+        const std::string &name) const
+    {
+        return std::dynamic_pointer_cast<drogon::monitoring::Collector<T>>(
+            getCollector(name));
+    }
 
   private:
     mutable std::mutex mutex_;
