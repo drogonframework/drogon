@@ -1521,6 +1521,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 
     virtual HttpAppFramework &enableCompressedRequest(bool enable = true) = 0;
     virtual bool isCompressedRequestEnabled() const = 0;
+    /*
+     * @brief get the number of active connections.
+     */
+    virtual int64_t getConnectionCount() const = 0;
 
   private:
     virtual void registerHttpController(

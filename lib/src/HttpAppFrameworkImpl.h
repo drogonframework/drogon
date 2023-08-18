@@ -606,6 +606,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const std::string &ext,
         const std::string &mime) override;
 
+    int64_t getConnectionCount() const override
+    {
+        return connectionNum_.load(std::memory_order_relaxed);
+    }
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
