@@ -604,105 +604,14 @@ const char *HttpRequestImpl::versionString() const
 
 const char *HttpRequestImpl::methodString() const
 {
-    const char *result = "UNKNOWN";
-    switch (method_)
-    {
-        case Get:
-            result = "GET";
-            break;
-        case Post:
-            result = "POST";
-            break;
-        case Head:
-            result = "HEAD";
-            break;
-        case Put:
-            result = "PUT";
-            break;
-        case Delete:
-            result = "DELETE";
-            break;
-        case Options:
-            result = "OPTIONS";
-            break;
-        case Patch:
-            result = "PATCH";
-            break;
-        default:
-            break;
-    }
-    return result;
+    auto sv = to_string_view(method_);
+    return sv.data();
 }
 
 bool HttpRequestImpl::setMethod(const char *start, const char *end)
 {
     assert(method_ == Invalid);
-    string_view m(start, end - start);
-    switch (m.length())
-    {
-        case 3:
-            if (m == "GET")
-            {
-                method_ = Get;
-            }
-            else if (m == "PUT")
-            {
-                method_ = Put;
-            }
-            else
-            {
-                method_ = Invalid;
-            }
-            break;
-        case 4:
-            if (m == "POST")
-            {
-                method_ = Post;
-            }
-            else if (m == "HEAD")
-            {
-                method_ = Head;
-            }
-            else
-            {
-                method_ = Invalid;
-            }
-            break;
-        case 5:
-            if (m == "PATCH")
-            {
-                method_ = Patch;
-            }
-            else
-            {
-                method_ = Invalid;
-            }
-            break;
-        case 6:
-            if (m == "DELETE")
-            {
-                method_ = Delete;
-            }
-            else
-            {
-                method_ = Invalid;
-            }
-            break;
-        case 7:
-            if (m == "OPTIONS")
-            {
-                method_ = Options;
-            }
-            else
-            {
-                method_ = Invalid;
-            }
-            break;
-        default:
-            method_ = Invalid;
-            break;
-    }
-
+    method_ = to_http_method(string_view(start, end - start));
     // if (method_ != Invalid)
     // {
     //     content_ = "";
