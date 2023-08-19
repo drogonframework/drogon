@@ -182,55 +182,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         req->setCreationDate(trantor::Date::date());
         req->setSecure(conn->isSSLConnection());
         req->setPeerCertificate(conn->peerCertificate());
-        if (requestParser->firstReq() && isWebSocket(req))
-        {
-            bool isHeadMethod = (req->method() == Head);
-            if (isHeadMethod)
-            {
-                req->setMethod(Get);
-            }
-            bool reqPipelined = false;
-            if (!requestParser->emptyPipelining())
-            {
-                requestParser->pushRequestToPipelining(req, isHeadMethod);
-                reqPipelined = true;
-            }
-            if (!syncAdvices_.empty() && !passSyncAdvices(req,
-                                                          requestParser,
-                                                          syncAdvices_,
-                                                          reqPipelined,
-                                                          isHeadMethod))
-            {
-                continue;
-            }
-            auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-            wsConn->setPingMessage("", std::chrono::seconds{30});
-            newWebsocketCallback_(
-                req,
-                [conn, wsConn, requestParser, this, req](
-                    const HttpResponsePtr &resp) mutable {
-                    if (conn->connected())
-                    {
-                        for (auto &advice : preSendingAdvices_)
-                        {
-                            advice(req, resp);
-                        }
-                        if (resp->statusCode() == k101SwitchingProtocols)
-                        {
-                            requestParser->setWebsockConnection(wsConn);
-                        }
-                        auto httpString =
-                            ((HttpResponseImpl *)resp.get())->renderToBuffer();
-                        conn->send(httpString);
-                        COZ_PROGRESS
-                    }
-                },
-                wsConn);
-        }
-        else
-        {
-            requests.push_back(req);
-        }
+        requests.push_back(req);
         requestParser->reset();
     }
     onRequests(conn, requests, requestParser);
@@ -306,6 +258,35 @@ void HttpServer::onRequests(
             !passSyncAdvices(
                 req, requestParser, syncAdvices_, reqPipelined, isHeadMethod))
         {
+            continue;
+        }
+
+        if (requestParser->firstReq() && isWebSocket(req))
+        {
+            auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
+            wsConn->setPingMessage("", std::chrono::seconds{30});
+            newWebsocketCallback_(
+                req,
+                [conn, wsConn, requestParser, this, req](
+                    const HttpResponsePtr &resp) mutable {
+                    if (conn->connected())
+                    {
+                        for (auto &advice : preSendingAdvices_)
+                        {
+                            advice(req, resp);
+                        }
+                        if (resp->statusCode() == k101SwitchingProtocols)
+                        {
+                            requestParser->setWebsockConnection(wsConn);
+                        }
+                        auto httpString =
+                            ((HttpResponseImpl *)resp.get())->renderToBuffer();
+                        conn->send(httpString);
+                        COZ_PROGRESS
+                    }
+                },
+                wsConn);
+
             continue;
         }
 
