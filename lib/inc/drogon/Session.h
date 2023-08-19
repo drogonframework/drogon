@@ -15,12 +15,12 @@
 #pragma once
 
 #include <drogon/utils/any.h>
-#include <drogon/utils/optional.h>
 #include <trantor/utils/Logger.h>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <optional>
 
 namespace drogon
 {
@@ -70,7 +70,7 @@ class Session
      * @return optional<T>
      */
     template <typename T>
-    optional<T> getOptional(const std::string &key) const
+    std::optional<T> getOptional(const std::string &key) const
     {
         {
             std::lock_guard<std::mutex> lck(mutex_);
@@ -87,7 +87,7 @@ class Session
                 }
             }
         }
-        return nullopt;
+        return std::nullopt;
     }
     /**
      * @brief Modify or visit the data identified by the key parameter.

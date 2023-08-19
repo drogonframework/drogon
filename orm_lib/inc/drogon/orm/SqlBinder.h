@@ -22,7 +22,6 @@
 #include <drogon/orm/Row.h>
 #include <drogon/orm/RowIterator.h>
 #include <drogon/utils/string_view.h>
-#include <drogon/utils/optional.h>
 #include <json/writer.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
@@ -36,6 +35,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <optional>
 #ifdef _WIN32
 #include <winsock2.h>
 #else  // some Unix-like OS
@@ -493,7 +493,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return *this;
     }
     template <typename T>
-    self &operator<<(const optional<T> &parameter)
+    self &operator<<(const std::optional<T> &parameter)
     {
         if (parameter)
         {
@@ -502,7 +502,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return *this << nullptr;
     }
     template <typename T>
-    self &operator<<(optional<T> &parameter)
+    self &operator<<(std::optional<T> &parameter)
     {
         if (parameter)
         {
@@ -511,7 +511,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return *this << nullptr;
     }
     template <typename T>
-    self &operator<<(optional<T> &&parameter)
+    self &operator<<(std::optional<T> &&parameter)
     {
         if (parameter)
         {

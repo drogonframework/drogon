@@ -712,7 +712,6 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/coroutine.h
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/HttpConstraint.h
-    lib/inc/drogon/utils/optional.h
     lib/inc/drogon/utils/OStringStream.h
     lib/inc/drogon/utils/string_view.h
     lib/inc/drogon/utils/Utilities.h)

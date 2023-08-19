@@ -15,9 +15,9 @@
 #include <drogon/plugins/Plugin.h>
 #include <drogon/plugins/RealIpResolver.h>
 #include <drogon/HttpAppFramework.h>
-#include <drogon/utils/optional.h>
 #include <drogon/CacheMap.h>
 #include <regex>
+#include <optional>
 
 namespace drogon
 {
@@ -93,7 +93,7 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
      * method. etc. use the beginning advice of AOP.
      * */
     void setUserIdGetter(
-        std::function<optional<std::string>(const HttpRequestPtr &)> func)
+        std::function<std::optional<std::string>(const HttpRequestPtr &)> func)
     {
         userIdGetter_ = std::move(func);
     }
@@ -128,7 +128,7 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     bool multiThreads_{true};
     bool useRealIpResolver_{false};
     size_t limiterExpireTime_{600};
-    std::function<optional<std::string>(const drogon::HttpRequestPtr &)>
+    std::function<std::optional<std::string>(const drogon::HttpRequestPtr &)>
         userIdGetter_;
     std::function<HttpResponsePtr(const drogon::HttpRequestPtr &)>
         rejectResponseFactory_;
@@ -139,7 +139,7 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     bool checkLimit(const drogon::HttpRequestPtr &req,
                     const LimitStrategy &strategy,
                     const std::string &ip,
-                    const drogon::optional<std::string> &userId);
+                    const std::optional<std::string> &userId);
     HttpResponsePtr rejectResponse_;
 };
 }  // namespace plugin

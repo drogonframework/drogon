@@ -14,13 +14,13 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/optional.h>
 #include <drogon/utils/string_view.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
 #include <cctype>
 #include <string>
 #include <limits>
+#include <optional>
 
 namespace drogon
 {
@@ -267,7 +267,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the max-age of the cookie
      */
-    optional<int> maxAge() const
+    std::optional<int> maxAge() const
     {
         return maxAge_;
     }
@@ -275,7 +275,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the max-age of the cookie
      */
-    optional<int> getMaxAge() const
+    std::optional<int> getMaxAge() const
     {
         return maxAge_;
     }
@@ -404,7 +404,7 @@ class DROGON_EXPORT Cookie
     std::string path_;
     std::string key_;
     std::string value_;
-    optional<int> maxAge_;
+    std::optional<int> maxAge_;
     SameSite sameSite_{SameSite::kNull};
 };
 

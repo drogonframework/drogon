@@ -16,7 +16,6 @@
 
 #include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
-#include <drogon/utils/optional.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpTypes.h>
@@ -30,6 +29,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <optional>
 
 namespace drogon
 {
@@ -302,7 +302,7 @@ class DROGON_EXPORT HttpRequest
      * @return optional<T>
      */
     template <typename T>
-    optional<T> getOptionalParameter(const std::string &key)
+    std::optional<T> getOptionalParameter(const std::string &key)
     {
         auto &params = getParameters();
         auto it = params.find(key);
@@ -310,17 +310,17 @@ class DROGON_EXPORT HttpRequest
         {
             try
             {
-                return optional<T>(drogon::utils::fromString<T>(it->second));
+                return std::optional<T>(drogon::utils::fromString<T>(it->second));
             }
             catch (const std::exception &e)
             {
                 LOG_ERROR << e.what();
-                return optional<T>{};
+                return std::optional<T>{};
             }
         }
         else
         {
-            return optional<T>{};
+            return std::optional<T>{};
         }
     }
 

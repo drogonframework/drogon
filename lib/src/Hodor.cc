@@ -118,7 +118,7 @@ void Hodor::shutdown()
 bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
                        const LimitStrategy &strategy,
                        const std::string &ip,
-                       const drogon::optional<std::string> &userId)
+                       const std::optional<std::string> &userId)
 {
     if (strategy.regexFlag)
     {
@@ -208,7 +208,7 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
         (useRealIpResolver_ ? drogon::plugin::RealIpResolver::GetRealAddr(req)
                             : req->peerAddr())
             .toIpNetEndian();
-    optional<std::string> userId;
+    std::optional<std::string> userId;
     if (userIdGetter_)
     {
         userId = userIdGetter_(req);
