@@ -13,7 +13,6 @@
  */
 
 #include <drogon/utils/Utilities.h>
-#include "filesystem.h"
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/Utilities.h>
 #include <drogon/config.h>
@@ -40,6 +39,7 @@
 #include <clocale>
 #include <cctype>
 #include <cstdlib>
+#include <filesystem>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -1070,11 +1070,11 @@ int createPath(const std::string &path)
     if (path.empty())
         return 0;
     auto osPath{toNativePath(path)};
-    if (osPath.back() != filesystem::path::preferred_separator)
-        osPath.push_back(filesystem::path::preferred_separator);
-    filesystem::path fsPath(osPath);
-    drogon::error_code err;
-    filesystem::create_directories(fsPath, err);
+    if (osPath.back() != std::filesystem::path::preferred_separator)
+        osPath.push_back(std::filesystem::path::preferred_separator);
+    std::filesystem::path fsPath(osPath);
+    std::error_code err;
+    std::filesystem::create_directories(fsPath, err);
     if (err)
     {
         LOG_ERROR << "Error " << err.value() << " creating path " << osPath

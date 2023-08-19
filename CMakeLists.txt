@@ -303,7 +303,6 @@ set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
     lib/src/ConfigLoader.h
-    lib/src/filesystem.h
     lib/src/FiltersFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h

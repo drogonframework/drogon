@@ -15,13 +15,13 @@
 #pragma once
 #include "HttpUtils.h"
 #include <drogon/utils/string_view.h>
-#include "filesystem.h"
 #include <drogon/HttpRequest.h>
 
 #include <map>
 #include <string>
 #include <vector>
 #include <memory>
+#include <filesystem>
 
 namespace drogon
 {
@@ -123,7 +123,7 @@ class HttpFileImpl
     // Return sha512 hash of the file
     std::string getSha3() const noexcept;
     //    int saveTo(const std::string &pathAndFileName) const;
-    int saveTo(const filesystem::path &pathAndFileName) const noexcept;
+    int saveTo(const std::filesystem::path &pathAndFileName) const noexcept;
     void setRequest(const HttpRequestPtr &req) noexcept
     {
         requestPtr_ = req;

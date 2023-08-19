@@ -39,13 +39,13 @@
 #include "StaticFileRouter.h"
 #include "WebSocketConnectionImpl.h"
 #include "WebsocketControllersRouter.h"
-#include "filesystem.h"
 
 #include <iostream>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
+#include <filesystem>
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -738,10 +738,10 @@ HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(
 {
     assert(!uploadPath.empty());
 
-    filesystem::path fsUploadPath(utils::toNativePath(uploadPath));
+    std::filesystem::path fsUploadPath(utils::toNativePath(uploadPath));
     if (!fsUploadPath.is_absolute())
     {
-        filesystem::path fsRoot(utils::toNativePath(rootPath_));
+        std::filesystem::path fsRoot(utils::toNativePath(rootPath_));
         fsUploadPath = fsRoot / fsUploadPath;
     }
     uploadPath_ = utils::fromNativePath(fsUploadPath.native());

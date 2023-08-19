@@ -310,7 +310,8 @@ class DROGON_EXPORT HttpRequest
         {
             try
             {
-                return std::optional<T>(drogon::utils::fromString<T>(it->second));
+                return std::optional<T>(
+                    drogon::utils::fromString<T>(it->second));
             }
             catch (const std::exception &e)
             {
