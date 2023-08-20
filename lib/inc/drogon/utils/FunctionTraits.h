@@ -48,9 +48,8 @@ struct FunctionTraits;
 
 // functor,lambda,std::function...
 template <typename Function>
-struct FunctionTraits
-    : public FunctionTraits<
-          decltype(&std::remove_reference<Function>::type::operator())>
+struct FunctionTraits : public FunctionTraits<decltype(
+                            &std::remove_reference<Function>::type::operator())>
 {
     static const bool isClassFunction = false;
     static const bool isDrObjectClass = false;
