@@ -4,6 +4,131 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.5] - 2023-08-19
+
+### API changes list
+
+- Add the forwardCoro method to HttpAppFramework.
+
+- Possibility to add plugins without config file.
+
+- Implement QueryBuilder.
+
+- Add getOriginalPath function.
+
+- Add setsockopt to HttpClient.
+
+- Add overload function of newHttpResponse.
+
+- Add getConnectionCount method.
+
+### Changed
+
+- Add synchronization interface to model's associated query.
+
+- Use syncAdvices.empty() to check. 
+
+- Remove the deprecated Json::Reader.
+
+- Adapt Drogon to take advitange of Trantor TLS refactor.
+
+- Add avatars of all contributors to the readme file.
+
+- Remove docsforge from readme.
+
+- Adapt to gcc13.
+
+- Modify the HttpMessageBody class.
+
+- Add the GlobalFilters plugin.
+
+- Add filters and plugins to the drogon.h header file.
+
+- Add webp and svg to the default file_types.
+
+- Update SqlBinder.h.
+
+- Remove path from COMPILER_COMMAND.
+
+- Hodor plugin - Use IP bytes for user IP identification.
+
+- Add SlashRemover plugin.
+
+- Support setting max_files in loggers.
+
+- Use shared_ptr to store plugins.
+
+- Throw custom exception in HttpClient.
+
+- Base64 improvements.
+
+- Add CT_TEXT_JAVASCRIPT.
+
+- Fix typo in newHttpJsonResponse documentation.
+
+- Add CodeQL workflow.
+
+- constexpr base64 length calculators.
+
+- Make isBase64() and isInteger() take string_view.
+
+- Chore: add package.xml. 
+
+- Add an example of yaml config file.
+
+- Remove some unused functions.
+
+- Use unsigned char to call the std::isspace function.
+
+- Change options BUILD_CTL and BUILD_EXAMPLES and update readme with Building options.
+
+- Remove unused CI files and Jekyll config.
+
+- Ensure that all filters, AOP advices, and handlers are executed within the IO threads.
+
+- Update test.sh and build.sh by appending prefix "X" to string variable comparisons.
+
+- Recognize URI in request lines.
+
+- Address warnings on macOS CI.
+
+- Perform insensitive string compare of cookie SameSite attribute.
+
+### Fixed
+
+- Temporary fix dead HttpClient.
+
+- Fix a configuration error when building drogon_ctl.
+
+- Fix generation of JSON field validation for short type.
+
+- Fix bug on Mac M1 with redis chat example code.
+
+- Fix error: conversion from ‘long int’ to ‘Json::Value’ is ambiguous.
+
+- Bugfix: PgBatchConnection did not report error message.
+
+- Fix typo in config file.
+
+- Fix a hanging bug when writing large string to text field.
+
+- Fixed logic error of limiterExpireTime_.
+
+- Fix Missing Header BaseBuilder.h in CMakeLists.
+
+- Fix: Coroutine handle should be captured by value.
+
+- Fix issues in the ListParaView and content types.
+
+- Fix target link libraries of yaml-cpp to comaptiable with vcpkg.
+
+- Fix build error on win32/mingw.
+
+- Fix CI in MacOS.
+
+- Fix broken link in CONTRIBUTING.md.
+
+
 ## [1.8.4] - 2023-03-19
 
 ### API Changes list
@@ -1287,7 +1412,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.4...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.5...HEAD
+
+[1.8.5]: https://github.com/an-tao/drogon/compare/v1.8.4...v1.8.5
 
 [1.8.4]: https://github.com/an-tao/drogon/compare/v1.8.3...v1.8.4
 
