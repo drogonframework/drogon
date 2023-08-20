@@ -72,6 +72,11 @@ static void newModelConfigFile(std::ofstream &configFile)
     auto templ = DrTemplateBase::newTemplate("model_json");
     configFile << templ->genText();
 }
+static void newSwaggerConfigFile(std::ofstream &configFile)
+{
+    auto templ = DrTemplateBase::newTemplate("swagger_json");
+    configFile << templ->genText();
+}
 static void newTestMainFile(std::ofstream &mainFile)
 {
     auto templ = DrTemplateBase::newTemplate("test_main");
@@ -119,6 +124,7 @@ void create_project::createProject(const std::string &projectName)
     drogon::utils::createPath("build");
     drogon::utils::createPath("models");
     drogon::utils::createPath("test");
+    drogon::utils::createPath("swagger");
 
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);
@@ -128,6 +134,8 @@ void create_project::createProject(const std::string &projectName)
     newConfigYamlFile(configYamlFile);
     std::ofstream modelConfigFile("models/model.json", std::ofstream::out);
     newModelConfigFile(modelConfigFile);
+    std::ofstream swaggerConfigFile("swagger/swagger.json", std::ofstream::out);
+    newSwaggerConfigFile(swaggerConfigFile);
     std::ofstream testMainFile("test/test_main.cc", std::ofstream::out);
     newTestMainFile(testMainFile);
     std::ofstream testCmakeFile("test/CMakeLists.txt", std::ofstream::out);
