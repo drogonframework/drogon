@@ -50,7 +50,7 @@ class Session
             {
                 if (typeid(T) == it->second.type())
                 {
-                    return *(any_cast<T>(&(it->second)));
+                    return *(std::any_cast<T>(&(it->second)));
                 }
                 else
                 {
@@ -79,7 +79,7 @@ class Session
             {
                 if (typeid(T) == it->second.type())
                 {
-                    return *(any_cast<T>(&(it->second)));
+                    return *(std::any_cast<T>(&(it->second)));
                 }
                 else
                 {
@@ -111,7 +111,7 @@ class Session
         {
             if (typeid(T) == it->second.type())
             {
-                handler(*(any_cast<T>(&(it->second))));
+                handler(*(std::any_cast<T>(&(it->second))));
             }
             else
             {
