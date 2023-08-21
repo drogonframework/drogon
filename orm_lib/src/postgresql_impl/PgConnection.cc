@@ -362,7 +362,8 @@ void PgConnection::doAfterPreparing()
 {
     isPreparingStatement_ = false;
     auto r = preparedStatements_.insert(std::string{sql_});
-    preparedStatementsMap_[string_view{r.first->data(), r.first->length()}] =
+    preparedStatementsMap_[std::string_view{r.first->data(),
+                                            r.first->length()}] =
         statementName_;
     if (PQsendQueryPrepared(connectionPtr_.get(),
                             statementName_.c_str(),
