@@ -43,7 +43,7 @@ class DROGON_EXPORT HttpViewData
         {
             if (typeid(T) == it->second.type())
             {
-                return *(any_cast<T>(&(it->second)));
+                return *(std::any_cast<T>(&(it->second)));
             }
             else
             {
