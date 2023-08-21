@@ -76,12 +76,12 @@ static void outputVal(std::ofstream &oSrcFile,
              << "\"];\n";
     oSrcFile << "    if(val.type()==typeid(const char *)){\n";
     oSrcFile << "        " << streamName
-             << "<<*any_cast<const char *>(&val);\n";
+             << "<<*(std::any_cast<const char *>(&val));\n";
     oSrcFile << "    }else "
                 "if(val.type()==typeid(std::string)||val.type()==typeid(const "
                 "std::string)){\n";
     oSrcFile << "        " << streamName
-             << "<<*any_cast<const std::string>(&val);\n";
+             << "<<*(std::any_cast<const std::string>(&val));\n";
     oSrcFile << "    }\n";
     oSrcFile << "}\n";
 }
