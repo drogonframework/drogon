@@ -15,6 +15,7 @@
 
 #include <exception>
 #include <functional>
+#include <string>
 
 namespace drogon
 {
