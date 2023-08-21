@@ -30,7 +30,6 @@
 #define S_ISDIR(m) (((m)&0170000) == (0040000))
 #endif
 #include <sys/stat.h>
-// Switch between native c++17 or boost for c++14
 #include <filesystem>
 
 using namespace drogon;

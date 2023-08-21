@@ -486,9 +486,6 @@ ContentType getContentType(const std::string &fileName)
 
 ContentType parseContentType(const std::string_view &contentType)
 {
-    // When using C++14. boost::string_view have a different idea of hashing.
-    // For boost. only std::string_view referencing the same underlying string
-    // and range have the same hash. Use a custom hash to avoid it
     static const std::unordered_map<std::string_view, ContentType> map_{
         {"text/html", CT_TEXT_HTML},
         {"application/x-www-form-urlencoded", CT_APPLICATION_X_FORM},
