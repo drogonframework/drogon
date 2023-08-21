@@ -143,7 +143,7 @@ class PgConnection : public DbConnection,
     std::unordered_map<std::string_view, std::pair<std::string, bool>>
         preparedStatementsMap_;
 #else
-    std::unordered_map<string_view, std::string> preparedStatementsMap_;
+    std::unordered_map<std::string_view, std::string> preparedStatementsMap_;
 #endif
 
     MessageCallback messageCallback_;
