@@ -15,7 +15,6 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/string_view.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpTypes.h>
@@ -30,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 #include <optional>
+#include <string_view>
 
 namespace drogon
 {
@@ -188,14 +188,14 @@ class DROGON_EXPORT HttpRequest
 
     /// Get the content string of the request, which is the body part of the
     /// request.
-    string_view body() const
+    std::string_view body() const
     {
-        return string_view(bodyData(), bodyLength());
+        return std::string_view(bodyData(), bodyLength());
     }
 
     /// Get the content string of the request, which is the body part of the
     /// request.
-    string_view getBody() const
+    std::string_view getBody() const
     {
         return body();
     }
@@ -221,16 +221,16 @@ class DROGON_EXPORT HttpRequest
     }
 
     /// Get the matched path pattern after routing
-    string_view getMatchedPathPattern() const
+    std::string_view getMatchedPathPattern() const
     {
         return matchedPathPattern();
     }
 
     /// Get the matched path pattern after routing
-    string_view matchedPathPattern() const
+    std::string_view matchedPathPattern() const
     {
-        return string_view(matchedPathPatternData(),
-                           matchedPathPatternLength());
+        return std::string_view(matchedPathPatternData(),
+                                matchedPathPatternLength());
     }
     virtual const char *matchedPathPatternData() const = 0;
     virtual size_t matchedPathPatternLength() const = 0;
@@ -410,7 +410,7 @@ class DROGON_EXPORT HttpRequest
     /// CRLF. Or just the MIME type
     //
     /// For example, "content-type: text/plain\r\n" or "text/plain"
-    void setContentTypeString(const string_view &typeString)
+    void setContentTypeString(const std::string_view &typeString)
     {
         setContentTypeString(typeString.data(), typeString.size());
     }

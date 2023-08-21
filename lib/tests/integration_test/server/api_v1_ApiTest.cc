@@ -48,7 +48,7 @@ void ApiTest::your_method_name(
             para;
     para["p1"] = std::to_string(p1);
     para["p2"] = std::to_string(p2);
-    para["p3"] = HttpViewData::htmlTranslate(string_view(
+    para["p3"] = HttpViewData::htmlTranslate(std::string_view(
         "<script>alert(\" This should not be displayed in a browser alert "
         "box.\");</script>"));
     data.insert("parameters", para);

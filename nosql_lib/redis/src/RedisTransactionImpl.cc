@@ -37,7 +37,7 @@ void RedisTransactionImpl::execute(RedisResultCallback &&resultCallback,
 void RedisTransactionImpl::execCommandAsync(
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
-    string_view command,
+    std::string_view command,
     ...) noexcept
 {
     if (isExecutedOrCancelled_)

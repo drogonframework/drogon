@@ -162,7 +162,7 @@ void PgListener::listenInLoop(const std::string& channel,
             return;
         }
 
-        // Because DbConnection::execSql() takes string_view as parameter,
+        // Because DbConnection::execSql() takes std::string_view as parameter,
         // sql must be hold until query finish.
         auto sql = std::make_shared<std::string>(
             (listen ? "LISTEN " : "UNLISTEN ") + escapedChannel);

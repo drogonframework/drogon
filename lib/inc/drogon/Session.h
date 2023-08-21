@@ -14,13 +14,13 @@
 
 #pragma once
 
-#include <drogon/utils/any.h>
 #include <trantor/utils/Logger.h>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <optional>
+#include <any>
 
 namespace drogon
 {
@@ -31,7 +31,7 @@ namespace drogon
 class Session
 {
   public:
-    using SessionMap = std::map<std::string, any>;
+    using SessionMap = std::map<std::string, std::any>;
     /**
      * @brief Get the data identified by the key parameter.
      * @note if the data is not found, a default value is returned.
@@ -122,7 +122,7 @@ class Session
         {
             auto item = T();
             handler(item);
-            sessionMap_.insert(std::make_pair(key, any(std::move(item))));
+            sessionMap_.insert(std::make_pair(key, std::any(std::move(item))));
         }
     }
     /**
@@ -149,7 +149,7 @@ class Session
        @endcode
      * @note If the key already exists, the element is not inserted.
      */
-    void insert(const std::string &key, const any &obj)
+    void insert(const std::string &key, const std::any &obj)
     {
         std::lock_guard<std::mutex> lck(mutex_);
         sessionMap_.insert(std::make_pair(key, obj));
@@ -163,7 +163,7 @@ class Session
        @endcode
      * @note If the key already exists, the element is not inserted.
      */
-    void insert(const std::string &key, any &&obj)
+    void insert(const std::string &key, std::any &&obj)
     {
         std::lock_guard<std::mutex> lck(mutex_);
         sessionMap_.insert(std::make_pair(key, std::move(obj)));

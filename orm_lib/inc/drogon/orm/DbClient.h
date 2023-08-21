@@ -223,7 +223,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     {
         return internal::SqlBinder(sql, N - 1, *this, type_);
     }
-    internal::SqlBinder operator<<(const string_view &sql)
+    internal::SqlBinder operator<<(const std::string_view &sql)
     {
         return internal::SqlBinder(sql.data(), sql.length(), *this, type_);
     }

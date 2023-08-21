@@ -37,7 +37,7 @@ std::string press::detail()
            "http://localhost:8080/index.html\n";
 }
 
-void outputErrorAndExit(const string_view &err)
+void outputErrorAndExit(const std::string_view &err)
 {
     std::cout << err << std::endl;
     exit(1);

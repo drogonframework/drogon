@@ -43,7 +43,7 @@ class RedisClientLockFree final
                         unsigned int db = 0);
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
-                          string_view command,
+                          std::string_view command,
                           ...) noexcept override;
     ~RedisClientLockFree() override;
     std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override;
@@ -87,7 +87,7 @@ class RedisClientLockFree final
     std::shared_ptr<RedisTransaction> makeTransaction(
         const RedisConnectionPtr &connPtr);
     void handleNextTask(const RedisConnectionPtr &connPtr);
-    void execCommandAsyncWithTimeout(string_view command,
+    void execCommandAsyncWithTimeout(std::string_view command,
                                      RedisResultCallback &&resultCallback,
                                      RedisExceptionCallback &&exceptionCallback,
                                      va_list ap);

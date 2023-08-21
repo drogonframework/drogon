@@ -14,7 +14,6 @@
 
 #pragma once
 #include "HttpUtils.h"
-#include <drogon/utils/string_view.h>
 #include <drogon/HttpRequest.h>
 
 #include <map>
@@ -22,6 +21,7 @@
 #include <vector>
 #include <memory>
 #include <filesystem>
+#include <string_view>
 
 namespace drogon
 {
@@ -44,7 +44,7 @@ class HttpFileImpl
         fileName_ = std::move(fileName);
     }
     /// Return the file extension;
-    string_view getFileExtension() const noexcept
+    std::string_view getFileExtension() const noexcept
     {
         return drogon::getFileExtension(fileName_);
     }
@@ -53,7 +53,7 @@ class HttpFileImpl
     /// parser.
     void setFile(const char *data, size_t length) noexcept
     {
-        fileContent_ = string_view{data, length};
+        fileContent_ = std::string_view{data, length};
     }
 
     /// Save the file to the file system.
@@ -91,7 +91,7 @@ class HttpFileImpl
         return fileContent_.data();
     }
 
-    const string_view &fileContent() const noexcept
+    const std::string_view &fileContent() const noexcept
     {
         return fileContent_;
     }
@@ -155,7 +155,7 @@ class HttpFileImpl
     std::string fileName_;
     std::string itemName_;
     std::string transferEncoding_;
-    string_view fileContent_;
+    std::string_view fileContent_;
     HttpRequestPtr requestPtr_;
     drogon::ContentType contentType_{drogon::CT_NONE};
 };

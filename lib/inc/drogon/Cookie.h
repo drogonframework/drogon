@@ -14,13 +14,14 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/string_view.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
+#include <drogon/utils/Utilities.h>
 #include <cctype>
 #include <string>
 #include <limits>
 #include <optional>
+#include <string_view>
 
 namespace drogon
 {
@@ -307,16 +308,16 @@ class DROGON_EXPORT Cookie
      * str2. so the function doesn't apply tolower to the second argument
      * str2 as it's always in lower case.
      *
-     * @return 0 if both strings are equall ignoring case, negative value if lhs
-     * is smaller than rhs and vice versa
+     * @return true if both strings are equall ignoring case
      */
-    static int stricmp(const string_view str1, const string_view str2)
+    static bool stricmp(const std::string_view str1,
+                        const std::string_view str2)
     {
         auto str1Len{str1.length()};
         auto str2Len{str2.length()};
 
         if (str1Len != str2Len)
-            return str1Len - str2Len;
+            return false;
 
         for (size_t idx{0}; idx < str1Len; ++idx)
         {
@@ -324,32 +325,32 @@ class DROGON_EXPORT Cookie
 
             if (lowerChar != str2[idx])
             {
-                return lowerChar - str2[idx];
+                return false;
             }
         }
 
-        return 0;
+        return true;
     }
 
     /**
      * @brief Converts a string value to its associated enum class SameSite
      * value
      */
-    static SameSite convertString2SameSite(const string_view &sameSite)
+    static SameSite convertString2SameSite(const std::string_view &sameSite)
     {
-        if (stricmp(sameSite, "lax") == 0)
+        if (stricmp(sameSite, "lax"))
         {
             return Cookie::SameSite::kLax;
         }
-        else if (stricmp(sameSite, "strict") == 0)
+        else if (stricmp(sameSite, "strict"))
         {
             return Cookie::SameSite::kStrict;
         }
-        else if (stricmp(sameSite, "none") == 0)
+        else if (stricmp(sameSite, "none"))
         {
             return Cookie::SameSite::kNone;
         }
-        else if (stricmp(sameSite, "null") != 0)
+        else if (!stricmp(sameSite, "null"))
         {
             LOG_WARN
                 << "'" << sameSite
@@ -357,7 +358,6 @@ class DROGON_EXPORT Cookie
                    "or "
                    "'None' are proper values. Return value is SameSite::kNull.";
         }
-
         return Cookie::SameSite::kNull;
     }
 
@@ -365,33 +365,33 @@ class DROGON_EXPORT Cookie
      * @brief Converts an enum class SameSite value to its associated string
      * value
      */
-    static const string_view &convertSameSite2String(SameSite sameSite)
+    static const std::string_view &convertSameSite2String(SameSite sameSite)
     {
         switch (sameSite)
         {
             case SameSite::kLax:
             {
-                static string_view sv{"Lax"};
+                static std::string_view sv{"Lax"};
                 return sv;
             }
             case SameSite::kStrict:
             {
-                static string_view sv{"Strict"};
+                static std::string_view sv{"Strict"};
                 return sv;
             }
             case SameSite::kNone:
             {
-                static string_view sv{"None"};
+                static std::string_view sv{"None"};
                 return sv;
             }
             case SameSite::kNull:
             {
-                static string_view sv{"Null"};
+                static std::string_view sv{"Null"};
                 return sv;
             }
         }
         {
-            static string_view sv{"UNDEFINED"};
+            static std::string_view sv{"UNDEFINED"};
             return sv;
         }
     }

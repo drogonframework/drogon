@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <string_view>
 
 using namespace drogon;
 using namespace std::chrono_literals;
@@ -156,7 +157,7 @@ using namespace drogon;
 namespace drogon
 {
 template <>
-string_view fromRequest(const HttpRequest &req)
+std::string_view fromRequest(const HttpRequest &req)
 {
     return req.body();
 }
@@ -190,8 +191,8 @@ int main()
                      // parameter in the path.
            float b,  // here the `b` parameter is converted from the number 2
                      // parameter in the path.
-           string_view &&body,  // here the `body` parameter is converted from
-                                // req->as<string_view>();
+           std::string_view &&body,  // here the `body` parameter is converted
+                                     // from req->as<string_view>();
            const std::shared_ptr<Json::Value>
                &jsonPtr  // here the `jsonPtr` parameter is converted from
                          // req->as<std::shared_ptr<Json::Value>>();

@@ -18,7 +18,7 @@
 #include <exception>
 #include <drogon/orm/DbTypes.h>
 #include <drogon/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <errmsg.h>
 #ifndef _WIN32
 #include <poll.h>
@@ -403,7 +403,7 @@ void MysqlConnection::startSetCharacterSet()
     setChannel();
 }
 void MysqlConnection::execSqlInLoop(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,

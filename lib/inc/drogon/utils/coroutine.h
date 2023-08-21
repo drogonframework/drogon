@@ -13,7 +13,6 @@
  */
 #pragma once
 
-#include <drogon/utils/optional.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/Logger.h>
@@ -27,6 +26,7 @@
 #include <mutex>
 #include <list>
 #include <type_traits>
+#include <optional>
 
 namespace drogon
 {
@@ -183,7 +183,7 @@ struct [[nodiscard]] Task
             continuation_ = handle;
         }
 
-        optional<T> value;
+        std::optional<T> value;
         std::exception_ptr exception_;
         std::coroutine_handle<> continuation_;
     };
@@ -502,7 +502,7 @@ struct CallbackAwaiter : public trantor::NonCopyable
     // HACK: Not all desired types are default constructable. But we need the
     // entire struct to be constructed for awaiting. std::optional takes care of
     // that.
-    optional<T> result_;
+    std::optional<T> result_;
     std::exception_ptr exception_{nullptr};
 
   protected:
@@ -581,7 +581,7 @@ auto sync_wait(Await &&await)
     }
     else
     {
-        optional<value_type> value;
+        std::optional<value_type> value;
         auto task = [&]() -> AsyncTask {
             try
             {

@@ -53,7 +53,7 @@ class StaticFileRouter
         const std::string &filePath,
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
-        const string_view &defaultContentType);
+        const std::string_view &defaultContentType);
 
     void addALocation(const std::string &uriPrefix,
                       const std::string &defaultContentType,

@@ -140,7 +140,7 @@ static inline bool isBase64(unsigned char c)
     return false;
 }
 
-bool isInteger(string_view str)
+bool isInteger(std::string_view str)
 {
     for (auto c : str)
         if (c < '0' || c > '9')
@@ -148,7 +148,7 @@ bool isInteger(string_view str)
     return true;
 }
 
-bool isBase64(string_view str)
+bool isBase64(std::string_view str)
 {
     for (auto c : str)
         if (!isBase64(c))
@@ -395,7 +395,7 @@ std::string getUuid()
 }
 
 std::string base64Encode(const unsigned char *bytes_to_encode,
-                         unsigned int in_len,
+                         size_t in_len,
                          bool url_safe,
                          bool padded)
 {
@@ -447,7 +447,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
     return ret;
 }
 
-std::vector<char> base64DecodeToVector(string_view encoded_string)
+std::vector<char> base64DecodeToVector(std::string_view encoded_string)
 {
     auto in_len = encoded_string.size();
     int i = 0;
@@ -509,7 +509,7 @@ std::vector<char> base64DecodeToVector(string_view encoded_string)
     return ret;
 }
 
-std::string base64Decode(string_view encoded_string)
+std::string base64Decode(std::string_view encoded_string)
 {
     auto in_len = encoded_string.size();
     int i = 0;
@@ -1208,7 +1208,7 @@ std::string secureRandomString(size_t size)
         return std::string();
 
     std::string ret(size, 0);
-    const string_view chars =
+    const std::string_view chars =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz"

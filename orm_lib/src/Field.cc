@@ -48,7 +48,7 @@ std::string Field::as<std::string>() const
     else
     {
         // Bytea type of PostgreSQL
-        auto sv = as<string_view>();
+        auto sv = as<std::string_view>();
         if (sv.length() < 2 || sv[0] != '\\' || sv[1] != 'x')
             return std::string();
         return utils::hexToBinaryString(sv.data() + 2, sv.length() - 2);
@@ -78,7 +78,7 @@ std::vector<char> Field::as<std::vector<char>>() const
     else
     {
         // Bytea type of PostgreSQL
-        auto sv = as<string_view>();
+        auto sv = as<std::string_view>();
         if (sv.length() < 2 || sv[0] != '\\' || sv[1] != 'x')
             return std::vector<char>();
         return utils::hexToBinaryVector(sv.data() + 2, sv.length() - 2);

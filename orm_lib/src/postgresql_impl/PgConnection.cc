@@ -16,7 +16,7 @@
 #include "PostgreSQLResultImpl.h"
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <trantor/utils/Logger.h>
 #include <memory>
 #include <stdio.h>
@@ -188,7 +188,7 @@ void PgConnection::pgPoll()
 }
 
 void PgConnection::execSqlInLoop(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,

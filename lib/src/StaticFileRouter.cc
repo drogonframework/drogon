@@ -140,10 +140,11 @@ void StaticFileRouter::route(
                        tmpPath.begin() + URI.length(),
                        URI.begin()))
         {
-            string_view restOfThePath{path.data() + URI.length(),
-                                      path.length() - URI.length()};
+            std::string_view restOfThePath{path.data() + URI.length(),
+                                           path.length() - URI.length()};
             auto pos = restOfThePath.rfind('/');
-            if (pos != 0 && pos != string_view::npos && !location.isRecursive_)
+            if (pos != 0 && pos != std::string_view::npos &&
+                !location.isRecursive_)
             {
                 callback(app().getCustomErrorHandler()(k403Forbidden));
                 return;
@@ -176,7 +177,7 @@ void StaticFileRouter::route(
                 if (!location.allowAll_)
                 {
                     pos = restOfThePath.rfind('.');
-                    if (pos == string_view::npos)
+                    if (pos == std::string_view::npos)
                     {
                         callback(app().getCustomErrorHandler()(k403Forbidden));
                         return;
@@ -200,7 +201,7 @@ void StaticFileRouter::route(
                 sendStaticFileResponse(filePath,
                                        req,
                                        std::move(callback),
-                                       string_view{
+                                       std::string_view{
                                            location.defaultContentType_});
             }
             else
@@ -220,7 +221,7 @@ void StaticFileRouter::route(
                         sendStaticFileResponse(filePath,
                                                req,
                                                std::move(*callbackPtr),
-                                               string_view{contentType});
+                                               std::string_view{contentType});
                     });
             }
 
@@ -317,7 +318,7 @@ void StaticFileRouter::sendStaticFileResponse(
     const std::string &filePath,
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
-    const string_view &defaultContentType)
+    const std::string_view &defaultContentType)
 {
     if (req->method() != Get)
     {

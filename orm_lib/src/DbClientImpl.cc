@@ -16,7 +16,7 @@
 #include "DbConnection.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
 #include <drogon/config.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
 #endif
@@ -161,7 +161,7 @@ void DbClientImpl::execSql(
             {
                 // LOG_TRACE << "Push query to buffer";
                 std::shared_ptr<SqlCmd> cmd =
-                    std::make_shared<SqlCmd>(string_view{sql, sqlLength},
+                    std::make_shared<SqlCmd>(std::string_view{sql, sqlLength},
                                              paraNum,
                                              std::move(parameters),
                                              std::move(length),
@@ -540,7 +540,7 @@ void DbClientImpl::execSqlWithTimeout(
             {
                 // LOG_TRACE << "Push query to buffer";
                 auto command =
-                    std::make_shared<SqlCmd>(string_view{sql, sqlLength},
+                    std::make_shared<SqlCmd>(std::string_view{sql, sqlLength},
                                              paraNum,
                                              std::move(parameters),
                                              std::move(length),
@@ -561,7 +561,7 @@ void DbClientImpl::execSqlWithTimeout(
     }
     if (conn)
     {
-        conn->execSql(string_view{sql, sqlLength},
+        conn->execSql(std::string_view{sql, sqlLength},
                       paraNum,
                       std::move(parameters),
                       std::move(length),

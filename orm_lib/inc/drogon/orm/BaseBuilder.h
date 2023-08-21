@@ -16,7 +16,7 @@
 
 #include <drogon/orm/Criteria.h>
 #include <drogon/orm/DbClient.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <future>
 #include <memory>
 #include <string>
