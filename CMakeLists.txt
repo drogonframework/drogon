@@ -236,16 +236,18 @@ if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
 
     try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
         ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-        LINK_LIBRARIES UUID_lib)
+        LINK_LIBRARIES UUID_lib
+        OUTPUT_VARIABLE NORMAL_UUID_COMPILE_OUTPUT)
     try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
         ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-        LINK_LIBRARIES UUID_lib)
+        LINK_LIBRARIES UUID_lib
+        OUTPUT_VARIABLE OSSP_UUID_COMPILE_OUTPUT)
     if (normal_uuid)
         add_definitions(-DUSE_OSSP_UUID=0)
     elseif (ossp_uuid)
         add_definitions(-DUSE_OSSP_UUID=1)
     else ()
-        message(FATAL_ERROR "uuid lib error")
+        message(FATAL_ERROR "uuid lib error:\n${NORMAL_UUID_COMPILE_OUTPUT}\n${OSSP_UUID_COMPILE_OUTPUT}")
     endif ()
 endif (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
