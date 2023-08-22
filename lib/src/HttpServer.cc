@@ -188,7 +188,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 !passSyncAdvices(req,
                                  requestParser,
                                  syncAdvices_,
-                                 false /* Not pipelined*/,
+                                 false /* Not pipelined */,
                                  false /* Not HEAD */))
             {
                 requestParser->reset();
