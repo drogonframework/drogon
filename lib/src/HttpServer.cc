@@ -182,47 +182,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         req->setCreationDate(trantor::Date::date());
         req->setSecure(conn->isSSLConnection());
         req->setPeerCertificate(conn->peerCertificate());
-        if (requestParser->firstReq() && isWebSocket(req))
-        {
-            if (!syncAdvices_.empty() &&
-                !passSyncAdvices(req,
-                                 requestParser,
-                                 syncAdvices_,
-                                 false /* Not pipelined */,
-                                 false /* Not HEAD */))
-            {
-                requestParser->reset();
-                continue;
-            }
-
-            auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-            wsConn->setPingMessage("", std::chrono::seconds{30});
-            newWebsocketCallback_(
-                req,
-                [conn, wsConn, requestParser, this, req](
-                    const HttpResponsePtr &resp) mutable {
-                    if (conn->connected())
-                    {
-                        for (auto &advice : preSendingAdvices_)
-                        {
-                            advice(req, resp);
-                        }
-                        if (resp->statusCode() == k101SwitchingProtocols)
-                        {
-                            requestParser->setWebsockConnection(wsConn);
-                        }
-                        auto httpString =
-                            ((HttpResponseImpl *)resp.get())->renderToBuffer();
-                        conn->send(httpString);
-                        COZ_PROGRESS
-                    }
-                },
-                wsConn);
-        }
-        else
-        {
-            requests.push_back(req);
-        }
+        requests.push_back(req);
         requestParser->reset();
     }
     onRequests(conn, requests, requestParser);
@@ -259,6 +219,55 @@ void HttpServer::onRequests(
 {
     if (requests.empty())
         return;
+
+    if (requests.size() == 1 && requestParser->firstReq())
+    {
+        auto req = requests[0];
+        if (isWebSocket(req))
+        {
+            if (passSyncAdvices(req,
+                                requestParser,
+                                syncAdvices_,
+                                false /* Not pipelined */,
+                                false /* Not HEAD */))
+            {
+                auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
+                wsConn->setPingMessage("", std::chrono::seconds{30});
+                newWebsocketCallback_(
+                    req,
+                    [conn, wsConn, requestParser, this, req](
+                        const HttpResponsePtr &resp) mutable {
+                        if (conn->connected())
+                        {
+                            for (auto &advice : preSendingAdvices_)
+                            {
+                                advice(req, resp);
+                            }
+                            if (resp->statusCode() == k101SwitchingProtocols)
+                            {
+                                requestParser->setWebsockConnection(wsConn);
+                            }
+                            auto httpString = ((HttpResponseImpl *)resp.get())
+                                                  ->renderToBuffer();
+                            conn->send(httpString);
+                            COZ_PROGRESS
+                        }
+                    },
+                    wsConn);
+            }
+
+            if (conn->connected() &&
+                !requestParser->getResponseBuffer().empty())
+            {
+                sendResponses(conn,
+                              requestParser->getResponseBuffer(),
+                              requestParser->getBuffer());
+                requestParser->getResponseBuffer().clear();
+            }
+            return;
+        }
+    }
+
     if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
         requestParser->numberOfRequestsParsed() >=
             HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
@@ -294,8 +303,7 @@ void HttpServer::onRequests(
             requestParser->pushRequestToPipelining(req, isHeadMethod);
             reqPipelined = true;
         }
-        if (!syncAdvices_.empty() &&
-            !passSyncAdvices(
+        if (!passSyncAdvices(
                 req, requestParser, syncAdvices_, reqPipelined, isHeadMethod))
         {
             continue;
