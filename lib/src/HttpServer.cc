@@ -220,52 +220,52 @@ void HttpServer::onRequests(
     if (requests.empty())
         return;
 
-    if (requests.size() == 1 && requestParser->firstReq())
+    // will only be checked for the first request
+    if (requestParser->firstReq() && requests.size() == 1 &&
+        isWebSocket(requests[0]))
     {
-        auto req = requests[0];
-        if (isWebSocket(req))
+        auto &req = requests[0];
+        if (passSyncAdvices(req,
+                            requestParser,
+                            syncAdvices_,
+                            false /* Not pipelined */,
+                            false /* Not HEAD */))
         {
-            if (passSyncAdvices(req,
-                                requestParser,
-                                syncAdvices_,
-                                false /* Not pipelined */,
-                                false /* Not HEAD */))
-            {
-                auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-                wsConn->setPingMessage("", std::chrono::seconds{30});
-                newWebsocketCallback_(
-                    req,
-                    [conn, wsConn, requestParser, this, req](
-                        const HttpResponsePtr &resp) mutable {
-                        if (conn->connected())
+            auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
+            wsConn->setPingMessage("", std::chrono::seconds{30});
+            newWebsocketCallback_(
+                req,
+                [conn, wsConn, requestParser, this, req](
+                    const HttpResponsePtr &resp) mutable {
+                    if (conn->connected())
+                    {
+                        for (auto &advice : preSendingAdvices_)
                         {
-                            for (auto &advice : preSendingAdvices_)
-                            {
-                                advice(req, resp);
-                            }
-                            if (resp->statusCode() == k101SwitchingProtocols)
-                            {
-                                requestParser->setWebsockConnection(wsConn);
-                            }
-                            auto httpString = ((HttpResponseImpl *)resp.get())
-                                                  ->renderToBuffer();
-                            conn->send(httpString);
-                            COZ_PROGRESS
+                            advice(req, resp);
                         }
-                    },
-                    wsConn);
-            }
-
-            if (conn->connected() &&
-                !requestParser->getResponseBuffer().empty())
-            {
-                sendResponses(conn,
-                              requestParser->getResponseBuffer(),
-                              requestParser->getBuffer());
-                requestParser->getResponseBuffer().clear();
-            }
+                        if (resp->statusCode() == k101SwitchingProtocols)
+                        {
+                            requestParser->setWebsockConnection(wsConn);
+                        }
+                        auto httpString =
+                            ((HttpResponseImpl *)resp.get())->renderToBuffer();
+                        conn->send(httpString);
+                        COZ_PROGRESS
+                    }
+                },
+                wsConn);
             return;
         }
+
+        // flush response for not passing sync advices
+        if (conn->connected() && !requestParser->getResponseBuffer().empty())
+        {
+            sendResponses(conn,
+                          requestParser->getResponseBuffer(),
+                          requestParser->getBuffer());
+            requestParser->getResponseBuffer().clear();
+        }
+        return;
     }
 
     if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
