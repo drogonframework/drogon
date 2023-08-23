@@ -33,6 +33,7 @@ class PgListener : public DbListener,
     PgListener(std::string connInfo, trantor::EventLoop* loop);
     ~PgListener() override;
     void init() noexcept;
+
     trantor::EventLoop* loop() const
     {
         return loop_;

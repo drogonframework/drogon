@@ -6,6 +6,7 @@ using namespace drogon;
 class TestA : public DrObject<TestA>
 {
 };
+
 namespace test
 {
 class TestB : public DrObject<TestB>

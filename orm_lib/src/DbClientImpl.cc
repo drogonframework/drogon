@@ -71,6 +71,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
     LOG_TRACE << "type=" << (int)type;
     assert(connNum > 0);
 }
+
 void DbClientImpl::init()
 {
     // LOG_DEBUG << loops_.getLoopNum();
@@ -198,6 +199,7 @@ void DbClientImpl::execSql(
         return;
     }
 }
+
 void DbClientImpl::newTransactionAsync(
     const std::function<void(const std::shared_ptr<Transaction> &)> &callback)
 {
@@ -263,6 +265,7 @@ void DbClientImpl::newTransactionAsync(
                       callback));
     }
 }
+
 void DbClientImpl::makeTrans(
     const DbConnectionPtr &conn,
     std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
@@ -316,6 +319,7 @@ void DbClientImpl::makeTrans(
     conn->loop()->queueInLoop(
         [callback = std::move(callback), trans]() { callback(trans); });
 }
+
 std::shared_ptr<Transaction> DbClientImpl::newTransaction(
     const std::function<void(bool)> &commitCallback) noexcept(false)
 {

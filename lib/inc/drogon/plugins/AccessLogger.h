@@ -102,6 +102,7 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     AccessLogger()
     {
     }
+
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 

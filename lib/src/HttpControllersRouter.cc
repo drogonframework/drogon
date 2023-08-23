@@ -162,6 +162,7 @@ void HttpControllersRouter::addHttpRegex(
     }
     ctrlVector_.push_back(std::move(router));
 }
+
 void HttpControllersRouter::addHttpPath(
     const std::string &path,
     const internal::HttpBinderBasePtr &binder,

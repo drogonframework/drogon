@@ -34,6 +34,7 @@ const std::vector<HttpFile> &MultiPartParser::getFiles() const
 {
     return files_;
 }
+
 std::unordered_map<std::string, HttpFile> MultiPartParser::getFilesMap() const
 {
     std::unordered_map<std::string, HttpFile> result;
@@ -43,6 +44,7 @@ std::unordered_map<std::string, HttpFile> MultiPartParser::getFilesMap() const
     }
     return result;
 }
+
 const std::map<std::string, std::string> &MultiPartParser::getParameters() const
 {
     return parameters_;
@@ -76,6 +78,7 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
         pos2 = contentType.size();
     return parse(req, contentType.data() + (pos + 9), pos2 - (pos + 9));
 }
+
 static std::pair<std::string_view, std::string_view> parseLine(
     const char *begin,
     const char *end)
@@ -100,6 +103,7 @@ static std::pair<std::string_view, std::string_view> parseLine(
     }
     return std::make_pair(std::string_view(), std::string_view());
 }
+
 int MultiPartParser::parseEntity(const char *begin, const char *end)
 {
     static const char entityName[] = "name=";

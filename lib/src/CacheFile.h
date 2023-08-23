@@ -26,11 +26,14 @@ class CacheFile : public trantor::NonCopyable
   public:
     explicit CacheFile(const std::string &path, bool autoDelete = true);
     ~CacheFile();
+
     void append(const std::string &data)
     {
         append(data.data(), data.length());
     }
+
     void append(const char *data, size_t length);
+
     std::string_view getStringView()
     {
         if (data())

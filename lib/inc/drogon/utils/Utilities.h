@@ -57,6 +57,7 @@ struct CanConvertFromStringStream
                      yes>::value;
 };
 }  // namespace internal
+
 namespace utils
 {
 /// Determine if the string is an integer
@@ -161,11 +162,13 @@ DROGON_EXPORT bool needUrlDecoding(const char *begin, const char *end);
 
 /// Decode from or encode to the URL format string
 DROGON_EXPORT std::string urlDecode(const char *begin, const char *end);
+
 inline std::string urlDecode(const std::string &szToDecode)
 {
     auto begin = szToDecode.data();
     return urlDecode(begin, begin + szToDecode.length());
 }
+
 inline std::string urlDecode(const std::string_view &szToDecode)
 {
     auto begin = szToDecode.data();
@@ -177,30 +180,35 @@ DROGON_EXPORT std::string urlEncodeComponent(const std::string &);
 
 /// Get the MD5 digest of a string.
 DROGON_EXPORT std::string getMd5(const char *data, const size_t dataLen);
+
 inline std::string getMd5(const std::string &originalString)
 {
     return getMd5(originalString.data(), originalString.length());
 }
 
 DROGON_EXPORT std::string getSha1(const char *data, const size_t dataLen);
+
 inline std::string getSha1(const std::string &originalString)
 {
     return getSha1(originalString.data(), originalString.length());
 }
 
 DROGON_EXPORT std::string getSha256(const char *data, const size_t dataLen);
+
 inline std::string getSha256(const std::string &originalString)
 {
     return getSha256(originalString.data(), originalString.length());
 }
 
 DROGON_EXPORT std::string getSha3(const char *data, const size_t dataLen);
+
 inline std::string getSha3(const std::string &originalString)
 {
     return getSha3(originalString.data(), originalString.length());
 }
 
 DROGON_EXPORT std::string getBlake2b(const char *data, const size_t dataLen);
+
 inline std::string getBlake2b(const std::string &originalString)
 {
     return getBlake2b(originalString.data(), originalString.length());
@@ -315,6 +323,7 @@ inline std::wstring toNativePath(const std::string &strPath)
 {
     return trantor::utils::toNativePath(strPath);
 }
+
 inline const std::wstring &toNativePath(const std::wstring &strPath)
 {
     return trantor::utils::toNativePath(strPath);
@@ -324,6 +333,7 @@ inline const std::string &toNativePath(const std::string &strPath)
 {
     return trantor::utils::toNativePath(strPath);
 }
+
 inline std::string toNativePath(const std::wstring &strPath)
 {
     return trantor::utils::toNativePath(strPath);
@@ -350,6 +360,7 @@ inline const std::string &fromNativePath(const std::string &strPath)
 {
     return trantor::utils::fromNativePath(strPath);
 }
+
 // Convert on all systems
 inline std::string fromNativePath(const std::wstring &strPath)
 {
@@ -492,6 +503,7 @@ DROGON_EXPORT bool supportsTls() noexcept;
 namespace internal
 {
 DROGON_EXPORT extern const size_t fixedRandomNumber;
+
 struct SafeStringHash
 {
     size_t operator()(const std::string &str) const
@@ -515,6 +527,7 @@ inline LogStream &operator<<(LogStream &ls, const std::string_view &v)
     ls.append(v.data(), v.length());
     return ls;
 }
+
 inline LogStream &operator<<(LogStream &ls, const std::filesystem::path &p)
 {
     return ls << p.string();

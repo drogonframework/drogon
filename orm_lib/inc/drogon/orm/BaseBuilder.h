@@ -207,6 +207,7 @@ class BaseBuilder
     {
         return T(r[0]);
     }
+
     template <bool SA = SelectAll,
               bool SI = Single,
               std::enable_if_t<SA, std::nullptr_t> = nullptr,
@@ -220,6 +221,7 @@ class BaseBuilder
         }
         return ret;
     }
+
     template <bool SA = SelectAll,
               bool SI = Single,
               std::enable_if_t<!SA, std::nullptr_t> = nullptr,
@@ -228,6 +230,7 @@ class BaseBuilder
     {
         return r[0];
     }
+
     template <bool SA = SelectAll,
               bool SI = Single,
               std::enable_if_t<!SA, std::nullptr_t> = nullptr,

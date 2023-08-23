@@ -3,6 +3,7 @@
 #include "DateFuncs.h"
 #include <drogon/drogon.h>
 #define VDate "visitDate"
+
 void SlowCtrl::hello(const HttpRequestPtr &req,
                      std::function<void(const HttpResponsePtr &)> &&callback,
                      std::string &&userid)

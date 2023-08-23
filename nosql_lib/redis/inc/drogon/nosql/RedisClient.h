@@ -34,16 +34,19 @@ namespace nosql
 #ifdef __cpp_impl_coroutine
 class RedisClient;
 class RedisTransaction;
+
 namespace internal
 {
 struct [[nodiscard]] RedisAwaiter : public CallbackAwaiter<RedisResult>
 {
     using RedisFunction =
         std::function<void(RedisResultCallback &&, RedisExceptionCallback &&)>;
+
     explicit RedisAwaiter(RedisFunction &&function)
         : function_(std::move(function))
     {
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         function_(
@@ -78,6 +81,7 @@ struct [[nodiscard]] RedisTransactionAwaiter
 #endif
 
 class RedisTransaction;
+
 /**
  * @brief This class represents a redis client that contains several connections
  * to a redis server.
@@ -268,6 +272,7 @@ class DROGON_EXPORT RedisClient
                                  args...);
             });
     }
+
     /**
      * @brief await a RedisTransactionPtr in a coroutine.
      *
@@ -292,6 +297,7 @@ class DROGON_EXPORT RedisClient
     }
 #endif
 };
+
 class DROGON_EXPORT RedisTransaction : public RedisClient
 {
   public:
@@ -333,6 +339,7 @@ class DROGON_EXPORT RedisTransaction : public RedisClient
     {
     }
 };
+
 using RedisClientPtr = std::shared_ptr<RedisClient>;
 using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
 

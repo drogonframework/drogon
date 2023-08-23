@@ -78,25 +78,31 @@ struct SqlCmd
 
 class DbConnection;
 using DbConnectionPtr = std::shared_ptr<DbConnection>;
+
 class DbConnection : public trantor::NonCopyable
 {
   public:
     using DbConnectionCallback = std::function<void(const DbConnectionPtr &)>;
+
     explicit DbConnection(trantor::EventLoop *loop) : loop_(loop)
     {
     }
+
     void setOkCallback(const DbConnectionCallback &cb)
     {
         okCallback_ = cb;
     }
+
     void setCloseCallback(const DbConnectionCallback &cb)
     {
         closeCallback_ = cb;
     }
+
     void setIdleCallback(const std::function<void()> &cb)
     {
         idleCb_ = cb;
     }
+
     virtual void execSql(
         std::string_view &&sql,
         size_t paraNum,
@@ -107,19 +113,24 @@ class DbConnection : public trantor::NonCopyable
         std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
     virtual void batchSql(
         std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) = 0;
+
     virtual ~DbConnection()
     {
         LOG_TRACE << "Destruct DbConn" << this;
     }
+
     ConnectStatus status() const
     {
         return status_;
     }
+
     trantor::EventLoop *loop()
     {
         return loop_;
     }
+
     virtual void disconnect() = 0;
+
     bool isWorking() const
     {
         return isWorking_;

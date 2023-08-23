@@ -38,11 +38,13 @@ const std::vector<typename Users::MetaData> Users::metaData_ = {
     {"salt", "std::string", "character varchar(20)", 0, 0, 0, 0},
     {"admin", "std::string", "boolean", 0, 0, 0, 0},
     {"create_time", "::trantor::Date", "datetime", 0, 0, 0, 0}};
+
 const std::string &Users::getColumnName(size_t index) noexcept(false)
 {
     assert(index < metaData_.size());
     return metaData_[index].colName_;
 }
+
 Users::Users(const Row &r, const ssize_t indexOffset) noexcept
 {
     if (indexOffset < 0)
@@ -681,20 +683,24 @@ const uint64_t &Users::getValueOfId() const noexcept
         return *id_;
     return defaultValue;
 }
+
 const std::shared_ptr<uint64_t> &Users::getId() const noexcept
 {
     return id_;
 }
+
 void Users::setId(const uint64_t &pId) noexcept
 {
     id_ = std::make_shared<uint64_t>(pId);
     dirtyFlag_[0] = true;
 }
+
 void Users::setIdToNull() noexcept
 {
     id_.reset();
     dirtyFlag_[0] = true;
 }
+
 const typename Users::PrimaryKeyType &Users::getPrimaryKey() const
 {
     assert(id_);
@@ -708,20 +714,24 @@ const std::string &Users::getValueOfUserId() const noexcept
         return *userId_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getUserId() const noexcept
 {
     return userId_;
 }
+
 void Users::setUserId(const std::string &pUserId) noexcept
 {
     userId_ = std::make_shared<std::string>(pUserId);
     dirtyFlag_[1] = true;
 }
+
 void Users::setUserId(std::string &&pUserId) noexcept
 {
     userId_ = std::make_shared<std::string>(std::move(pUserId));
     dirtyFlag_[1] = true;
 }
+
 void Users::setUserIdToNull() noexcept
 {
     userId_.reset();
@@ -735,20 +745,24 @@ const std::string &Users::getValueOfUserName() const noexcept
         return *userName_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getUserName() const noexcept
 {
     return userName_;
 }
+
 void Users::setUserName(const std::string &pUserName) noexcept
 {
     userName_ = std::make_shared<std::string>(pUserName);
     dirtyFlag_[2] = true;
 }
+
 void Users::setUserName(std::string &&pUserName) noexcept
 {
     userName_ = std::make_shared<std::string>(std::move(pUserName));
     dirtyFlag_[2] = true;
 }
+
 void Users::setUserNameToNull() noexcept
 {
     userName_.reset();
@@ -762,20 +776,24 @@ const std::string &Users::getValueOfPassword() const noexcept
         return *password_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getPassword() const noexcept
 {
     return password_;
 }
+
 void Users::setPassword(const std::string &pPassword) noexcept
 {
     password_ = std::make_shared<std::string>(pPassword);
     dirtyFlag_[3] = true;
 }
+
 void Users::setPassword(std::string &&pPassword) noexcept
 {
     password_ = std::make_shared<std::string>(std::move(pPassword));
     dirtyFlag_[3] = true;
 }
+
 void Users::setPasswordToNull() noexcept
 {
     password_.reset();
@@ -789,20 +807,24 @@ const std::string &Users::getValueOfOrgName() const noexcept
         return *orgName_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getOrgName() const noexcept
 {
     return orgName_;
 }
+
 void Users::setOrgName(const std::string &pOrgName) noexcept
 {
     orgName_ = std::make_shared<std::string>(pOrgName);
     dirtyFlag_[4] = true;
 }
+
 void Users::setOrgName(std::string &&pOrgName) noexcept
 {
     orgName_ = std::make_shared<std::string>(std::move(pOrgName));
     dirtyFlag_[4] = true;
 }
+
 void Users::setOrgNameToNull() noexcept
 {
     orgName_.reset();
@@ -816,20 +838,24 @@ const std::string &Users::getValueOfSignature() const noexcept
         return *signature_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getSignature() const noexcept
 {
     return signature_;
 }
+
 void Users::setSignature(const std::string &pSignature) noexcept
 {
     signature_ = std::make_shared<std::string>(pSignature);
     dirtyFlag_[5] = true;
 }
+
 void Users::setSignature(std::string &&pSignature) noexcept
 {
     signature_ = std::make_shared<std::string>(std::move(pSignature));
     dirtyFlag_[5] = true;
 }
+
 void Users::setSignatureToNull() noexcept
 {
     signature_.reset();
@@ -843,20 +869,24 @@ const std::string &Users::getValueOfAvatarId() const noexcept
         return *avatarId_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getAvatarId() const noexcept
 {
     return avatarId_;
 }
+
 void Users::setAvatarId(const std::string &pAvatarId) noexcept
 {
     avatarId_ = std::make_shared<std::string>(pAvatarId);
     dirtyFlag_[6] = true;
 }
+
 void Users::setAvatarId(std::string &&pAvatarId) noexcept
 {
     avatarId_ = std::make_shared<std::string>(std::move(pAvatarId));
     dirtyFlag_[6] = true;
 }
+
 void Users::setAvatarIdToNull() noexcept
 {
     avatarId_.reset();
@@ -870,20 +900,24 @@ const std::string &Users::getValueOfSalt() const noexcept
         return *salt_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getSalt() const noexcept
 {
     return salt_;
 }
+
 void Users::setSalt(const std::string &pSalt) noexcept
 {
     salt_ = std::make_shared<std::string>(pSalt);
     dirtyFlag_[7] = true;
 }
+
 void Users::setSalt(std::string &&pSalt) noexcept
 {
     salt_ = std::make_shared<std::string>(std::move(pSalt));
     dirtyFlag_[7] = true;
 }
+
 void Users::setSaltToNull() noexcept
 {
     salt_.reset();
@@ -897,20 +931,24 @@ const std::string &Users::getValueOfAdmin() const noexcept
         return *admin_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getAdmin() const noexcept
 {
     return admin_;
 }
+
 void Users::setAdmin(const std::string &pAdmin) noexcept
 {
     admin_ = std::make_shared<std::string>(pAdmin);
     dirtyFlag_[8] = true;
 }
+
 void Users::setAdmin(std::string &&pAdmin) noexcept
 {
     admin_ = std::make_shared<std::string>(std::move(pAdmin));
     dirtyFlag_[8] = true;
 }
+
 void Users::setAdminToNull() noexcept
 {
     admin_.reset();
@@ -924,15 +962,18 @@ const ::trantor::Date &Users::getValueOfCreateTime() const noexcept
         return *createTime_;
     return defaultValue;
 }
+
 const std::shared_ptr<::trantor::Date> &Users::getCreateTime() const noexcept
 {
     return createTime_;
 }
+
 void Users::setCreateTime(const ::trantor::Date &pCreateTime) noexcept
 {
     createTime_ = std::make_shared<::trantor::Date>(pCreateTime);
     dirtyFlag_[9] = true;
 }
+
 void Users::setCreateTimeToNull() noexcept
 {
     createTime_.reset();
@@ -1205,6 +1246,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
         }
     }
 }
+
 Json::Value Users::toJson() const
 {
     Json::Value ret;
@@ -1549,6 +1591,7 @@ bool Users::validateJsonForCreation(const Json::Value &pJson, std::string &err)
     }
     return true;
 }
+
 bool Users::validateMasqueradedJsonForCreation(
     const Json::Value &pJson,
     const std::vector<std::string> &pMasqueradingVector,
@@ -1689,6 +1732,7 @@ bool Users::validateMasqueradedJsonForCreation(
     }
     return true;
 }
+
 bool Users::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
 {
     if (pJson.isMember("id"))
@@ -1751,6 +1795,7 @@ bool Users::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
     }
     return true;
 }
+
 bool Users::validateMasqueradedJsonForUpdate(
     const Json::Value &pJson,
     const std::vector<std::string> &pMasqueradingVector,
@@ -1878,6 +1923,7 @@ bool Users::validateMasqueradedJsonForUpdate(
     }
     return true;
 }
+
 bool Users::validJsonOfField(size_t index,
                              const std::string &fieldName,
                              const Json::Value &pJson,

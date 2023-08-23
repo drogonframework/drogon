@@ -1,6 +1,7 @@
 #pragma once
 #include <drogon/HttpController.h>
 using namespace drogon;
+
 class SlowCtrl : public drogon::HttpController<SlowCtrl>
 {
   public:

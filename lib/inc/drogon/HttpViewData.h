@@ -58,6 +58,7 @@ class DROGON_EXPORT HttpViewData
     {
         viewData_[key] = std::move(obj);
     }
+
     void insert(const std::string &key, const std::any &obj)
     {
         viewData_[key] = obj;
@@ -142,6 +143,7 @@ class DROGON_EXPORT HttpViewData
        @endcode
      */
     static std::string htmlTranslate(const char *str, size_t length);
+
     static std::string htmlTranslate(const std::string_view &str)
     {
         return htmlTranslate(str.data(), str.length());

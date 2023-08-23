@@ -33,6 +33,7 @@ enum class RedisErrorCode
     kBadType,
     kTimeout
 };
+
 class RedisException final : public std::exception
 {
   public:
@@ -40,24 +41,29 @@ class RedisException final : public std::exception
     {
         return message_.data();
     }
+
     RedisErrorCode code() const
     {
         return code_;
     }
+
     RedisException(RedisErrorCode code, const std::string &message)
         : message_(message), code_(code)
     {
     }
+
     RedisException(RedisErrorCode code, std::string &&message)
         : message_(std::move(message)), code_(code)
     {
     }
+
     RedisException() = delete;
 
   private:
     std::string message_;
     RedisErrorCode code_{RedisErrorCode::kNone};
 };
+
 using RedisExceptionCallback = std::function<void(const RedisException &)>;
 }  // namespace nosql
 }  // namespace drogon

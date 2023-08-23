@@ -3,6 +3,7 @@
 #include <mutex>
 
 using namespace drogon;
+
 Json::Value JsonConfigAdapter::getJson(const std::string &content) const
     noexcept(false)
 {
@@ -19,6 +20,7 @@ Json::Value JsonConfigAdapter::getJson(const std::string &content) const
     }
     return root;
 }
+
 std::vector<std::string> JsonConfigAdapter::getExtensions() const
 {
     return {"json"};

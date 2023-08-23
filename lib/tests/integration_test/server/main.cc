@@ -12,6 +12,7 @@
 
 using namespace drogon;
 using namespace std::chrono_literals;
+
 class A : public DrObjectBase
 {
   public:
@@ -37,6 +38,7 @@ class A : public DrObjectBase
         auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
         callback(res);
     }
+
     static void staticHandle(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
@@ -61,6 +63,7 @@ class A : public DrObjectBase
         callback(res);
     }
 };
+
 class B : public DrObjectBase
 {
   public:
@@ -88,6 +91,7 @@ class C : public drogon::HttpController<C>
   public:
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(C::priv, "/priv/resource", Get, "DigestAuthFilter");
+
     METHOD_LIST_END
     void priv(const HttpRequestPtr &req,
               std::function<void(const HttpResponsePtr &)> &&callback) const
@@ -112,6 +116,7 @@ class Test : public HttpController<Test>
     METHOD_ADD(Test::list,
                "/{2}/info",
                Get);  // path is /api/v1/test/{arg2}/info
+
     METHOD_LIST_END
     void get(const HttpRequestPtr &req,
              std::function<void(const HttpResponsePtr &)> &&callback,
@@ -130,6 +135,7 @@ class Test : public HttpController<Test>
         auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
         callback(res);
     }
+
     void list(const HttpRequestPtr &req,
               std::function<void(const HttpResponsePtr &)> &&callback,
               int p1,

@@ -12,6 +12,7 @@ static std::atomic_int nPmsgRecv{0};
 static std::atomic_int nMsgSent{0};
 
 RedisClientPtr redisClient;
+
 DROGON_TEST(RedisSubscriberTest)
 {
     redisClient = drogon::nosql::RedisClient::newRedisClient(

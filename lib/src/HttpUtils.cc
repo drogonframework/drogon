@@ -722,6 +722,7 @@ const std::string_view fileNameToMime(const std::string &fileName)
         return "";
     return it->second;
 }
+
 std::pair<ContentType, const std::string_view> fileNameToContentTypeAndMime(
     const std::string &fileName)
 {

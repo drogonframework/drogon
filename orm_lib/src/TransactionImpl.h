@@ -33,15 +33,18 @@ class TransactionImpl : public Transaction,
                     std::function<void()> usedUpCallback);
     ~TransactionImpl() override;
     void rollback() override;
+
     void setCommitCallback(
         const std::function<void(bool)> &commitCallback) override
     {
         commitCallback_ = commitCallback;
     }
+
     bool hasAvailableConnections() const noexcept override
     {
         return connectionPtr_->status() == ConnectStatus::Ok;
     }
+
     void setTimeout(double timeout) override
     {
         timeout_ = timeout;
@@ -49,6 +52,7 @@ class TransactionImpl : public Transaction,
 
   private:
     DbConnectionPtr connectionPtr_;
+
     void execSql(const char *sql,
                  size_t sqlLength,
                  size_t paraNum,
@@ -107,6 +111,7 @@ class TransactionImpl : public Transaction,
         std::vector<int> &&format,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
+
     std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &) noexcept(false) override
     {
@@ -119,10 +124,12 @@ class TransactionImpl : public Transaction,
     {
         callback(shared_from_this());
     }
+
     std::function<void()> usedUpCallback_;
     bool isCommitedOrRolledback_{false};
     bool isWorking_{false};
     void execNewTask();
+
     struct SqlCmd
     {
         std::string_view sql_;
@@ -135,6 +142,7 @@ class TransactionImpl : public Transaction,
         bool isRollbackCmd_{false};
         std::shared_ptr<TransactionImpl> thisPtr_;
     };
+
     using SqlCmdPtr = std::shared_ptr<SqlCmd>;
     std::list<SqlCmdPtr> sqlCmdBuffer_;
     //   std::mutex _bufferMutex;

@@ -27,6 +27,7 @@ namespace Json
 {
 class Value;
 }
+
 namespace drogon
 {
 namespace orm
@@ -55,6 +56,7 @@ struct CustomSql
     explicit CustomSql(std::string content) : content_(std::move(content))
     {
     }
+
     std::string content_;
 };
 
@@ -308,10 +310,12 @@ class DROGON_EXPORT Criteria
                 break;
         }
     }
+
     Criteria(const std::string &colName, CompareOperator &opera)
         : Criteria(colName, (const CompareOperator &)opera)
     {
     }
+
     Criteria(const std::string &colName, CompareOperator &&opera)
         : Criteria(colName, (const CompareOperator &)opera)
     {

@@ -19,6 +19,7 @@
 #ifdef __cpp_impl_coroutine
 #include <drogon/orm/Mapper.h>
 #include <drogon/utils/coroutine.h>
+
 namespace drogon
 {
 namespace orm
@@ -31,10 +32,12 @@ struct [[nodiscard]] MapperAwaiter : public CallbackAwaiter<ReturnType>
     using MapperFunction =
         std::function<void(std::function<void(ReturnType result)> &&,
                            std::function<void(const std::exception_ptr &)> &&)>;
+
     explicit MapperAwaiter(MapperFunction &&function)
         : function_(std::move(function))
     {
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         function_(
@@ -72,7 +75,9 @@ class CoroMapper : public Mapper<T>
     explicit CoroMapper(DbClientPtr client) : Mapper<T>(std::move(client))
     {
     }
+
     using TraitsPKType = typename Mapper<T>::TraitsPKType;
+
     inline internal::MapperAwaiter<T> findByPrimaryKey(const TraitsPKType &key)
     {
         if constexpr (!std::is_same<typename T::PrimaryKeyType, void>::value)
@@ -213,6 +218,7 @@ class CoroMapper : public Mapper<T>
     {
         return findBy(Criteria());
     }
+
     inline internal::MapperAwaiter<size_t> count(
         const Criteria &criteria = Criteria())
     {
@@ -238,6 +244,7 @@ class CoroMapper : public Mapper<T>
         };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
+
     inline internal::MapperAwaiter<T> findOne(const Criteria &criteria)
     {
         auto lb = [this, criteria](SingleRowCallback &&callback,
@@ -297,6 +304,7 @@ class CoroMapper : public Mapper<T>
         };
         return internal::MapperAwaiter<T>(std::move(lb));
     }
+
     inline internal::MapperAwaiter<std::vector<T>> findBy(
         const Criteria &criteria)
     {
@@ -348,6 +356,7 @@ class CoroMapper : public Mapper<T>
         };
         return internal::MapperAwaiter<std::vector<T>>(std::move(lb));
     }
+
     inline internal::MapperAwaiter<T> insert(const T &obj)
     {
         auto lb = [this, obj](SingleRowCallback &&callback,
@@ -402,6 +411,7 @@ class CoroMapper : public Mapper<T>
         };
         return internal::MapperAwaiter<T>(std::move(lb));
     }
+
     inline internal::MapperAwaiter<size_t> update(const T &obj)
     {
         auto lb = [this, obj](CountCallback &&callback,
@@ -539,6 +549,7 @@ class CoroMapper : public Mapper<T>
         };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
+
     inline internal::MapperAwaiter<size_t> deleteBy(const Criteria &criteria)
     {
         auto lb = [this, criteria](CountCallback &&callback,
@@ -569,6 +580,7 @@ class CoroMapper : public Mapper<T>
         };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
+
     inline internal::MapperAwaiter<size_t> deleteByPrimaryKey(
         const TraitsPKType &key)
     {

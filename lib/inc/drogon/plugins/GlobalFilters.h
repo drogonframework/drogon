@@ -42,6 +42,7 @@ class DROGON_EXPORT GlobalFilters
     GlobalFilters()
     {
     }
+
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 

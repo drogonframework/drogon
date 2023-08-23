@@ -34,6 +34,7 @@ namespace orm
 {
 class PgConnection;
 using PgConnectionPtr = std::shared_ptr<PgConnection>;
+
 class PgConnection : public DbConnection,
                      public std::enable_shared_from_this<PgConnection>
 {
@@ -94,6 +95,7 @@ class PgConnection : public DbConnection,
     {
         return connectionPtr_;
     }
+
     void setMessageCallback(MessageCallback cb)
     {
         messageCallback_ = std::move(cb);
@@ -104,11 +106,13 @@ class PgConnection : public DbConnection,
     trantor::Channel channel_;
     bool isPreparingStatement_{false};
     size_t preparedStatementsID_{0};
+
     std::string newStmtName()
     {
         loop_->assertInLoopThread();
         return std::to_string(++preparedStatementsID_);
     }
+
     void handleRead();
     void pgPoll();
     void handleClosed();

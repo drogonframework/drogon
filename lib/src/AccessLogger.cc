@@ -331,6 +331,7 @@ void AccessLogger::outputReqQuery(trantor::LogStream &stream,
 {
     stream << req->query();
 }
+
 //$request_url
 void AccessLogger::outputReqURL(trantor::LogStream &stream,
                                 const drogon::HttpRequestPtr &req,
@@ -407,6 +408,7 @@ void AccessLogger::outputRespLength(trantor::LogStream &stream,
 {
     stream << resp->body().length();
 }
+
 void AccessLogger::outputMethod(trantor::LogStream &stream,
                                 const drogon::HttpRequestPtr &req,
                                 const drogon::HttpResponsePtr &)
@@ -484,6 +486,7 @@ void AccessLogger::outputStatusString(trantor::LogStream &stream,
     int code = resp->getStatusCode();
     stream << code << " " << statusCodeToString(code);
 }
+
 //$status_code
 void AccessLogger::outputStatusCode(trantor::LogStream &stream,
                                     const drogon::HttpRequestPtr &,
@@ -491,6 +494,7 @@ void AccessLogger::outputStatusCode(trantor::LogStream &stream,
 {
     stream << resp->getStatusCode();
 }
+
 //$processing_time
 void AccessLogger::outputProcessingTime(trantor::LogStream &stream,
                                         const drogon::HttpRequestPtr &req,

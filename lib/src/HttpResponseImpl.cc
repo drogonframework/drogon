@@ -37,6 +37,7 @@ namespace drogon
 {
 // "Fri, 23 Aug 2019 12:58:03 GMT" length = 29
 static const size_t httpFullDateStringLength = 29;
+
 static inline void doResponseCreateAdvices(
     const HttpResponseImplPtr &responsePtr)
 {
@@ -50,6 +51,7 @@ static inline void doResponseCreateAdvices(
         }
     }
 }
+
 static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
                                               const HttpViewData &data)
 {
@@ -202,6 +204,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
         }
     }
 }
+
 HttpResponsePtr HttpResponse::newRedirectionResponse(
     const std::string &location,
     HttpStatusCode status)
@@ -585,6 +588,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         buffer.append("\r\n");
     }
 }
+
 void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
 {
     if (expriedTime_ >= 0)
@@ -628,6 +632,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     if (bodyPtr_)
         buffer.append(bodyPtr_->data(), bodyPtr_->length());
 }
+
 std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
 {
     if (expriedTime_ >= 0)

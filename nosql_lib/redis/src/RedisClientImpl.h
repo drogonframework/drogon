@@ -30,6 +30,7 @@ namespace nosql
 {
 class RedisConnection;
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
+
 class RedisClientImpl final
     : public RedisClient,
       public trantor::NonCopyable,
@@ -47,6 +48,7 @@ class RedisClientImpl final
                           ...) noexcept override;
     ~RedisClientImpl() override;
     std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override;
+
     RedisTransactionPtr newTransaction() noexcept(false) override
     {
         std::promise<RedisTransactionPtr> prom;
@@ -63,13 +65,16 @@ class RedisClientImpl final
         }
         return trans;
     }
+
     void newTransactionAsync(
         const std::function<void(const RedisTransactionPtr &)> &callback)
         override;
+
     void setTimeout(double timeout) override
     {
         timeout_ = timeout;
     }
+
     void init();
     void closeAll() override;
 

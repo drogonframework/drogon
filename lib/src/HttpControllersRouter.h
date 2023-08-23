@@ -58,6 +58,7 @@ class HttpControllersRouter : public trantor::NonCopyable
           postHandlingAdvices_(postHandlingAdvices)
     {
     }
+
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
@@ -76,6 +77,7 @@ class HttpControllersRouter : public trantor::NonCopyable
 
   private:
     StaticFileRouter &fileRouter_;
+
     struct CtrlBinder
     {
         internal::HttpBinderBasePtr binderPtr_;
@@ -87,7 +89,9 @@ class HttpControllersRouter : public trantor::NonCopyable
         IOThreadStorage<HttpResponsePtr> responseCache_;
         bool isCORS_{false};
     };
+
     using CtrlBinderPtr = std::shared_ptr<CtrlBinder>;
+
     struct HttpControllerRouterItem
     {
         std::string pathParameterPattern_;
@@ -96,6 +100,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         CtrlBinderPtr binders_[Invalid]{
             nullptr};  // The enum value of Invalid is the http methods number
     };
+
     std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
     std::vector<HttpControllerRouterItem> ctrlVector_;
 

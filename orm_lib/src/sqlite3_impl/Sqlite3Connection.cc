@@ -310,6 +310,7 @@ int Sqlite3Connection::stmtStep(
     }
     return r;
 }
+
 void Sqlite3Connection::disconnect()
 {
     std::promise<int> pro;

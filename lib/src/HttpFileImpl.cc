@@ -80,6 +80,7 @@ int HttpFileImpl::save(const std::string &path) const noexcept
 
     return saveTo(fsSaveToPath);
 }
+
 int HttpFileImpl::saveAs(const std::string &fileName) const noexcept
 {
     assert(!fileName.empty());
@@ -106,6 +107,7 @@ int HttpFileImpl::saveAs(const std::string &fileName) const noexcept
     }
     return saveTo(fsFileName);
 }
+
 int HttpFileImpl::saveTo(
     const std::filesystem::path &pathAndFileName) const noexcept
 {
@@ -199,10 +201,12 @@ std::string HttpFile::getMd5() const noexcept
 {
     return implPtr_->getMd5();
 }
+
 const std::string &HttpFile::getContentTransferEncoding() const noexcept
 {
     return implPtr_->getContentTransferEncoding();
 }
+
 HttpFile::HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr) noexcept
     : implPtr_(std::move(implPtr))
 {

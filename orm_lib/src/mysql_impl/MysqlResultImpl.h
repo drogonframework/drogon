@@ -70,6 +70,7 @@ class MysqlResultImpl : public ResultImpl
             }
         }
     }
+
     SizeType size() const noexcept override;
     RowSizeType columns() const noexcept override;
     const char *columnName(RowSizeType number) const override;

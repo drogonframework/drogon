@@ -39,10 +39,12 @@ class HttpFileImpl
     {
         fileName_ = fileName;
     }
+
     void setFileName(std::string &&fileName) noexcept
     {
         fileName_ = std::move(fileName);
     }
+
     /// Return the file extension;
     std::string_view getFileExtension() const noexcept
     {
@@ -106,10 +108,12 @@ class HttpFileImpl
     {
         itemName_ = itemName;
     }
+
     void setItemName(std::string &&itemName) noexcept
     {
         itemName_ = std::move(itemName);
     }
+
     /// Return the type of file.
     FileType getFileType() const noexcept
     {
@@ -124,28 +128,34 @@ class HttpFileImpl
     std::string getSha3() const noexcept;
     //    int saveTo(const std::string &pathAndFileName) const;
     int saveTo(const std::filesystem::path &pathAndFileName) const noexcept;
+
     void setRequest(const HttpRequestPtr &req) noexcept
     {
         requestPtr_ = req;
     }
+
     drogon::ContentType getContentType() const noexcept
     {
         return contentType_;
     }
+
     void setContentType(drogon::ContentType contentType) noexcept
     {
         contentType_ = contentType;
     }
+
     void setContentTransferEncoding(
         const std::string &contentTransferEncoding) noexcept
     {
         transferEncoding_ = contentTransferEncoding;
     }
+
     void setContentTransferEncoding(
         std::string &&contentTransferEncoding) noexcept
     {
         transferEncoding_ = std::move(contentTransferEncoding);
     }
+
     const std::string &getContentTransferEncoding() const noexcept
     {
         return transferEncoding_;

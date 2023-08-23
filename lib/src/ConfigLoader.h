@@ -27,10 +27,12 @@ class ConfigLoader : public trantor::NonCopyable
     explicit ConfigLoader(const Json::Value &data);
     explicit ConfigLoader(Json::Value &&data);
     ~ConfigLoader();
+
     const Json::Value &jsonValue() const
     {
         return configJsonRoot_;
     }
+
     void load() noexcept(false);
 
   private:

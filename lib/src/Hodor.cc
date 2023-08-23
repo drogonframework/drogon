@@ -2,6 +2,7 @@
 #include <drogon/plugins/RealIpResolver.h>
 
 using namespace drogon::plugin;
+
 Hodor::LimitStrategy Hodor::makeLimitStrategy(const Json::Value &config)
 {
     LimitStrategy strategy;
@@ -62,6 +63,7 @@ Hodor::LimitStrategy Hodor::makeLimitStrategy(const Json::Value &config)
     }
     return strategy;
 }
+
 void Hodor::initAndStart(const Json::Value &config)
 {
     algorithm_ = stringToRateLimiterType(
@@ -200,6 +202,7 @@ bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
     }
     return true;
 }
+
 void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                           drogon::AdviceCallback &&adviceCallback,
                           drogon::AdviceChainCallback &&chainCallback)

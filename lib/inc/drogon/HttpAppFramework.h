@@ -68,6 +68,7 @@ using DefaultHandler =
                        std::function<void(const HttpResponsePtr &)> &&)>;
 #ifdef __cpp_impl_coroutine
 class HttpAppFramework;
+
 namespace internal
 {
 struct [[nodiscard]] ForwardAwaiter
@@ -84,6 +85,7 @@ struct [[nodiscard]] ForwardAwaiter
           app_(app)
     {
     }
+
     void await_suspend(std::coroutine_handle<> handle) noexcept;
 
   private:
@@ -538,6 +540,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
             pathPattern, binder, validMethods, filters, handlerName);
         return *this;
     }
+
     /**
      * @brief Register a handler into the framework via a regular expression.
      *

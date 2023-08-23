@@ -1,5 +1,6 @@
 #pragma once
 #include "ConfigAdapter.h"
+
 namespace drogon
 {
 class YamlConfigAdapter : public ConfigAdapter

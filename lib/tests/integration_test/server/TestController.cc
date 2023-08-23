@@ -1,5 +1,6 @@
 #include "TestController.h"
 using namespace example;
+
 void TestController::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)

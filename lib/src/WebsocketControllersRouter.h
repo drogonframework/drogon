@@ -29,6 +29,7 @@
 namespace drogon
 {
 class HttpAppFrameworkImpl;
+
 class WebsocketControllersRouter : public trantor::NonCopyable
 {
   public:
@@ -55,6 +56,7 @@ class WebsocketControllersRouter : public trantor::NonCopyable
           postHandlingAdvices_(postHandlingAdvices)
     {
     }
+
     void registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
@@ -83,6 +85,7 @@ class WebsocketControllersRouter : public trantor::NonCopyable
     {
         CtrlBinderPtr binders_[Invalid];
     };
+
     std::unordered_map<std::string, WebSocketControllerRouterItem> wsCtrlMap_;
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,

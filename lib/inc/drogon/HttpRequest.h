@@ -65,6 +65,7 @@ template <>
 HttpRequestPtr toRequest<const Json::Value &>(const Json::Value &pJson);
 template <>
 HttpRequestPtr toRequest(Json::Value &&pJson);
+
 template <>
 inline HttpRequestPtr toRequest<Json::Value &>(Json::Value &pJson)
 {
@@ -108,6 +109,7 @@ class DROGON_EXPORT HttpRequest
 
     /// Return the method string of the request, such as GET, POST, etc.
     virtual const char *methodString() const = 0;
+
     const char *getMethodString() const
     {
         return methodString();
@@ -115,6 +117,7 @@ class DROGON_EXPORT HttpRequest
 
     /// Return the enum type method of the request.
     virtual HttpMethod method() const = 0;
+
     HttpMethod getMethod() const
     {
         return method();
@@ -199,6 +202,7 @@ class DROGON_EXPORT HttpRequest
     {
         return body();
     }
+
     virtual const char *bodyData() const = 0;
     virtual size_t bodyLength() const = 0;
 
@@ -232,12 +236,14 @@ class DROGON_EXPORT HttpRequest
         return std::string_view(matchedPathPatternData(),
                                 matchedPathPatternLength());
     }
+
     virtual const char *matchedPathPatternData() const = 0;
     virtual size_t matchedPathPatternLength() const = 0;
 
     /// Return the string of http version of request, such as HTTP/1.0,
     /// HTTP/1.1, etc.
     virtual const char *versionString() const = 0;
+
     const char *getVersionString() const
     {
         return versionString();
@@ -327,6 +333,7 @@ class DROGON_EXPORT HttpRequest
 
     /// Return the remote IP address and port
     virtual const trantor::InetAddress &peerAddr() const = 0;
+
     const trantor::InetAddress &getPeerAddr() const
     {
         return peerAddr();
@@ -334,6 +341,7 @@ class DROGON_EXPORT HttpRequest
 
     /// Return the local IP address and port
     virtual const trantor::InetAddress &localAddr() const = 0;
+
     const trantor::InetAddress &getLocalAddr() const
     {
         return localAddr();
@@ -341,6 +349,7 @@ class DROGON_EXPORT HttpRequest
 
     /// Return the creation timestamp set by the framework.
     virtual const trantor::Date &creationDate() const = 0;
+
     const trantor::Date &getCreationDate() const
     {
         return creationDate();
@@ -348,6 +357,7 @@ class DROGON_EXPORT HttpRequest
 
     // Return the peer certificate (if any)
     virtual const trantor::CertificatePtr &peerCertificate() const = 0;
+
     const trantor::CertificatePtr &getPeerCertificate() const
     {
         return peerCertificate();
@@ -378,6 +388,7 @@ class DROGON_EXPORT HttpRequest
 
     /// Get the content type
     virtual ContentType contentType() const = 0;
+
     ContentType getContentType() const
     {
         return contentType();

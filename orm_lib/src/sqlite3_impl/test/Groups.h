@@ -22,6 +22,7 @@
 #include <iostream>
 
 using namespace drogon::orm;
+
 namespace drogon
 {
 namespace orm
@@ -30,6 +31,7 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 }  // namespace orm
 }  // namespace drogon
+
 namespace drogon_model
 {
 namespace sqlite3
@@ -236,6 +238,7 @@ class Groups
     {
         return 11;
     }
+
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -261,6 +264,7 @@ class Groups
     std::shared_ptr<std::string> text_;
     std::shared_ptr<std::vector<char>> avatar_;
     std::shared_ptr<bool> isDefault_;
+
     struct MetaData
     {
         const std::string colName_;
@@ -271,6 +275,7 @@ class Groups
         const bool isPrimaryKey_;
         const bool notNull_;
     };
+
     static const std::vector<MetaData> metaData_;
     bool dirtyFlag_[11] = {false};
 
@@ -288,6 +293,7 @@ class Groups
             "delete from " + tableName + " where group_id = ?";
         return sql;
     }
+
     std::string sqlForInserting(bool &needSelection) const
     {
         std::string sql = "insert into " + tableName + " (";

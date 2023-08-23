@@ -4,6 +4,7 @@
 #include <iostream>
 
 using namespace drogon;
+
 DROGON_TEST(HttpFullDateTest)
 {
     auto str = utils::getHttpFullDate();

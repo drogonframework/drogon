@@ -85,8 +85,10 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     Hodor()
     {
     }
+
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
+
     /**
      * @brief the method is used to set a function to get the user id from the
      * request. users should call this method after calling the app().run()
@@ -97,6 +99,7 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     {
         userIdGetter_ = std::move(func);
     }
+
     /**
      * @brief the method is used to set a function to create the response when
      * the rate limit is exceeded. users should call this method after calling
@@ -121,6 +124,7 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
         std::unique_ptr<CacheMap<std::string, RateLimiterPtr>>
             userLimiterMapPtr;
     };
+
     LimitStrategy makeLimitStrategy(const Json::Value &config);
     std::vector<LimitStrategy> limitStrategies_;
     RateLimiterType algorithm_{RateLimiterType::kTokenBucket};
