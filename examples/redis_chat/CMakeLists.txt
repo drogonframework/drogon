@@ -32,7 +32,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon)
 # ##############################################################################
 
 if (CMAKE_CXX_STANDARD LESS 17)
-    # With C++14, use boost to support any and string_view
+    # With C++14, use boost to support any and std::string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
     target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})

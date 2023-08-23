@@ -1,5 +1,6 @@
 #include "JsonTestController.h"
 #include <json/json.h>
+
 void JsonTestController::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)

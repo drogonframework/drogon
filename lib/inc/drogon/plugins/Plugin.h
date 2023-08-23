@@ -82,18 +82,22 @@ class DROGON_EXPORT PluginBase : public virtual DrObjectBase,
   private:
     PluginStatus status_{PluginStatus::None};
     friend class PluginsManager;
+
     void setConfig(const Json::Value &config)
     {
         config_ = config;
     }
+
     void addDependency(PluginBase *dp)
     {
         dependencies_.push_back(dp);
     }
+
     void setInitializedCallback(const std::function<void(PluginBase *)> &cb)
     {
         initializedCallback_ = cb;
     }
+
     Json::Value config_;
     std::vector<PluginBase *> dependencies_;
     std::function<void(PluginBase *)> initializedCallback_;
@@ -109,10 +113,12 @@ struct IsPlugin
     {
         return 0;
     }
+
     static char test(PluginBase *)
     {
         return 0;
     }
+
     static constexpr bool value =
         (sizeof(test((TYPE *)nullptr)) == sizeof(char));
 };

@@ -8,9 +8,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <string_view>
 
 using namespace drogon;
 using namespace std::chrono_literals;
+
 class A : public DrObjectBase
 {
   public:
@@ -36,6 +38,7 @@ class A : public DrObjectBase
         auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
         callback(res);
     }
+
     static void staticHandle(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
@@ -60,6 +63,7 @@ class A : public DrObjectBase
         callback(res);
     }
 };
+
 class B : public DrObjectBase
 {
   public:
@@ -87,6 +91,7 @@ class C : public drogon::HttpController<C>
   public:
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(C::priv, "/priv/resource", Get, "DigestAuthFilter");
+
     METHOD_LIST_END
     void priv(const HttpRequestPtr &req,
               std::function<void(const HttpResponsePtr &)> &&callback) const
@@ -111,6 +116,7 @@ class Test : public HttpController<Test>
     METHOD_ADD(Test::list,
                "/{2}/info",
                Get);  // path is /api/v1/test/{arg2}/info
+
     METHOD_LIST_END
     void get(const HttpRequestPtr &req,
              std::function<void(const HttpResponsePtr &)> &&callback,
@@ -129,6 +135,7 @@ class Test : public HttpController<Test>
         auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
         callback(res);
     }
+
     void list(const HttpRequestPtr &req,
               std::function<void(const HttpResponsePtr &)> &&callback,
               int p1,
@@ -156,7 +163,7 @@ using namespace drogon;
 namespace drogon
 {
 template <>
-string_view fromRequest(const HttpRequest &req)
+std::string_view fromRequest(const HttpRequest &req)
 {
     return req.body();
 }
@@ -190,8 +197,8 @@ int main()
                      // parameter in the path.
            float b,  // here the `b` parameter is converted from the number 2
                      // parameter in the path.
-           string_view &&body,  // here the `body` parameter is converted from
-                                // req->as<string_view>();
+           std::string_view &&body,  // here the `body` parameter is converted
+                                     // from req->as<string_view>();
            const std::shared_ptr<Json::Value>
                &jsonPtr  // here the `jsonPtr` parameter is converted from
                          // req->as<std::shared_ptr<Json::Value>>();

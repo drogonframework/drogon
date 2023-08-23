@@ -56,18 +56,22 @@ class UploadFile
             }
         }
     }
+
     const std::string &path() const
     {
         return path_;
     }
+
     const std::string &fileName() const
     {
         return fileName_;
     }
+
     const std::string &itemName() const
     {
         return itemName_;
     }
+
     ContentType contentType() const
     {
         return contentType_;

@@ -15,6 +15,7 @@ class ConfigAdapter
         noexcept(false) = 0;
     virtual std::vector<std::string> getExtensions() const = 0;
 };
+
 using ConfigAdapterPtr = std::shared_ptr<ConfigAdapter>;
 
 }  // namespace drogon

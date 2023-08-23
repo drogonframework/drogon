@@ -9,6 +9,7 @@ using namespace std::chrono_literals;
 using namespace drogon::nosql;
 
 RedisClientPtr redisClient;
+
 DROGON_TEST(RedisTest)
 {
     redisClient = drogon::nosql::RedisClient::newRedisClient(

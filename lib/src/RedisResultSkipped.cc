@@ -54,12 +54,14 @@ std::vector<RedisResult> RedisResult::asArray() const noexcept(false)
                  "hiredis library first.";
     abort();
 }
+
 long long RedisResult::asInteger() const noexcept(false)
 {
     LOG_FATAL << "Redis is not supported by drogon, please install the "
                  "hiredis library first.";
     abort();
 }
+
 bool RedisResult::isNil() const noexcept
 {
     LOG_FATAL << "Redis is not supported by drogon, please install the "

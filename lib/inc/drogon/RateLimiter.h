@@ -13,6 +13,7 @@ enum class DROGON_EXPORT RateLimiterType
     kSlidingWindow,
     kTokenBucket
 };
+
 inline RateLimiterType stringToRateLimiterType(const std::string &type)
 {
     if (type == "fixedWindow" || type == "fixed_window")
@@ -23,6 +24,7 @@ inline RateLimiterType stringToRateLimiterType(const std::string &type)
 }
 class DROGON_EXPORT RateLimiter;
 using RateLimiterPtr = std::shared_ptr<RateLimiter>;
+
 /**
  * @brief This class is used to limit the number of requests per second
  *
@@ -50,17 +52,20 @@ class DROGON_EXPORT RateLimiter
     virtual bool isAllowed() = 0;
     virtual ~RateLimiter() noexcept = default;
 };
+
 class DROGON_EXPORT SafeRateLimiter : public RateLimiter
 {
   public:
     SafeRateLimiter(RateLimiterPtr limiter) : limiter_(limiter)
     {
     }
+
     bool isAllowed() override
     {
         std::lock_guard<std::mutex> lock(mutex_);
         return limiter_->isAllowed();
     }
+
     ~SafeRateLimiter() noexcept override = default;
 
   private:

@@ -142,7 +142,7 @@ RedisConnectionPtr RedisClientLockFree::newSubscribeConnection(
 void RedisClientLockFree::execCommandAsync(
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
-    string_view command,
+    std::string_view command,
     ...) noexcept
 {
     loop_->assertInLoopThread();
@@ -339,7 +339,7 @@ void RedisClientLockFree::handleNextTask(const RedisConnectionPtr &connPtr)
 }
 
 void RedisClientLockFree::execCommandAsyncWithTimeout(
-    string_view command,
+    std::string_view command,
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
     va_list ap)

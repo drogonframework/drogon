@@ -19,6 +19,7 @@
 #include <drogon/orm/RowIterator.h>
 
 using namespace drogon::orm;
+
 Row::Row(const Result &r, SizeType index) noexcept
     : result_(r), index_(long(index)), end_(r.columns())
 {

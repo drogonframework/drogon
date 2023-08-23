@@ -17,7 +17,7 @@
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/nosql/RedisException.h>
 #include <drogon/nosql/RedisSubscriber.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
 #include <memory>
@@ -34,16 +34,19 @@ namespace nosql
 #ifdef __cpp_impl_coroutine
 class RedisClient;
 class RedisTransaction;
+
 namespace internal
 {
 struct [[nodiscard]] RedisAwaiter : public CallbackAwaiter<RedisResult>
 {
     using RedisFunction =
         std::function<void(RedisResultCallback &&, RedisExceptionCallback &&)>;
+
     explicit RedisAwaiter(RedisFunction &&function)
         : function_(std::move(function))
     {
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         function_(
@@ -78,6 +81,7 @@ struct [[nodiscard]] RedisTransactionAwaiter
 #endif
 
 class RedisTransaction;
+
 /**
  * @brief This class represents a redis client that contains several connections
  * to a redis server.
@@ -123,7 +127,7 @@ class DROGON_EXPORT RedisClient
      */
     virtual void execCommandAsync(RedisResultCallback &&resultCallback,
                                   RedisExceptionCallback &&exceptionCallback,
-                                  string_view command,
+                                  std::string_view command,
                                   ...) noexcept = 0;
 
     /**
@@ -157,7 +161,7 @@ class DROGON_EXPORT RedisClient
      */
     template <typename T, typename... Args>
     T execCommandSync(std::function<T(const RedisResult &)> &&processFunc,
-                      string_view command,
+                      std::string_view command,
                       Args &&...args)
     {
         std::shared_ptr<std::promise<T>> pro(new std::promise<T>);
@@ -254,7 +258,7 @@ class DROGON_EXPORT RedisClient
        @endcode
      */
     template <typename... Arguments>
-    internal::RedisAwaiter execCommandCoro(string_view command,
+    internal::RedisAwaiter execCommandCoro(std::string_view command,
                                            Arguments... args)
     {
         return internal::RedisAwaiter(
@@ -268,6 +272,7 @@ class DROGON_EXPORT RedisClient
                                  args...);
             });
     }
+
     /**
      * @brief await a RedisTransactionPtr in a coroutine.
      *
@@ -292,6 +297,7 @@ class DROGON_EXPORT RedisClient
     }
 #endif
 };
+
 class DROGON_EXPORT RedisTransaction : public RedisClient
 {
   public:
@@ -333,6 +339,7 @@ class DROGON_EXPORT RedisTransaction : public RedisClient
     {
     }
 };
+
 using RedisClientPtr = std::shared_ptr<RedisClient>;
 using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
 

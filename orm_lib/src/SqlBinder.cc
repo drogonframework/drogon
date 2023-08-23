@@ -124,6 +124,7 @@ void SqlBinder::exec()
         }
     }
 }
+
 SqlBinder::~SqlBinder()
 {
     destructed_ = true;
@@ -132,7 +133,8 @@ SqlBinder::~SqlBinder()
         exec();
     }
 }
-SqlBinder &SqlBinder::operator<<(const drogon::string_view &str)
+
+SqlBinder &SqlBinder::operator<<(const std::string_view &str)
 {
     auto obj = std::make_shared<std::string>(str.data(), str.length());
     parameters_.push_back(obj->data());
@@ -153,6 +155,7 @@ SqlBinder &SqlBinder::operator<<(const drogon::string_view &str)
     }
     return *this;
 }
+
 SqlBinder &SqlBinder::operator<<(const std::string &str)
 {
     auto obj = std::make_shared<std::string>(str);

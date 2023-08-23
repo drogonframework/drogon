@@ -67,42 +67,52 @@ class HttpRequestParser : public trantor::NonCopyable,
         }
         return false;
     }
+
     const WebSocketConnectionImplPtr &webSocketConn() const
     {
         return websockConnPtr_;
     }
+
     void setWebsockConnection(const WebSocketConnectionImplPtr &conn)
     {
         websockConnPtr_ = conn;
     }
+
     // to support request pipelining(rfc2616-8.1.2.2)
     void pushRequestToPipelining(const HttpRequestPtr &, bool isHeadMethod);
     bool pushResponseToPipelining(const HttpRequestPtr &, HttpResponsePtr);
     void popReadyResponses(std::vector<std::pair<HttpResponsePtr, bool>> &);
+
     size_t numberOfRequestsInPipelining() const
     {
         return requestPipelining_.size();
     }
+
     bool emptyPipelining()
     {
         return requestPipelining_.empty();
     }
+
     bool isStop() const
     {
         return stopWorking_;
     }
+
     void stop()
     {
         stopWorking_ = true;
     }
+
     size_t numberOfRequestsParsed() const
     {
         return requestsCounter_;
     }
+
     trantor::MsgBuffer &getBuffer()
     {
         return sendBuffer_;
     }
+
     std::vector<std::pair<HttpResponsePtr, bool>> &getResponseBuffer()
     {
         assert(loop_->isInLoopThread());
@@ -114,6 +124,7 @@ class HttpRequestParser : public trantor::NonCopyable,
         }
         return *responseBuffer_;
     }
+
     std::vector<HttpRequestImplPtr> &getRequestBuffer()
     {
         assert(loop_->isInLoopThread());

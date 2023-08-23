@@ -102,6 +102,7 @@ class Topic : public trantor::NonCopyable
         std::shared_lock<SharedMutex> lock(mutex_);
         return handlersMap_.empty();
     }
+
     /**
      * @brief Remove all subscribers from the topic.
      *
@@ -247,6 +248,7 @@ class PubSubService : public trantor::NonCopyable
         topicMap_;
     mutable SharedMutex mutex_;
     SubscriberID subID_ = 0;
+
     SubscriberID subscribeToTopic(
         const std::string &topicName,
         typename Topic<MessageType>::MessageHandler &&handler)

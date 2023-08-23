@@ -33,6 +33,7 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 }  // namespace orm
 }  // namespace drogon
+
 namespace drogon_model
 {
 namespace sqlite3
@@ -232,6 +233,7 @@ class Users
     {
         return 10;
     }
+
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -263,6 +265,7 @@ class Users
     std::shared_ptr<std::string> salt_;
     std::shared_ptr<std::string> admin_;
     std::shared_ptr<::trantor::Date> createTime_;
+
     struct MetaData
     {
         const std::string colName_;
@@ -273,6 +276,7 @@ class Users
         const bool isPrimaryKey_;
         const bool notNull_;
     };
+
     static const std::vector<MetaData> metaData_;
     bool dirtyFlag_[10] = {false};
 
@@ -290,6 +294,7 @@ class Users
             "delete from " + tableName + " where id = ?";
         return sql;
     }
+
     std::string sqlForInserting(bool &needSelection) const
     {
         std::string sql = "insert into " + tableName + " (";

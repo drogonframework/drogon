@@ -2,6 +2,7 @@
 #include <drogon/plugins/RealIpResolver.h>
 
 using namespace drogon::plugin;
+
 Hodor::LimitStrategy Hodor::makeLimitStrategy(const Json::Value &config)
 {
     LimitStrategy strategy;
@@ -62,6 +63,7 @@ Hodor::LimitStrategy Hodor::makeLimitStrategy(const Json::Value &config)
     }
     return strategy;
 }
+
 void Hodor::initAndStart(const Json::Value &config)
 {
     algorithm_ = stringToRateLimiterType(
@@ -118,7 +120,7 @@ void Hodor::shutdown()
 bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
                        const LimitStrategy &strategy,
                        const std::string &ip,
-                       const drogon::optional<std::string> &userId)
+                       const std::optional<std::string> &userId)
 {
     if (strategy.regexFlag)
     {
@@ -200,6 +202,7 @@ bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
     }
     return true;
 }
+
 void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                           drogon::AdviceCallback &&adviceCallback,
                           drogon::AdviceChainCallback &&chainCallback)
@@ -208,7 +211,7 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
         (useRealIpResolver_ ? drogon::plugin::RealIpResolver::GetRealAddr(req)
                             : req->peerAddr())
             .toIpNetEndian();
-    optional<std::string> userId;
+    std::optional<std::string> userId;
     if (userIdGetter_)
     {
         userId = userIdGetter_(req);

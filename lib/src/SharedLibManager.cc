@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <trantor/utils/Logger.h>
 #include <unistd.h>
+
 static void forEachFileIn(
     const std::string &path,
     const std::function<void(const std::string &, const struct stat &)> &cb)
@@ -70,6 +71,7 @@ static void forEachFileIn(
 }
 
 using namespace drogon;
+
 SharedLibManager::SharedLibManager(const std::vector<std::string> &libPaths,
                                    const std::string &outputPath)
     : libPaths_(libPaths), outputPath_(outputPath)
@@ -78,10 +80,12 @@ SharedLibManager::SharedLibManager(const std::vector<std::string> &libPaths,
     timeId_ =
         workingThread_.getLoop()->runEvery(5.0, [this]() { managerLibs(); });
 }
+
 SharedLibManager::~SharedLibManager()
 {
     workingThread_.getLoop()->invalidateTimer(timeId_);
 }
+
 void SharedLibManager::managerLibs()
 {
     for (auto const &libPath : libPaths_)

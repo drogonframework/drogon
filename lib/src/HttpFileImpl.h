@@ -14,14 +14,14 @@
 
 #pragma once
 #include "HttpUtils.h"
-#include <drogon/utils/string_view.h>
-#include "filesystem.h"
 #include <drogon/HttpRequest.h>
 
 #include <map>
 #include <string>
 #include <vector>
 #include <memory>
+#include <filesystem>
+#include <string_view>
 
 namespace drogon
 {
@@ -39,12 +39,14 @@ class HttpFileImpl
     {
         fileName_ = fileName;
     }
+
     void setFileName(std::string &&fileName) noexcept
     {
         fileName_ = std::move(fileName);
     }
+
     /// Return the file extension;
-    string_view getFileExtension() const noexcept
+    std::string_view getFileExtension() const noexcept
     {
         return drogon::getFileExtension(fileName_);
     }
@@ -53,7 +55,7 @@ class HttpFileImpl
     /// parser.
     void setFile(const char *data, size_t length) noexcept
     {
-        fileContent_ = string_view{data, length};
+        fileContent_ = std::string_view{data, length};
     }
 
     /// Save the file to the file system.
@@ -91,7 +93,7 @@ class HttpFileImpl
         return fileContent_.data();
     }
 
-    const string_view &fileContent() const noexcept
+    const std::string_view &fileContent() const noexcept
     {
         return fileContent_;
     }
@@ -106,10 +108,12 @@ class HttpFileImpl
     {
         itemName_ = itemName;
     }
+
     void setItemName(std::string &&itemName) noexcept
     {
         itemName_ = std::move(itemName);
     }
+
     /// Return the type of file.
     FileType getFileType() const noexcept
     {
@@ -123,29 +127,35 @@ class HttpFileImpl
     // Return sha512 hash of the file
     std::string getSha3() const noexcept;
     //    int saveTo(const std::string &pathAndFileName) const;
-    int saveTo(const filesystem::path &pathAndFileName) const noexcept;
+    int saveTo(const std::filesystem::path &pathAndFileName) const noexcept;
+
     void setRequest(const HttpRequestPtr &req) noexcept
     {
         requestPtr_ = req;
     }
+
     drogon::ContentType getContentType() const noexcept
     {
         return contentType_;
     }
+
     void setContentType(drogon::ContentType contentType) noexcept
     {
         contentType_ = contentType;
     }
+
     void setContentTransferEncoding(
         const std::string &contentTransferEncoding) noexcept
     {
         transferEncoding_ = contentTransferEncoding;
     }
+
     void setContentTransferEncoding(
         std::string &&contentTransferEncoding) noexcept
     {
         transferEncoding_ = std::move(contentTransferEncoding);
     }
+
     const std::string &getContentTransferEncoding() const noexcept
     {
         return transferEncoding_;
@@ -155,7 +165,7 @@ class HttpFileImpl
     std::string fileName_;
     std::string itemName_;
     std::string transferEncoding_;
-    string_view fileContent_;
+    std::string_view fileContent_;
     HttpRequestPtr requestPtr_;
     drogon::ContentType contentType_{drogon::CT_NONE};
 };

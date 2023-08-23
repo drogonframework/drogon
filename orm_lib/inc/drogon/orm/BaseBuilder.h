@@ -16,14 +16,14 @@
 
 #include <drogon/orm/Criteria.h>
 #include <drogon/orm/DbClient.h>
-#include <drogon/utils/optional.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <future>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <optional>
 
 #define unimplemented() assert(false && "unimplemented")
 
@@ -87,8 +87,8 @@ class BaseBuilder
     std::string from_;
     std::string columns_;
     std::vector<Filter> filters_;
-    optional<std::uint64_t> limit_;
-    optional<std::uint64_t> offset_;
+    std::optional<std::uint64_t> limit_;
+    std::optional<std::uint64_t> offset_;
     // The order is important; use vector<pair> instead of unordered_map and
     // map.
     std::vector<std::pair<std::string, bool>> orders_;
@@ -207,6 +207,7 @@ class BaseBuilder
     {
         return T(r[0]);
     }
+
     template <bool SA = SelectAll,
               bool SI = Single,
               std::enable_if_t<SA, std::nullptr_t> = nullptr,
@@ -220,6 +221,7 @@ class BaseBuilder
         }
         return ret;
     }
+
     template <bool SA = SelectAll,
               bool SI = Single,
               std::enable_if_t<!SA, std::nullptr_t> = nullptr,
@@ -228,6 +230,7 @@ class BaseBuilder
     {
         return r[0];
     }
+
     template <bool SA = SelectAll,
               bool SI = Single,
               std::enable_if_t<!SA, std::nullptr_t> = nullptr,

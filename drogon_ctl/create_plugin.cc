@@ -69,6 +69,7 @@ static void createPluginSourceFile(std::ofstream &file,
     data.insert("filename", fileName);
     file << templ->genText(data);
 }
+
 void create_plugin::handleCommand(std::vector<std::string> &parameters)
 {
     if (parameters.size() < 1)

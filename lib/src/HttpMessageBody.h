@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <memory>
 #include <string>
 
@@ -28,26 +28,33 @@ class HttpMessageBody
         kString,
         kStringView
     };
+
     BodyType bodyType()
     {
         return type_;
     }
+
     virtual const char *data() const
     {
         return nullptr;
     }
+
     virtual char *data()
     {
         return nullptr;
     }
+
     virtual size_t length() const
     {
         return 0;
     }
-    virtual string_view getString() const = 0;
+
+    virtual std::string_view getString() const = 0;
+
     virtual void append(const char * /*buf*/, size_t /*len*/)
     {
     }
+
     virtual ~HttpMessageBody()
     {
     }
@@ -55,6 +62,7 @@ class HttpMessageBody
   protected:
     BodyType type_{BodyType::kNone};
 };
+
 class HttpMessageStringBody : public HttpMessageBody
 {
   public:
@@ -62,30 +70,37 @@ class HttpMessageStringBody : public HttpMessageBody
     {
         type_ = BodyType::kString;
     }
+
     HttpMessageStringBody(const std::string &body) : body_(body)
     {
         type_ = BodyType::kString;
     }
+
     HttpMessageStringBody(std::string &&body) : body_(std::move(body))
     {
         type_ = BodyType::kString;
     }
+
     const char *data() const override
     {
         return body_.data();
     }
+
     char *data() override
     {
         return const_cast<char *>(body_.data());
     }
+
     size_t length() const override
     {
         return body_.length();
     }
-    string_view getString() const override
+
+    std::string_view getString() const override
     {
-        return string_view{body_.data(), body_.length()};
+        return std::string_view{body_.data(), body_.length()};
     }
+
     void append(const char *buf, size_t len) override
     {
         body_.append(buf, len);
@@ -102,25 +117,29 @@ class HttpMessageStringViewBody : public HttpMessageBody
     {
         type_ = BodyType::kStringView;
     }
+
     const char *data() const override
     {
         return body_.data();
     }
+
     char *data() override
     {
         return const_cast<char *>(body_.data());
     }
+
     size_t length() const override
     {
         return body_.length();
     }
-    string_view getString() const override
+
+    std::string_view getString() const override
     {
         return body_;
     }
 
   private:
-    string_view body_;
+    std::string_view body_;
 };
 
 }  // namespace drogon

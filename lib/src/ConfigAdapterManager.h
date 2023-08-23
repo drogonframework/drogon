@@ -2,6 +2,7 @@
 #include "ConfigAdapterManager.h"
 #include "ConfigAdapter.h"
 #include <map>
+
 namespace drogon
 {
 class ConfigAdapterManager

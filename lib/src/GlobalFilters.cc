@@ -93,6 +93,7 @@ void GlobalFilters::initAndStart(const Json::Value &config)
                 std::move(accb));
         });
 }
+
 void GlobalFilters::shutdown()
 {
     filters_.clear();

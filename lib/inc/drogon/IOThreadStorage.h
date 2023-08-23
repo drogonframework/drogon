@@ -154,6 +154,7 @@ class IOThreadStorage : public trantor::NonCopyable
   private:
     std::vector<ValueType> storage_;
 };
+
 inline trantor::EventLoop *getIOThreadStorageLoop(size_t index) noexcept(false)
 {
     if (index > drogon::app().getThreadNum())

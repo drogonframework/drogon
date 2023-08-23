@@ -10,6 +10,7 @@ FixedWindowRateLimiter::FixedWindowRateLimiter(
       timeUnit_(timeUnit)
 {
 }
+
 // implementation of the fixed window algorithm
 
 bool FixedWindowRateLimiter::isAllowed()

@@ -31,6 +31,7 @@ class PostgreSQLResultImpl : public ResultImpl
         : result_(std::move(r))
     {
     }
+
     SizeType size() const noexcept override;
     RowSizeType columns() const noexcept override;
     const char *columnName(RowSizeType number) const override;

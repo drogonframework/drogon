@@ -88,10 +88,8 @@ if (NOT "${CMAKE_CXX_STANDARD}" STREQUAL "")
     set(DROGON_CXX_STANDARD ${CMAKE_CXX_STANDARD})
 elseif (HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE)
     set(DROGON_CXX_STANDARD 20)
-elseif (HAS_ANY AND HAS_STRING_VIEW)
-    set(DROGON_CXX_STANDARD 17)
 else ()
-    set(DROGON_CXX_STANDARD 14)
+    set(DROGON_CXX_STANDARD 17)
 endif ()
 if(USE_SUBMODULE)
     target_include_directories(
@@ -135,68 +133,36 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 find_package(Filesystem COMPONENTS Final)
 if(CXX_FILESYSTEM_HAVE_FS)
     message(STATUS "Found std::filesystem")
+else ()
+    message(FATAL_ERROR "Not found std::filesystem, please use a newer compiler")
 endif()
 
-# Check for C++ filesystem support
-set(NEED_BOOST_FS 0)
-if (DROGON_CXX_STANDARD EQUAL 14)
-    # With C++14, use Boost to support any and string_view
-    message(STATUS "use c++14")
-    find_package(Boost 1.61.0 REQUIRED)
-    message(STATUS "Using Boost filesystem, string_view and any")
-    message(STATUS "Boost include dir: " ${Boost_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
-    list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
-    set(NEED_BOOST_FS 1)
-elseif (DROGON_CXX_STANDARD EQUAL 17)
-    # With C++17, use Boost if std::filesystem::path is missing
+if (DROGON_CXX_STANDARD EQUAL 17)
     message(STATUS "use c++17")
-
     # Check for partial implementation of c++17 (Windows/OSX only?)
-    if (CXX_FILESYSTEM_HAVE_FS)
-        set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-        try_compile(check_filesystem_path ${CMAKE_BINARY_DIR}/cmaketest
-            ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
-            CXX_STANDARD 17)
-        set(CMAKE_TRY_COMPILE_TARGET_TYPE)
-        if (NOT check_filesystem_path)
-          message(STATUS "The std::filesystem seems to be a partial implementation"
-            " Falling back to boost::filesystem")
-            set(NEED_BOOST_FS 1)
-        endif()
-    else()
-        set(NEED_BOOST_FS 1)
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+    try_compile(check_filesystem_path ${CMAKE_BINARY_DIR}/cmaketest
+        ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
+        CXX_STANDARD 17)
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE)
+    if (NOT check_filesystem_path)
+      message(FATAL_ERROR "The std::filesystem seems to be a partial implementation,"
+        " please use a newer compiler")
     endif()
 else ()
     message(STATUS "use c++20")
 endif ()
 
-# Workaround: 2021-08-09 Android NDK does not provide proper std::filesystem
-# support. Force boost::filesystem instead.
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-    message(STATUS "WORKAROUND: Forcing boost::filesystem on Android")
-    set(NEED_BOOST_FS 1)
-endif ()
 
-if(NEED_BOOST_FS)
-    find_package(Boost 1.49.0 COMPONENTS filesystem system REQUIRED)
-    message(STATUS "Using Boost filesytem::path")
-    message(STATUS "Boost include dir: " ${Boost_INCLUDE_DIR})
-    include_directories(${BOOST_INCLUDE_DIRS})
-    message(STATUS "Boost libraries: " ${Boost_LIBRARIES})
-    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::filesystem Boost::system)
-    list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
-    option(HAS_STD_FILESYSTEM_PATH "use boost::filesystem" OFF)
-else()
-    option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
-    # HACK: Needed to be compiled on Yocto Linux
-    if(TARGET std::filesystem)
-      get_property(CAN_LINK_FS TARGET std::filesystem PROPERTY INTERFACE_LINK_LIBRARIES SET)
-      if ( CAN_LINK_FS )
-        target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
-      endif()
-    endif()
+option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
+# HACK: Needed to be compiled on Yocto Linux
+if(TARGET std::filesystem)
+  get_property(CAN_LINK_FS TARGET std::filesystem PROPERTY INTERFACE_LINK_LIBRARIES SET)
+  if ( CAN_LINK_FS )
+    target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
+  endif()
 endif()
+
 
 # jsoncpp
 find_package(Jsoncpp REQUIRED)
@@ -316,7 +282,6 @@ set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
     lib/src/ConfigLoader.h
-    lib/src/filesystem.h
     lib/src/FiltersFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h
@@ -720,14 +685,11 @@ set(NOSQL_HEADERS
 install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
 
 set(DROGON_UTIL_HEADERS
-    lib/inc/drogon/utils/any.h
     lib/inc/drogon/utils/apply.h
     lib/inc/drogon/utils/coroutine.h
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/HttpConstraint.h
-    lib/inc/drogon/utils/optional.h
     lib/inc/drogon/utils/OStringStream.h
-    lib/inc/drogon/utils/string_view.h
     lib/inc/drogon/utils/Utilities.h)
 install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)

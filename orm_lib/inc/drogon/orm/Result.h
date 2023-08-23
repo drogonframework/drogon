@@ -60,6 +60,7 @@ class DROGON_EXPORT Result
     explicit Result(ResultImplPtr ptr) : resultPtr_(std::move(ptr))
     {
     }
+
     Result(const Result &r) noexcept = default;
     Result(Result &&) noexcept = default;
     Result &operator=(const Result &r) noexcept;
@@ -87,10 +88,12 @@ class DROGON_EXPORT Result
     using const_reverse_iterator = ConstReverseIterator;
 
     SizeType size() const noexcept;
+
     SizeType capacity() const noexcept
     {
         return size();
     }
+
     ConstIterator begin() const noexcept;
     ConstIterator cbegin() const noexcept;
     ConstIterator end() const noexcept;
@@ -147,11 +150,13 @@ class DROGON_EXPORT Result
     friend class Row;
     /// Number of given column (throws exception if it doesn't exist).
     RowSizeType columnNumber(const char colName[]) const;
+
     /// Number of given column (throws exception if it doesn't exist).
     RowSizeType columnNumber(const std::string &name) const
     {
         return columnNumber(name.c_str());
     }
+
     /// Get the column oid, for postgresql database
     int oid(RowSizeType column) const noexcept;
 
@@ -159,6 +164,7 @@ class DROGON_EXPORT Result
     bool isNull(SizeType row, RowSizeType column) const;
     FieldSizeType getLength(SizeType row, RowSizeType column) const;
 };
+
 inline void swap(Result &one, Result &two) noexcept
 {
     one.swap(two);

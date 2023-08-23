@@ -16,7 +16,7 @@
 #include "DbConnection.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
 #include <drogon/config.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
 #endif
@@ -71,6 +71,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
     LOG_TRACE << "type=" << (int)type;
     assert(connNum > 0);
 }
+
 void DbClientImpl::init()
 {
     // LOG_DEBUG << loops_.getLoopNum();
@@ -161,7 +162,7 @@ void DbClientImpl::execSql(
             {
                 // LOG_TRACE << "Push query to buffer";
                 std::shared_ptr<SqlCmd> cmd =
-                    std::make_shared<SqlCmd>(string_view{sql, sqlLength},
+                    std::make_shared<SqlCmd>(std::string_view{sql, sqlLength},
                                              paraNum,
                                              std::move(parameters),
                                              std::move(length),
@@ -198,6 +199,7 @@ void DbClientImpl::execSql(
         return;
     }
 }
+
 void DbClientImpl::newTransactionAsync(
     const std::function<void(const std::shared_ptr<Transaction> &)> &callback)
 {
@@ -263,6 +265,7 @@ void DbClientImpl::newTransactionAsync(
                       callback));
     }
 }
+
 void DbClientImpl::makeTrans(
     const DbConnectionPtr &conn,
     std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
@@ -316,6 +319,7 @@ void DbClientImpl::makeTrans(
     conn->loop()->queueInLoop(
         [callback = std::move(callback), trans]() { callback(trans); });
 }
+
 std::shared_ptr<Transaction> DbClientImpl::newTransaction(
     const std::function<void(bool)> &commitCallback) noexcept(false)
 {
@@ -540,7 +544,7 @@ void DbClientImpl::execSqlWithTimeout(
             {
                 // LOG_TRACE << "Push query to buffer";
                 auto command =
-                    std::make_shared<SqlCmd>(string_view{sql, sqlLength},
+                    std::make_shared<SqlCmd>(std::string_view{sql, sqlLength},
                                              paraNum,
                                              std::move(parameters),
                                              std::move(length),
@@ -561,7 +565,7 @@ void DbClientImpl::execSqlWithTimeout(
     }
     if (conn)
     {
-        conn->execSql(string_view{sql, sqlLength},
+        conn->execSql(std::string_view{sql, sqlLength},
                       paraNum,
                       std::move(parameters),
                       std::move(length),

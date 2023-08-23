@@ -33,6 +33,7 @@ enum class SortOrder
     ASC,
     DESC
 };
+
 namespace internal
 {
 template <typename T, bool hasPrimaryKey = true>
@@ -40,11 +41,13 @@ struct Traits
 {
     using type = typename T::PrimaryKeyType;
 };
+
 template <typename T>
 struct Traits<T, false>
 {
     using type = int;
 };
+
 template <typename T>
 struct has_sqlForFindingByPrimaryKey
 {
@@ -62,6 +65,7 @@ struct has_sqlForFindingByPrimaryKey
     static constexpr bool value =
         std::is_same<decltype(test<T>(0)), yes>::value;
 };
+
 template <typename T>
 struct has_sqlForDeletingByPrimaryKey
 {
@@ -288,6 +292,7 @@ class Mapper
         };
         binder >> ecb;
     }
+
     template <typename U = T>
     inline typename std::enable_if<
         std::is_same<typename U::PrimaryKeyType, void>::value,
@@ -686,6 +691,7 @@ class Mapper
     size_t offset_{0};
     std::string orderByString_;
     bool forUpdate_{false};
+
     void clear()
     {
         limit_ = 0;
@@ -693,6 +699,7 @@ class Mapper
         orderByString_.clear();
         forUpdate_ = false;
     }
+
     template <typename PKType = decltype(T::primaryKeyName)>
     typename std::enable_if<std::is_same<const std::string, PKType>::value,
                             void>::type
@@ -702,6 +709,7 @@ class Mapper
         sql += T::primaryKeyName;
         sql += " = $?";
     }
+
     template <typename PKType = decltype(T::primaryKeyName)>
     typename std::enable_if<
         std::is_same<const std::vector<std::string>, PKType>::value,
@@ -719,6 +727,7 @@ class Mapper
             }
         }
     }
+
     template <typename PKType = decltype(T::primaryKeyName)>
     typename std::enable_if<std::is_same<const std::string, PKType>::value,
                             void>::type
@@ -727,6 +736,7 @@ class Mapper
     {
         binder << pk;
     }
+
     template <typename PKType = decltype(T::primaryKeyName)>
     typename std::enable_if<
         std::is_same<const std::vector<std::string>, PKType>::value,
@@ -745,6 +755,7 @@ class Mapper
         tupleToBinder<TP, N - 1>(t, binder);
         binder << std::get<N - 1>(t);
     }
+
     template <typename TP, ssize_t N = std::tuple_size<TP>::value>
     typename std::enable_if<(N == 1), void>::type tupleToBinder(
         const TP &t,
@@ -927,6 +938,7 @@ inline std::future<T> Mapper<T>::findFutureOne(
     binder.exec();
     return prom->get_future();
 }
+
 template <typename T>
 inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
     false)
@@ -978,6 +990,7 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
     }
     return ret;
 }
+
 template <typename T>
 inline void Mapper<T>::findBy(const Criteria &criteria,
                               const MultipleRowsCallback &rcb,
@@ -1027,6 +1040,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
     };
     binder >> ecb;
 }
+
 template <typename T>
 inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
     const Criteria &criteria) noexcept
@@ -1079,22 +1093,26 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
     binder.exec();
     return prom->get_future();
 }
+
 template <typename T>
 inline std::vector<T> Mapper<T>::findAll() noexcept(false)
 {
     return findBy(Criteria());
 }
+
 template <typename T>
 inline void Mapper<T>::findAll(const MultipleRowsCallback &rcb,
                                const ExceptionCallback &ecb) noexcept
 {
     findBy(Criteria(), rcb, ecb);
 }
+
 template <typename T>
 inline std::future<std::vector<T>> Mapper<T>::findFutureAll() noexcept
 {
     return findFutureBy(Criteria());
 }
+
 template <typename T>
 inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
 {
@@ -1119,6 +1137,7 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
     assert(r.size() == 1);
     return r[0][(Row::SizeType)0].as<size_t>();
 }
+
 template <typename T>
 inline void Mapper<T>::count(const Criteria &criteria,
                              const CountCallback &rcb,
@@ -1142,6 +1161,7 @@ inline void Mapper<T>::count(const Criteria &criteria,
     };
     binder >> ecb;
 }
+
 template <typename T>
 inline std::future<size_t> Mapper<T>::countFuture(
     const Criteria &criteria) noexcept
@@ -1169,6 +1189,7 @@ inline std::future<size_t> Mapper<T>::countFuture(
     binder.exec();
     return prom->get_future();
 }
+
 template <typename T>
 inline void Mapper<T>::insert(T &obj) noexcept(false)
 {
@@ -1201,6 +1222,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
         }
     }
 }
+
 template <typename T>
 inline void Mapper<T>::insert(const T &obj,
                               const SingleRowCallback &rcb,
@@ -1243,6 +1265,7 @@ inline void Mapper<T>::insert(const T &obj,
     };
     binder >> ecb;
 }
+
 template <typename T>
 inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
 {
@@ -1324,6 +1347,7 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     }
     return r.affectedRows();
 }
+
 template <typename T>
 template <typename... Arguments>
 size_t Mapper<T>::updateBy(const std::vector<std::string> &colNames,
@@ -1391,6 +1415,7 @@ inline void Mapper<T>::update(const T &obj,
     binder >> [rcb](const Result &r) { rcb(r.affectedRows()); };
     binder >> ecb;
 }
+
 template <typename T>
 template <typename... Arguments>
 void Mapper<T>::updateBy(const std::vector<std::string> &colNames,
@@ -1458,6 +1483,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     binder.exec();
     return prom->get_future();
 }
+
 template <typename T>
 template <typename... Arguments>
 inline std::future<size_t> Mapper<T>::updateFutureBy(
@@ -1523,6 +1549,7 @@ inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
     }
     return r.affectedRows();
 }
+
 template <typename T>
 inline void Mapper<T>::deleteOne(const T &obj,
                                  const CountCallback &rcb,
@@ -1543,6 +1570,7 @@ inline void Mapper<T>::deleteOne(const T &obj,
     binder >> [rcb](const Result &r) { rcb(r.affectedRows()); };
     binder >> ecb;
 }
+
 template <typename T>
 inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
 {
@@ -1596,6 +1624,7 @@ inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
     }
     return r.affectedRows();
 }
+
 template <typename T>
 inline void Mapper<T>::deleteBy(const Criteria &criteria,
                                 const CountCallback &rcb,
@@ -1622,6 +1651,7 @@ inline void Mapper<T>::deleteBy(const Criteria &criteria,
     binder >> [rcb](const Result &r) { rcb(r.affectedRows()); };
     binder >> ecb;
 }
+
 template <typename T>
 inline std::future<size_t> Mapper<T>::deleteFutureBy(
     const Criteria &criteria) noexcept
@@ -1658,12 +1688,14 @@ inline Mapper<T> &Mapper<T>::limit(size_t limit)
     limit_ = limit;
     return *this;
 }
+
 template <typename T>
 inline Mapper<T> &Mapper<T>::offset(size_t offset)
 {
     offset_ = offset;
     return *this;
 }
+
 template <typename T>
 inline Mapper<T> &Mapper<T>::orderBy(const std::string &colName,
                                      const SortOrder &order)
@@ -1688,6 +1720,7 @@ inline Mapper<T> &Mapper<T>::orderBy(const std::string &colName,
     }
     return *this;
 }
+
 template <typename T>
 inline Mapper<T> &Mapper<T>::orderBy(size_t colIndex, const SortOrder &order)
 {
@@ -1695,18 +1728,21 @@ inline Mapper<T> &Mapper<T>::orderBy(size_t colIndex, const SortOrder &order)
     assert(!colName.empty());
     return orderBy(colName, order);
 }
+
 template <typename T>
 inline Mapper<T> &Mapper<T>::paginate(size_t page, size_t perPage)
 {
     assert(page > 0 && perPage > 0);
     return limit(perPage).offset((page - 1) * perPage);
 }
+
 template <typename T>
 inline Mapper<T> &Mapper<T>::forUpdate()
 {
     forUpdate_ = true;
     return *this;
 }
+
 template <typename T>
 inline std::string Mapper<T>::replaceSqlPlaceHolder(
     const std::string &sqlStr,

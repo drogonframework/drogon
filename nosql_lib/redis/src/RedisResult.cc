@@ -115,12 +115,14 @@ std::vector<RedisResult> RedisResult::asArray() const noexcept(false)
     }
     throw RedisException(RedisErrorCode::kBadType, "bad type");
 }
+
 long long RedisResult::asInteger() const noexcept(false)
 {
     if (type() == RedisResultType::kInteger)
         return result_->integer;
     throw RedisException(RedisErrorCode::kBadType, "bad type");
 }
+
 bool RedisResult::isNil() const noexcept
 {
     return type() == RedisResultType::kNil;

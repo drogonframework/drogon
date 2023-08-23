@@ -96,6 +96,7 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
     }
     return succeed;
 }
+
 HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
 {
     std::weak_ptr<HttpRequestParser> weakPtr = shared_from_this();
@@ -124,6 +125,7 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
         }
     });
 }
+
 void HttpRequestParser::reset()
 {
     assert(loop_->isInLoopThread());

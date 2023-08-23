@@ -57,10 +57,12 @@ class DbClientImpl : public DbClient,
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
     bool hasAvailableConnections() const noexcept override;
+
     void setTimeout(double timeout) override
     {
         timeout_ = timeout;
     }
+
     void init();
     void closeAll() override;
 

@@ -30,8 +30,7 @@
 #define S_ISDIR(m) (((m)&0170000) == (0040000))
 #endif
 #include <sys/stat.h>
-// Switch between native c++17 or boost for c++14
-#include "filesystem.h"
+#include <filesystem>
 
 using namespace drogon;
 
@@ -140,10 +139,11 @@ void StaticFileRouter::route(
                        tmpPath.begin() + URI.length(),
                        URI.begin()))
         {
-            string_view restOfThePath{path.data() + URI.length(),
-                                      path.length() - URI.length()};
+            std::string_view restOfThePath{path.data() + URI.length(),
+                                           path.length() - URI.length()};
             auto pos = restOfThePath.rfind('/');
-            if (pos != 0 && pos != string_view::npos && !location.isRecursive_)
+            if (pos != 0 && pos != std::string_view::npos &&
+                !location.isRecursive_)
             {
                 callback(app().getCustomErrorHandler()(k403Forbidden));
                 return;
@@ -151,14 +151,14 @@ void StaticFileRouter::route(
             std::string filePath =
                 location.realLocation_ +
                 std::string{restOfThePath.data(), restOfThePath.length()};
-            filesystem::path fsFilePath(utils::toNativePath(filePath));
-            drogon::error_code err;
-            if (!filesystem::exists(fsFilePath, err))
+            std::filesystem::path fsFilePath(utils::toNativePath(filePath));
+            std::error_code err;
+            if (!std::filesystem::exists(fsFilePath, err))
             {
                 defaultHandler_(req, std::move(callback));
                 return;
             }
-            if (filesystem::is_directory(fsFilePath, err))
+            if (std::filesystem::is_directory(fsFilePath, err))
             {
                 // Check if path is eligible for an implicit index.html
                 if (implicitPageEnable_)
@@ -176,7 +176,7 @@ void StaticFileRouter::route(
                 if (!location.allowAll_)
                 {
                     pos = restOfThePath.rfind('.');
-                    if (pos == string_view::npos)
+                    if (pos == std::string_view::npos)
                     {
                         callback(app().getCustomErrorHandler()(k403Forbidden));
                         return;
@@ -200,7 +200,7 @@ void StaticFileRouter::route(
                 sendStaticFileResponse(filePath,
                                        req,
                                        std::move(callback),
-                                       string_view{
+                                       std::string_view{
                                            location.defaultContentType_});
             }
             else
@@ -220,7 +220,7 @@ void StaticFileRouter::route(
                         sendStaticFileResponse(filePath,
                                                req,
                                                std::move(*callbackPtr),
-                                               string_view{contentType});
+                                               std::string_view{contentType});
                     });
             }
 
@@ -230,11 +230,11 @@ void StaticFileRouter::route(
 
     std::string directoryPath =
         HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
-    filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));
-    drogon::error_code err;
-    if (filesystem::exists(fsDirectoryPath, err))
+    std::filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));
+    std::error_code err;
+    if (std::filesystem::exists(fsDirectoryPath, err))
     {
-        if (filesystem::is_directory(fsDirectoryPath, err))
+        if (std::filesystem::is_directory(fsDirectoryPath, err))
         {
             // Check if path is eligible for an implicit index.html
             if (implicitPageEnable_)
@@ -317,7 +317,7 @@ void StaticFileRouter::sendStaticFileResponse(
     const std::string &filePath,
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
-    const string_view &defaultContentType)
+    const std::string_view &defaultContentType)
 {
     if (req->method() != Get)
     {
@@ -479,10 +479,10 @@ void StaticFileRouter::sendStaticFileResponse(
     // Check existence
     if (!fileExists)
     {
-        filesystem::path fsFilePath(utils::toNativePath(filePath));
-        drogon::error_code err;
-        if (!filesystem::exists(fsFilePath, err) ||
-            !filesystem::is_regular_file(fsFilePath, err))
+        std::filesystem::path fsFilePath(utils::toNativePath(filePath));
+        std::error_code err;
+        if (!std::filesystem::exists(fsFilePath, err) ||
+            !std::filesystem::is_regular_file(fsFilePath, err))
         {
             defaultHandler_(req, std::move(callback));
             return;
@@ -496,10 +496,10 @@ void StaticFileRouter::sendStaticFileResponse(
     {
         // Find compressed file first.
         auto brFileName = filePath + ".br";
-        filesystem::path fsBrFile(utils::toNativePath(brFileName));
-        drogon::error_code err;
-        if (filesystem::exists(fsBrFile, err) &&
-            filesystem::is_regular_file(fsBrFile, err))
+        std::filesystem::path fsBrFile(utils::toNativePath(brFileName));
+        std::error_code err;
+        if (std::filesystem::exists(fsBrFile, err) &&
+            std::filesystem::is_regular_file(fsBrFile, err))
         {
             auto ct = fileNameToContentTypeAndMime(filePath);
             resp = HttpResponse::newFileResponse(brFileName,
@@ -514,10 +514,10 @@ void StaticFileRouter::sendStaticFileResponse(
     {
         // Find compressed file first.
         auto gzipFileName = filePath + ".gz";
-        filesystem::path fsGzipFile(utils::toNativePath(gzipFileName));
-        drogon::error_code err;
-        if (filesystem::exists(fsGzipFile, err) &&
-            filesystem::is_regular_file(fsGzipFile, err))
+        std::filesystem::path fsGzipFile(utils::toNativePath(gzipFileName));
+        std::error_code err;
+        if (std::filesystem::exists(fsGzipFile, err) &&
+            std::filesystem::is_regular_file(fsGzipFile, err))
         {
             auto ct = fileNameToContentTypeAndMime(filePath);
             resp = HttpResponse::newFileResponse(gzipFileName,
