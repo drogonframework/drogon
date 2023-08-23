@@ -55,6 +55,7 @@ class HttpRequestImpl : public HttpRequest
     void reset()
     {
         method_ = Invalid;
+        previousMethod_ = Invalid;
         version_ = Version::kUnknown;
         flagForParsingJson_ = false;
         headers_.clear();
@@ -110,6 +111,7 @@ class HttpRequestImpl : public HttpRequest
 
     void setMethod(const HttpMethod method) override
     {
+        previousMethod_ = method_;
         method_ = method;
         return;
     }
@@ -117,6 +119,12 @@ class HttpRequestImpl : public HttpRequest
     HttpMethod method() const override
     {
         return method_;
+    }
+
+    bool isHead() const override
+    {
+        return (method_ == HttpMethod::Head) ||
+                ((method_ == HttpMethod::Get) && (previousMethod_ == HttpMethod::Head));
     }
 
     const char *methodString() const override;
@@ -576,6 +584,7 @@ class HttpRequestImpl : public HttpRequest
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};
     HttpMethod method_{Invalid};
+    HttpMethod previousMethod_{Invalid};
     Version version_{Version::kUnknown};
     std::string path_;
     std::string originalPath_;
