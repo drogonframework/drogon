@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.6] - 2023-08-23
+
+### Changed
+
+- Show outputs of try_compile for UUID libs.
+
+- Update Trantor to fix a serious bug when sending files.
+
 ## [1.8.5] - 2023-08-19
 
 ### API changes list
@@ -1412,7 +1420,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.5...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.6...HEAD
+
+[1.8.6]: https://github.com/an-tao/drogon/compare/v1.8.5...v1.8.6
 
 [1.8.5]: https://github.com/an-tao/drogon/compare/v1.8.4...v1.8.5
 
