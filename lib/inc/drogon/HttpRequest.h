@@ -125,9 +125,11 @@ class DROGON_EXPORT HttpRequest
 
     /**
      * @brief Check if the method is or was HttpMethod::Head
-     * @details Allows to know that an incoming request is a HEAD request, since drogon sets the
-     *          method to HttpMethod::Get before calling the controller
-     * @return true if method() returns HttpMethod::Head, or HttpMethod::Get but was previously HttpMethod::Head
+     * @details Allows to know that an incoming request is a HEAD request, since
+     *          drogon sets the method to HttpMethod::Get before calling the
+     *          controller
+     * @return true if method() returns HttpMethod::Head, or HttpMethod::Get but
+     *              was previously HttpMethod::Head
      */
     virtual bool isHead() const = 0;
 

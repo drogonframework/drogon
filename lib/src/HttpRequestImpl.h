@@ -124,7 +124,8 @@ class HttpRequestImpl : public HttpRequest
     bool isHead() const override
     {
         return (method_ == HttpMethod::Head) ||
-                ((method_ == HttpMethod::Get) && (previousMethod_ == HttpMethod::Head));
+               ((method_ == HttpMethod::Get) &&
+                (previousMethod_ == HttpMethod::Head));
     }
 
     const char *methodString() const override;
