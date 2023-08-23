@@ -31,15 +31,18 @@ namespace orm
 {
 class MysqlConnection;
 using MysqlConnectionPtr = std::shared_ptr<MysqlConnection>;
+
 class MysqlConnection : public DbConnection,
                         public std::enable_shared_from_this<MysqlConnection>
 {
   public:
     MysqlConnection(trantor::EventLoop *loop, const std::string &connInfo);
+
     ~MysqlConnection()
     {
     }
-    void execSql(string_view &&sql,
+
+    void execSql(std::string_view &&sql,
                  size_t paraNum,
                  std::vector<const char *> &&parameters,
                  std::vector<int> &&length,
@@ -80,11 +83,13 @@ class MysqlConnection : public DbConnection,
                 });
         }
     }
+
     void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
     {
         LOG_FATAL << "The mysql library does not support batch mode";
         exit(1);
     }
+
     void disconnect() override;
 
   private:
@@ -95,11 +100,13 @@ class MysqlConnection : public DbConnection,
         {
             mysql_library_init(0, nullptr, nullptr);
         }
+
         ~MysqlEnv()
         {
             mysql_library_end();
         }
     };
+
     class MysqlThreadEnv
     {
       public:
@@ -107,13 +114,15 @@ class MysqlConnection : public DbConnection,
         {
             mysql_thread_init();
         }
+
         ~MysqlThreadEnv()
         {
             mysql_thread_end();
         }
     };
+
     void execSqlInLoop(
-        string_view &&sql,
+        std::string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,

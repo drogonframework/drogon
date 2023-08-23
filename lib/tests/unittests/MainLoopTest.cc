@@ -10,6 +10,7 @@ struct TestCookie
     TestCookie(std::shared_ptr<test::CaseBase> ctx) : TEST_CTX(ctx)
     {
     }
+
     ~TestCookie()
     {
         if (!taken)
@@ -17,6 +18,7 @@ struct TestCookie
         else
             SUCCESS();
     }
+
     void take()
     {
         taken = true;

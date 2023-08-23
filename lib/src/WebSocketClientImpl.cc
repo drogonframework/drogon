@@ -30,10 +30,12 @@ using namespace trantor;
 WebSocketClientImpl::~WebSocketClientImpl()
 {
 }
+
 WebSocketConnectionPtr WebSocketClientImpl::getConnection()
 {
     return websockConnPtr_;
 }
+
 void WebSocketClientImpl::stop()
 {
     stop_ = true;
@@ -44,6 +46,7 @@ void WebSocketClientImpl::stop()
     }
     tcpClientPtr_.reset();
 }
+
 void WebSocketClientImpl::createTcpClient()
 {
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
@@ -110,6 +113,7 @@ void WebSocketClientImpl::createTcpClient()
         });
     tcpClientPtr_->connect();
 }
+
 void WebSocketClientImpl::connectToServerInLoop()
 {
     loop_->assertInLoopThread();

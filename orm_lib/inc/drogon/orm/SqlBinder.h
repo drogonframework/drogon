@@ -21,8 +21,7 @@
 #include <drogon/orm/ResultIterator.h>
 #include <drogon/orm/Row.h>
 #include <drogon/orm/RowIterator.h>
-#include <drogon/utils/string_view.h>
-#include <drogon/utils/optional.h>
+#include <string_view>
 #include <json/writer.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
@@ -36,6 +35,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <optional>
 #ifdef _WIN32
 #include <winsock2.h>
 #else  // some Unix-like OS
@@ -70,10 +70,12 @@ constexpr T htonT(T value) noexcept
     return value;
 #endif
 }
+
 inline uint64_t htonll(uint64_t value)
 {
     return htonT<uint64_t>(value);
 }
+
 inline uint64_t ntohll(uint64_t value)
 {
     return htonll(value);
@@ -111,6 +113,7 @@ enum class Mode
     NonBlocking,
     Blocking
 };
+
 namespace internal
 {
 template <typename T>
@@ -120,6 +123,7 @@ struct VectorTypeTraits
     static const bool isPtrVector = false;
     using ItemsType = T;
 };
+
 template <typename T>
 struct VectorTypeTraits<std::vector<std::shared_ptr<T>>>
 {
@@ -127,6 +131,7 @@ struct VectorTypeTraits<std::vector<std::shared_ptr<T>>>
     static const bool isPtrVector = true;
     using ItemsType = T;
 };
+
 template <>
 struct VectorTypeTraits<std::string>
 {
@@ -142,21 +147,25 @@ struct CallbackArgTypeTraits
 {
     static const bool isValid = true;
 };
+
 template <typename T>
 struct CallbackArgTypeTraits<T *>
 {
     static const bool isValid = false;
 };
+
 template <typename T>
 struct CallbackArgTypeTraits<T &>
 {
     static const bool isValid = false;
 };
+
 template <typename T>
 struct CallbackArgTypeTraits<T &&>
 {
     static const bool isValid = true;
 };
+
 template <typename T>
 struct CallbackArgTypeTraits<const T &>
 {
@@ -169,6 +178,7 @@ class CallbackHolderBase
     virtual ~CallbackHolderBase() = default;
     virtual void execCallback(const Result &result) = 0;
 };
+
 template <typename Function>
 class CallbackHolder : public CallbackHolderBase
 {
@@ -206,6 +216,7 @@ class CallbackHolder : public CallbackHolderBase
         }
         run(nullptr, true);
     }
+
     template <bool isStep = traits::isStepResultCallback>
     typename std::enable_if<!isStep, void>::type run(const Result &result)
     {
@@ -213,6 +224,7 @@ class CallbackHolder : public CallbackHolderBase
                       "Your sql callback function type is wrong!");
         function_(result);
     }
+
     template <typename... Values, std::size_t Boundary = argumentCount>
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
         const Row *const row,
@@ -244,6 +256,7 @@ class CallbackHolder : public CallbackHolderBase
 
         run(row, isNull, std::forward<Values>(values)..., std::move(value));
     }
+
     template <typename... Values, std::size_t Boundary = argumentCount>
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
         const Row *const,
@@ -252,6 +265,7 @@ class CallbackHolder : public CallbackHolderBase
     {
         function_(isNull, std::move(values)...);
     }
+
     template <typename ValueType>
     typename std::enable_if<VectorTypeTraits<ValueType>::isVector,
                             ValueType>::type
@@ -259,6 +273,7 @@ class CallbackHolder : public CallbackHolderBase
     {
         return field.asArray<typename VectorTypeTraits<ValueType>::ItemsType>();
     }
+
     template <typename ValueType>
     typename std::enable_if<!VectorTypeTraits<ValueType>::isVector,
                             ValueType>::type
@@ -267,6 +282,7 @@ class CallbackHolder : public CallbackHolderBase
         return field.as<ValueType>();
     }
 };
+
 class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
 {
     using self = SqlBinder;
@@ -280,6 +296,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           type_(type)
     {
     }
+
     SqlBinder(std::string &&sql, DbClient &client, ClientType type)
         : sqlPtr_(std::make_shared<std::string>(std::move(sql))),
           sqlViewPtr_(sqlPtr_->data()),
@@ -288,6 +305,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           type_(type)
     {
     }
+
     SqlBinder(const char *sql,
               size_t sqlLength,
               DbClient &client,
@@ -298,6 +316,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           type_(type)
     {
     }
+
     SqlBinder(SqlBinder &&that) noexcept
         : sqlPtr_(std::move(that.sqlPtr_)),
           sqlViewPtr_(that.sqlViewPtr_),
@@ -320,8 +339,10 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         // set the execed_ to true to avoid the same sql being executed twice.
         that.execed_ = true;
     }
+
     SqlBinder &operator=(SqlBinder &&that) = delete;
     ~SqlBinder();
+
     template <typename CallbackType,
               typename traits =
                   FunctionTraits<typename std::decay<CallbackType>::type>>
@@ -428,44 +449,58 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         // LOG_TRACE << "Bind parameter:" << parameter;
         return *this;
     }
+
     // template <>
     self &operator<<(const char str[])
     {
         return operator<<(std::string(str));
     }
+
     self &operator<<(char str[])
     {
         return operator<<(std::string(str));
     }
-    self &operator<<(const drogon::string_view &str);
-    self &operator<<(drogon::string_view &&str)
+
+    self &operator<<(const std::string_view &str);
+
+    self &operator<<(std::string_view &&str)
     {
-        return operator<<((const drogon::string_view &)str);
+        return operator<<((const std::string_view &)str);
     }
-    self &operator<<(drogon::string_view &str)
+
+    self &operator<<(std::string_view &str)
     {
-        return operator<<((const drogon::string_view &)str);
+        return operator<<((const std::string_view &)str);
     }
+
     self &operator<<(const std::string &str);
+
     self &operator<<(std::string &str)
     {
         return operator<<((const std::string &)str);
     }
+
     self &operator<<(std::string &&str);
+
     self &operator<<(trantor::Date &&date)
     {
         return operator<<(date.toDbStringLocal());
     }
+
     self &operator<<(const trantor::Date &date)
     {
         return operator<<(date.toDbStringLocal());
     }
+
     self &operator<<(const std::vector<char> &v);
+
     self &operator<<(std::vector<char> &v)
     {
         return operator<<((const std::vector<char> &)v);
     }
+
     self &operator<<(std::vector<char> &&v);
+
     self &operator<<(float f)
     {
         if (type_ == ClientType::Sqlite3)
@@ -474,26 +509,31 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return operator<<(std::to_string(f));
     }
+
     self &operator<<(double f);
     self &operator<<(std::nullptr_t);
     self &operator<<(DefaultValue dv);
+
     self &operator<<(const Mode &mode)
     {
         mode_ = mode;
         return *this;
     }
+
     self &operator<<(Mode &mode)
     {
         mode_ = mode;
         return *this;
     }
+
     self &operator<<(Mode &&mode)
     {
         mode_ = mode;
         return *this;
     }
+
     template <typename T>
-    self &operator<<(const optional<T> &parameter)
+    self &operator<<(const std::optional<T> &parameter)
     {
         if (parameter)
         {
@@ -501,8 +541,9 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return *this << nullptr;
     }
+
     template <typename T>
-    self &operator<<(optional<T> &parameter)
+    self &operator<<(std::optional<T> &parameter)
     {
         if (parameter)
         {
@@ -510,8 +551,9 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return *this << nullptr;
     }
+
     template <typename T>
-    self &operator<<(optional<T> &&parameter)
+    self &operator<<(std::optional<T> &&parameter)
     {
         if (parameter)
         {
@@ -519,6 +561,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return *this << nullptr;
     }
+
     self &operator<<(const Json::Value &j) noexcept(true)
     {
         switch (j.type())
@@ -545,14 +588,17 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
                 return *this << Json::writeString(jsonBuilder, j);
         }
     }
+
     self &operator<<(Json::Value &j) noexcept(true)
     {
         return *this << static_cast<const Json::Value &>(j);
     }
+
     self &operator<<(Json::Value &&j) noexcept(true)
     {
         return *this << static_cast<const Json::Value &>(j);
     }
+
     void exec() noexcept(false);
 
   private:

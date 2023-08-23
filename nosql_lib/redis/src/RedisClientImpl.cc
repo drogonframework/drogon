@@ -174,7 +174,7 @@ RedisConnectionPtr RedisClientImpl::newSubscribeConnection(
 void RedisClientImpl::execCommandAsync(
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
-    string_view command,
+    std::string_view command,
     ...) noexcept
 {
     if (timeout_ > 0.0)
@@ -250,6 +250,7 @@ void RedisClientImpl::closeAll()
     readyConnections_.clear();
     connections_.clear();
 }
+
 void RedisClientImpl::newTransactionAsync(
     const std::function<void(const std::shared_ptr<RedisTransaction> &)>
         &callback)
@@ -376,8 +377,9 @@ void RedisClientImpl::handleNextTask(const RedisConnectionPtr &connPtr)
         (*taskPtr)(connPtr);
     }
 }
+
 void RedisClientImpl::execCommandAsyncWithTimeout(
-    string_view command,
+    std::string_view command,
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
     va_list ap)

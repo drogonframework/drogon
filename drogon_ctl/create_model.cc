@@ -36,6 +36,7 @@
 
 using namespace std::chrono_literals;
 using namespace drogon_ctl;
+
 static std::string toLower(const std::string &str)
 {
     auto ret = str;
@@ -389,6 +390,7 @@ void create_model::createModelClassFromPG(
     sourceFile << templ->genText(data);
     createRestfulAPIController(data, restfulApiConfig);
 }
+
 void create_model::createModelFromPG(
     const std::string &path,
     const DbClientPtr &client,
@@ -584,6 +586,7 @@ void create_model::createModelClassFromMysql(
     sourceFile << templ->genText(data);
     createRestfulAPIController(data, restfulApiConfig);
 }
+
 void create_model::createModelFromMysql(
     const std::string &path,
     const DbClientPtr &client,
@@ -1112,6 +1115,7 @@ void create_model::createModel(const std::string &path,
         exit(1);
     }
 }
+
 void create_model::createModel(const std::string &path,
                                const std::string &singleModelName)
 {

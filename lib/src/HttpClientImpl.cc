@@ -601,6 +601,7 @@ void HttpClientImpl::handleResponse(
         }
     }
 }
+
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
                                    trantor::MsgBuffer *msg)
 {

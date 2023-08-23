@@ -10,6 +10,7 @@ class CoroFilter : public drogon::HttpCoroFilter<CoroFilter>
 {
   public:
     Task<HttpResponsePtr> doFilter(const HttpRequestPtr &req) override;
+
     CoroFilter()
     {
         LOG_DEBUG << "CoroFilter constructor";

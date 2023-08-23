@@ -89,6 +89,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &postHandlingAdvices_;
+
     struct CtrlBinder
     {
         std::shared_ptr<HttpSimpleControllerBase> controller_;
@@ -105,6 +106,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     {
         CtrlBinderPtr binders_[Invalid];
     };
+
     std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
     std::mutex simpleCtrlMutex_;
 

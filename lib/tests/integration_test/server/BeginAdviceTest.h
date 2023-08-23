@@ -14,6 +14,7 @@ class BeginAdviceTest : public drogon::HttpSimpleController<BeginAdviceTest>
     // list path definations here;
     // PATH_ADD("/path","filter1","filter2",...);
     PATH_ADD("/test_begin_advice", Get);
+
     PATH_LIST_END
     BeginAdviceTest()
     {

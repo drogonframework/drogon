@@ -1,6 +1,7 @@
 #pragma once
 #include <drogon/HttpController.h>
 using namespace drogon;
+
 namespace api
 {
 namespace v1
@@ -74,11 +75,13 @@ class ApiTest : public drogon::HttpController<ApiTest>
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    int p1,
                    std::string &&p2);
+
     void shutdown(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback)
     {
         app().quit();
     }
+
     void cacheTest(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
     void cacheTest2(const HttpRequestPtr &req,

@@ -73,6 +73,7 @@ std::shared_ptr<DrObjectBase> DrClassMap::newSharedObject(
     else
         return nullptr;
 }
+
 const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(
     const std::string &className)
 {

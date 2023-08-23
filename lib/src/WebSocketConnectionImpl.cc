@@ -17,6 +17,7 @@
 #include <thread>
 
 using namespace drogon;
+
 WebSocketConnectionImpl::WebSocketConnectionImpl(
     const trantor::TcpConnectionPtr &conn,
     bool isServer)
@@ -27,10 +28,12 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(
       usingMask_(false)
 {
 }
+
 WebSocketConnectionImpl::~WebSocketConnectionImpl()
 {
     shutdown();
 }
+
 void WebSocketConnectionImpl::send(const char *msg,
                                    uint64_t len,
                                    const WebSocketMessageType type)
@@ -155,15 +158,18 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
     }
     tcpConnectionPtr_->send(std::move(bytesFormatted));
 }
+
 void WebSocketConnectionImpl::send(const std::string &msg,
                                    const WebSocketMessageType type)
 {
     send(msg.data(), msg.length(), type);
 }
+
 const trantor::InetAddress &WebSocketConnectionImpl::localAddr() const
 {
     return localAddr_;
 }
+
 const trantor::InetAddress &WebSocketConnectionImpl::peerAddr() const
 {
     return peerAddr_;
@@ -173,10 +179,12 @@ bool WebSocketConnectionImpl::connected() const
 {
     return tcpConnectionPtr_->connected();
 }
+
 bool WebSocketConnectionImpl::disconnected() const
 {
     return tcpConnectionPtr_->disconnected();
 }
+
 void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown(
     const CloseCode code,
     const std::string &reason)
@@ -193,6 +201,7 @@ void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown(
     send(message, WebSocketMessageType::Close);
     tcpConnectionPtr_->shutdown();
 }
+
 void WebSocketConnectionImpl::WebSocketConnectionImpl::forceClose()
 {
     tcpConnectionPtr_->forceClose();

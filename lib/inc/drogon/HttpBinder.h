@@ -39,26 +39,31 @@ struct BinderArgTypeTraits
 {
     static const bool isValid = true;
 };
+
 template <typename T>
 struct BinderArgTypeTraits<T *>
 {
     static const bool isValid = false;
 };
+
 template <typename T>
 struct BinderArgTypeTraits<T &>
 {
     static const bool isValid = false;
 };
+
 template <typename T>
 struct BinderArgTypeTraits<T &&>
 {
     static const bool isValid = true;
 };
+
 template <typename T>
 struct BinderArgTypeTraits<const T &&>
 {
     static const bool isValid = false;
 };
+
 template <typename T>
 struct BinderArgTypeTraits<const T &>
 {
@@ -74,6 +79,7 @@ class HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual size_t paramCount() = 0;
     virtual const std::string &handlerName() const = 0;
+
     virtual ~HttpBinderBase()
     {
     }
@@ -96,12 +102,14 @@ DROGON_EXPORT void handleException(
     std::function<void(const HttpResponsePtr &)> &&);
 
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
+
 template <typename FUNCTION>
 class HttpBinder : public HttpBinderBase
 {
   public:
     using traits = FunctionTraits<FUNCTION>;
     using FunctionType = FUNCTION;
+
     void handleHttpRequest(
         std::deque<std::string> &pathArguments,
         const HttpRequestPtr &req,
@@ -109,25 +117,30 @@ class HttpBinder : public HttpBinderBase
     {
         run(pathArguments, req, std::move(callback));
     }
+
     size_t paramCount() override
     {
         return traits::arity;
     }
+
     HttpBinder(FUNCTION &&func) : func_(std::forward<FUNCTION>(func))
     {
         static_assert(traits::isHTTPFunction,
                       "Your API handler function interface is wrong!");
         handlerName_ = DrClassMap::demangle(typeid(FUNCTION).name());
     }
+
     void test()
     {
         std::cout << "argument_count=" << argument_count << " "
                   << traits::isHTTPFunction << std::endl;
     }
+
     const std::string &handlerName() const override
     {
         return handlerName_;
     }
+
     template <bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass>
     typename std::enable_if<isDrObjectClass && isClassFunction, void>::type
@@ -137,6 +150,7 @@ class HttpBinder : public HttpBinderBase
             DrClassMap::getSingleInstance<typename traits::class_type>();
         LOG_TRACE << "create handler class object: " << objPtr.get();
     }
+
     template <bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass>
     typename std::enable_if<!isDrObjectClass && isClassFunction, void>::type
@@ -145,6 +159,7 @@ class HttpBinder : public HttpBinderBase
         auto &obj = getControllerObj<typename traits::class_type>();
         LOG_TRACE << "create handler class object: " << &obj;
     }
+
     template <bool isClassFunction = traits::isClassFunction>
     typename std::enable_if<!isClassFunction, void>::type
     createHandlerInstance()
@@ -279,6 +294,7 @@ class HttpBinder : public HttpBinderBase
             std::forward<Values>(values)...,
             std::move(value));
     }
+
     template <typename... Values,
               std::size_t Boundary = argument_count,
               bool isCoroutine = traits::isCoroutine>
@@ -366,6 +382,7 @@ class HttpBinder : public HttpBinderBase
         static auto &obj = getControllerObj<typename traits::class_type>();
         return (obj.*func_)(req, std::move(values)...);
     }
+
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass,
@@ -379,6 +396,7 @@ class HttpBinder : public HttpBinderBase
             DrClassMap::getSingleInstance<typename traits::class_type>();
         return (*objPtr.*func_)(req, std::move(values)...);
     }
+
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
               bool isNormal = std::is_same<typename traits::first_param_type,
@@ -402,6 +420,7 @@ class HttpBinder : public HttpBinderBase
         static auto &obj = getControllerObj<typename traits::class_type>();
         return (obj.*func_)((*req), std::move(values)...);
     }
+
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass,
@@ -415,6 +434,7 @@ class HttpBinder : public HttpBinderBase
             DrClassMap::getSingleInstance<typename traits::class_type>();
         return (*objPtr.*func_)((*req), std::move(values)...);
     }
+
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
               bool isNormal = std::is_same<typename traits::first_param_type,

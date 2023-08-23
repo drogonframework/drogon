@@ -21,6 +21,7 @@
 #include <functional>
 
 struct redisReply;
+
 namespace drogon
 {
 namespace nosql
@@ -47,6 +48,7 @@ class DROGON_EXPORT RedisResult
     explicit RedisResult(redisReply *result) : result_(result)
     {
     }
+
     ~RedisResult() = default;
 
     /**

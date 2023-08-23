@@ -45,7 +45,7 @@ static std::string leftpad(const std::string& str, size_t len)
     return std::string(len - str.size(), ' ') + str;
 }
 
-std::string prettifyString(const string_view sv, size_t maxLength)
+std::string prettifyString(const std::string_view sv, size_t maxLength)
 {
     if (sv.size() <= maxLength)
         return "\"" + escapeString(sv) + "\"";
@@ -56,7 +56,7 @@ std::string prettifyString(const string_view sv, size_t maxLength)
 
 }  // namespace internal
 
-static void printHelp(string_view argv0)
+static void printHelp(std::string_view argv0)
 {
     print() << "A Drogon Test application:\n\n"
             << "Usage: " << argv0 << " [options]\n"

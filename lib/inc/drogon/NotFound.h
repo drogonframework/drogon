@@ -17,6 +17,7 @@
 
 #include <drogon/exports.h>
 #include <drogon/DrTemplate.h>
+
 namespace drogon
 {
 /**
@@ -29,6 +30,7 @@ class DROGON_EXPORT NotFound final : public drogon::DrTemplate<NotFound>
     NotFound()
     {
     }
+
     std::string genText(const drogon::HttpViewData &) override;
 };
 }  // namespace drogon

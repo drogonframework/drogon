@@ -44,6 +44,7 @@ const Criteria operator&&(Criteria cond1, Criteria cond2)
     };
     return cond;
 }
+
 const Criteria operator||(Criteria cond1, Criteria cond2)
 {
     assert(cond1);

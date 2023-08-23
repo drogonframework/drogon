@@ -14,6 +14,7 @@ struct SomeStruct
     {
         beenDestructed = true;
     }
+
     static bool beenDestructed;
 };
 

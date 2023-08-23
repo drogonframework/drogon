@@ -17,21 +17,25 @@
 #include <drogon/DrObject.h>
 #include "CommandHandler.h"
 using namespace drogon;
+
 namespace drogon_ctl
 {
 class create : public DrObject<create>, public CommandHandler
 {
   public:
     void handleCommand(std::vector<std::string> &parameters) override;
+
     std::string script() override
     {
         return "create some source files(Use 'drogon_ctl help create' for more "
                "information)";
     }
+
     bool isTopCommand() override
     {
         return true;
     }
+
     std::string detail() override;
 };
 }  // namespace drogon_ctl

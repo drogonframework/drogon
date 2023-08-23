@@ -13,7 +13,6 @@
  */
 #pragma once
 
-#include <drogon/utils/optional.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/Logger.h>
@@ -27,6 +26,7 @@
 #include <mutex>
 #include <list>
 #include <type_traits>
+#include <optional>
 
 namespace drogon
 {
@@ -90,11 +90,13 @@ struct final_awaiter
     {
         return false;
     }
+
     template <typename T>
     auto await_suspend(std::coroutine_handle<T> handle) noexcept
     {
         return handle.promise().continuation_;
     }
+
     void await_resume() noexcept
     {
     }
@@ -109,18 +111,23 @@ struct [[nodiscard]] Task
     Task(handle_type h) : coro_(h)
     {
     }
+
     Task(const Task &) = delete;
+
     Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
     }
+
     ~Task()
     {
         if (coro_)
             coro_.destroy();
     }
+
     Task &operator=(const Task &) = delete;
+
     Task &operator=(Task &&other)
     {
         if (std::addressof(other) == this)
@@ -139,14 +146,17 @@ struct [[nodiscard]] Task
         {
             return Task<T>{handle_type::from_promise(*this)};
         }
+
         std::suspend_always initial_suspend()
         {
             return {};
         }
+
         void return_value(const T &v)
         {
             value = v;
         }
+
         void return_value(T &&v)
         {
             value = std::move(v);
@@ -183,7 +193,7 @@ struct [[nodiscard]] Task
             continuation_ = handle;
         }
 
-        optional<T> value;
+        std::optional<T> value;
         std::exception_ptr exception_;
         std::coroutine_handle<> continuation_;
     };
@@ -196,15 +206,18 @@ struct [[nodiscard]] Task
             explicit awaiter(handle_type coro) : coro_(coro)
             {
             }
+
             bool await_ready() noexcept
             {
                 return !coro_ || coro_.done();
             }
+
             auto await_suspend(std::coroutine_handle<> handle) noexcept
             {
                 coro_.promise().setContinuation(handle);
                 return coro_;
             }
+
             T await_resume()
             {
                 auto &&v = coro_.promise().result();
@@ -214,6 +227,7 @@ struct [[nodiscard]] Task
           private:
             handle_type coro_;
         };
+
         return awaiter(coro_);
     }
 
@@ -225,15 +239,18 @@ struct [[nodiscard]] Task
             explicit awaiter(handle_type coro) : coro_(coro)
             {
             }
+
             bool await_ready() noexcept
             {
                 return !coro_ || coro_.done();
             }
+
             auto await_suspend(std::coroutine_handle<> handle) noexcept
             {
                 coro_.promise().setContinuation(handle);
                 return coro_;
             }
+
             T await_resume()
             {
                 return std::move(coro_.promise().result());
@@ -242,8 +259,10 @@ struct [[nodiscard]] Task
           private:
             handle_type coro_;
         };
+
         return awaiter(coro_);
     }
+
     handle_type coro_;
 };
 
@@ -256,18 +275,23 @@ struct [[nodiscard]] Task<void>
     Task(handle_type handle) : coro_(handle)
     {
     }
+
     Task(const Task &) = delete;
+
     Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
     }
+
     ~Task()
     {
         if (coro_)
             coro_.destroy();
     }
+
     Task &operator=(const Task &) = delete;
+
     Task &operator=(Task &&other)
     {
         if (std::addressof(other) == this)
@@ -286,30 +310,37 @@ struct [[nodiscard]] Task<void>
         {
             return Task<>{handle_type::from_promise(*this)};
         }
+
         std::suspend_always initial_suspend()
         {
             return {};
         }
+
         void return_void()
         {
         }
+
         auto final_suspend() noexcept
         {
             return final_awaiter{};
         }
+
         void unhandled_exception()
         {
             exception_ = std::current_exception();
         }
+
         void result()
         {
             if (exception_ != nullptr)
                 std::rethrow_exception(exception_);
         }
+
         void setContinuation(std::coroutine_handle<> handle)
         {
             continuation_ = handle;
         }
+
         std::exception_ptr exception_;
         std::coroutine_handle<> continuation_;
     };
@@ -322,15 +353,18 @@ struct [[nodiscard]] Task<void>
             explicit awaiter(handle_type coro) : coro_(coro)
             {
             }
+
             bool await_ready() noexcept
             {
                 return !coro_ || coro_.done();
             }
+
             auto await_suspend(std::coroutine_handle<> handle) noexcept
             {
                 coro_.promise().setContinuation(handle);
                 return coro_;
             }
+
             auto await_resume()
             {
                 coro_.promise().result();
@@ -339,6 +373,7 @@ struct [[nodiscard]] Task<void>
           private:
             handle_type coro_;
         };
+
         return awaiter(coro_);
     }
 
@@ -350,15 +385,18 @@ struct [[nodiscard]] Task<void>
             explicit awaiter(handle_type coro) : coro_(coro)
             {
             }
+
             bool await_ready() noexcept
             {
                 return false;
             }
+
             auto await_suspend(std::coroutine_handle<> handle) noexcept
             {
                 coro_.promise().setContinuation(handle);
                 return coro_;
             }
+
             void await_resume()
             {
                 coro_.promise().result();
@@ -367,8 +405,10 @@ struct [[nodiscard]] Task<void>
           private:
             handle_type coro_;
         };
+
         return awaiter(coro_);
     }
+
     handle_type coro_;
 };
 
@@ -388,6 +428,7 @@ struct AsyncTask
     }
 
     AsyncTask(const AsyncTask &) = delete;
+
     AsyncTask(AsyncTask &&other)
     {
         coro_ = other.coro_;
@@ -395,6 +436,7 @@ struct AsyncTask
     }
 
     AsyncTask &operator=(const AsyncTask &) = delete;
+
     AsyncTask &operator=(AsyncTask &&other)
     {
         if (std::addressof(other) == this)
@@ -454,9 +496,11 @@ struct AsyncTask
                 {
                 }
             };
+
             return awaiter{};
         }
     };
+
     bool await_ready() const noexcept
     {
         return coro_.done();
@@ -502,7 +546,7 @@ struct CallbackAwaiter : public trantor::NonCopyable
     // HACK: Not all desired types are default constructable. But we need the
     // entire struct to be constructed for awaiting. std::optional takes care of
     // that.
-    optional<T> result_;
+    std::optional<T> result_;
     std::exception_ptr exception_{nullptr};
 
   protected:
@@ -510,10 +554,12 @@ struct CallbackAwaiter : public trantor::NonCopyable
     {
         exception_ = e;
     }
+
     void setValue(const T &v)
     {
         result_.emplace(v);
     }
+
     void setValue(T &&v)
     {
         result_.emplace(std::move(v));
@@ -581,7 +627,7 @@ auto sync_wait(Await &&await)
     }
     else
     {
-        optional<value_type> value;
+        std::optional<value_type> value;
         auto task = [&]() -> AsyncTask {
             try
             {
@@ -644,10 +690,12 @@ struct [[nodiscard]] TimerAwaiter : CallbackAwaiter<void>
         : loop_(loop), delay_(delay.count())
     {
     }
+
     TimerAwaiter(trantor::EventLoop *loop, double delay)
         : loop_(loop), delay_(delay)
     {
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         loop_->runAfter(delay_, [handle]() { handle.resume(); });
@@ -669,6 +717,7 @@ struct [[nodiscard]] LoopAwaiter : CallbackAwaiter<void>
     {
         assert(workLoop);
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         workLoop_->queueInLoop([handle, this]() {
@@ -702,6 +751,7 @@ struct [[nodiscard]] SwitchThreadAwaiter : CallbackAwaiter<void>
     explicit SwitchThreadAwaiter(trantor::EventLoop *loop) : loop_(loop)
     {
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         loop_->runInLoop([handle]() { handle.resume(); });
@@ -710,12 +760,14 @@ struct [[nodiscard]] SwitchThreadAwaiter : CallbackAwaiter<void>
   private:
     trantor::EventLoop *loop_;
 };
+
 struct [[nodiscard]] EndAwaiter : CallbackAwaiter<void>
 {
     EndAwaiter(trantor::EventLoop *loop) : loop_(loop)
     {
         assert(loop);
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         loop_->runOnQuit([handle]() { handle.resume(); });
@@ -816,6 +868,7 @@ std::function<void()> async_func(Coro &&coro)
         async_run(std::move(coro));
     };
 }
+
 namespace internal
 {
 template <typename T>
@@ -825,6 +878,7 @@ struct [[nodiscard]] EventLoopAwaiter : public drogon::CallbackAwaiter<T>
         : task_(std::move(task)), loop_(loop)
     {
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         loop_->queueInLoop([this, handle]() {

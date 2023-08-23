@@ -51,6 +51,7 @@ class HttpRequestImpl : public HttpRequest
         : creationDate_(trantor::Date::now()), loop_(loop)
     {
     }
+
     void reset()
     {
         method_ = Invalid;
@@ -78,6 +79,7 @@ class HttpRequestImpl : public HttpRequest
         jsonParsingErrorPtr_.reset();
         peerCertificate_.reset();
     }
+
     trantor::EventLoop *getLoop()
     {
         return loop_;
@@ -100,6 +102,7 @@ class HttpRequestImpl : public HttpRequest
     const char *versionString() const override;
 
     bool setMethod(const char *start, const char *end);
+
     void setSecure(bool secure)
     {
         isOnSecureConnection_ = secure;
@@ -179,7 +182,7 @@ class HttpRequestImpl : public HttpRequest
         query_ = query;
     }
 
-    string_view bodyView() const
+    std::string_view bodyView() const
     {
         if (cacheFilePtr_)
         {
@@ -187,6 +190,7 @@ class HttpRequestImpl : public HttpRequest
         }
         return content_;
     }
+
     const char *bodyData() const override
     {
         if (cacheFilePtr_)
@@ -195,6 +199,7 @@ class HttpRequestImpl : public HttpRequest
         }
         return content_.data();
     }
+
     size_t bodyLength() const override
     {
         if (cacheFilePtr_)
@@ -208,12 +213,12 @@ class HttpRequestImpl : public HttpRequest
 
     void reserveBodySize(size_t length);
 
-    string_view queryView() const
+    std::string_view queryView() const
     {
         return query_;
     }
 
-    string_view contentView() const
+    std::string_view contentView() const
     {
         if (cacheFilePtr_)
             return cacheFilePtr_->getStringView();
@@ -434,6 +439,7 @@ class HttpRequestImpl : public HttpRequest
         contentTypeString_ = std::string(type.begin() + (haveHeader ? 14 : 0),
                                          type.end() - endOffset);
     }
+
     void setContentTypeCode(const ContentType type) override
     {
         contentType_ = type;
@@ -462,6 +468,7 @@ class HttpRequestImpl : public HttpRequest
     {
         return matchedPathPattern_.data();
     }
+
     size_t matchedPathPatternLength() const override
     {
         return matchedPathPattern_.length();
@@ -471,6 +478,7 @@ class HttpRequestImpl : public HttpRequest
     {
         matchedPathPattern_ = pathPattern;
     }
+
     const std::string &expect() const
     {
         const static std::string none{""};
@@ -478,14 +486,17 @@ class HttpRequestImpl : public HttpRequest
             return *expectPtr_;
         return none;
     }
+
     bool keepAlive() const
     {
         return keepAlive_;
     }
+
     bool isOnSecureConnection() const noexcept override
     {
         return isOnSecureConnection_;
     }
+
     const std::string &getJsonError() const override
     {
         const static std::string none{""};
@@ -493,16 +504,19 @@ class HttpRequestImpl : public HttpRequest
             return *jsonParsingErrorPtr_;
         return none;
     }
+
     StreamDecompressStatus decompressBody();
 
     ~HttpRequestImpl();
 
   protected:
     friend class HttpRequest;
+
     void setContentType(const std::string &contentType)
     {
         contentTypeString_ = contentType;
     }
+
     void setContentType(std::string &&contentType)
     {
         contentTypeString_ = std::move(contentType);
@@ -524,12 +538,12 @@ class HttpRequestImpl : public HttpRequest
                 if (pos != std::string::npos)
                 {
                     contentType_ = parseContentType(
-                        string_view(contentTypeString.data(), pos));
+                        std::string_view(contentTypeString.data(), pos));
                 }
                 else
                 {
                     contentType_ =
-                        parseContentType(string_view(contentTypeString));
+                        parseContentType(std::string_view(contentTypeString));
                 }
 
                 if (contentType_ == CT_NONE)
@@ -541,6 +555,7 @@ class HttpRequestImpl : public HttpRequest
 
   private:
     void parseParameters() const;
+
     void parseParametersOnce() const
     {
         // Not multi-thread safe but good, because we basically call this
@@ -551,6 +566,7 @@ class HttpRequestImpl : public HttpRequest
             parseParameters();
         }
     }
+
     void createTmpFile();
     void parseJson() const;
 #ifdef USE_BROTLI
@@ -564,7 +580,7 @@ class HttpRequestImpl : public HttpRequest
     std::string path_;
     std::string originalPath_;
     bool pathEncode_{true};
-    string_view matchedPathPattern_{""};
+    std::string_view matchedPathPattern_{""};
     std::string query_;
     std::
         unordered_map<std::string, std::string, utils::internal::SafeStringHash>

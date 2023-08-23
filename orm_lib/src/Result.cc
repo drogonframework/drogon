@@ -180,6 +180,7 @@ Result &Result::operator=(const Result &r) noexcept
     resultPtr_ = r.resultPtr_;
     return *this;
 }
+
 Result &Result::operator=(Result &&r) noexcept
 {
     resultPtr_ = std::move(r.resultPtr_);

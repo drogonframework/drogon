@@ -12,6 +12,7 @@ SlidingWindowRateLimiter::SlidingWindowRateLimiter(
       timeUnit_(timeUnit)
 {
 }
+
 // implementation of the sliding window algorithm
 bool SlidingWindowRateLimiter::isAllowed()
 {
@@ -20,11 +21,12 @@ bool SlidingWindowRateLimiter::isAllowed()
         unitStartTime_ +
         std::chrono::duration_cast<decltype(unitStartTime_)::duration>(
             std::chrono::duration<double>(
-                static_cast<double>((uint64_t)(
-                    std::chrono::duration_cast<std::chrono::duration<double>>(
-                        now - unitStartTime_)
-                        .count() /
-                    timeUnit_.count())) *
+                static_cast<double>(
+                    (uint64_t)(std::chrono::duration_cast<
+                                   std::chrono::duration<double>>(
+                                   now - unitStartTime_)
+                                   .count() /
+                               timeUnit_.count())) *
                 timeUnit_.count()));
 
     if (unitStartTime_ > lastTime_)

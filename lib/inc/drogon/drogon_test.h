@@ -1,14 +1,15 @@
 #pragma once
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
-#include <drogon/utils/string_view.h>
 #include <drogon/exports.h>
 
 #include <memory>
 #include <mutex>
 #include <sstream>
 #include <atomic>
+#include <string_view>
 #include <cstddef>
+
 /**
  * @brief Drogon Test is a minimal effort test framework developed because the
  * major C++ test frameworks doesn't handle async programs well. Drogon Test's
@@ -76,7 +77,7 @@ struct is_printable<_Tp,
 {
 };
 
-inline std::string escapeString(const string_view sv)
+inline std::string escapeString(const std::string_view sv)
 {
     std::string result;
     result.reserve(sv.size());
@@ -104,7 +105,7 @@ inline std::string escapeString(const string_view sv)
     return result;
 }
 
-DROGON_EXPORT std::string prettifyString(const string_view sv,
+DROGON_EXPORT std::string prettifyString(const std::string_view sv,
                                          size_t maxLength = 120);
 
 #ifdef __cpp_fold_expressions
@@ -119,6 +120,7 @@ inline void outputReason(Head&& head)
 {
     std::cout << std::forward<Head>(head);
 }
+
 template <typename Head, typename... Tail>
 inline void outputReason(Head&& head, Tail&&... tail)
 {
@@ -151,7 +153,7 @@ struct AttemptPrintViaStream<true>
 
 struct StringPrinter
 {
-    std::string operator()(const string_view& v)
+    std::string operator()(const std::string_view& v)
     {
         return prettifyString(v);
     }
@@ -165,9 +167,10 @@ inline std::string attemptPrint(T&& v)
 
     // Poor man's if constexpr because SFINAE don't disambiguate between
     // possible resolutions
-    return typename std::conditional<std::is_convertible<T, string_view>::value,
-                                     internal::StringPrinter,
-                                     DefaultPrinter>::type()(v);
+    return typename std::conditional<
+        std::is_convertible<T, std::string_view>::value,
+        internal::StringPrinter,
+        DefaultPrinter>::type()(v);
 }
 
 // Specializations to reduce template construction
@@ -225,6 +228,7 @@ struct Lhs
     Lhs(const T& lhs) : ref_(lhs)
     {
     }
+
     const T& ref_;
 
     template <typename RhsType>
@@ -348,13 +352,16 @@ class CaseBase : public trantor::NonCopyable
 {
   public:
     CaseBase() = default;
+
     CaseBase(const std::string& name) : name_(name)
     {
     }
+
     CaseBase(std::shared_ptr<CaseBase> parent, const std::string& name)
         : parent_(parent), name_(name)
     {
     }
+
     virtual ~CaseBase() = default;
 
     std::string fullname() const
@@ -421,6 +428,7 @@ struct TestCase : public CaseBase
     TestCase(const std::string& name) : CaseBase(name)
     {
     }
+
     virtual ~TestCase() = default;
     virtual void doTest_(std::shared_ptr<Case>) = 0;
 };

@@ -1,22 +1,26 @@
 link_libraries(${PROJECT_NAME})
-if(WIN32)
-  link_libraries(iphlpapi)
-endif(WIN32)
+if (WIN32)
+    link_libraries(iphlpapi)
+endif (WIN32)
 
 add_executable(db_test
-    db_test.cc
-    postgresql/Users.cc
-    mysql/Users.cc
-    sqlite3/Users.cc
-)
+        db_test.cc
+        postgresql/Users.cc
+        mysql/Users.cc
+        sqlite3/Users.cc
+        )
+
+if (WIN32)
+    target_compile_options(db_test PRIVATE /bigobj)
+endif (WIN32)
 
 add_executable(pipeline_test
         pipeline_test.cpp
-)
+        )
 
 add_executable(db_listener_test
         db_listener_test.cc
-)
+        )
 
 set_property(TARGET db_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET db_test PROPERTY CXX_STANDARD_REQUIRED ON)

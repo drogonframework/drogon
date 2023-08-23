@@ -1,6 +1,7 @@
 #pragma once
 #include <drogon/HttpSimpleController.h>
 using namespace drogon;
+
 class ForwardCtrl : public drogon::HttpSimpleController<ForwardCtrl>
 {
   public:

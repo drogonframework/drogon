@@ -16,16 +16,17 @@
 
 #include <drogon/exports.h>
 #include <drogon/HttpRequest.h>
-#include <drogon/utils/string_view.h>
 #include <map>
 #include <unordered_map>
 #include <string>
 #include <vector>
 #include <memory>
+#include <string_view>
 
 namespace drogon
 {
 class HttpFileImpl;
+
 /**
  * @brief This class represents a uploaded file by a HTTP request.
  *
@@ -39,8 +40,8 @@ class DROGON_EXPORT HttpFile
 
     /// Return the file extension;
     /// Note: After the HttpFile object is destroyed, do not use this
-    /// string_view object.
-    string_view getFileExtension() const noexcept;
+    /// std::string_view object.
+    std::string_view getFileExtension() const noexcept;
 
     /// Return the name of the item in multiple parts.
     const std::string &getItemName() const noexcept;
@@ -82,11 +83,11 @@ class DROGON_EXPORT HttpFile
     /**
      * @brief return the content of the file.
      *
-     * @return string_view
+     * @return std::string_view
      */
-    string_view fileContent() const noexcept
+    std::string_view fileContent() const noexcept
     {
-        return string_view{fileData(), fileLength()};
+        return std::string_view{fileData(), fileLength()};
     }
 
     /// Return the file length.

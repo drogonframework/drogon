@@ -14,6 +14,7 @@ using namespace drogon;
             adapters_[ext] = adapterPtr;                                    \
         }                                                                   \
     }
+
 ConfigAdapterManager &ConfigAdapterManager::instance()
 {
     static ConfigAdapterManager instance;

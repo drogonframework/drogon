@@ -180,7 +180,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
             }
             else if(col.colDatabaseType_=="bytea")
             {
-                $$<<"            auto str = r[\""<<col.colName_<<"\"].as<string_view>();\n";
+                $$<<"            auto str = r[\""<<col.colName_<<"\"].as<std::string_view>();\n";
                 $$<<"            if(str.length()>=2&&\n";
                 $$<<"                str[0]=='\\\\'&&str[1]=='x')\n";
                 $$<<"            {\n";
@@ -271,7 +271,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
             }
             else if(col.colDatabaseType_=="bytea")
             {
-                $$<<"            auto str = r[index].as<string_view>();\n";
+                $$<<"            auto str = r[index].as<std::string_view>();\n";
                 $$<<"            if(str.length()>=2&&\n";
                 $$<<"                str[0]=='\\\\'&&str[1]=='x')\n";
                 $$<<"            {\n";

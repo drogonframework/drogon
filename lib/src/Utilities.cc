@@ -13,7 +13,6 @@
  */
 
 #include <drogon/utils/Utilities.h>
-#include "filesystem.h"
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/Utilities.h>
 #include <drogon/config.h>
@@ -40,6 +39,7 @@
 #include <clocale>
 #include <cctype>
 #include <cstdlib>
+#include <filesystem>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -60,6 +60,7 @@ char *strptime(const char *s, const char *f, struct tm *tm)
     }
     return (char *)(s + input.tellg());
 }
+
 time_t timegm(struct tm *tm)
 {
     struct tm my_tm;
@@ -91,6 +92,7 @@ static const std::string urlBase64Chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789-_";
+
 class Base64CharMap
 {
   public:
@@ -115,6 +117,7 @@ class Base64CharMap
             index;
         charMap_[0] = char(0xff);
     }
+
     char getIndex(const char c) const noexcept
     {
         return charMap_[static_cast<int>(c)];
@@ -123,6 +126,7 @@ class Base64CharMap
   private:
     char charMap_[256]{0};
 };
+
 const static Base64CharMap base64CharMap;
 
 static inline bool isBase64(unsigned char c)
@@ -140,7 +144,7 @@ static inline bool isBase64(unsigned char c)
     return false;
 }
 
-bool isInteger(string_view str)
+bool isInteger(std::string_view str)
 {
     for (auto c : str)
         if (c < '0' || c > '9')
@@ -148,7 +152,7 @@ bool isInteger(string_view str)
     return true;
 }
 
-bool isBase64(string_view str)
+bool isBase64(std::string_view str)
 {
     for (auto c : str)
         if (!isBase64(c))
@@ -234,6 +238,7 @@ std::vector<char> hexToBinaryVector(const char *ptr, size_t length)
     }
     return ret;
 }
+
 std::string hexToBinaryString(const char *ptr, size_t length)
 {
     assert(length % 2 == 0);
@@ -395,7 +400,7 @@ std::string getUuid()
 }
 
 std::string base64Encode(const unsigned char *bytes_to_encode,
-                         unsigned int in_len,
+                         size_t in_len,
                          bool url_safe,
                          bool padded)
 {
@@ -447,7 +452,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
     return ret;
 }
 
-std::vector<char> base64DecodeToVector(string_view encoded_string)
+std::vector<char> base64DecodeToVector(std::string_view encoded_string)
 {
     auto in_len = encoded_string.size();
     int i = 0;
@@ -509,7 +514,7 @@ std::vector<char> base64DecodeToVector(string_view encoded_string)
     return ret;
 }
 
-std::string base64Decode(string_view encoded_string)
+std::string base64Decode(std::string_view encoded_string)
 {
     auto in_len = encoded_string.size();
     int i = 0;
@@ -569,6 +574,7 @@ std::string base64Decode(string_view encoded_string)
 
     return ret;
 }
+
 static std::string charToHex(char c)
 {
     std::string result;
@@ -584,6 +590,7 @@ static std::string charToHex(char c)
 
     return result;
 }
+
 std::string urlEncodeComponent(const std::string &src)
 {
     std::string result;
@@ -680,6 +687,7 @@ std::string urlEncodeComponent(const std::string &src)
 
     return result;
 }
+
 std::string urlEncode(const std::string &src)
 {
     std::string result;
@@ -782,12 +790,14 @@ std::string urlEncode(const std::string &src)
 
     return result;
 }
+
 bool needUrlDecoding(const char *begin, const char *end)
 {
     return std::find_if(begin, end, [](const char c) {
                return c == '+' || c == '%';
            }) != end;
 }
+
 std::string urlDecode(const char *begin, const char *end)
 {
     std::string result;
@@ -993,6 +1003,7 @@ char *getHttpFullDate(const trantor::Date &date)
                                    sizeof(lastTimeString));
     return lastTimeString;
 }
+
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
     static const std::array<const char *, 4> formats = {
@@ -1017,6 +1028,7 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
     LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
     return trantor::Date((std::numeric_limits<int64_t>::max)());
 }
+
 std::string formattedString(const char *format, ...)
 {
     std::string strBuffer(128, 0);
@@ -1070,11 +1082,11 @@ int createPath(const std::string &path)
     if (path.empty())
         return 0;
     auto osPath{toNativePath(path)};
-    if (osPath.back() != filesystem::path::preferred_separator)
-        osPath.push_back(filesystem::path::preferred_separator);
-    filesystem::path fsPath(osPath);
-    drogon::error_code err;
-    filesystem::create_directories(fsPath, err);
+    if (osPath.back() != std::filesystem::path::preferred_separator)
+        osPath.push_back(std::filesystem::path::preferred_separator);
+    std::filesystem::path fsPath(osPath);
+    std::error_code err;
+    std::filesystem::create_directories(fsPath, err);
     if (err)
     {
         LOG_ERROR << "Error " << err.value() << " creating path " << osPath
@@ -1104,6 +1116,7 @@ std::string brotliCompress(const char *data, const size_t ndata)
         ret.resize(encodedSize);
     return ret;
 }
+
 std::string brotliDecompress(const char *data, const size_t ndata)
 {
     if (ndata == 0)
@@ -1149,6 +1162,7 @@ std::string brotliCompress(const char * /*data*/, const size_t /*ndata*/)
                  "use brotliCompress()";
     abort();
 }
+
 std::string brotliDecompress(const char * /*data*/, const size_t /*ndata*/)
 {
     LOG_ERROR << "If you do not have the brotli package installed, you cannot "
@@ -1208,7 +1222,7 @@ std::string secureRandomString(size_t size)
         return std::string();
 
     std::string ret(size, 0);
-    const string_view chars =
+    const std::string_view chars =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz"

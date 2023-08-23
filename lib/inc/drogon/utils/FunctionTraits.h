@@ -48,12 +48,14 @@ struct FunctionTraits;
 
 // functor,lambda,std::function...
 template <typename Function>
-struct FunctionTraits : public FunctionTraits<decltype(
-                            &std::remove_reference<Function>::type::operator())>
+struct FunctionTraits
+    : public FunctionTraits<
+          decltype(&std::remove_reference<Function>::type::operator())>
 {
     static const bool isClassFunction = false;
     static const bool isDrObjectClass = false;
     using class_type = void;
+
     static const std::string name()
     {
         return std::string("Functor");
@@ -69,6 +71,7 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const>
     static const bool isDrObjectClass =
         std::is_base_of<DrObject<ClassType>, ClassType>::value;
     using class_type = ClassType;
+
     static const std::string name()
     {
         return std::string("Class Function");
@@ -84,6 +87,7 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)>
     static const bool isDrObjectClass =
         std::is_base_of<DrObject<ClassType>, ClassType>::value;
     using class_type = ClassType;
+
     static const std::string name()
     {
         return std::string("Class Function");
@@ -127,6 +131,7 @@ struct FunctionTraits<
     using first_param_type = HttpRequestPtr;
     using return_type = AsyncTask;
 };
+
 template <typename... Arguments>
 struct FunctionTraits<
     Task<> (*)(HttpRequestPtr req,
@@ -139,6 +144,7 @@ struct FunctionTraits<
     using first_param_type = HttpRequestPtr;
     using return_type = Task<>;
 };
+
 template <typename... Arguments>
 struct FunctionTraits<Task<HttpResponsePtr> (*)(HttpRequestPtr req,
                                                 Arguments...)>
@@ -193,6 +199,7 @@ struct FunctionTraits<ReturnType (*)(Arguments...)>
     static const bool isClassFunction = false;
     static const bool isDrObjectClass = false;
     static const bool isCoroutine = false;
+
     static const std::string name()
     {
         return std::string("Normal or Static Function");

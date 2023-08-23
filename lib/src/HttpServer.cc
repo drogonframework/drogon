@@ -109,10 +109,12 @@ void HttpServer::start()
               << server_.ipPort();
     server_.start();
 }
+
 void HttpServer::stop()
 {
     server_.stop();
 }
+
 void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (conn->connected())
@@ -230,6 +232,7 @@ struct CallbackParamPack
           isHeadMethod_(isHeadMethod)
     {
     }
+
     trantor::TcpConnectionPtr conn_;
     HttpRequestImplPtr req_;
     std::shared_ptr<bool> loopFlag_;
@@ -422,9 +425,11 @@ void HttpServer::handleResponse(
 struct ChunkingParams
 {
     using DataCallback = std::function<std::size_t(char *, std::size_t)>;
+
     explicit ChunkingParams(DataCallback cb) : dataCallback(std::move(cb))
     {
     }
+
     DataCallback dataCallback;
     bool bFinished{false};
 #ifndef NDEBUG  // defined by CMake for release build
@@ -460,6 +465,7 @@ static std::size_t chunkingCallback(
 #endif
         return 0;
     }
+
     // Reserve size to prepend the chunk size & append cr/lf, and get data
     struct
     {
@@ -468,6 +474,7 @@ static std::size_t chunkingCallback(
             return n == 0 ? 0 : 1 + (*this)(n >> 4);
         }
     } neededDigits;
+
     auto nHeaderSize = neededDigits(nSize) + 2;
     auto nDataSize =
         cbParams->dataCallback(pBuffer + nHeaderSize, nSize - nHeaderSize - 2);
