@@ -1,4 +1,4 @@
-![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
+![](https://github.com/an-tao/drogon/wiki/images/drogon-white17.jpg)
 
 [![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)](https://github.com/drogonframework/drogon/actions)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
