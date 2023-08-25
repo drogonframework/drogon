@@ -108,6 +108,7 @@ void PromExporter::initAndStart(const Json::Value &config)
         }
     }
 }
+
 static std::string exportCollector(
     const std::shared_ptr<CollectorBase> &collector)
 {
@@ -166,6 +167,7 @@ static std::string exportCollector(
     }
     return res;
 }
+
 std::string PromExporter::exportMetrics()
 {
     std::lock_guard<std::mutex> guard(mutex_);

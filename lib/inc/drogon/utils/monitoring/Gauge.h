@@ -14,8 +14,9 @@
 
 #pragma once
 #include <drogon/utils/monitoring/Metric.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <atomic>
+
 namespace drogon
 {
 namespace monitoring
@@ -35,6 +36,7 @@ class Gauge : public Metric
         : Metric(name, labelNames, labelValues)
     {
     }
+
     std::vector<Sample> collect() const override
     {
         Sample s;
@@ -44,6 +46,7 @@ class Gauge : public Metric
         s.timestamp = timestamp_;
         return {s};
     }
+
     /**
      * Increment the counter by 1.
      * */
@@ -52,16 +55,19 @@ class Gauge : public Metric
         std::lock_guard<std::mutex> lock(mutex_);
         value_ += 1;
     }
+
     void decrement()
     {
         std::lock_guard<std::mutex> lock(mutex_);
         value_ -= 1;
     }
+
     void decrement(double value)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         value_ -= value;
     }
+
     /**
      * Increment the counter by the given value.
      * */
@@ -70,20 +76,24 @@ class Gauge : public Metric
         std::lock_guard<std::mutex> lock(mutex_);
         value_ += value;
     }
+
     void reset()
     {
         std::lock_guard<std::mutex> lock(mutex_);
         value_ = 0;
     }
+
     void set(double value)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         value_ = value;
     }
-    static string_view type()
+
+    static std::string_view type()
     {
         return "counter";
     }
+
     void setToCurrentTime()
     {
         std::lock_guard<std::mutex> lock(mutex_);

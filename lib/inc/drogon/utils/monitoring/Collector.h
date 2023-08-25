@@ -17,8 +17,8 @@
 #include <drogon/utils/monitoring/Sample.h>
 #include <drogon/utils/monitoring/Metric.h>
 #include <drogon/utils/monitoring/Registry.h>
-#include <drogon/utils/string_view.h>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <mutex>
 #include <map>
@@ -42,7 +42,7 @@ class CollectorBase : public std::enable_shared_from_this<CollectorBase>
     virtual std::vector<SamplesGroup> collect() const = 0;
     virtual const std::string &name() const = 0;
     virtual const std::string &help() const = 0;
-    virtual const string_view type() const = 0;
+    virtual const std::string_view type() const = 0;
 };
 
 /**
@@ -79,6 +79,7 @@ class Collector : public CollectorBase
         metrics_[labelValues] = metric;
         return metrics_[labelValues];
     }
+
     std::vector<SamplesGroup> collect() const override
     {
         std::lock_guard<std::mutex> guard(mutex_);
@@ -94,22 +95,27 @@ class Collector : public CollectorBase
         }
         return samples;
     }
+
     const std::string &name() const override
     {
         return name_;
     }
+
     const std::string &help() const override
     {
         return help_;
     }
-    const string_view type() const override
+
+    const std::string_view type() const override
     {
         return T::type();
     }
+
     void registerTo(Registry &registry)
     {
         registry.registerCollector(shared_from_this());
     }
+
     const std::vector<std::string> &labelsNames() const
     {
         return labelsNames_;

@@ -15,8 +15,8 @@
 #pragma once
 #include <drogon/exports.h>
 #include <drogon/utils/monitoring/Metric.h>
-#include <drogon/utils/string_view.h>
 #include <trantor/net/EventLoopThread.h>
+#include <string_view>
 #include <atomic>
 #include <mutex>
 
@@ -36,6 +36,7 @@ class DROGON_EXPORT Histogram : public Metric
         uint64_t count{0};
         double sum{0};
     };
+
     Histogram(const std::string &name,
               const std::vector<std::string> &labelNames,
               const std::vector<std::string> &labelValues,
@@ -77,8 +78,10 @@ class DROGON_EXPORT Histogram : public Metric
             }
         }
     }
+
     void observe(double value);
     std::vector<Sample> collect() const override;
+
     ~Histogram() override
     {
         if (timerId_ != trantor::InvalidTimerId)
@@ -86,7 +89,8 @@ class DROGON_EXPORT Histogram : public Metric
             loopPtr_->invalidateTimer(timerId_);
         }
     }
-    static string_view type()
+
+    static std::string_view type()
     {
         return "histogram";
     }
@@ -100,6 +104,7 @@ class DROGON_EXPORT Histogram : public Metric
     trantor::TimerId timerId_{trantor::InvalidTimerId};
     size_t timeBucketCount_{0};
     const std::vector<double> bucketBoundaries_;
+
     void rotateTimeBuckets()
     {
         std::lock_guard<std::mutex> guard(mutex_);

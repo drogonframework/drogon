@@ -20,6 +20,7 @@ namespace drogon
 namespace monitoring
 {
 class CollectorBase;
+
 /**
  * This class is used to register metrics.
  * */

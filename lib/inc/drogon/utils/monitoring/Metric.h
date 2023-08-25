@@ -52,14 +52,17 @@ class Metric : public std::enable_shared_from_this<Metric>
             labels_[i].second = labelValues[i];
         }
     };
+
     const std::string &name() const
     {
         return name_;
     }
+
     const std::vector<std::pair<std::string, std::string>> &labels() const
     {
         return labels_;
     }
+
     virtual ~Metric() = default;
     virtual std::vector<Sample> collect() const = 0;
 
@@ -67,6 +70,7 @@ class Metric : public std::enable_shared_from_this<Metric>
     const std::string name_;
     std::vector<std::pair<std::string, std::string>> labels_;
 };
+
 using MetricPtr = std::shared_ptr<Metric>;
 
 }  // namespace monitoring
