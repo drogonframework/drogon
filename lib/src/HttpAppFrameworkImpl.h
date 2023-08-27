@@ -130,8 +130,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework {
     return *this;
   }
 
-  const std::vector<std::function<void(const HttpResponsePtr &)>> &
-  getResponseCreationAdvices() const {
+  const std::vector<std::function<void(const HttpResponsePtr &)>>
+      &getResponseCreationAdvices() const {
     return responseCreationAdvices_;
   }
 

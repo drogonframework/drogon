@@ -65,7 +65,7 @@ void DbClientManager::createDbClients(
                                                     dbInfo.connectionNumber_,
                                                     dbInfo.autoBatch_));
 #else
-                                                     dbInfo.connectionNumber_));
+                                                    dbInfo.connectionNumber_));
 #endif
               if (dbInfo.timeout_ > 0.0) {
                 c->setTimeout(dbInfo.timeout_);

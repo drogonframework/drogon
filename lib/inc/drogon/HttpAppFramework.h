@@ -174,8 +174,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable {
    * setCustomErrorHandler. If none was provided, the default error handler is
    * returned.
    */
-  virtual const std::function<HttpResponsePtr(HttpStatusCode)> &
-  getCustomErrorHandler() const = 0;
+  virtual const std::function<HttpResponsePtr(HttpStatusCode)>
+      &getCustomErrorHandler() const = 0;
 
   /// Get the plugin object registered in the framework
   /**

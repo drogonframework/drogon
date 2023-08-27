@@ -302,9 +302,9 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable {
   template <
       typename CallbackType,
       typename traits = FunctionTraits<typename std::decay<CallbackType>::type>>
-  typename std::enable_if<traits::isExceptCallback && traits::isPtr,
-                          self>::type &
-  operator>>(CallbackType &&callback) {
+  typename std::enable_if<traits::isExceptCallback && traits::isPtr, self>::type
+      &
+      operator>>(CallbackType &&callback) {
     // LOG_DEBUG << "ptr callback";
     isExceptionPtr_ = true;
     exceptionPtrCallback_ = std::forward<CallbackType>(callback);

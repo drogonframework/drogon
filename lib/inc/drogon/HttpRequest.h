@@ -154,25 +154,25 @@ class DROGON_EXPORT HttpRequest {
 
   /// Get all headers of the request
   virtual const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      headers() const = 0;
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &headers() const = 0;
 
   /// Get all headers of the request
   const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      getHeaders() const {
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &getHeaders() const {
     return headers();
   }
 
   /// Get all cookies of the request
   virtual const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      cookies() const = 0;
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &cookies() const = 0;
 
   /// Get all cookies of the request
   const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      getCookies() const {
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &getCookies() const {
     return cookies();
   }
 
@@ -273,13 +273,13 @@ class DROGON_EXPORT HttpRequest {
 
   /// Get parameters of the request.
   virtual const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      parameters() const = 0;
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &parameters() const = 0;
 
   /// Get parameters of the request.
   const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      getParameters() const {
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &getParameters() const {
     return parameters();
   }
 

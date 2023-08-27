@@ -135,8 +135,8 @@ class HttpRequestImpl : public HttpRequest {
   }
 
   const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      parameters() const override {
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &parameters() const override {
     parseParametersOnce();
     return parameters_;
   }
@@ -277,14 +277,14 @@ class HttpRequestImpl : public HttpRequest {
   }
 
   const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      headers() const override {
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &headers() const override {
     return headers_;
   }
 
   const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
-      cookies() const override {
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+          &cookies() const override {
     return cookies_;
   }
 

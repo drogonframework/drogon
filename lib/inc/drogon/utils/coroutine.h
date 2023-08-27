@@ -169,7 +169,7 @@ struct [[nodiscard]] Task {
     std::coroutine_handle<> continuation_;
   };
 
-  auto operator co_await() const & noexcept {
+  auto operator co_await() const &noexcept {
     struct awaiter {
      public:
       explicit awaiter(handle_type coro) : coro_(coro) {
@@ -196,7 +196,7 @@ struct [[nodiscard]] Task {
     return awaiter(coro_);
   }
 
-  auto operator co_await() const && noexcept {
+  auto operator co_await() const &&noexcept {
     struct awaiter {
      public:
       explicit awaiter(handle_type coro) : coro_(coro) {
@@ -291,7 +291,7 @@ struct [[nodiscard]] Task<void> {
     std::coroutine_handle<> continuation_;
   };
 
-  auto operator co_await() const & noexcept {
+  auto operator co_await() const &noexcept {
     struct awaiter {
      public:
       explicit awaiter(handle_type coro) : coro_(coro) {
@@ -317,7 +317,7 @@ struct [[nodiscard]] Task<void> {
     return awaiter(coro_);
   }
 
-  auto operator co_await() const && noexcept {
+  auto operator co_await() const &&noexcept {
     struct awaiter {
      public:
       explicit awaiter(handle_type coro) : coro_(coro) {
