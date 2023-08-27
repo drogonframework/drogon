@@ -17,20 +17,17 @@
 #include <drogon/exports.h>
 #include <drogon/HttpFilter.h>
 
-namespace drogon
-{
+namespace drogon {
 /**
  * @brief A filter that prohibit access from external networks
  */
-class DROGON_EXPORT IntranetIpFilter : public HttpFilter<IntranetIpFilter>
-{
-  public:
-    IntranetIpFilter()
-    {
-    }
+class DROGON_EXPORT IntranetIpFilter : public HttpFilter<IntranetIpFilter> {
+ public:
+  IntranetIpFilter() {
+  }
 
-    virtual void doFilter(const HttpRequestPtr &req,
-                          FilterCallback &&fcb,
-                          FilterChainCallback &&fccb) override;
+  virtual void doFilter(const HttpRequestPtr &req,
+                        FilterCallback &&fcb,
+                        FilterChainCallback &&fccb) override;
 };
 }  // namespace drogon

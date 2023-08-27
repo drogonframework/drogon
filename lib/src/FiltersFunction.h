@@ -19,10 +19,8 @@
 #include <string>
 #include <vector>
 
-namespace drogon
-{
-namespace filters_function
-{
+namespace drogon {
+namespace filters_function {
 std::vector<std::shared_ptr<HttpFilterBase>> createFilters(
     const std::vector<std::string> &filterNames);
 void doFilters(

@@ -6,13 +6,11 @@
 #include <drogon/HttpFilter.h>
 using namespace drogon;
 
-class CoroFilter : public drogon::HttpCoroFilter<CoroFilter>
-{
-  public:
-    Task<HttpResponsePtr> doFilter(const HttpRequestPtr &req) override;
+class CoroFilter : public drogon::HttpCoroFilter<CoroFilter> {
+ public:
+  Task<HttpResponsePtr> doFilter(const HttpRequestPtr &req) override;
 
-    CoroFilter()
-    {
-        LOG_DEBUG << "CoroFilter constructor";
-    }
+  CoroFilter() {
+    LOG_DEBUG << "CoroFilter constructor";
+  }
 };

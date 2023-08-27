@@ -24,37 +24,32 @@
 #pragma warning(disable : 4250)
 #endif
 
-namespace drogon
-{
+namespace drogon {
 /**
  * @brief The base class for all drogon reflection classes.
  *
  */
-class DROGON_EXPORT DrObjectBase
-{
-  public:
-    /**
-     * @brief Get the class name
-     *
-     * @return const std::string& the class name
-     */
-    virtual const std::string &className() const
-    {
-        static const std::string name{"DrObjectBase"};
-        return name;
-    }
+class DROGON_EXPORT DrObjectBase {
+ public:
+  /**
+   * @brief Get the class name
+   *
+   * @return const std::string& the class name
+   */
+  virtual const std::string &className() const {
+    static const std::string name{"DrObjectBase"};
+    return name;
+  }
 
-    /**
-     * @brief Return true if the class name is 'class_name'
-     */
-    virtual bool isClass(const std::string &class_name) const
-    {
-        return (className() == class_name);
-    }
+  /**
+   * @brief Return true if the class name is 'class_name'
+   */
+  virtual bool isClass(const std::string &class_name) const {
+    return (className() == class_name);
+  }
 
-    virtual ~DrObjectBase()
-    {
-    }
+  virtual ~DrObjectBase() {
+  }
 };
 
 /**
@@ -62,68 +57,57 @@ class DROGON_EXPORT DrObjectBase
  * implement the reflection function of creating the class object by class name
  */
 template <typename T>
-class DrObject : public virtual DrObjectBase
-{
-  public:
-    const std::string &className() const override
-    {
-        return alloc_.className();
+class DrObject : public virtual DrObjectBase {
+ public:
+  const std::string &className() const override {
+    return alloc_.className();
+  }
+
+  static const std::string &classTypeName() {
+    return alloc_.className();
+  }
+
+  bool isClass(const std::string &class_name) const override {
+    return (className() == class_name);
+  }
+
+ protected:
+  // protect constructor to make this class only inheritable
+  DrObject() = default;
+  ~DrObject() override = default;
+
+ private:
+  class DrAllocator {
+   public:
+    DrAllocator() {
+      registerClass<T>();
     }
 
-    static const std::string &classTypeName()
-    {
-        return alloc_.className();
+    const std::string &className() const {
+      static std::string className = DrClassMap::demangle(typeid(T).name());
+      return className;
     }
 
-    bool isClass(const std::string &class_name) const override
-    {
-        return (className() == class_name);
+    template <typename D>
+    typename std::enable_if<std::is_default_constructible<D>::value, void>::type
+    registerClass() {
+      DrClassMap::registerClass(
+          className(),
+          []() -> DrObjectBase * { return new T; },
+          []() -> std::shared_ptr<DrObjectBase> {
+            return std::make_shared<T>();
+          });
     }
 
-  protected:
-    // protect constructor to make this class only inheritable
-    DrObject() = default;
-    ~DrObject() override = default;
+    template <typename D>
+    typename std::enable_if<!std::is_default_constructible<D>::value,
+                            void>::type
+    registerClass() {
+    }
+  };
 
-  private:
-    class DrAllocator
-    {
-      public:
-        DrAllocator()
-        {
-            registerClass<T>();
-        }
-
-        const std::string &className() const
-        {
-            static std::string className =
-                DrClassMap::demangle(typeid(T).name());
-            return className;
-        }
-
-        template <typename D>
-        typename std::enable_if<std::is_default_constructible<D>::value,
-                                void>::type
-        registerClass()
-        {
-            DrClassMap::registerClass(
-                className(),
-                []() -> DrObjectBase * { return new T; },
-                []() -> std::shared_ptr<DrObjectBase> {
-                    return std::make_shared<T>();
-                });
-        }
-
-        template <typename D>
-        typename std::enable_if<!std::is_default_constructible<D>::value,
-                                void>::type
-        registerClass()
-        {
-        }
-    };
-
-    // use static val to register allocator function for class T;
-    static DrAllocator alloc_;
+  // use static val to register allocator function for class T;
+  static DrAllocator alloc_;
 };
 
 template <typename T>

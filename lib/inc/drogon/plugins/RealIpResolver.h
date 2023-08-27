@@ -11,10 +11,8 @@
 #include <drogon/HttpRequest.h>
 #include <vector>
 
-namespace drogon
-{
-namespace plugin
-{
+namespace drogon {
+namespace plugin {
 /**
 * @brief This plugin is used to resolve client real ip from HTTP request.
 * @note This plugin currently supports only ipv4 address or cidr.
@@ -41,35 +39,32 @@ namespace plugin
 * configuration file.
 *
 */
-class DROGON_EXPORT RealIpResolver : public drogon::Plugin<RealIpResolver>
-{
-  public:
-    RealIpResolver()
-    {
-    }
+class DROGON_EXPORT RealIpResolver : public drogon::Plugin<RealIpResolver> {
+ public:
+  RealIpResolver() {
+  }
 
-    void initAndStart(const Json::Value &config) override;
-    void shutdown() override;
+  void initAndStart(const Json::Value &config) override;
+  void shutdown() override;
 
-    static const trantor::InetAddress &GetRealAddr(
-        const drogon::HttpRequestPtr &req);
+  static const trantor::InetAddress &GetRealAddr(
+      const drogon::HttpRequestPtr &req);
 
-  private:
-    const trantor::InetAddress &getRealAddr(
-        const drogon::HttpRequestPtr &req) const;
-    bool matchCidr(const trantor::InetAddress &addr) const;
+ private:
+  const trantor::InetAddress &getRealAddr(
+      const drogon::HttpRequestPtr &req) const;
+  bool matchCidr(const trantor::InetAddress &addr) const;
 
-    struct CIDR
-    {
-        explicit CIDR(const std::string &ipOrCidr);
-        in_addr_t addr_{0};
-        in_addr_t mask_{32};
-    };
+  struct CIDR {
+    explicit CIDR(const std::string &ipOrCidr);
+    in_addr_t addr_{0};
+    in_addr_t mask_{32};
+  };
 
-    std::vector<CIDR> trustCIDRs_;
-    std::string fromHeader_;
-    std::string attributeKey_;
-    bool useXForwardedFor_{false};
+  std::vector<CIDR> trustCIDRs_;
+  std::string fromHeader_;
+  std::string attributeKey_;
+  bool useXForwardedFor_{false};
 };
 }  // namespace plugin
 }  // namespace drogon

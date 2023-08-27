@@ -20,8 +20,7 @@
 #include <vector>
 #include <memory>
 
-namespace drogon
-{
+namespace drogon {
 void doAdvicesChain(
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,

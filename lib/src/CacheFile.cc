@@ -25,78 +25,66 @@
 using namespace drogon;
 
 CacheFile::CacheFile(const std::string &path, bool autoDelete)
-    : autoDelete_(autoDelete), path_(path)
-{
+    : autoDelete_(autoDelete), path_(path) {
 #ifndef _MSC_VER
-    file_ = fopen(path_.data(), "wb+");
+  file_ = fopen(path_.data(), "wb+");
 #else
-    auto wPath{drogon::utils::toNativePath(path)};
-    if (_wfopen_s(&file_, wPath.c_str(), L"wb+") != 0)
-    {
-        file_ = nullptr;
-    }
+  auto wPath{drogon::utils::toNativePath(path)};
+  if (_wfopen_s(&file_, wPath.c_str(), L"wb+") != 0) {
+    file_ = nullptr;
+  }
 #endif
 }
 
-CacheFile::~CacheFile()
-{
-    if (data_)
-    {
-        munmap(data_, dataLength_);
-    }
-    if (autoDelete_ && file_)
-    {
-        fclose(file_);
+CacheFile::~CacheFile() {
+  if (data_) {
+    munmap(data_, dataLength_);
+  }
+  if (autoDelete_ && file_) {
+    fclose(file_);
 #if defined(_WIN32) && !defined(__MINGW32__)
-        auto wPath{drogon::utils::toNativePath(path_)};
-        _wunlink(wPath.c_str());
+    auto wPath{drogon::utils::toNativePath(path_)};
+    _wunlink(wPath.c_str());
 #else
-        unlink(path_.data());
+    unlink(path_.data());
 #endif
-    }
-    else if (file_)
-    {
-        fclose(file_);
-    }
+  } else if (file_) {
+    fclose(file_);
+  }
 }
 
-void CacheFile::append(const char *data, size_t length)
-{
-    if (file_)
-        fwrite(data, length, 1, file_);
+void CacheFile::append(const char *data, size_t length) {
+  if (file_)
+    fwrite(data, length, 1, file_);
 }
 
-size_t CacheFile::length()
-{
-    if (file_)
+size_t CacheFile::length() {
+  if (file_)
 #ifdef _WIN32
-        return _ftelli64(file_);
+    return _ftelli64(file_);
 #else
-        return ftell(file_);
+    return ftell(file_);
 #endif
-    return 0;
+  return 0;
 }
 
-char *CacheFile::data()
-{
-    if (!file_)
-        return nullptr;
-    if (!data_)
-    {
-        fflush(file_);
+char *CacheFile::data() {
+  if (!file_)
+    return nullptr;
+  if (!data_) {
+    fflush(file_);
 #ifdef _WIN32
-        auto fd = _fileno(file_);
+    auto fd = _fileno(file_);
 #else
-        auto fd = fileno(file_);
+    auto fd = fileno(file_);
 #endif
-        dataLength_ = length();
-        data_ = static_cast<char *>(
-            mmap(nullptr, dataLength_, PROT_READ, MAP_SHARED, fd, 0));
-        if (data_ == MAP_FAILED)
-        {
-            data_ = nullptr;
-            LOG_SYSERR << "mmap:";
-        }
+    dataLength_ = length();
+    data_ = static_cast<char *>(
+        mmap(nullptr, dataLength_, PROT_READ, MAP_SHARED, fd, 0));
+    if (data_ == MAP_FAILED) {
+      data_ = nullptr;
+      LOG_SYSERR << "mmap:";
     }
-    return data_;
+  }
+  return data_;
 }

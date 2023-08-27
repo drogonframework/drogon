@@ -17,20 +17,17 @@
 #include <drogon/exports.h>
 #include <drogon/HttpFilter.h>
 
-namespace drogon
-{
+namespace drogon {
 /**
  * @brief A filter that prohibit access from other hosts.
  */
-class DROGON_EXPORT LocalHostFilter : public HttpFilter<LocalHostFilter>
-{
-  public:
-    LocalHostFilter()
-    {
-    }
+class DROGON_EXPORT LocalHostFilter : public HttpFilter<LocalHostFilter> {
+ public:
+  LocalHostFilter() {
+  }
 
-    void doFilter(const HttpRequestPtr &req,
-                  FilterCallback &&fcb,
-                  FilterChainCallback &&fccb) override;
+  void doFilter(const HttpRequestPtr &req,
+                FilterCallback &&fcb,
+                FilterChainCallback &&fccb) override;
 };
 }  // namespace drogon

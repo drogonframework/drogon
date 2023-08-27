@@ -17,15 +17,12 @@
 #include <drogon/DrObject.h>
 #include <drogon/DrTemplateBase.h>
 
-namespace drogon
-{
+namespace drogon {
 template <typename T>
-class DrTemplate : public DrObject<T>, public DrTemplateBase
-{
-  protected:
-    DrTemplate()
-    {
-    }
+class DrTemplate : public DrObject<T>, public DrTemplateBase {
+ protected:
+  DrTemplate() {
+  }
 };
 
 }  // namespace drogon

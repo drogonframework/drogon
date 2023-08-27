@@ -27,52 +27,47 @@
 
 using namespace drogon;
 
-namespace drogon_ctl
-{
-struct Statistics
-{
-    std::atomic_size_t numOfRequestsSent_{0};
-    std::atomic_size_t bytesRecieved_{0};
-    std::atomic_size_t numOfGoodResponse_{0};
-    std::atomic_size_t numOfBadResponse_{0};
-    std::atomic_size_t totalDelay_{0};
-    trantor::Date startDate_;
-    trantor::Date endDate_;
+namespace drogon_ctl {
+struct Statistics {
+  std::atomic_size_t numOfRequestsSent_{0};
+  std::atomic_size_t bytesRecieved_{0};
+  std::atomic_size_t numOfGoodResponse_{0};
+  std::atomic_size_t numOfBadResponse_{0};
+  std::atomic_size_t totalDelay_{0};
+  trantor::Date startDate_;
+  trantor::Date endDate_;
 };
 
-class press : public DrObject<press>, public CommandHandler
-{
-  public:
-    void handleCommand(std::vector<std::string> &parameters) override;
+class press : public DrObject<press>, public CommandHandler {
+ public:
+  void handleCommand(std::vector<std::string> &parameters) override;
 
-    std::string script() override
-    {
-        return "Do stress testing(Use 'drogon_ctl help press' for more "
-               "information)";
-    }
+  std::string script() override {
+    return "Do stress testing(Use 'drogon_ctl help press' for more "
+           "information)";
+  }
 
-    bool isTopCommand() override
-    {
-        return true;
-    }
+  bool isTopCommand() override {
+    return true;
+  }
 
-    std::string detail() override;
+  std::string detail() override;
 
-  private:
-    size_t numOfThreads_{1};
-    size_t numOfRequests_{1};
-    size_t numOfConnections_{1};
-    // bool keepAlive_ = false;
-    bool processIndication_{true};
-    std::string url_;
-    std::string host_;
-    std::string path_;
-    void doTesting();
-    void createRequestAndClients();
-    void sendRequest(const HttpClientPtr &client);
-    void outputResults();
-    std::unique_ptr<trantor::EventLoopThreadPool> loopPool_;
-    std::vector<HttpClientPtr> clients_;
-    Statistics statistics_;
+ private:
+  size_t numOfThreads_{1};
+  size_t numOfRequests_{1};
+  size_t numOfConnections_{1};
+  // bool keepAlive_ = false;
+  bool processIndication_{true};
+  std::string url_;
+  std::string host_;
+  std::string path_;
+  void doTesting();
+  void createRequestAndClients();
+  void sendRequest(const HttpClientPtr &client);
+  void outputResults();
+  std::unique_ptr<trantor::EventLoopThreadPool> loopPool_;
+  std::vector<HttpClientPtr> clients_;
+  Statistics statistics_;
 };
 }  // namespace drogon_ctl

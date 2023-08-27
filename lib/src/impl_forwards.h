@@ -3,8 +3,7 @@
 #include <memory>
 #include <functional>
 
-namespace drogon
-{
+namespace drogon {
 class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 class HttpResponse;
@@ -36,23 +35,20 @@ class SharedLibManager;
 class SessionManager;
 class HttpServer;
 
-namespace orm
-{
+namespace orm {
 class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 class DbClientManager;
 }  // namespace orm
 
-namespace nosql
-{
+namespace nosql {
 class RedisClient;
 using RedisClientPtr = std::shared_ptr<RedisClient>;
 class RedisClientManager;
 }  // namespace nosql
 }  // namespace drogon
 
-namespace trantor
-{
+namespace trantor {
 class EventLoop;
 class TcpConnection;
 using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
@@ -60,8 +56,7 @@ class Resolver;
 class AsyncFileLogger;
 }  // namespace trantor
 
-namespace drogon
-{
+namespace drogon {
 using HttpAsyncCallback =
     std::function<void(const HttpRequestImplPtr &,
                        std::function<void(const HttpResponsePtr &)> &&)>;

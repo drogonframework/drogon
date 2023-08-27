@@ -18,19 +18,16 @@
 #include <drogon/exports.h>
 #include <drogon/DrTemplate.h>
 
-namespace drogon
-{
+namespace drogon {
 /**
  * @brief This class is used by the drogon to generate the 404 page. Users don't
  * use this class directly.
  */
-class DROGON_EXPORT NotFound final : public drogon::DrTemplate<NotFound>
-{
-  public:
-    NotFound()
-    {
-    }
+class DROGON_EXPORT NotFound final : public drogon::DrTemplate<NotFound> {
+ public:
+  NotFound() {
+  }
 
-    std::string genText(const drogon::HttpViewData &) override;
+  std::string genText(const drogon::HttpViewData &) override;
 };
 }  // namespace drogon

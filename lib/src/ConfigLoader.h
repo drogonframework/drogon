@@ -18,25 +18,22 @@
 #include <string>
 #include <trantor/utils/NonCopyable.h>
 
-namespace drogon
-{
-class ConfigLoader : public trantor::NonCopyable
-{
-  public:
-    explicit ConfigLoader(const std::string &configFile) noexcept(false);
-    explicit ConfigLoader(const Json::Value &data);
-    explicit ConfigLoader(Json::Value &&data);
-    ~ConfigLoader();
+namespace drogon {
+class ConfigLoader : public trantor::NonCopyable {
+ public:
+  explicit ConfigLoader(const std::string &configFile) noexcept(false);
+  explicit ConfigLoader(const Json::Value &data);
+  explicit ConfigLoader(Json::Value &&data);
+  ~ConfigLoader();
 
-    const Json::Value &jsonValue() const
-    {
-        return configJsonRoot_;
-    }
+  const Json::Value &jsonValue() const {
+    return configJsonRoot_;
+  }
 
-    void load() noexcept(false);
+  void load() noexcept(false);
 
-  private:
-    std::string configFile_;
-    Json::Value configJsonRoot_;
+ private:
+  std::string configFile_;
+  Json::Value configJsonRoot_;
 };
 }  // namespace drogon

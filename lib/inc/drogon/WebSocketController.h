@@ -24,37 +24,32 @@
 #include <string>
 #include <vector>
 
-#define WS_PATH_LIST_BEGIN        \
-    static void initPathRouting() \
-    {
+#define WS_PATH_LIST_BEGIN static void initPathRouting() {
 #define WS_PATH_ADD(path, ...) registerSelf__(path, {__VA_ARGS__})
 #define WS_PATH_LIST_END }
 
-namespace drogon
-{
+namespace drogon {
 /**
  * @brief The abstract base class for WebSocket controllers.
  *
  */
-class WebSocketControllerBase : public virtual DrObjectBase
-{
-  public:
-    // This function is called when a new message is received
-    virtual void handleNewMessage(const WebSocketConnectionPtr &,
-                                  std::string &&,
-                                  const WebSocketMessageType &) = 0;
+class WebSocketControllerBase : public virtual DrObjectBase {
+ public:
+  // This function is called when a new message is received
+  virtual void handleNewMessage(const WebSocketConnectionPtr &,
+                                std::string &&,
+                                const WebSocketMessageType &) = 0;
 
-    // This function is called after a new connection of WebSocket is
-    // established.
-    virtual void handleNewConnection(const HttpRequestPtr &,
-                                     const WebSocketConnectionPtr &) = 0;
+  // This function is called after a new connection of WebSocket is
+  // established.
+  virtual void handleNewConnection(const HttpRequestPtr &,
+                                   const WebSocketConnectionPtr &) = 0;
 
-    // This function is called after a WebSocket connection is closed
-    virtual void handleConnectionClosed(const WebSocketConnectionPtr &) = 0;
+  // This function is called after a WebSocket connection is closed
+  virtual void handleConnectionClosed(const WebSocketConnectionPtr &) = 0;
 
-    virtual ~WebSocketControllerBase()
-    {
-    }
+  virtual ~WebSocketControllerBase() {
+  }
 };
 
 using WebSocketControllerBasePtr = std::shared_ptr<WebSocketControllerBase>;
@@ -67,53 +62,45 @@ using WebSocketControllerBasePtr = std::shared_ptr<WebSocketControllerBase>;
  * flag to false for classes that have nondefault constructors.
  */
 template <typename T, bool AutoCreation = true>
-class WebSocketController : public DrObject<T>, public WebSocketControllerBase
-{
-  public:
-    static const bool isAutoCreation = AutoCreation;
+class WebSocketController : public DrObject<T>, public WebSocketControllerBase {
+ public:
+  static const bool isAutoCreation = AutoCreation;
 
-    virtual ~WebSocketController()
-    {
+  virtual ~WebSocketController() {
+  }
+
+ protected:
+  WebSocketController() {
+  }
+
+  static void registerSelf__(
+      const std::string &path,
+      const std::vector<internal::HttpConstraint> &filtersAndMethods) {
+    LOG_TRACE << "register websocket controller("
+              << WebSocketController<T, AutoCreation>::classTypeName()
+              << ") on path:" << path;
+    app().registerWebSocketController(
+        path,
+        WebSocketController<T, AutoCreation>::classTypeName(),
+        filtersAndMethods);
+  }
+
+ private:
+  class pathRegistrator {
+   public:
+    pathRegistrator() {
+      if (AutoCreation) {
+        T::initPathRouting();
+      }
     }
+  };
 
-  protected:
-    WebSocketController()
-    {
-    }
+  friend pathRegistrator;
+  static pathRegistrator registrator_;
 
-    static void registerSelf__(
-        const std::string &path,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods)
-    {
-        LOG_TRACE << "register websocket controller("
-                  << WebSocketController<T, AutoCreation>::classTypeName()
-                  << ") on path:" << path;
-        app().registerWebSocketController(
-            path,
-            WebSocketController<T, AutoCreation>::classTypeName(),
-            filtersAndMethods);
-    }
-
-  private:
-    class pathRegistrator
-    {
-      public:
-        pathRegistrator()
-        {
-            if (AutoCreation)
-            {
-                T::initPathRouting();
-            }
-        }
-    };
-
-    friend pathRegistrator;
-    static pathRegistrator registrator_;
-
-    virtual void *touch()
-    {
-        return &registrator_;
-    }
+  virtual void *touch() {
+    return &registrator_;
+  }
 };
 
 template <typename T, bool AutoCreation>

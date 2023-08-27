@@ -15,72 +15,59 @@
 #pragma once
 #include <string>
 
-namespace drogon
-{
+namespace drogon {
 /**
  * This class represents an upload file which will be transferred to the server
  * via the multipart/form-data format
  */
-class UploadFile
-{
-  public:
-    /// Constructor
-    /**
-     * @param filePath The file location on local host, including file name.
-     * @param fileName The file name provided to the server. If it is empty by
-     * default, the file name in the @param filePath
-     * is provided to the server.
-     * @param itemName The item name on the browser form.
-     * @param contentType The Mime content type for the part
-     */
-    explicit UploadFile(const std::string &filePath,
-                        const std::string &fileName = "",
-                        const std::string &itemName = "file",
-                        ContentType contentType = CT_NONE)
-        : path_(filePath), itemName_(itemName), contentType_(contentType)
-    {
-        if (!fileName.empty())
-        {
-            fileName_ = fileName;
-        }
-        else
-        {
-            auto pos = filePath.rfind('/');
-            if (pos != std::string::npos)
-            {
-                fileName_ = filePath.substr(pos + 1);
-            }
-            else
-            {
-                fileName_ = filePath;
-            }
-        }
+class UploadFile {
+ public:
+  /// Constructor
+  /**
+   * @param filePath The file location on local host, including file name.
+   * @param fileName The file name provided to the server. If it is empty by
+   * default, the file name in the @param filePath
+   * is provided to the server.
+   * @param itemName The item name on the browser form.
+   * @param contentType The Mime content type for the part
+   */
+  explicit UploadFile(const std::string &filePath,
+                      const std::string &fileName = "",
+                      const std::string &itemName = "file",
+                      ContentType contentType = CT_NONE)
+      : path_(filePath), itemName_(itemName), contentType_(contentType) {
+    if (!fileName.empty()) {
+      fileName_ = fileName;
+    } else {
+      auto pos = filePath.rfind('/');
+      if (pos != std::string::npos) {
+        fileName_ = filePath.substr(pos + 1);
+      } else {
+        fileName_ = filePath;
+      }
     }
+  }
 
-    const std::string &path() const
-    {
-        return path_;
-    }
+  const std::string &path() const {
+    return path_;
+  }
 
-    const std::string &fileName() const
-    {
-        return fileName_;
-    }
+  const std::string &fileName() const {
+    return fileName_;
+  }
 
-    const std::string &itemName() const
-    {
-        return itemName_;
-    }
+  const std::string &itemName() const {
+    return itemName_;
+  }
 
-    ContentType contentType() const
-    {
-        return contentType_;
-    }
+  ContentType contentType() const {
+    return contentType_;
+  }
 
-  private:
-    std::string path_;
-    std::string fileName_;
-    std::string itemName_;
-    ContentType contentType_;
+ private:
+  std::string path_;
+  std::string fileName_;
+  std::string itemName_;
+  ContentType contentType_;
 };
 }  // namespace drogon

@@ -7,15 +7,13 @@
 #include <drogon/HttpFilter.h>
 using namespace drogon;
 
-class TimeFilter : public drogon::HttpFilter<TimeFilter>
-{
-  public:
-    virtual void doFilter(const HttpRequestPtr &req,
-                          FilterCallback &&cb,
-                          FilterChainCallback &&ccb) override;
+class TimeFilter : public drogon::HttpFilter<TimeFilter> {
+ public:
+  virtual void doFilter(const HttpRequestPtr &req,
+                        FilterCallback &&cb,
+                        FilterChainCallback &&ccb) override;
 
-    TimeFilter()
-    {
-        LOG_DEBUG << "TimeFilter constructor";
-    }
+  TimeFilter() {
+    LOG_DEBUG << "TimeFilter constructor";
+  }
 };

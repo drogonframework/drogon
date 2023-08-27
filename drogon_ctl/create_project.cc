@@ -28,116 +28,105 @@
 
 using namespace drogon_ctl;
 
-void create_project::handleCommand(std::vector<std::string> &parameters)
-{
-    if (parameters.size() < 1)
-    {
-        std::cout << "please input project name" << std::endl;
-        exit(1);
-    }
-    auto pName = parameters[0];
-    createProject(pName);
+void create_project::handleCommand(std::vector<std::string> &parameters) {
+  if (parameters.size() < 1) {
+    std::cout << "please input project name" << std::endl;
+    exit(1);
+  }
+  auto pName = parameters[0];
+  createProject(pName);
 }
 
 static void newCmakeFile(std::ofstream &cmakeFile,
-                         const std::string &projectName)
-{
-    HttpViewData data;
-    data.insert("ProjectName", projectName);
-    auto templ = DrTemplateBase::newTemplate("cmake.csp");
-    cmakeFile << templ->genText(data);
+                         const std::string &projectName) {
+  HttpViewData data;
+  data.insert("ProjectName", projectName);
+  auto templ = DrTemplateBase::newTemplate("cmake.csp");
+  cmakeFile << templ->genText(data);
 }
 
-static void newMainFile(std::ofstream &mainFile)
-{
-    auto templ = DrTemplateBase::newTemplate("demoMain");
-    mainFile << templ->genText();
+static void newMainFile(std::ofstream &mainFile) {
+  auto templ = DrTemplateBase::newTemplate("demoMain");
+  mainFile << templ->genText();
 }
 
-static void newGitIgFile(std::ofstream &gitFile)
-{
-    auto templ = DrTemplateBase::newTemplate("gitignore.csp");
-    gitFile << templ->genText();
+static void newGitIgFile(std::ofstream &gitFile) {
+  auto templ = DrTemplateBase::newTemplate("gitignore.csp");
+  gitFile << templ->genText();
 }
 
-static void newConfigJsonFile(std::ofstream &configJsonFile)
-{
-    auto templ = DrTemplateBase::newTemplate("config_json");
-    configJsonFile << templ->genText();
+static void newConfigJsonFile(std::ofstream &configJsonFile) {
+  auto templ = DrTemplateBase::newTemplate("config_json");
+  configJsonFile << templ->genText();
 }
 
-static void newConfigYamlFile(std::ofstream &configYamlFile)
-{
-    auto templ = DrTemplateBase::newTemplate("config_yaml");
-    configYamlFile << templ->genText();
+static void newConfigYamlFile(std::ofstream &configYamlFile) {
+  auto templ = DrTemplateBase::newTemplate("config_yaml");
+  configYamlFile << templ->genText();
 }
 
-static void newModelConfigFile(std::ofstream &configFile)
-{
-    auto templ = DrTemplateBase::newTemplate("model_json");
-    configFile << templ->genText();
+static void newModelConfigFile(std::ofstream &configFile) {
+  auto templ = DrTemplateBase::newTemplate("model_json");
+  configFile << templ->genText();
 }
 
-static void newTestMainFile(std::ofstream &mainFile)
-{
-    auto templ = DrTemplateBase::newTemplate("test_main");
-    mainFile << templ->genText();
+static void newTestMainFile(std::ofstream &mainFile) {
+  auto templ = DrTemplateBase::newTemplate("test_main");
+  mainFile << templ->genText();
 }
 
 static void newTestCmakeFile(std::ofstream &testCmakeFile,
-                             const std::string &projectName)
-{
-    HttpViewData data;
-    data.insert("ProjectName", projectName);
-    auto templ = DrTemplateBase::newTemplate("test_cmake");
-    testCmakeFile << templ->genText(data);
+                             const std::string &projectName) {
+  HttpViewData data;
+  data.insert("ProjectName", projectName);
+  auto templ = DrTemplateBase::newTemplate("test_cmake");
+  testCmakeFile << templ->genText(data);
 }
 
-void create_project::createProject(const std::string &projectName)
-{
+void create_project::createProject(const std::string &projectName) {
 #ifdef _WIN32
-    if (_access(projectName.data(), 0) == 0)
+  if (_access(projectName.data(), 0) == 0)
 #else
-    if (access(projectName.data(), 0) == 0)
+  if (access(projectName.data(), 0) == 0)
 #endif
-    {
-        std::cerr
-            << "The directory already exists, please use another project name!"
-            << std::endl;
-        exit(1);
-    }
-    std::cout << "create a project named " << projectName << std::endl;
+  {
+    std::cerr
+        << "The directory already exists, please use another project name!"
+        << std::endl;
+    exit(1);
+  }
+  std::cout << "create a project named " << projectName << std::endl;
 
-    drogon::utils::createPath(projectName);
+  drogon::utils::createPath(projectName);
 // 1.create CMakeLists.txt
 #ifdef _WIN32
-    auto r = _chdir(projectName.data());
+  auto r = _chdir(projectName.data());
 #else
-    auto r = chdir(projectName.data());
+  auto r = chdir(projectName.data());
 #endif
-    (void)(r);
-    std::ofstream cmakeFile("CMakeLists.txt", std::ofstream::out);
-    newCmakeFile(cmakeFile, projectName);
-    std::ofstream mainFile("main.cc", std::ofstream::out);
-    newMainFile(mainFile);
-    drogon::utils::createPath("views");
-    drogon::utils::createPath("controllers");
-    drogon::utils::createPath("filters");
-    drogon::utils::createPath("plugins");
-    drogon::utils::createPath("build");
-    drogon::utils::createPath("models");
-    drogon::utils::createPath("test");
+  (void)(r);
+  std::ofstream cmakeFile("CMakeLists.txt", std::ofstream::out);
+  newCmakeFile(cmakeFile, projectName);
+  std::ofstream mainFile("main.cc", std::ofstream::out);
+  newMainFile(mainFile);
+  drogon::utils::createPath("views");
+  drogon::utils::createPath("controllers");
+  drogon::utils::createPath("filters");
+  drogon::utils::createPath("plugins");
+  drogon::utils::createPath("build");
+  drogon::utils::createPath("models");
+  drogon::utils::createPath("test");
 
-    std::ofstream gitFile(".gitignore", std::ofstream::out);
-    newGitIgFile(gitFile);
-    std::ofstream configJsonFile("config.json", std::ofstream::out);
-    newConfigJsonFile(configJsonFile);
-    std::ofstream configYamlFile("config.yaml", std::ofstream::out);
-    newConfigYamlFile(configYamlFile);
-    std::ofstream modelConfigFile("models/model.json", std::ofstream::out);
-    newModelConfigFile(modelConfigFile);
-    std::ofstream testMainFile("test/test_main.cc", std::ofstream::out);
-    newTestMainFile(testMainFile);
-    std::ofstream testCmakeFile("test/CMakeLists.txt", std::ofstream::out);
-    newTestCmakeFile(testCmakeFile, projectName);
+  std::ofstream gitFile(".gitignore", std::ofstream::out);
+  newGitIgFile(gitFile);
+  std::ofstream configJsonFile("config.json", std::ofstream::out);
+  newConfigJsonFile(configJsonFile);
+  std::ofstream configYamlFile("config.yaml", std::ofstream::out);
+  newConfigYamlFile(configYamlFile);
+  std::ofstream modelConfigFile("models/model.json", std::ofstream::out);
+  newModelConfigFile(modelConfigFile);
+  std::ofstream testMainFile("test/test_main.cc", std::ofstream::out);
+  newTestMainFile(testMainFile);
+  std::ofstream testCmakeFile("test/CMakeLists.txt", std::ofstream::out);
+  newTestCmakeFile(testCmakeFile, projectName);
 }

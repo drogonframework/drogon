@@ -11,10 +11,8 @@
 #include <regex>
 #include <memory>
 
-namespace drogon
-{
-namespace plugin
-{
+namespace drogon {
+namespace plugin {
 /**
  * @brief This plugin is used to redirect all non-HTTPS requests to HTTPS
  * (except for those URLs matching a regular expression listed in
@@ -48,28 +46,26 @@ namespace plugin
  */
 class DROGON_EXPORT SecureSSLRedirector
     : public drogon::Plugin<SecureSSLRedirector>,
-      public std::enable_shared_from_this<SecureSSLRedirector>
-{
-  public:
-    SecureSSLRedirector()
-    {
-    }
+      public std::enable_shared_from_this<SecureSSLRedirector> {
+ public:
+  SecureSSLRedirector() {
+  }
 
-    /// This method must be called by drogon to initialize and start the plugin.
-    /// It must be implemented by the user.
-    void initAndStart(const Json::Value &config) override;
+  /// This method must be called by drogon to initialize and start the plugin.
+  /// It must be implemented by the user.
+  void initAndStart(const Json::Value &config) override;
 
-    /// This method must be called by drogon to shutdown the plugin.
-    /// It must be implemented by the user.
-    void shutdown() override;
+  /// This method must be called by drogon to shutdown the plugin.
+  /// It must be implemented by the user.
+  void shutdown() override;
 
-  private:
-    HttpResponsePtr redirectingAdvice(const HttpRequestPtr &) const;
-    HttpResponsePtr redirectToSSL(const HttpRequestPtr &) const;
+ private:
+  HttpResponsePtr redirectingAdvice(const HttpRequestPtr &) const;
+  HttpResponsePtr redirectToSSL(const HttpRequestPtr &) const;
 
-    std::regex exemptPegex_;
-    bool regexFlag_{false};
-    std::string secureHost_;
+  std::regex exemptPegex_;
+  bool regexFlag_{false};
+  std::string secureHost_;
 };
 
 }  // namespace plugin

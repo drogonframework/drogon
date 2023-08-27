@@ -20,8 +20,7 @@
 #include <memory>
 #include <string>
 
-namespace drogon
-{
+namespace drogon {
 using DrTemplateData = HttpViewData;
 
 /// The templating engine class
@@ -30,29 +29,28 @@ using DrTemplateData = HttpViewData;
  * data.
  * For more details on the template file, see the wiki site (the 'View' section)
  */
-class DROGON_EXPORT DrTemplateBase : public virtual DrObjectBase
-{
-  public:
-    /// Create an object of the implementation class
-    /**
-     * @param templateName represents the name of the template file. A template
-     * file is a description file with a special format. Its extension is
-     * usually .csp. The user should preprocess the template file with the
-     * drogon_ctl tool to create c++ source files.
-     */
-    static std::shared_ptr<DrTemplateBase> newTemplate(
-        const std::string &templateName);
+class DROGON_EXPORT DrTemplateBase : public virtual DrObjectBase {
+ public:
+  /// Create an object of the implementation class
+  /**
+   * @param templateName represents the name of the template file. A template
+   * file is a description file with a special format. Its extension is
+   * usually .csp. The user should preprocess the template file with the
+   * drogon_ctl tool to create c++ source files.
+   */
+  static std::shared_ptr<DrTemplateBase> newTemplate(
+      const std::string &templateName);
 
-    /// Generate the text string
-    /**
-     * @param data represents data rendered in the string in a format
-     * according to the template file.
-     */
-    virtual std::string genText(
-        const DrTemplateData &data = DrTemplateData()) = 0;
+  /// Generate the text string
+  /**
+   * @param data represents data rendered in the string in a format
+   * according to the template file.
+   */
+  virtual std::string genText(
+      const DrTemplateData &data = DrTemplateData()) = 0;
 
-    virtual ~DrTemplateBase(){};
-    DrTemplateBase(){};
+  virtual ~DrTemplateBase(){};
+  DrTemplateBase(){};
 };
 
 }  // namespace drogon

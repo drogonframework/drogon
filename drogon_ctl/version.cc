@@ -30,39 +30,38 @@ static const char banner[] =
                  |___/
 )";
 
-void version::handleCommand(std::vector<std::string> &parameters)
-{
-    const auto tlsBackend = trantor::utils::tlsBackend();
-    const bool tlsSupported = drogon::utils::supportsTls();
-    std::cout << banner << std::endl;
-    std::cout << "A utility for drogon" << std::endl;
-    std::cout << "Version: " << DROGON_VERSION << std::endl;
-    std::cout << "Git commit: " << DROGON_VERSION_SHA1 << std::endl;
-    std::cout << "Compilation: \n  Compiler: " << COMPILER_COMMAND
-              << "\n  Compiler ID: " << COMPILER_ID
-              << "\n  Compilation flags: " << COMPILATION_FLAGS
-              << INCLUDING_DIRS << std::endl;
-    std::cout << "Libraries: \n  postgresql: "
-              << (USE_POSTGRESQL ? "yes" : "no") << "  (pipeline mode: "
-              << (LIBPQ_SUPPORTS_BATCH_MODE ? "yes)\n" : "no)\n")
-              << "  mariadb: " << (USE_MYSQL ? "yes\n" : "no\n")
-              << "  sqlite3: " << (USE_SQLITE3 ? "yes\n" : "no\n");
-    std::cout << "  ssl/tls backend: " << tlsBackend << "\n";
+void version::handleCommand(std::vector<std::string> &parameters) {
+  const auto tlsBackend = trantor::utils::tlsBackend();
+  const bool tlsSupported = drogon::utils::supportsTls();
+  std::cout << banner << std::endl;
+  std::cout << "A utility for drogon" << std::endl;
+  std::cout << "Version: " << DROGON_VERSION << std::endl;
+  std::cout << "Git commit: " << DROGON_VERSION_SHA1 << std::endl;
+  std::cout << "Compilation: \n  Compiler: " << COMPILER_COMMAND
+            << "\n  Compiler ID: " << COMPILER_ID
+            << "\n  Compilation flags: " << COMPILATION_FLAGS << INCLUDING_DIRS
+            << std::endl;
+  std::cout << "Libraries: \n  postgresql: " << (USE_POSTGRESQL ? "yes" : "no")
+            << "  (pipeline mode: "
+            << (LIBPQ_SUPPORTS_BATCH_MODE ? "yes)\n" : "no)\n")
+            << "  mariadb: " << (USE_MYSQL ? "yes\n" : "no\n")
+            << "  sqlite3: " << (USE_SQLITE3 ? "yes\n" : "no\n");
+  std::cout << "  ssl/tls backend: " << tlsBackend << "\n";
 #ifdef USE_BROTLI
-    std::cout << "  brotli: yes\n";
+  std::cout << "  brotli: yes\n";
 #else
-    std::cout << "  brotli: no\n";
+  std::cout << "  brotli: no\n";
 #endif
 #ifdef USE_REDIS
-    std::cout << "  hiredis: yes\n";
+  std::cout << "  hiredis: yes\n";
 #else
-    std::cout << "  hiredis: no\n";
+  std::cout << "  hiredis: no\n";
 #endif
-    std::cout << "  c-ares: "
-              << (trantor::Resolver::isCAresUsed() ? "yes\n" : "no\n");
+  std::cout << "  c-ares: "
+            << (trantor::Resolver::isCAresUsed() ? "yes\n" : "no\n");
 #ifdef HAS_YAML_CPP
-    std::cout << "  yaml-cpp: yes\n";
+  std::cout << "  yaml-cpp: yes\n";
 #else
-    std::cout << "  yaml-cpp: no\n";
+  std::cout << "  yaml-cpp: no\n";
 #endif
 }

@@ -20,81 +20,64 @@
 
 #include <queue>
 
-namespace drogon
-{
-namespace filters_function
-{
+namespace drogon {
+namespace filters_function {
 static void doFilterChains(
     const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
     size_t index,
     const HttpRequestImplPtr &req,
     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &callbackPtr,
-    std::function<void()> &&missCallback)
-{
-    if (index < filters.size())
-    {
-        auto &filter = filters[index];
-        filter->doFilter(
-            req,
-            [req, callbackPtr](const HttpResponsePtr &res) {
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              res,
-                                                              *callbackPtr);
-            },
-            [index,
-             req,
-             callbackPtr,
-             &filters,
-             missCallback = std::move(missCallback)]() mutable {
-                auto ioLoop = req->getLoop();
-                if (ioLoop && !ioLoop->isInLoopThread())
-                {
-                    ioLoop->queueInLoop([index,
-                                         req,
-                                         callbackPtr,
-                                         &filters,
-                                         missCallback = std::move(missCallback),
-                                         ioLoop]() mutable {
-                        doFilterChains(filters,
-                                       index + 1,
-                                       req,
-                                       callbackPtr,
-                                       std::move(missCallback));
-                    });
-                }
-                else
-                {
-                    doFilterChains(filters,
-                                   index + 1,
-                                   req,
-                                   callbackPtr,
-                                   std::move(missCallback));
-                }
+    std::function<void()> &&missCallback) {
+  if (index < filters.size()) {
+    auto &filter = filters[index];
+    filter->doFilter(
+        req,
+        [req, callbackPtr](const HttpResponsePtr &res) {
+          HttpAppFrameworkImpl::instance().callCallback(req, res, *callbackPtr);
+        },
+        [index,
+         req,
+         callbackPtr,
+         &filters,
+         missCallback = std::move(missCallback)]() mutable {
+          auto ioLoop = req->getLoop();
+          if (ioLoop && !ioLoop->isInLoopThread()) {
+            ioLoop->queueInLoop([index,
+                                 req,
+                                 callbackPtr,
+                                 &filters,
+                                 missCallback = std::move(missCallback),
+                                 ioLoop]() mutable {
+              doFilterChains(filters,
+                             index + 1,
+                             req,
+                             callbackPtr,
+                             std::move(missCallback));
             });
-    }
-    else
-    {
-        missCallback();
-    }
+          } else {
+            doFilterChains(
+                filters, index + 1, req, callbackPtr, std::move(missCallback));
+          }
+        });
+  } else {
+    missCallback();
+  }
 }
 
 std::vector<std::shared_ptr<HttpFilterBase>> createFilters(
-    const std::vector<std::string> &filterNames)
-{
-    std::vector<std::shared_ptr<HttpFilterBase>> filters;
-    for (auto const &filter : filterNames)
-    {
-        auto object_ = DrClassMap::getSingleInstance(filter);
-        auto filter_ = std::dynamic_pointer_cast<HttpFilterBase>(object_);
-        if (filter_)
-            filters.push_back(filter_);
-        else
-        {
-            LOG_ERROR << "filter " << filter << " not found";
-        }
+    const std::vector<std::string> &filterNames) {
+  std::vector<std::shared_ptr<HttpFilterBase>> filters;
+  for (auto const &filter : filterNames) {
+    auto object_ = DrClassMap::getSingleInstance(filter);
+    auto filter_ = std::dynamic_pointer_cast<HttpFilterBase>(object_);
+    if (filter_)
+      filters.push_back(filter_);
+    else {
+      LOG_ERROR << "filter " << filter << " not found";
     }
-    return filters;
+  }
+  return filters;
 }
 
 void doFilters(
@@ -102,9 +85,8 @@ void doFilters(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &callbackPtr,
-    std::function<void()> &&missCallback)
-{
-    doFilterChains(filters, 0, req, callbackPtr, std::move(missCallback));
+    std::function<void()> &&missCallback) {
+  doFilterChains(filters, 0, req, callbackPtr, std::move(missCallback));
 }
 
 }  // namespace filters_function

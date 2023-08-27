@@ -6,10 +6,8 @@
 #include <memory>
 #include <drogon/HttpFilter.h>
 
-namespace drogon
-{
-namespace plugin
-{
+namespace drogon {
+namespace plugin {
 /**
  * @brif This plugin is used to add global filters to all HTTP requests.
  * The json configuration is as follows:
@@ -36,20 +34,18 @@ namespace plugin
  */
 class DROGON_EXPORT GlobalFilters
     : public drogon::Plugin<GlobalFilters>,
-      public std::enable_shared_from_this<GlobalFilters>
-{
-  public:
-    GlobalFilters()
-    {
-    }
+      public std::enable_shared_from_this<GlobalFilters> {
+ public:
+  GlobalFilters() {
+  }
 
-    void initAndStart(const Json::Value &config) override;
-    void shutdown() override;
+  void initAndStart(const Json::Value &config) override;
+  void shutdown() override;
 
-  private:
-    std::vector<std::shared_ptr<drogon::HttpFilterBase>> filters_;
-    std::regex exemptPegex_;
-    bool regexFlag_{false};
+ private:
+  std::vector<std::shared_ptr<drogon::HttpFilterBase>> filters_;
+  std::regex exemptPegex_;
+  bool regexFlag_{false};
 };
 }  // namespace plugin
 }  // namespace drogon

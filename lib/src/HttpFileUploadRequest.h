@@ -17,26 +17,22 @@
 #include <string>
 #include <vector>
 
-namespace drogon
-{
-class HttpFileUploadRequest : public HttpRequestImpl
-{
-  public:
-    const std::string &boundary() const
-    {
-        return boundary_;
-    }
+namespace drogon {
+class HttpFileUploadRequest : public HttpRequestImpl {
+ public:
+  const std::string &boundary() const {
+    return boundary_;
+  }
 
-    const std::vector<UploadFile> &files() const
-    {
-        return files_;
-    }
+  const std::vector<UploadFile> &files() const {
+    return files_;
+  }
 
-    explicit HttpFileUploadRequest(const std::vector<UploadFile> &files);
+  explicit HttpFileUploadRequest(const std::vector<UploadFile> &files);
 
-  private:
-    std::string boundary_;
-    std::vector<UploadFile> files_;
+ private:
+  std::string boundary_;
+  std::vector<UploadFile> files_;
 };
 
 }  // namespace drogon

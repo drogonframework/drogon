@@ -16,8 +16,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 
-namespace drogon
-{
+namespace drogon {
 void doAdvicesChain(
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
@@ -26,52 +25,40 @@ void doAdvicesChain(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &callbackPtr,
-    std::function<void()> &&missCallback)
-{
-    if (index < advices.size())
-    {
-        auto &advice = advices[index];
-        advice(
-            req,
-            [callbackPtr](const HttpResponsePtr &resp) {
-                (*callbackPtr)(resp);
-            },
-            [index,
-             req,
-             callbackPtr,
-             &advices,
-             missCallback = std::move(missCallback)]() mutable {
-                auto ioLoop = req->getLoop();
-                if (ioLoop && !ioLoop->isInLoopThread())
-                {
-                    ioLoop->queueInLoop(
-                        [index,
-                         req,
-                         callbackPtr,
-                         &advices,
-                         missCallback = std::move(missCallback)]() mutable {
-                            doAdvicesChain(advices,
-                                           index + 1,
-                                           req,
-                                           callbackPtr,
-                                           std::move(missCallback));
-                        });
-                    return;
-                }
-                else
-                {
-                    doAdvicesChain(advices,
-                                   index + 1,
-                                   req,
-                                   callbackPtr,
-                                   std::move(missCallback));
-                }
-            });
-    }
-    else
-    {
-        missCallback();
-    }
+    std::function<void()> &&missCallback) {
+  if (index < advices.size()) {
+    auto &advice = advices[index];
+    advice(
+        req,
+        [callbackPtr](const HttpResponsePtr &resp) { (*callbackPtr)(resp); },
+        [index,
+         req,
+         callbackPtr,
+         &advices,
+         missCallback = std::move(missCallback)]() mutable {
+          auto ioLoop = req->getLoop();
+          if (ioLoop && !ioLoop->isInLoopThread()) {
+            ioLoop->queueInLoop(
+                [index,
+                 req,
+                 callbackPtr,
+                 &advices,
+                 missCallback = std::move(missCallback)]() mutable {
+                  doAdvicesChain(advices,
+                                 index + 1,
+                                 req,
+                                 callbackPtr,
+                                 std::move(missCallback));
+                });
+            return;
+          } else {
+            doAdvicesChain(
+                advices, index + 1, req, callbackPtr, std::move(missCallback));
+          }
+        });
+  } else {
+    missCallback();
+  }
 }
 
 }  // namespace drogon

@@ -18,8 +18,7 @@
 #include <functional>
 #include <memory>
 
-namespace drogon
-{
+namespace drogon {
 class HttpResponse;
 using HttpResponsePtr = std::shared_ptr<HttpResponse>;
 class HttpRequest;

@@ -16,21 +16,18 @@
 #include <vector>
 #include <sys/types.h>
 
-namespace drogon
-{
+namespace drogon {
 // [start, end)
-struct FileRange
-{
-    size_t start;
-    size_t end;
+struct FileRange {
+  size_t start;
+  size_t end;
 };
 
-enum FileRangeParseResult
-{
-    InvalidRange = -1,
-    NotSatisfiable = 0,
-    SinglePart = 1,
-    MultiPart = 2
+enum FileRangeParseResult {
+  InvalidRange = -1,
+  NotSatisfiable = 0,
+  SinglePart = 1,
+  MultiPart = 2
 };
 
 FileRangeParseResult parseRangeHeader(const std::string &rangeStr,

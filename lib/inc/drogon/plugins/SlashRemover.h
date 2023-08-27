@@ -17,8 +17,7 @@
 #include "drogon/utils/FunctionTraits.h"
 #include <json/value.h>
 
-namespace drogon::plugin
-{
+namespace drogon::plugin {
 /**
  * @brief The SlashRemover plugin redirects requests to proper paths if they
  * contain excessive slashes.
@@ -45,17 +44,15 @@ internally.
  * Enable the plugin by adding the configuration to the list of plugins in the
  * configuration file.
  * */
-class DROGON_EXPORT SlashRemover : public drogon::Plugin<SlashRemover>
-{
-  public:
-    SlashRemover()
-    {
-    }
+class DROGON_EXPORT SlashRemover : public drogon::Plugin<SlashRemover> {
+ public:
+  SlashRemover() {
+  }
 
-    void initAndStart(const Json::Value &config) override;
-    void shutdown() override;
+  void initAndStart(const Json::Value &config) override;
+  void shutdown() override;
 
-  private:
-    bool trailingSlashes_{true}, duplicateSlashes_{true}, redirect_{true};
+ private:
+  bool trailingSlashes_{true}, duplicateSlashes_{true}, redirect_{true};
 };
 }  // namespace drogon::plugin

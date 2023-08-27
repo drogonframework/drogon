@@ -23,29 +23,28 @@
 
 using namespace drogon;
 
-std::string NotFound::genText(const HttpViewData &NotFound_view_data)
-{
-    std::stringstream NotFound_tmp_stream;
-    NotFound_tmp_stream << "<html>\n";
-    NotFound_tmp_stream << "<head><title>404 Not Found</title></head>\n";
-    NotFound_tmp_stream << "<body bgcolor=\"white\" text=\"black\">\n";
-    NotFound_tmp_stream << "<center><h1>404 Not Found</h1></center>\n";
-    NotFound_tmp_stream << "<hr><center>drogon/";
-    NotFound_tmp_stream << NotFound_view_data.get<std::string>("version");
-    NotFound_tmp_stream << "</center>\n";
-    NotFound_tmp_stream << "</body>\n";
-    NotFound_tmp_stream << "</html>\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
-                           "error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
-                           "error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
-                           "error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
-                           "error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
-                           "error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
-                           "error page -->\n";
-    return NotFound_tmp_stream.str();
+std::string NotFound::genText(const HttpViewData &NotFound_view_data) {
+  std::stringstream NotFound_tmp_stream;
+  NotFound_tmp_stream << "<html>\n";
+  NotFound_tmp_stream << "<head><title>404 Not Found</title></head>\n";
+  NotFound_tmp_stream << "<body bgcolor=\"white\" text=\"black\">\n";
+  NotFound_tmp_stream << "<center><h1>404 Not Found</h1></center>\n";
+  NotFound_tmp_stream << "<hr><center>drogon/";
+  NotFound_tmp_stream << NotFound_view_data.get<std::string>("version");
+  NotFound_tmp_stream << "</center>\n";
+  NotFound_tmp_stream << "</body>\n";
+  NotFound_tmp_stream << "</html>\n";
+  NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                         "error page -->\n";
+  NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                         "error page -->\n";
+  NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                         "error page -->\n";
+  NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                         "error page -->\n";
+  NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                         "error page -->\n";
+  NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                         "error page -->\n";
+  return NotFound_tmp_stream.str();
 }

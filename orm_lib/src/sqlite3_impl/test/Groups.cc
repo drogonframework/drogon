@@ -40,2022 +40,1547 @@ const std::vector<typename Groups::MetaData> Groups::metaData_ = {
     {"avatar", "std::vector<char>", "blob", 0, 0, 0, 0},
     {"is_default", "bool", "bool", 1, 0, 0, 0}};
 
-const std::string &Groups::getColumnName(size_t index) noexcept(false)
-{
-    assert(index < metaData_.size());
-    return metaData_[index].colName_;
+const std::string &Groups::getColumnName(size_t index) noexcept(false) {
+  assert(index < metaData_.size());
+  return metaData_[index].colName_;
 }
 
-Groups::Groups(const Row &r, const ssize_t indexOffset) noexcept
-{
-    if (indexOffset < 0)
-    {
-        if (!r["group_id"].isNull())
-        {
-            groupId_ = std::make_shared<uint64_t>(r["group_id"].as<uint64_t>());
-        }
-        if (!r["group_name"].isNull())
-        {
-            groupName_ = std::make_shared<std::string>(
-                r["group_name"].as<std::string>());
-        }
-        if (!r["creater_id"].isNull())
-        {
-            createrId_ =
-                std::make_shared<uint64_t>(r["creater_id"].as<uint64_t>());
-        }
-        if (!r["create_time"].isNull())
-        {
-            createTime_ = std::make_shared<std::string>(
-                r["create_time"].as<std::string>());
-        }
-        if (!r["inviting"].isNull())
-        {
-            inviting_ =
-                std::make_shared<uint64_t>(r["inviting"].as<uint64_t>());
-        }
-        if (!r["inviting_user_id"].isNull())
-        {
-            invitingUserId_ = std::make_shared<uint64_t>(
-                r["inviting_user_id"].as<uint64_t>());
-        }
-        if (!r["avatar_id"].isNull())
-        {
-            avatarId_ =
-                std::make_shared<std::string>(r["avatar_id"].as<std::string>());
-        }
-        if (!r["uuu"].isNull())
-        {
-            uuu_ = std::make_shared<double>(r["uuu"].as<double>());
-        }
-        if (!r["text"].isNull())
-        {
-            text_ = std::make_shared<std::string>(r["text"].as<std::string>());
-        }
-        if (!r["avatar"].isNull())
-        {
-            avatar_ = std::make_shared<std::vector<char>>(
-                r["avatar"].as<std::vector<char>>());
-        }
-        if (!r["is_default"].isNull())
-        {
-            isDefault_ = std::make_shared<bool>(r["is_default"].as<bool>());
-        }
+Groups::Groups(const Row &r, const ssize_t indexOffset) noexcept {
+  if (indexOffset < 0) {
+    if (!r["group_id"].isNull()) {
+      groupId_ = std::make_shared<uint64_t>(r["group_id"].as<uint64_t>());
     }
-    else
-    {
-        size_t offset = (size_t)indexOffset;
-        if (offset + 11 > r.size())
-        {
-            LOG_FATAL << "Invalid SQL result for this model";
-            return;
-        }
-        size_t index;
-        index = offset + 0;
-        if (!r[index].isNull())
-        {
-            groupId_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
-        }
-        index = offset + 1;
-        if (!r[index].isNull())
-        {
-            groupName_ =
-                std::make_shared<std::string>(r[index].as<std::string>());
-        }
-        index = offset + 2;
-        if (!r[index].isNull())
-        {
-            createrId_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
-        }
-        index = offset + 3;
-        if (!r[index].isNull())
-        {
-            createTime_ =
-                std::make_shared<std::string>(r[index].as<std::string>());
-        }
-        index = offset + 4;
-        if (!r[index].isNull())
-        {
-            inviting_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
-        }
-        index = offset + 5;
-        if (!r[index].isNull())
-        {
-            invitingUserId_ =
-                std::make_shared<uint64_t>(r[index].as<uint64_t>());
-        }
-        index = offset + 6;
-        if (!r[index].isNull())
-        {
-            avatarId_ =
-                std::make_shared<std::string>(r[index].as<std::string>());
-        }
-        index = offset + 7;
-        if (!r[index].isNull())
-        {
-            uuu_ = std::make_shared<double>(r[index].as<double>());
-        }
-        index = offset + 8;
-        if (!r[index].isNull())
-        {
-            text_ = std::make_shared<std::string>(r[index].as<std::string>());
-        }
-        index = offset + 9;
-        if (!r[index].isNull())
-        {
-            avatar_ = std::make_shared<std::vector<char>>(
-                r[index].as<std::vector<char>>());
-        }
-        index = offset + 10;
-        if (!r[index].isNull())
-        {
-            isDefault_ = std::make_shared<bool>(r[index].as<bool>());
-        }
+    if (!r["group_name"].isNull()) {
+      groupName_ =
+          std::make_shared<std::string>(r["group_name"].as<std::string>());
     }
+    if (!r["creater_id"].isNull()) {
+      createrId_ = std::make_shared<uint64_t>(r["creater_id"].as<uint64_t>());
+    }
+    if (!r["create_time"].isNull()) {
+      createTime_ =
+          std::make_shared<std::string>(r["create_time"].as<std::string>());
+    }
+    if (!r["inviting"].isNull()) {
+      inviting_ = std::make_shared<uint64_t>(r["inviting"].as<uint64_t>());
+    }
+    if (!r["inviting_user_id"].isNull()) {
+      invitingUserId_ =
+          std::make_shared<uint64_t>(r["inviting_user_id"].as<uint64_t>());
+    }
+    if (!r["avatar_id"].isNull()) {
+      avatarId_ =
+          std::make_shared<std::string>(r["avatar_id"].as<std::string>());
+    }
+    if (!r["uuu"].isNull()) {
+      uuu_ = std::make_shared<double>(r["uuu"].as<double>());
+    }
+    if (!r["text"].isNull()) {
+      text_ = std::make_shared<std::string>(r["text"].as<std::string>());
+    }
+    if (!r["avatar"].isNull()) {
+      avatar_ = std::make_shared<std::vector<char>>(
+          r["avatar"].as<std::vector<char>>());
+    }
+    if (!r["is_default"].isNull()) {
+      isDefault_ = std::make_shared<bool>(r["is_default"].as<bool>());
+    }
+  } else {
+    size_t offset = (size_t)indexOffset;
+    if (offset + 11 > r.size()) {
+      LOG_FATAL << "Invalid SQL result for this model";
+      return;
+    }
+    size_t index;
+    index = offset + 0;
+    if (!r[index].isNull()) {
+      groupId_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
+    }
+    index = offset + 1;
+    if (!r[index].isNull()) {
+      groupName_ = std::make_shared<std::string>(r[index].as<std::string>());
+    }
+    index = offset + 2;
+    if (!r[index].isNull()) {
+      createrId_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
+    }
+    index = offset + 3;
+    if (!r[index].isNull()) {
+      createTime_ = std::make_shared<std::string>(r[index].as<std::string>());
+    }
+    index = offset + 4;
+    if (!r[index].isNull()) {
+      inviting_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
+    }
+    index = offset + 5;
+    if (!r[index].isNull()) {
+      invitingUserId_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
+    }
+    index = offset + 6;
+    if (!r[index].isNull()) {
+      avatarId_ = std::make_shared<std::string>(r[index].as<std::string>());
+    }
+    index = offset + 7;
+    if (!r[index].isNull()) {
+      uuu_ = std::make_shared<double>(r[index].as<double>());
+    }
+    index = offset + 8;
+    if (!r[index].isNull()) {
+      text_ = std::make_shared<std::string>(r[index].as<std::string>());
+    }
+    index = offset + 9;
+    if (!r[index].isNull()) {
+      avatar_ =
+          std::make_shared<std::vector<char>>(r[index].as<std::vector<char>>());
+    }
+    index = offset + 10;
+    if (!r[index].isNull()) {
+      isDefault_ = std::make_shared<bool>(r[index].as<bool>());
+    }
+  }
 }
 
 Groups::Groups(
     const Json::Value &pJson,
-    const std::vector<std::string> &pMasqueradingVector) noexcept(false)
-{
-    if (pMasqueradingVector.size() != 11)
-    {
-        LOG_ERROR << "Bad masquerading vector";
-        return;
+    const std::vector<std::string> &pMasqueradingVector) noexcept(false) {
+  if (pMasqueradingVector.size() != 11) {
+    LOG_ERROR << "Bad masquerading vector";
+    return;
+  }
+  if (!pMasqueradingVector[0].empty() &&
+      pJson.isMember(pMasqueradingVector[0])) {
+    dirtyFlag_[0] = true;
+    if (!pJson[pMasqueradingVector[0]].isNull()) {
+      groupId_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
     }
-    if (!pMasqueradingVector[0].empty() &&
-        pJson.isMember(pMasqueradingVector[0]))
-    {
-        dirtyFlag_[0] = true;
-        if (!pJson[pMasqueradingVector[0]].isNull())
-        {
-            groupId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
-        }
+  }
+  if (!pMasqueradingVector[1].empty() &&
+      pJson.isMember(pMasqueradingVector[1])) {
+    dirtyFlag_[1] = true;
+    if (!pJson[pMasqueradingVector[1]].isNull()) {
+      groupName_ = std::make_shared<std::string>(
+          pJson[pMasqueradingVector[1]].asString());
     }
-    if (!pMasqueradingVector[1].empty() &&
-        pJson.isMember(pMasqueradingVector[1]))
-    {
-        dirtyFlag_[1] = true;
-        if (!pJson[pMasqueradingVector[1]].isNull())
-        {
-            groupName_ = std::make_shared<std::string>(
-                pJson[pMasqueradingVector[1]].asString());
-        }
+  }
+  if (!pMasqueradingVector[2].empty() &&
+      pJson.isMember(pMasqueradingVector[2])) {
+    dirtyFlag_[2] = true;
+    if (!pJson[pMasqueradingVector[2]].isNull()) {
+      createrId_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
     }
-    if (!pMasqueradingVector[2].empty() &&
-        pJson.isMember(pMasqueradingVector[2]))
-    {
-        dirtyFlag_[2] = true;
-        if (!pJson[pMasqueradingVector[2]].isNull())
-        {
-            createrId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
-        }
+  }
+  if (!pMasqueradingVector[3].empty() &&
+      pJson.isMember(pMasqueradingVector[3])) {
+    dirtyFlag_[3] = true;
+    if (!pJson[pMasqueradingVector[3]].isNull()) {
+      createTime_ = std::make_shared<std::string>(
+          pJson[pMasqueradingVector[3]].asString());
     }
-    if (!pMasqueradingVector[3].empty() &&
-        pJson.isMember(pMasqueradingVector[3]))
-    {
-        dirtyFlag_[3] = true;
-        if (!pJson[pMasqueradingVector[3]].isNull())
-        {
-            createTime_ = std::make_shared<std::string>(
-                pJson[pMasqueradingVector[3]].asString());
-        }
+  }
+  if (!pMasqueradingVector[4].empty() &&
+      pJson.isMember(pMasqueradingVector[4])) {
+    dirtyFlag_[4] = true;
+    if (!pJson[pMasqueradingVector[4]].isNull()) {
+      inviting_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
     }
-    if (!pMasqueradingVector[4].empty() &&
-        pJson.isMember(pMasqueradingVector[4]))
-    {
-        dirtyFlag_[4] = true;
-        if (!pJson[pMasqueradingVector[4]].isNull())
-        {
-            inviting_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
-        }
+  }
+  if (!pMasqueradingVector[5].empty() &&
+      pJson.isMember(pMasqueradingVector[5])) {
+    dirtyFlag_[5] = true;
+    if (!pJson[pMasqueradingVector[5]].isNull()) {
+      invitingUserId_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
     }
-    if (!pMasqueradingVector[5].empty() &&
-        pJson.isMember(pMasqueradingVector[5]))
-    {
-        dirtyFlag_[5] = true;
-        if (!pJson[pMasqueradingVector[5]].isNull())
-        {
-            invitingUserId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
-        }
+  }
+  if (!pMasqueradingVector[6].empty() &&
+      pJson.isMember(pMasqueradingVector[6])) {
+    dirtyFlag_[6] = true;
+    if (!pJson[pMasqueradingVector[6]].isNull()) {
+      avatarId_ = std::make_shared<std::string>(
+          pJson[pMasqueradingVector[6]].asString());
     }
-    if (!pMasqueradingVector[6].empty() &&
-        pJson.isMember(pMasqueradingVector[6]))
-    {
-        dirtyFlag_[6] = true;
-        if (!pJson[pMasqueradingVector[6]].isNull())
-        {
-            avatarId_ = std::make_shared<std::string>(
-                pJson[pMasqueradingVector[6]].asString());
-        }
+  }
+  if (!pMasqueradingVector[7].empty() &&
+      pJson.isMember(pMasqueradingVector[7])) {
+    dirtyFlag_[7] = true;
+    if (!pJson[pMasqueradingVector[7]].isNull()) {
+      uuu_ = std::make_shared<double>(pJson[pMasqueradingVector[7]].asDouble());
     }
-    if (!pMasqueradingVector[7].empty() &&
-        pJson.isMember(pMasqueradingVector[7]))
-    {
-        dirtyFlag_[7] = true;
-        if (!pJson[pMasqueradingVector[7]].isNull())
-        {
-            uuu_ = std::make_shared<double>(
-                pJson[pMasqueradingVector[7]].asDouble());
-        }
+  }
+  if (!pMasqueradingVector[8].empty() &&
+      pJson.isMember(pMasqueradingVector[8])) {
+    dirtyFlag_[8] = true;
+    if (!pJson[pMasqueradingVector[8]].isNull()) {
+      text_ = std::make_shared<std::string>(
+          pJson[pMasqueradingVector[8]].asString());
     }
-    if (!pMasqueradingVector[8].empty() &&
-        pJson.isMember(pMasqueradingVector[8]))
-    {
-        dirtyFlag_[8] = true;
-        if (!pJson[pMasqueradingVector[8]].isNull())
-        {
-            text_ = std::make_shared<std::string>(
-                pJson[pMasqueradingVector[8]].asString());
-        }
+  }
+  if (!pMasqueradingVector[9].empty() &&
+      pJson.isMember(pMasqueradingVector[9])) {
+    dirtyFlag_[9] = true;
+    if (!pJson[pMasqueradingVector[9]].isNull()) {
+      auto str = pJson[pMasqueradingVector[9]].asString();
+      avatar_ = std::make_shared<std::vector<char>>(
+          drogon::utils::base64DecodeToVector(str));
     }
-    if (!pMasqueradingVector[9].empty() &&
-        pJson.isMember(pMasqueradingVector[9]))
-    {
-        dirtyFlag_[9] = true;
-        if (!pJson[pMasqueradingVector[9]].isNull())
-        {
-            auto str = pJson[pMasqueradingVector[9]].asString();
-            avatar_ = std::make_shared<std::vector<char>>(
-                drogon::utils::base64DecodeToVector(str));
-        }
+  }
+  if (!pMasqueradingVector[10].empty() &&
+      pJson.isMember(pMasqueradingVector[10])) {
+    dirtyFlag_[10] = true;
+    if (!pJson[pMasqueradingVector[10]].isNull()) {
+      isDefault_ =
+          std::make_shared<bool>(pJson[pMasqueradingVector[10]].asBool());
     }
-    if (!pMasqueradingVector[10].empty() &&
-        pJson.isMember(pMasqueradingVector[10]))
-    {
-        dirtyFlag_[10] = true;
-        if (!pJson[pMasqueradingVector[10]].isNull())
-        {
-            isDefault_ =
-                std::make_shared<bool>(pJson[pMasqueradingVector[10]].asBool());
-        }
-    }
+  }
 }
 
-Groups::Groups(const Json::Value &pJson) noexcept(false)
-{
-    if (pJson.isMember("group_id"))
-    {
-        dirtyFlag_[0] = true;
-        if (!pJson["group_id"].isNull())
-        {
-            groupId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson["group_id"].asUInt64());
-        }
+Groups::Groups(const Json::Value &pJson) noexcept(false) {
+  if (pJson.isMember("group_id")) {
+    dirtyFlag_[0] = true;
+    if (!pJson["group_id"].isNull()) {
+      groupId_ =
+          std::make_shared<uint64_t>((uint64_t)pJson["group_id"].asUInt64());
     }
-    if (pJson.isMember("group_name"))
-    {
-        dirtyFlag_[1] = true;
-        if (!pJson["group_name"].isNull())
-        {
-            groupName_ =
-                std::make_shared<std::string>(pJson["group_name"].asString());
-        }
+  }
+  if (pJson.isMember("group_name")) {
+    dirtyFlag_[1] = true;
+    if (!pJson["group_name"].isNull()) {
+      groupName_ =
+          std::make_shared<std::string>(pJson["group_name"].asString());
     }
-    if (pJson.isMember("creater_id"))
-    {
-        dirtyFlag_[2] = true;
-        if (!pJson["creater_id"].isNull())
-        {
-            createrId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson["creater_id"].asUInt64());
-        }
+  }
+  if (pJson.isMember("creater_id")) {
+    dirtyFlag_[2] = true;
+    if (!pJson["creater_id"].isNull()) {
+      createrId_ =
+          std::make_shared<uint64_t>((uint64_t)pJson["creater_id"].asUInt64());
     }
-    if (pJson.isMember("create_time"))
-    {
-        dirtyFlag_[3] = true;
-        if (!pJson["create_time"].isNull())
-        {
-            createTime_ =
-                std::make_shared<std::string>(pJson["create_time"].asString());
-        }
+  }
+  if (pJson.isMember("create_time")) {
+    dirtyFlag_[3] = true;
+    if (!pJson["create_time"].isNull()) {
+      createTime_ =
+          std::make_shared<std::string>(pJson["create_time"].asString());
     }
-    if (pJson.isMember("inviting"))
-    {
-        dirtyFlag_[4] = true;
-        if (!pJson["inviting"].isNull())
-        {
-            inviting_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson["inviting"].asUInt64());
-        }
+  }
+  if (pJson.isMember("inviting")) {
+    dirtyFlag_[4] = true;
+    if (!pJson["inviting"].isNull()) {
+      inviting_ =
+          std::make_shared<uint64_t>((uint64_t)pJson["inviting"].asUInt64());
     }
-    if (pJson.isMember("inviting_user_id"))
-    {
-        dirtyFlag_[5] = true;
-        if (!pJson["inviting_user_id"].isNull())
-        {
-            invitingUserId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson["inviting_user_id"].asUInt64());
-        }
+  }
+  if (pJson.isMember("inviting_user_id")) {
+    dirtyFlag_[5] = true;
+    if (!pJson["inviting_user_id"].isNull()) {
+      invitingUserId_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson["inviting_user_id"].asUInt64());
     }
-    if (pJson.isMember("avatar_id"))
-    {
-        dirtyFlag_[6] = true;
-        if (!pJson["avatar_id"].isNull())
-        {
-            avatarId_ =
-                std::make_shared<std::string>(pJson["avatar_id"].asString());
-        }
+  }
+  if (pJson.isMember("avatar_id")) {
+    dirtyFlag_[6] = true;
+    if (!pJson["avatar_id"].isNull()) {
+      avatarId_ = std::make_shared<std::string>(pJson["avatar_id"].asString());
     }
-    if (pJson.isMember("uuu"))
-    {
-        dirtyFlag_[7] = true;
-        if (!pJson["uuu"].isNull())
-        {
-            uuu_ = std::make_shared<double>(pJson["uuu"].asDouble());
-        }
+  }
+  if (pJson.isMember("uuu")) {
+    dirtyFlag_[7] = true;
+    if (!pJson["uuu"].isNull()) {
+      uuu_ = std::make_shared<double>(pJson["uuu"].asDouble());
     }
-    if (pJson.isMember("text"))
-    {
-        dirtyFlag_[8] = true;
-        if (!pJson["text"].isNull())
-        {
-            text_ = std::make_shared<std::string>(pJson["text"].asString());
-        }
+  }
+  if (pJson.isMember("text")) {
+    dirtyFlag_[8] = true;
+    if (!pJson["text"].isNull()) {
+      text_ = std::make_shared<std::string>(pJson["text"].asString());
     }
-    if (pJson.isMember("avatar"))
-    {
-        dirtyFlag_[9] = true;
-        if (!pJson["avatar"].isNull())
-        {
-            auto str = pJson["avatar"].asString();
-            avatar_ = std::make_shared<std::vector<char>>(
-                drogon::utils::base64DecodeToVector(str));
-        }
+  }
+  if (pJson.isMember("avatar")) {
+    dirtyFlag_[9] = true;
+    if (!pJson["avatar"].isNull()) {
+      auto str = pJson["avatar"].asString();
+      avatar_ = std::make_shared<std::vector<char>>(
+          drogon::utils::base64DecodeToVector(str));
     }
-    if (pJson.isMember("is_default"))
-    {
-        dirtyFlag_[10] = true;
-        if (!pJson["is_default"].isNull())
-        {
-            isDefault_ = std::make_shared<bool>(pJson["is_default"].asBool());
-        }
+  }
+  if (pJson.isMember("is_default")) {
+    dirtyFlag_[10] = true;
+    if (!pJson["is_default"].isNull()) {
+      isDefault_ = std::make_shared<bool>(pJson["is_default"].asBool());
     }
+  }
 }
 
 void Groups::updateByMasqueradedJson(
     const Json::Value &pJson,
-    const std::vector<std::string> &pMasqueradingVector) noexcept(false)
-{
-    if (pMasqueradingVector.size() != 11)
-    {
-        LOG_ERROR << "Bad masquerading vector";
-        return;
+    const std::vector<std::string> &pMasqueradingVector) noexcept(false) {
+  if (pMasqueradingVector.size() != 11) {
+    LOG_ERROR << "Bad masquerading vector";
+    return;
+  }
+  if (!pMasqueradingVector[0].empty() &&
+      pJson.isMember(pMasqueradingVector[0])) {
+    if (!pJson[pMasqueradingVector[0]].isNull()) {
+      groupId_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
     }
-    if (!pMasqueradingVector[0].empty() &&
-        pJson.isMember(pMasqueradingVector[0]))
-    {
-        if (!pJson[pMasqueradingVector[0]].isNull())
-        {
-            groupId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
-        }
+  }
+  if (!pMasqueradingVector[1].empty() &&
+      pJson.isMember(pMasqueradingVector[1])) {
+    dirtyFlag_[1] = true;
+    if (!pJson[pMasqueradingVector[1]].isNull()) {
+      groupName_ = std::make_shared<std::string>(
+          pJson[pMasqueradingVector[1]].asString());
     }
-    if (!pMasqueradingVector[1].empty() &&
-        pJson.isMember(pMasqueradingVector[1]))
-    {
-        dirtyFlag_[1] = true;
-        if (!pJson[pMasqueradingVector[1]].isNull())
-        {
-            groupName_ = std::make_shared<std::string>(
-                pJson[pMasqueradingVector[1]].asString());
-        }
+  }
+  if (!pMasqueradingVector[2].empty() &&
+      pJson.isMember(pMasqueradingVector[2])) {
+    dirtyFlag_[2] = true;
+    if (!pJson[pMasqueradingVector[2]].isNull()) {
+      createrId_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
     }
-    if (!pMasqueradingVector[2].empty() &&
-        pJson.isMember(pMasqueradingVector[2]))
-    {
-        dirtyFlag_[2] = true;
-        if (!pJson[pMasqueradingVector[2]].isNull())
-        {
-            createrId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
-        }
+  }
+  if (!pMasqueradingVector[3].empty() &&
+      pJson.isMember(pMasqueradingVector[3])) {
+    dirtyFlag_[3] = true;
+    if (!pJson[pMasqueradingVector[3]].isNull()) {
+      createTime_ = std::make_shared<std::string>(
+          pJson[pMasqueradingVector[3]].asString());
     }
-    if (!pMasqueradingVector[3].empty() &&
-        pJson.isMember(pMasqueradingVector[3]))
-    {
-        dirtyFlag_[3] = true;
-        if (!pJson[pMasqueradingVector[3]].isNull())
-        {
-            createTime_ = std::make_shared<std::string>(
-                pJson[pMasqueradingVector[3]].asString());
-        }
+  }
+  if (!pMasqueradingVector[4].empty() &&
+      pJson.isMember(pMasqueradingVector[4])) {
+    dirtyFlag_[4] = true;
+    if (!pJson[pMasqueradingVector[4]].isNull()) {
+      inviting_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
     }
-    if (!pMasqueradingVector[4].empty() &&
-        pJson.isMember(pMasqueradingVector[4]))
-    {
-        dirtyFlag_[4] = true;
-        if (!pJson[pMasqueradingVector[4]].isNull())
-        {
-            inviting_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
-        }
+  }
+  if (!pMasqueradingVector[5].empty() &&
+      pJson.isMember(pMasqueradingVector[5])) {
+    dirtyFlag_[5] = true;
+    if (!pJson[pMasqueradingVector[5]].isNull()) {
+      invitingUserId_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
     }
-    if (!pMasqueradingVector[5].empty() &&
-        pJson.isMember(pMasqueradingVector[5]))
-    {
-        dirtyFlag_[5] = true;
-        if (!pJson[pMasqueradingVector[5]].isNull())
-        {
-            invitingUserId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
-        }
+  }
+  if (!pMasqueradingVector[6].empty() &&
+      pJson.isMember(pMasqueradingVector[6])) {
+    dirtyFlag_[6] = true;
+    if (!pJson[pMasqueradingVector[6]].isNull()) {
+      avatarId_ = std::make_shared<std::string>(
+          pJson[pMasqueradingVector[6]].asString());
     }
-    if (!pMasqueradingVector[6].empty() &&
-        pJson.isMember(pMasqueradingVector[6]))
-    {
-        dirtyFlag_[6] = true;
-        if (!pJson[pMasqueradingVector[6]].isNull())
-        {
-            avatarId_ = std::make_shared<std::string>(
-                pJson[pMasqueradingVector[6]].asString());
-        }
+  }
+  if (!pMasqueradingVector[7].empty() &&
+      pJson.isMember(pMasqueradingVector[7])) {
+    dirtyFlag_[7] = true;
+    if (!pJson[pMasqueradingVector[7]].isNull()) {
+      uuu_ = std::make_shared<double>(pJson[pMasqueradingVector[7]].asDouble());
     }
-    if (!pMasqueradingVector[7].empty() &&
-        pJson.isMember(pMasqueradingVector[7]))
-    {
-        dirtyFlag_[7] = true;
-        if (!pJson[pMasqueradingVector[7]].isNull())
-        {
-            uuu_ = std::make_shared<double>(
-                pJson[pMasqueradingVector[7]].asDouble());
-        }
+  }
+  if (!pMasqueradingVector[8].empty() &&
+      pJson.isMember(pMasqueradingVector[8])) {
+    dirtyFlag_[8] = true;
+    if (!pJson[pMasqueradingVector[8]].isNull()) {
+      text_ = std::make_shared<std::string>(
+          pJson[pMasqueradingVector[8]].asString());
     }
-    if (!pMasqueradingVector[8].empty() &&
-        pJson.isMember(pMasqueradingVector[8]))
-    {
-        dirtyFlag_[8] = true;
-        if (!pJson[pMasqueradingVector[8]].isNull())
-        {
-            text_ = std::make_shared<std::string>(
-                pJson[pMasqueradingVector[8]].asString());
-        }
+  }
+  if (!pMasqueradingVector[9].empty() &&
+      pJson.isMember(pMasqueradingVector[9])) {
+    dirtyFlag_[9] = true;
+    if (!pJson[pMasqueradingVector[9]].isNull()) {
+      auto str = pJson[pMasqueradingVector[9]].asString();
+      avatar_ = std::make_shared<std::vector<char>>(
+          drogon::utils::base64DecodeToVector(str));
     }
-    if (!pMasqueradingVector[9].empty() &&
-        pJson.isMember(pMasqueradingVector[9]))
-    {
-        dirtyFlag_[9] = true;
-        if (!pJson[pMasqueradingVector[9]].isNull())
-        {
-            auto str = pJson[pMasqueradingVector[9]].asString();
-            avatar_ = std::make_shared<std::vector<char>>(
-                drogon::utils::base64DecodeToVector(str));
-        }
+  }
+  if (!pMasqueradingVector[10].empty() &&
+      pJson.isMember(pMasqueradingVector[10])) {
+    dirtyFlag_[10] = true;
+    if (!pJson[pMasqueradingVector[10]].isNull()) {
+      isDefault_ =
+          std::make_shared<bool>(pJson[pMasqueradingVector[10]].asBool());
     }
-    if (!pMasqueradingVector[10].empty() &&
-        pJson.isMember(pMasqueradingVector[10]))
-    {
-        dirtyFlag_[10] = true;
-        if (!pJson[pMasqueradingVector[10]].isNull())
-        {
-            isDefault_ =
-                std::make_shared<bool>(pJson[pMasqueradingVector[10]].asBool());
-        }
-    }
+  }
 }
 
-void Groups::updateByJson(const Json::Value &pJson) noexcept(false)
-{
-    if (pJson.isMember("group_id"))
-    {
-        if (!pJson["group_id"].isNull())
-        {
-            groupId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson["group_id"].asUInt64());
-        }
+void Groups::updateByJson(const Json::Value &pJson) noexcept(false) {
+  if (pJson.isMember("group_id")) {
+    if (!pJson["group_id"].isNull()) {
+      groupId_ =
+          std::make_shared<uint64_t>((uint64_t)pJson["group_id"].asUInt64());
     }
-    if (pJson.isMember("group_name"))
-    {
-        dirtyFlag_[1] = true;
-        if (!pJson["group_name"].isNull())
-        {
-            groupName_ =
-                std::make_shared<std::string>(pJson["group_name"].asString());
-        }
+  }
+  if (pJson.isMember("group_name")) {
+    dirtyFlag_[1] = true;
+    if (!pJson["group_name"].isNull()) {
+      groupName_ =
+          std::make_shared<std::string>(pJson["group_name"].asString());
     }
-    if (pJson.isMember("creater_id"))
-    {
-        dirtyFlag_[2] = true;
-        if (!pJson["creater_id"].isNull())
-        {
-            createrId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson["creater_id"].asUInt64());
-        }
+  }
+  if (pJson.isMember("creater_id")) {
+    dirtyFlag_[2] = true;
+    if (!pJson["creater_id"].isNull()) {
+      createrId_ =
+          std::make_shared<uint64_t>((uint64_t)pJson["creater_id"].asUInt64());
     }
-    if (pJson.isMember("create_time"))
-    {
-        dirtyFlag_[3] = true;
-        if (!pJson["create_time"].isNull())
-        {
-            createTime_ =
-                std::make_shared<std::string>(pJson["create_time"].asString());
-        }
+  }
+  if (pJson.isMember("create_time")) {
+    dirtyFlag_[3] = true;
+    if (!pJson["create_time"].isNull()) {
+      createTime_ =
+          std::make_shared<std::string>(pJson["create_time"].asString());
     }
-    if (pJson.isMember("inviting"))
-    {
-        dirtyFlag_[4] = true;
-        if (!pJson["inviting"].isNull())
-        {
-            inviting_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson["inviting"].asUInt64());
-        }
+  }
+  if (pJson.isMember("inviting")) {
+    dirtyFlag_[4] = true;
+    if (!pJson["inviting"].isNull()) {
+      inviting_ =
+          std::make_shared<uint64_t>((uint64_t)pJson["inviting"].asUInt64());
     }
-    if (pJson.isMember("inviting_user_id"))
-    {
-        dirtyFlag_[5] = true;
-        if (!pJson["inviting_user_id"].isNull())
-        {
-            invitingUserId_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson["inviting_user_id"].asUInt64());
-        }
+  }
+  if (pJson.isMember("inviting_user_id")) {
+    dirtyFlag_[5] = true;
+    if (!pJson["inviting_user_id"].isNull()) {
+      invitingUserId_ = std::make_shared<uint64_t>(
+          (uint64_t)pJson["inviting_user_id"].asUInt64());
     }
-    if (pJson.isMember("avatar_id"))
-    {
-        dirtyFlag_[6] = true;
-        if (!pJson["avatar_id"].isNull())
-        {
-            avatarId_ =
-                std::make_shared<std::string>(pJson["avatar_id"].asString());
-        }
+  }
+  if (pJson.isMember("avatar_id")) {
+    dirtyFlag_[6] = true;
+    if (!pJson["avatar_id"].isNull()) {
+      avatarId_ = std::make_shared<std::string>(pJson["avatar_id"].asString());
     }
-    if (pJson.isMember("uuu"))
-    {
-        dirtyFlag_[7] = true;
-        if (!pJson["uuu"].isNull())
-        {
-            uuu_ = std::make_shared<double>(pJson["uuu"].asDouble());
-        }
+  }
+  if (pJson.isMember("uuu")) {
+    dirtyFlag_[7] = true;
+    if (!pJson["uuu"].isNull()) {
+      uuu_ = std::make_shared<double>(pJson["uuu"].asDouble());
     }
-    if (pJson.isMember("text"))
-    {
-        dirtyFlag_[8] = true;
-        if (!pJson["text"].isNull())
-        {
-            text_ = std::make_shared<std::string>(pJson["text"].asString());
-        }
+  }
+  if (pJson.isMember("text")) {
+    dirtyFlag_[8] = true;
+    if (!pJson["text"].isNull()) {
+      text_ = std::make_shared<std::string>(pJson["text"].asString());
     }
-    if (pJson.isMember("avatar"))
-    {
-        dirtyFlag_[9] = true;
-        if (!pJson["avatar"].isNull())
-        {
-            auto str = pJson["avatar"].asString();
-            avatar_ = std::make_shared<std::vector<char>>(
-                drogon::utils::base64DecodeToVector(str));
-        }
+  }
+  if (pJson.isMember("avatar")) {
+    dirtyFlag_[9] = true;
+    if (!pJson["avatar"].isNull()) {
+      auto str = pJson["avatar"].asString();
+      avatar_ = std::make_shared<std::vector<char>>(
+          drogon::utils::base64DecodeToVector(str));
     }
-    if (pJson.isMember("is_default"))
-    {
-        dirtyFlag_[10] = true;
-        if (!pJson["is_default"].isNull())
-        {
-            isDefault_ = std::make_shared<bool>(pJson["is_default"].asBool());
-        }
+  }
+  if (pJson.isMember("is_default")) {
+    dirtyFlag_[10] = true;
+    if (!pJson["is_default"].isNull()) {
+      isDefault_ = std::make_shared<bool>(pJson["is_default"].asBool());
     }
+  }
 }
 
-const uint64_t &Groups::getValueOfGroupId() const noexcept
-{
-    const static uint64_t defaultValue = uint64_t();
-    if (groupId_)
-        return *groupId_;
-    return defaultValue;
-}
-
-const std::shared_ptr<uint64_t> &Groups::getGroupId() const noexcept
-{
-    return groupId_;
-}
-
-const typename Groups::PrimaryKeyType &Groups::getPrimaryKey() const
-{
-    assert(groupId_);
+const uint64_t &Groups::getValueOfGroupId() const noexcept {
+  const static uint64_t defaultValue = uint64_t();
+  if (groupId_)
     return *groupId_;
+  return defaultValue;
 }
 
-const std::string &Groups::getValueOfGroupName() const noexcept
-{
-    const static std::string defaultValue = std::string();
-    if (groupName_)
-        return *groupName_;
-    return defaultValue;
+const std::shared_ptr<uint64_t> &Groups::getGroupId() const noexcept {
+  return groupId_;
 }
 
-const std::shared_ptr<std::string> &Groups::getGroupName() const noexcept
-{
-    return groupName_;
+const typename Groups::PrimaryKeyType &Groups::getPrimaryKey() const {
+  assert(groupId_);
+  return *groupId_;
 }
 
-void Groups::setGroupName(const std::string &pGroupName) noexcept
-{
-    groupName_ = std::make_shared<std::string>(pGroupName);
-    dirtyFlag_[1] = true;
+const std::string &Groups::getValueOfGroupName() const noexcept {
+  const static std::string defaultValue = std::string();
+  if (groupName_)
+    return *groupName_;
+  return defaultValue;
 }
 
-void Groups::setGroupName(std::string &&pGroupName) noexcept
-{
-    groupName_ = std::make_shared<std::string>(std::move(pGroupName));
-    dirtyFlag_[1] = true;
+const std::shared_ptr<std::string> &Groups::getGroupName() const noexcept {
+  return groupName_;
 }
 
-void Groups::setGroupNameToNull() noexcept
-{
-    groupName_.reset();
-    dirtyFlag_[1] = true;
+void Groups::setGroupName(const std::string &pGroupName) noexcept {
+  groupName_ = std::make_shared<std::string>(pGroupName);
+  dirtyFlag_[1] = true;
 }
 
-const uint64_t &Groups::getValueOfCreaterId() const noexcept
-{
-    const static uint64_t defaultValue = uint64_t();
-    if (createrId_)
-        return *createrId_;
-    return defaultValue;
+void Groups::setGroupName(std::string &&pGroupName) noexcept {
+  groupName_ = std::make_shared<std::string>(std::move(pGroupName));
+  dirtyFlag_[1] = true;
 }
 
-const std::shared_ptr<uint64_t> &Groups::getCreaterId() const noexcept
-{
-    return createrId_;
+void Groups::setGroupNameToNull() noexcept {
+  groupName_.reset();
+  dirtyFlag_[1] = true;
 }
 
-void Groups::setCreaterId(const uint64_t &pCreaterId) noexcept
-{
-    createrId_ = std::make_shared<uint64_t>(pCreaterId);
-    dirtyFlag_[2] = true;
+const uint64_t &Groups::getValueOfCreaterId() const noexcept {
+  const static uint64_t defaultValue = uint64_t();
+  if (createrId_)
+    return *createrId_;
+  return defaultValue;
 }
 
-void Groups::setCreaterIdToNull() noexcept
-{
-    createrId_.reset();
-    dirtyFlag_[2] = true;
+const std::shared_ptr<uint64_t> &Groups::getCreaterId() const noexcept {
+  return createrId_;
 }
 
-const std::string &Groups::getValueOfCreateTime() const noexcept
-{
-    const static std::string defaultValue = std::string();
-    if (createTime_)
-        return *createTime_;
-    return defaultValue;
+void Groups::setCreaterId(const uint64_t &pCreaterId) noexcept {
+  createrId_ = std::make_shared<uint64_t>(pCreaterId);
+  dirtyFlag_[2] = true;
 }
 
-const std::shared_ptr<std::string> &Groups::getCreateTime() const noexcept
-{
-    return createTime_;
+void Groups::setCreaterIdToNull() noexcept {
+  createrId_.reset();
+  dirtyFlag_[2] = true;
 }
 
-void Groups::setCreateTime(const std::string &pCreateTime) noexcept
-{
-    createTime_ = std::make_shared<std::string>(pCreateTime);
-    dirtyFlag_[3] = true;
+const std::string &Groups::getValueOfCreateTime() const noexcept {
+  const static std::string defaultValue = std::string();
+  if (createTime_)
+    return *createTime_;
+  return defaultValue;
 }
 
-void Groups::setCreateTime(std::string &&pCreateTime) noexcept
-{
-    createTime_ = std::make_shared<std::string>(std::move(pCreateTime));
-    dirtyFlag_[3] = true;
+const std::shared_ptr<std::string> &Groups::getCreateTime() const noexcept {
+  return createTime_;
 }
 
-void Groups::setCreateTimeToNull() noexcept
-{
-    createTime_.reset();
-    dirtyFlag_[3] = true;
+void Groups::setCreateTime(const std::string &pCreateTime) noexcept {
+  createTime_ = std::make_shared<std::string>(pCreateTime);
+  dirtyFlag_[3] = true;
 }
 
-const uint64_t &Groups::getValueOfInviting() const noexcept
-{
-    const static uint64_t defaultValue = uint64_t();
-    if (inviting_)
-        return *inviting_;
-    return defaultValue;
+void Groups::setCreateTime(std::string &&pCreateTime) noexcept {
+  createTime_ = std::make_shared<std::string>(std::move(pCreateTime));
+  dirtyFlag_[3] = true;
 }
 
-const std::shared_ptr<uint64_t> &Groups::getInviting() const noexcept
-{
-    return inviting_;
+void Groups::setCreateTimeToNull() noexcept {
+  createTime_.reset();
+  dirtyFlag_[3] = true;
 }
 
-void Groups::setInviting(const uint64_t &pInviting) noexcept
-{
-    inviting_ = std::make_shared<uint64_t>(pInviting);
-    dirtyFlag_[4] = true;
+const uint64_t &Groups::getValueOfInviting() const noexcept {
+  const static uint64_t defaultValue = uint64_t();
+  if (inviting_)
+    return *inviting_;
+  return defaultValue;
 }
 
-void Groups::setInvitingToNull() noexcept
-{
-    inviting_.reset();
-    dirtyFlag_[4] = true;
+const std::shared_ptr<uint64_t> &Groups::getInviting() const noexcept {
+  return inviting_;
 }
 
-const uint64_t &Groups::getValueOfInvitingUserId() const noexcept
-{
-    const static uint64_t defaultValue = uint64_t();
-    if (invitingUserId_)
-        return *invitingUserId_;
-    return defaultValue;
+void Groups::setInviting(const uint64_t &pInviting) noexcept {
+  inviting_ = std::make_shared<uint64_t>(pInviting);
+  dirtyFlag_[4] = true;
 }
 
-const std::shared_ptr<uint64_t> &Groups::getInvitingUserId() const noexcept
-{
-    return invitingUserId_;
+void Groups::setInvitingToNull() noexcept {
+  inviting_.reset();
+  dirtyFlag_[4] = true;
 }
 
-void Groups::setInvitingUserId(const uint64_t &pInvitingUserId) noexcept
-{
-    invitingUserId_ = std::make_shared<uint64_t>(pInvitingUserId);
-    dirtyFlag_[5] = true;
+const uint64_t &Groups::getValueOfInvitingUserId() const noexcept {
+  const static uint64_t defaultValue = uint64_t();
+  if (invitingUserId_)
+    return *invitingUserId_;
+  return defaultValue;
 }
 
-void Groups::setInvitingUserIdToNull() noexcept
-{
-    invitingUserId_.reset();
-    dirtyFlag_[5] = true;
+const std::shared_ptr<uint64_t> &Groups::getInvitingUserId() const noexcept {
+  return invitingUserId_;
 }
 
-const std::string &Groups::getValueOfAvatarId() const noexcept
-{
-    const static std::string defaultValue = std::string();
-    if (avatarId_)
-        return *avatarId_;
-    return defaultValue;
+void Groups::setInvitingUserId(const uint64_t &pInvitingUserId) noexcept {
+  invitingUserId_ = std::make_shared<uint64_t>(pInvitingUserId);
+  dirtyFlag_[5] = true;
 }
 
-const std::shared_ptr<std::string> &Groups::getAvatarId() const noexcept
-{
-    return avatarId_;
+void Groups::setInvitingUserIdToNull() noexcept {
+  invitingUserId_.reset();
+  dirtyFlag_[5] = true;
 }
 
-void Groups::setAvatarId(const std::string &pAvatarId) noexcept
-{
-    avatarId_ = std::make_shared<std::string>(pAvatarId);
-    dirtyFlag_[6] = true;
+const std::string &Groups::getValueOfAvatarId() const noexcept {
+  const static std::string defaultValue = std::string();
+  if (avatarId_)
+    return *avatarId_;
+  return defaultValue;
 }
 
-void Groups::setAvatarId(std::string &&pAvatarId) noexcept
-{
-    avatarId_ = std::make_shared<std::string>(std::move(pAvatarId));
-    dirtyFlag_[6] = true;
+const std::shared_ptr<std::string> &Groups::getAvatarId() const noexcept {
+  return avatarId_;
 }
 
-void Groups::setAvatarIdToNull() noexcept
-{
-    avatarId_.reset();
-    dirtyFlag_[6] = true;
+void Groups::setAvatarId(const std::string &pAvatarId) noexcept {
+  avatarId_ = std::make_shared<std::string>(pAvatarId);
+  dirtyFlag_[6] = true;
 }
 
-const double &Groups::getValueOfUuu() const noexcept
-{
-    const static double defaultValue = double();
-    if (uuu_)
-        return *uuu_;
-    return defaultValue;
+void Groups::setAvatarId(std::string &&pAvatarId) noexcept {
+  avatarId_ = std::make_shared<std::string>(std::move(pAvatarId));
+  dirtyFlag_[6] = true;
 }
 
-const std::shared_ptr<double> &Groups::getUuu() const noexcept
-{
-    return uuu_;
+void Groups::setAvatarIdToNull() noexcept {
+  avatarId_.reset();
+  dirtyFlag_[6] = true;
 }
 
-void Groups::setUuu(const double &pUuu) noexcept
-{
-    uuu_ = std::make_shared<double>(pUuu);
-    dirtyFlag_[7] = true;
+const double &Groups::getValueOfUuu() const noexcept {
+  const static double defaultValue = double();
+  if (uuu_)
+    return *uuu_;
+  return defaultValue;
 }
 
-void Groups::setUuuToNull() noexcept
-{
-    uuu_.reset();
-    dirtyFlag_[7] = true;
+const std::shared_ptr<double> &Groups::getUuu() const noexcept {
+  return uuu_;
 }
 
-const std::string &Groups::getValueOfText() const noexcept
-{
-    const static std::string defaultValue = std::string();
-    if (text_)
-        return *text_;
-    return defaultValue;
+void Groups::setUuu(const double &pUuu) noexcept {
+  uuu_ = std::make_shared<double>(pUuu);
+  dirtyFlag_[7] = true;
 }
 
-const std::shared_ptr<std::string> &Groups::getText() const noexcept
-{
-    return text_;
+void Groups::setUuuToNull() noexcept {
+  uuu_.reset();
+  dirtyFlag_[7] = true;
 }
 
-void Groups::setText(const std::string &pText) noexcept
-{
-    text_ = std::make_shared<std::string>(pText);
-    dirtyFlag_[8] = true;
+const std::string &Groups::getValueOfText() const noexcept {
+  const static std::string defaultValue = std::string();
+  if (text_)
+    return *text_;
+  return defaultValue;
 }
 
-void Groups::setText(std::string &&pText) noexcept
-{
-    text_ = std::make_shared<std::string>(std::move(pText));
-    dirtyFlag_[8] = true;
+const std::shared_ptr<std::string> &Groups::getText() const noexcept {
+  return text_;
 }
 
-void Groups::setTextToNull() noexcept
-{
-    text_.reset();
-    dirtyFlag_[8] = true;
+void Groups::setText(const std::string &pText) noexcept {
+  text_ = std::make_shared<std::string>(pText);
+  dirtyFlag_[8] = true;
 }
 
-const std::vector<char> &Groups::getValueOfAvatar() const noexcept
-{
-    const static std::vector<char> defaultValue = std::vector<char>();
-    if (avatar_)
-        return *avatar_;
-    return defaultValue;
+void Groups::setText(std::string &&pText) noexcept {
+  text_ = std::make_shared<std::string>(std::move(pText));
+  dirtyFlag_[8] = true;
 }
 
-std::string Groups::getValueOfAvatarAsString() const noexcept
-{
-    const static std::string defaultValue = std::string();
-    if (avatar_)
-        return std::string(avatar_->data(), avatar_->size());
-    return defaultValue;
+void Groups::setTextToNull() noexcept {
+  text_.reset();
+  dirtyFlag_[8] = true;
 }
 
-const std::shared_ptr<std::vector<char>> &Groups::getAvatar() const noexcept
-{
-    return avatar_;
+const std::vector<char> &Groups::getValueOfAvatar() const noexcept {
+  const static std::vector<char> defaultValue = std::vector<char>();
+  if (avatar_)
+    return *avatar_;
+  return defaultValue;
 }
 
-void Groups::setAvatar(const std::vector<char> &pAvatar) noexcept
-{
-    avatar_ = std::make_shared<std::vector<char>>(pAvatar);
-    dirtyFlag_[9] = true;
+std::string Groups::getValueOfAvatarAsString() const noexcept {
+  const static std::string defaultValue = std::string();
+  if (avatar_)
+    return std::string(avatar_->data(), avatar_->size());
+  return defaultValue;
 }
 
-void Groups::setAvatar(const std::string &pAvatar) noexcept
-{
-    avatar_ =
-        std::make_shared<std::vector<char>>(pAvatar.c_str(),
-                                            pAvatar.c_str() + pAvatar.length());
-    dirtyFlag_[9] = true;
+const std::shared_ptr<std::vector<char>> &Groups::getAvatar() const noexcept {
+  return avatar_;
 }
 
-void Groups::setAvatarToNull() noexcept
-{
-    avatar_.reset();
-    dirtyFlag_[9] = true;
+void Groups::setAvatar(const std::vector<char> &pAvatar) noexcept {
+  avatar_ = std::make_shared<std::vector<char>>(pAvatar);
+  dirtyFlag_[9] = true;
 }
 
-const bool &Groups::getValueOfIsDefault() const noexcept
-{
-    const static bool defaultValue = bool();
-    if (isDefault_)
-        return *isDefault_;
-    return defaultValue;
+void Groups::setAvatar(const std::string &pAvatar) noexcept {
+  avatar_ =
+      std::make_shared<std::vector<char>>(pAvatar.c_str(),
+                                          pAvatar.c_str() + pAvatar.length());
+  dirtyFlag_[9] = true;
 }
 
-const std::shared_ptr<bool> &Groups::getIsDefault() const noexcept
-{
-    return isDefault_;
+void Groups::setAvatarToNull() noexcept {
+  avatar_.reset();
+  dirtyFlag_[9] = true;
 }
 
-void Groups::setIsDefault(const bool &pIsDefault) noexcept
-{
-    isDefault_ = std::make_shared<bool>(pIsDefault);
-    dirtyFlag_[10] = true;
+const bool &Groups::getValueOfIsDefault() const noexcept {
+  const static bool defaultValue = bool();
+  if (isDefault_)
+    return *isDefault_;
+  return defaultValue;
 }
 
-void Groups::setIsDefaultToNull() noexcept
-{
-    isDefault_.reset();
-    dirtyFlag_[10] = true;
+const std::shared_ptr<bool> &Groups::getIsDefault() const noexcept {
+  return isDefault_;
 }
 
-void Groups::updateId(const uint64_t id)
-{
-    groupId_ = std::make_shared<uint64_t>(id);
+void Groups::setIsDefault(const bool &pIsDefault) noexcept {
+  isDefault_ = std::make_shared<bool>(pIsDefault);
+  dirtyFlag_[10] = true;
 }
 
-const std::vector<std::string> &Groups::insertColumns() noexcept
-{
-    static const std::vector<std::string> inCols = {"group_name",
-                                                    "creater_id",
-                                                    "create_time",
-                                                    "inviting",
-                                                    "inviting_user_id",
-                                                    "avatar_id",
-                                                    "uuu",
-                                                    "text",
-                                                    "avatar",
-                                                    "is_default"};
-    return inCols;
+void Groups::setIsDefaultToNull() noexcept {
+  isDefault_.reset();
+  dirtyFlag_[10] = true;
 }
 
-void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
-{
-    if (dirtyFlag_[1])
-    {
-        if (getGroupName())
-        {
-            binder << getValueOfGroupName();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+void Groups::updateId(const uint64_t id) {
+  groupId_ = std::make_shared<uint64_t>(id);
+}
+
+const std::vector<std::string> &Groups::insertColumns() noexcept {
+  static const std::vector<std::string> inCols = {"group_name",
+                                                  "creater_id",
+                                                  "create_time",
+                                                  "inviting",
+                                                  "inviting_user_id",
+                                                  "avatar_id",
+                                                  "uuu",
+                                                  "text",
+                                                  "avatar",
+                                                  "is_default"};
+  return inCols;
+}
+
+void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const {
+  if (dirtyFlag_[1]) {
+    if (getGroupName()) {
+      binder << getValueOfGroupName();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[2])
-    {
-        if (getCreaterId())
-        {
-            binder << getValueOfCreaterId();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[2]) {
+    if (getCreaterId()) {
+      binder << getValueOfCreaterId();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[3])
-    {
-        if (getCreateTime())
-        {
-            binder << getValueOfCreateTime();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[3]) {
+    if (getCreateTime()) {
+      binder << getValueOfCreateTime();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[4])
-    {
-        if (getInviting())
-        {
-            binder << getValueOfInviting();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[4]) {
+    if (getInviting()) {
+      binder << getValueOfInviting();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[5])
-    {
-        if (getInvitingUserId())
-        {
-            binder << getValueOfInvitingUserId();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[5]) {
+    if (getInvitingUserId()) {
+      binder << getValueOfInvitingUserId();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[6])
-    {
-        if (getAvatarId())
-        {
-            binder << getValueOfAvatarId();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[6]) {
+    if (getAvatarId()) {
+      binder << getValueOfAvatarId();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[7])
-    {
-        if (getUuu())
-        {
-            binder << getValueOfUuu();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[7]) {
+    if (getUuu()) {
+      binder << getValueOfUuu();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[8])
-    {
-        if (getText())
-        {
-            binder << getValueOfText();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[8]) {
+    if (getText()) {
+      binder << getValueOfText();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[9])
-    {
-        if (getAvatar())
-        {
-            binder << getValueOfAvatar();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[9]) {
+    if (getAvatar()) {
+      binder << getValueOfAvatar();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[10])
-    {
-        if (getIsDefault())
-        {
-            binder << getValueOfIsDefault();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[10]) {
+    if (getIsDefault()) {
+      binder << getValueOfIsDefault();
+    } else {
+      binder << nullptr;
     }
+  }
 }
 
-const std::vector<std::string> Groups::updateColumns() const
-{
-    std::vector<std::string> ret;
-    for (size_t i = 0; i < sizeof(dirtyFlag_); i++)
-    {
-        if (dirtyFlag_[i])
-        {
-            ret.push_back(getColumnName(i));
-        }
+const std::vector<std::string> Groups::updateColumns() const {
+  std::vector<std::string> ret;
+  for (size_t i = 0; i < sizeof(dirtyFlag_); i++) {
+    if (dirtyFlag_[i]) {
+      ret.push_back(getColumnName(i));
     }
-    return ret;
+  }
+  return ret;
 }
 
-void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
-{
-    if (dirtyFlag_[1])
-    {
-        if (getGroupName())
-        {
-            binder << getValueOfGroupName();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const {
+  if (dirtyFlag_[1]) {
+    if (getGroupName()) {
+      binder << getValueOfGroupName();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[2])
-    {
-        if (getCreaterId())
-        {
-            binder << getValueOfCreaterId();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[2]) {
+    if (getCreaterId()) {
+      binder << getValueOfCreaterId();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[3])
-    {
-        if (getCreateTime())
-        {
-            binder << getValueOfCreateTime();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[3]) {
+    if (getCreateTime()) {
+      binder << getValueOfCreateTime();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[4])
-    {
-        if (getInviting())
-        {
-            binder << getValueOfInviting();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[4]) {
+    if (getInviting()) {
+      binder << getValueOfInviting();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[5])
-    {
-        if (getInvitingUserId())
-        {
-            binder << getValueOfInvitingUserId();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[5]) {
+    if (getInvitingUserId()) {
+      binder << getValueOfInvitingUserId();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[6])
-    {
-        if (getAvatarId())
-        {
-            binder << getValueOfAvatarId();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[6]) {
+    if (getAvatarId()) {
+      binder << getValueOfAvatarId();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[7])
-    {
-        if (getUuu())
-        {
-            binder << getValueOfUuu();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[7]) {
+    if (getUuu()) {
+      binder << getValueOfUuu();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[8])
-    {
-        if (getText())
-        {
-            binder << getValueOfText();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[8]) {
+    if (getText()) {
+      binder << getValueOfText();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[9])
-    {
-        if (getAvatar())
-        {
-            binder << getValueOfAvatar();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[9]) {
+    if (getAvatar()) {
+      binder << getValueOfAvatar();
+    } else {
+      binder << nullptr;
     }
-    if (dirtyFlag_[10])
-    {
-        if (getIsDefault())
-        {
-            binder << getValueOfIsDefault();
-        }
-        else
-        {
-            binder << nullptr;
-        }
+  }
+  if (dirtyFlag_[10]) {
+    if (getIsDefault()) {
+      binder << getValueOfIsDefault();
+    } else {
+      binder << nullptr;
     }
+  }
 }
 
-Json::Value Groups::toJson() const
-{
-    Json::Value ret;
-    if (getGroupId())
-    {
-        ret["group_id"] = (Json::UInt64)getValueOfGroupId();
-    }
-    else
-    {
-        ret["group_id"] = Json::Value();
-    }
-    if (getGroupName())
-    {
-        ret["group_name"] = getValueOfGroupName();
-    }
-    else
-    {
-        ret["group_name"] = Json::Value();
-    }
-    if (getCreaterId())
-    {
-        ret["creater_id"] = (Json::UInt64)getValueOfCreaterId();
-    }
-    else
-    {
-        ret["creater_id"] = Json::Value();
-    }
-    if (getCreateTime())
-    {
-        ret["create_time"] = getValueOfCreateTime();
-    }
-    else
-    {
-        ret["create_time"] = Json::Value();
-    }
-    if (getInviting())
-    {
-        ret["inviting"] = (Json::UInt64)getValueOfInviting();
-    }
-    else
-    {
-        ret["inviting"] = Json::Value();
-    }
-    if (getInvitingUserId())
-    {
-        ret["inviting_user_id"] = (Json::UInt64)getValueOfInvitingUserId();
-    }
-    else
-    {
-        ret["inviting_user_id"] = Json::Value();
-    }
-    if (getAvatarId())
-    {
-        ret["avatar_id"] = getValueOfAvatarId();
-    }
-    else
-    {
-        ret["avatar_id"] = Json::Value();
-    }
-    if (getUuu())
-    {
-        ret["uuu"] = getValueOfUuu();
-    }
-    else
-    {
-        ret["uuu"] = Json::Value();
-    }
-    if (getText())
-    {
-        ret["text"] = getValueOfText();
-    }
-    else
-    {
-        ret["text"] = Json::Value();
-    }
-    if (getAvatar())
-    {
-        ret["avatar"] = drogon::utils::base64Encode(
-            (const unsigned char *)getAvatar()->data(), getAvatar()->size());
-    }
-    else
-    {
-        ret["avatar"] = Json::Value();
-    }
-    if (getIsDefault())
-    {
-        ret["is_default"] = getValueOfIsDefault();
-    }
-    else
-    {
-        ret["is_default"] = Json::Value();
-    }
-    return ret;
+Json::Value Groups::toJson() const {
+  Json::Value ret;
+  if (getGroupId()) {
+    ret["group_id"] = (Json::UInt64)getValueOfGroupId();
+  } else {
+    ret["group_id"] = Json::Value();
+  }
+  if (getGroupName()) {
+    ret["group_name"] = getValueOfGroupName();
+  } else {
+    ret["group_name"] = Json::Value();
+  }
+  if (getCreaterId()) {
+    ret["creater_id"] = (Json::UInt64)getValueOfCreaterId();
+  } else {
+    ret["creater_id"] = Json::Value();
+  }
+  if (getCreateTime()) {
+    ret["create_time"] = getValueOfCreateTime();
+  } else {
+    ret["create_time"] = Json::Value();
+  }
+  if (getInviting()) {
+    ret["inviting"] = (Json::UInt64)getValueOfInviting();
+  } else {
+    ret["inviting"] = Json::Value();
+  }
+  if (getInvitingUserId()) {
+    ret["inviting_user_id"] = (Json::UInt64)getValueOfInvitingUserId();
+  } else {
+    ret["inviting_user_id"] = Json::Value();
+  }
+  if (getAvatarId()) {
+    ret["avatar_id"] = getValueOfAvatarId();
+  } else {
+    ret["avatar_id"] = Json::Value();
+  }
+  if (getUuu()) {
+    ret["uuu"] = getValueOfUuu();
+  } else {
+    ret["uuu"] = Json::Value();
+  }
+  if (getText()) {
+    ret["text"] = getValueOfText();
+  } else {
+    ret["text"] = Json::Value();
+  }
+  if (getAvatar()) {
+    ret["avatar"] =
+        drogon::utils::base64Encode((const unsigned char *)getAvatar()->data(),
+                                    getAvatar()->size());
+  } else {
+    ret["avatar"] = Json::Value();
+  }
+  if (getIsDefault()) {
+    ret["is_default"] = getValueOfIsDefault();
+  } else {
+    ret["is_default"] = Json::Value();
+  }
+  return ret;
 }
 
 Json::Value Groups::toMasqueradedJson(
-    const std::vector<std::string> &pMasqueradingVector) const
-{
-    Json::Value ret;
-    if (pMasqueradingVector.size() == 11)
-    {
-        if (!pMasqueradingVector[0].empty())
-        {
-            if (getGroupId())
-            {
-                ret[pMasqueradingVector[0]] = (Json::UInt64)getValueOfGroupId();
-            }
-            else
-            {
-                ret[pMasqueradingVector[0]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[1].empty())
-        {
-            if (getGroupName())
-            {
-                ret[pMasqueradingVector[1]] = getValueOfGroupName();
-            }
-            else
-            {
-                ret[pMasqueradingVector[1]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[2].empty())
-        {
-            if (getCreaterId())
-            {
-                ret[pMasqueradingVector[2]] =
-                    (Json::UInt64)getValueOfCreaterId();
-            }
-            else
-            {
-                ret[pMasqueradingVector[2]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[3].empty())
-        {
-            if (getCreateTime())
-            {
-                ret[pMasqueradingVector[3]] = getValueOfCreateTime();
-            }
-            else
-            {
-                ret[pMasqueradingVector[3]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[4].empty())
-        {
-            if (getInviting())
-            {
-                ret[pMasqueradingVector[4]] =
-                    (Json::UInt64)getValueOfInviting();
-            }
-            else
-            {
-                ret[pMasqueradingVector[4]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[5].empty())
-        {
-            if (getInvitingUserId())
-            {
-                ret[pMasqueradingVector[5]] =
-                    (Json::UInt64)getValueOfInvitingUserId();
-            }
-            else
-            {
-                ret[pMasqueradingVector[5]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[6].empty())
-        {
-            if (getAvatarId())
-            {
-                ret[pMasqueradingVector[6]] = getValueOfAvatarId();
-            }
-            else
-            {
-                ret[pMasqueradingVector[6]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[7].empty())
-        {
-            if (getUuu())
-            {
-                ret[pMasqueradingVector[7]] = getValueOfUuu();
-            }
-            else
-            {
-                ret[pMasqueradingVector[7]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[8].empty())
-        {
-            if (getText())
-            {
-                ret[pMasqueradingVector[8]] = getValueOfText();
-            }
-            else
-            {
-                ret[pMasqueradingVector[8]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[9].empty())
-        {
-            if (getAvatar())
-            {
-                ret[pMasqueradingVector[9]] = drogon::utils::base64Encode(
-                    (const unsigned char *)getAvatar()->data(),
-                    getAvatar()->size());
-            }
-            else
-            {
-                ret[pMasqueradingVector[9]] = Json::Value();
-            }
-        }
-        if (!pMasqueradingVector[10].empty())
-        {
-            if (getIsDefault())
-            {
-                ret[pMasqueradingVector[10]] = getValueOfIsDefault();
-            }
-            else
-            {
-                ret[pMasqueradingVector[10]] = Json::Value();
-            }
-        }
-        return ret;
+    const std::vector<std::string> &pMasqueradingVector) const {
+  Json::Value ret;
+  if (pMasqueradingVector.size() == 11) {
+    if (!pMasqueradingVector[0].empty()) {
+      if (getGroupId()) {
+        ret[pMasqueradingVector[0]] = (Json::UInt64)getValueOfGroupId();
+      } else {
+        ret[pMasqueradingVector[0]] = Json::Value();
+      }
     }
-    LOG_ERROR << "Masquerade failed";
-    if (getGroupId())
-    {
-        ret["group_id"] = (Json::UInt64)getValueOfGroupId();
+    if (!pMasqueradingVector[1].empty()) {
+      if (getGroupName()) {
+        ret[pMasqueradingVector[1]] = getValueOfGroupName();
+      } else {
+        ret[pMasqueradingVector[1]] = Json::Value();
+      }
     }
-    else
-    {
-        ret["group_id"] = Json::Value();
+    if (!pMasqueradingVector[2].empty()) {
+      if (getCreaterId()) {
+        ret[pMasqueradingVector[2]] = (Json::UInt64)getValueOfCreaterId();
+      } else {
+        ret[pMasqueradingVector[2]] = Json::Value();
+      }
     }
-    if (getGroupName())
-    {
-        ret["group_name"] = getValueOfGroupName();
+    if (!pMasqueradingVector[3].empty()) {
+      if (getCreateTime()) {
+        ret[pMasqueradingVector[3]] = getValueOfCreateTime();
+      } else {
+        ret[pMasqueradingVector[3]] = Json::Value();
+      }
     }
-    else
-    {
-        ret["group_name"] = Json::Value();
+    if (!pMasqueradingVector[4].empty()) {
+      if (getInviting()) {
+        ret[pMasqueradingVector[4]] = (Json::UInt64)getValueOfInviting();
+      } else {
+        ret[pMasqueradingVector[4]] = Json::Value();
+      }
     }
-    if (getCreaterId())
-    {
-        ret["creater_id"] = (Json::UInt64)getValueOfCreaterId();
+    if (!pMasqueradingVector[5].empty()) {
+      if (getInvitingUserId()) {
+        ret[pMasqueradingVector[5]] = (Json::UInt64)getValueOfInvitingUserId();
+      } else {
+        ret[pMasqueradingVector[5]] = Json::Value();
+      }
     }
-    else
-    {
-        ret["creater_id"] = Json::Value();
+    if (!pMasqueradingVector[6].empty()) {
+      if (getAvatarId()) {
+        ret[pMasqueradingVector[6]] = getValueOfAvatarId();
+      } else {
+        ret[pMasqueradingVector[6]] = Json::Value();
+      }
     }
-    if (getCreateTime())
-    {
-        ret["create_time"] = getValueOfCreateTime();
+    if (!pMasqueradingVector[7].empty()) {
+      if (getUuu()) {
+        ret[pMasqueradingVector[7]] = getValueOfUuu();
+      } else {
+        ret[pMasqueradingVector[7]] = Json::Value();
+      }
     }
-    else
-    {
-        ret["create_time"] = Json::Value();
+    if (!pMasqueradingVector[8].empty()) {
+      if (getText()) {
+        ret[pMasqueradingVector[8]] = getValueOfText();
+      } else {
+        ret[pMasqueradingVector[8]] = Json::Value();
+      }
     }
-    if (getInviting())
-    {
-        ret["inviting"] = (Json::UInt64)getValueOfInviting();
-    }
-    else
-    {
-        ret["inviting"] = Json::Value();
-    }
-    if (getInvitingUserId())
-    {
-        ret["inviting_user_id"] = (Json::UInt64)getValueOfInvitingUserId();
-    }
-    else
-    {
-        ret["inviting_user_id"] = Json::Value();
-    }
-    if (getAvatarId())
-    {
-        ret["avatar_id"] = getValueOfAvatarId();
-    }
-    else
-    {
-        ret["avatar_id"] = Json::Value();
-    }
-    if (getUuu())
-    {
-        ret["uuu"] = getValueOfUuu();
-    }
-    else
-    {
-        ret["uuu"] = Json::Value();
-    }
-    if (getText())
-    {
-        ret["text"] = getValueOfText();
-    }
-    else
-    {
-        ret["text"] = Json::Value();
-    }
-    if (getAvatar())
-    {
-        ret["avatar"] = drogon::utils::base64Encode(
+    if (!pMasqueradingVector[9].empty()) {
+      if (getAvatar()) {
+        ret[pMasqueradingVector[9]] = drogon::utils::base64Encode(
             (const unsigned char *)getAvatar()->data(), getAvatar()->size());
+      } else {
+        ret[pMasqueradingVector[9]] = Json::Value();
+      }
     }
-    else
-    {
-        ret["avatar"] = Json::Value();
-    }
-    if (getIsDefault())
-    {
-        ret["is_default"] = getValueOfIsDefault();
-    }
-    else
-    {
-        ret["is_default"] = Json::Value();
+    if (!pMasqueradingVector[10].empty()) {
+      if (getIsDefault()) {
+        ret[pMasqueradingVector[10]] = getValueOfIsDefault();
+      } else {
+        ret[pMasqueradingVector[10]] = Json::Value();
+      }
     }
     return ret;
+  }
+  LOG_ERROR << "Masquerade failed";
+  if (getGroupId()) {
+    ret["group_id"] = (Json::UInt64)getValueOfGroupId();
+  } else {
+    ret["group_id"] = Json::Value();
+  }
+  if (getGroupName()) {
+    ret["group_name"] = getValueOfGroupName();
+  } else {
+    ret["group_name"] = Json::Value();
+  }
+  if (getCreaterId()) {
+    ret["creater_id"] = (Json::UInt64)getValueOfCreaterId();
+  } else {
+    ret["creater_id"] = Json::Value();
+  }
+  if (getCreateTime()) {
+    ret["create_time"] = getValueOfCreateTime();
+  } else {
+    ret["create_time"] = Json::Value();
+  }
+  if (getInviting()) {
+    ret["inviting"] = (Json::UInt64)getValueOfInviting();
+  } else {
+    ret["inviting"] = Json::Value();
+  }
+  if (getInvitingUserId()) {
+    ret["inviting_user_id"] = (Json::UInt64)getValueOfInvitingUserId();
+  } else {
+    ret["inviting_user_id"] = Json::Value();
+  }
+  if (getAvatarId()) {
+    ret["avatar_id"] = getValueOfAvatarId();
+  } else {
+    ret["avatar_id"] = Json::Value();
+  }
+  if (getUuu()) {
+    ret["uuu"] = getValueOfUuu();
+  } else {
+    ret["uuu"] = Json::Value();
+  }
+  if (getText()) {
+    ret["text"] = getValueOfText();
+  } else {
+    ret["text"] = Json::Value();
+  }
+  if (getAvatar()) {
+    ret["avatar"] =
+        drogon::utils::base64Encode((const unsigned char *)getAvatar()->data(),
+                                    getAvatar()->size());
+  } else {
+    ret["avatar"] = Json::Value();
+  }
+  if (getIsDefault()) {
+    ret["is_default"] = getValueOfIsDefault();
+  } else {
+    ret["is_default"] = Json::Value();
+  }
+  return ret;
 }
 
-bool Groups::validateJsonForCreation(const Json::Value &pJson, std::string &err)
-{
-    if (pJson.isMember("group_id"))
-    {
-        if (!validJsonOfField(0, "group_id", pJson["group_id"], err, true))
-            return false;
-    }
-    if (pJson.isMember("group_name"))
-    {
-        if (!validJsonOfField(1, "group_name", pJson["group_name"], err, true))
-            return false;
-    }
-    if (pJson.isMember("creater_id"))
-    {
-        if (!validJsonOfField(2, "creater_id", pJson["creater_id"], err, true))
-            return false;
-    }
-    if (pJson.isMember("create_time"))
-    {
-        if (!validJsonOfField(
-                3, "create_time", pJson["create_time"], err, true))
-            return false;
-    }
-    if (pJson.isMember("inviting"))
-    {
-        if (!validJsonOfField(4, "inviting", pJson["inviting"], err, true))
-            return false;
-    }
-    if (pJson.isMember("inviting_user_id"))
-    {
-        if (!validJsonOfField(
-                5, "inviting_user_id", pJson["inviting_user_id"], err, true))
-            return false;
-    }
-    if (pJson.isMember("avatar_id"))
-    {
-        if (!validJsonOfField(6, "avatar_id", pJson["avatar_id"], err, true))
-            return false;
-    }
-    if (pJson.isMember("uuu"))
-    {
-        if (!validJsonOfField(7, "uuu", pJson["uuu"], err, true))
-            return false;
-    }
-    if (pJson.isMember("text"))
-    {
-        if (!validJsonOfField(8, "text", pJson["text"], err, true))
-            return false;
-    }
-    if (pJson.isMember("avatar"))
-    {
-        if (!validJsonOfField(9, "avatar", pJson["avatar"], err, true))
-            return false;
-    }
-    if (pJson.isMember("is_default"))
-    {
-        if (!validJsonOfField(10, "is_default", pJson["is_default"], err, true))
-            return false;
-    }
-    return true;
+bool Groups::validateJsonForCreation(const Json::Value &pJson,
+                                     std::string &err) {
+  if (pJson.isMember("group_id")) {
+    if (!validJsonOfField(0, "group_id", pJson["group_id"], err, true))
+      return false;
+  }
+  if (pJson.isMember("group_name")) {
+    if (!validJsonOfField(1, "group_name", pJson["group_name"], err, true))
+      return false;
+  }
+  if (pJson.isMember("creater_id")) {
+    if (!validJsonOfField(2, "creater_id", pJson["creater_id"], err, true))
+      return false;
+  }
+  if (pJson.isMember("create_time")) {
+    if (!validJsonOfField(3, "create_time", pJson["create_time"], err, true))
+      return false;
+  }
+  if (pJson.isMember("inviting")) {
+    if (!validJsonOfField(4, "inviting", pJson["inviting"], err, true))
+      return false;
+  }
+  if (pJson.isMember("inviting_user_id")) {
+    if (!validJsonOfField(
+            5, "inviting_user_id", pJson["inviting_user_id"], err, true))
+      return false;
+  }
+  if (pJson.isMember("avatar_id")) {
+    if (!validJsonOfField(6, "avatar_id", pJson["avatar_id"], err, true))
+      return false;
+  }
+  if (pJson.isMember("uuu")) {
+    if (!validJsonOfField(7, "uuu", pJson["uuu"], err, true))
+      return false;
+  }
+  if (pJson.isMember("text")) {
+    if (!validJsonOfField(8, "text", pJson["text"], err, true))
+      return false;
+  }
+  if (pJson.isMember("avatar")) {
+    if (!validJsonOfField(9, "avatar", pJson["avatar"], err, true))
+      return false;
+  }
+  if (pJson.isMember("is_default")) {
+    if (!validJsonOfField(10, "is_default", pJson["is_default"], err, true))
+      return false;
+  }
+  return true;
 }
 
 bool Groups::validateMasqueradedJsonForCreation(
     const Json::Value &pJson,
     const std::vector<std::string> &pMasqueradingVector,
-    std::string &err)
-{
-    if (pMasqueradingVector.size() != 11)
-    {
-        err = "Bad masquerading vector";
+    std::string &err) {
+  if (pMasqueradingVector.size() != 11) {
+    err = "Bad masquerading vector";
+    return false;
+  }
+  if (!pMasqueradingVector[0].empty()) {
+    if (pJson.isMember(pMasqueradingVector[0])) {
+      if (!validJsonOfField(0,
+                            pMasqueradingVector[0],
+                            pJson[pMasqueradingVector[0]],
+                            err,
+                            true))
         return false;
     }
-    if (!pMasqueradingVector[0].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[0]))
-        {
-            if (!validJsonOfField(0,
-                                  pMasqueradingVector[0],
-                                  pJson[pMasqueradingVector[0]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[1].empty()) {
+    if (pJson.isMember(pMasqueradingVector[1])) {
+      if (!validJsonOfField(1,
+                            pMasqueradingVector[1],
+                            pJson[pMasqueradingVector[1]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[1].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[1]))
-        {
-            if (!validJsonOfField(1,
-                                  pMasqueradingVector[1],
-                                  pJson[pMasqueradingVector[1]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[2].empty()) {
+    if (pJson.isMember(pMasqueradingVector[2])) {
+      if (!validJsonOfField(2,
+                            pMasqueradingVector[2],
+                            pJson[pMasqueradingVector[2]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[2].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[2]))
-        {
-            if (!validJsonOfField(2,
-                                  pMasqueradingVector[2],
-                                  pJson[pMasqueradingVector[2]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[3].empty()) {
+    if (pJson.isMember(pMasqueradingVector[3])) {
+      if (!validJsonOfField(3,
+                            pMasqueradingVector[3],
+                            pJson[pMasqueradingVector[3]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[3].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[3]))
-        {
-            if (!validJsonOfField(3,
-                                  pMasqueradingVector[3],
-                                  pJson[pMasqueradingVector[3]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[4].empty()) {
+    if (pJson.isMember(pMasqueradingVector[4])) {
+      if (!validJsonOfField(4,
+                            pMasqueradingVector[4],
+                            pJson[pMasqueradingVector[4]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[4].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[4]))
-        {
-            if (!validJsonOfField(4,
-                                  pMasqueradingVector[4],
-                                  pJson[pMasqueradingVector[4]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[5].empty()) {
+    if (pJson.isMember(pMasqueradingVector[5])) {
+      if (!validJsonOfField(5,
+                            pMasqueradingVector[5],
+                            pJson[pMasqueradingVector[5]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[5].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[5]))
-        {
-            if (!validJsonOfField(5,
-                                  pMasqueradingVector[5],
-                                  pJson[pMasqueradingVector[5]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[6].empty()) {
+    if (pJson.isMember(pMasqueradingVector[6])) {
+      if (!validJsonOfField(6,
+                            pMasqueradingVector[6],
+                            pJson[pMasqueradingVector[6]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[6].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[6]))
-        {
-            if (!validJsonOfField(6,
-                                  pMasqueradingVector[6],
-                                  pJson[pMasqueradingVector[6]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[7].empty()) {
+    if (pJson.isMember(pMasqueradingVector[7])) {
+      if (!validJsonOfField(7,
+                            pMasqueradingVector[7],
+                            pJson[pMasqueradingVector[7]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[7].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[7]))
-        {
-            if (!validJsonOfField(7,
-                                  pMasqueradingVector[7],
-                                  pJson[pMasqueradingVector[7]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[8].empty()) {
+    if (pJson.isMember(pMasqueradingVector[8])) {
+      if (!validJsonOfField(8,
+                            pMasqueradingVector[8],
+                            pJson[pMasqueradingVector[8]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[8].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[8]))
-        {
-            if (!validJsonOfField(8,
-                                  pMasqueradingVector[8],
-                                  pJson[pMasqueradingVector[8]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[9].empty()) {
+    if (pJson.isMember(pMasqueradingVector[9])) {
+      if (!validJsonOfField(9,
+                            pMasqueradingVector[9],
+                            pJson[pMasqueradingVector[9]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[9].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[9]))
-        {
-            if (!validJsonOfField(9,
-                                  pMasqueradingVector[9],
-                                  pJson[pMasqueradingVector[9]],
-                                  err,
-                                  true))
-                return false;
-        }
+  }
+  if (!pMasqueradingVector[10].empty()) {
+    if (pJson.isMember(pMasqueradingVector[10])) {
+      if (!validJsonOfField(10,
+                            pMasqueradingVector[10],
+                            pJson[pMasqueradingVector[10]],
+                            err,
+                            true))
+        return false;
     }
-    if (!pMasqueradingVector[10].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[10]))
-        {
-            if (!validJsonOfField(10,
-                                  pMasqueradingVector[10],
-                                  pJson[pMasqueradingVector[10]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    return true;
+  }
+  return true;
 }
 
-bool Groups::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
-{
-    if (pJson.isMember("group_id"))
-    {
-        if (!validJsonOfField(0, "group_id", pJson["group_id"], err, false))
-            return false;
-    }
-    else
-    {
-        err =
-            "The value of primary key must be set in the json object for "
-            "update";
-        return false;
-    }
-    if (pJson.isMember("group_name"))
-    {
-        if (!validJsonOfField(1, "group_name", pJson["group_name"], err, false))
-            return false;
-    }
-    if (pJson.isMember("creater_id"))
-    {
-        if (!validJsonOfField(2, "creater_id", pJson["creater_id"], err, false))
-            return false;
-    }
-    if (pJson.isMember("create_time"))
-    {
-        if (!validJsonOfField(
-                3, "create_time", pJson["create_time"], err, false))
-            return false;
-    }
-    if (pJson.isMember("inviting"))
-    {
-        if (!validJsonOfField(4, "inviting", pJson["inviting"], err, false))
-            return false;
-    }
-    if (pJson.isMember("inviting_user_id"))
-    {
-        if (!validJsonOfField(
-                5, "inviting_user_id", pJson["inviting_user_id"], err, false))
-            return false;
-    }
-    if (pJson.isMember("avatar_id"))
-    {
-        if (!validJsonOfField(6, "avatar_id", pJson["avatar_id"], err, false))
-            return false;
-    }
-    if (pJson.isMember("uuu"))
-    {
-        if (!validJsonOfField(7, "uuu", pJson["uuu"], err, false))
-            return false;
-    }
-    if (pJson.isMember("text"))
-    {
-        if (!validJsonOfField(8, "text", pJson["text"], err, false))
-            return false;
-    }
-    if (pJson.isMember("avatar"))
-    {
-        if (!validJsonOfField(9, "avatar", pJson["avatar"], err, false))
-            return false;
-    }
-    if (pJson.isMember("is_default"))
-    {
-        if (!validJsonOfField(
-                10, "is_default", pJson["is_default"], err, false))
-            return false;
-    }
-    return true;
+bool Groups::validateJsonForUpdate(const Json::Value &pJson, std::string &err) {
+  if (pJson.isMember("group_id")) {
+    if (!validJsonOfField(0, "group_id", pJson["group_id"], err, false))
+      return false;
+  } else {
+    err =
+        "The value of primary key must be set in the json object for "
+        "update";
+    return false;
+  }
+  if (pJson.isMember("group_name")) {
+    if (!validJsonOfField(1, "group_name", pJson["group_name"], err, false))
+      return false;
+  }
+  if (pJson.isMember("creater_id")) {
+    if (!validJsonOfField(2, "creater_id", pJson["creater_id"], err, false))
+      return false;
+  }
+  if (pJson.isMember("create_time")) {
+    if (!validJsonOfField(3, "create_time", pJson["create_time"], err, false))
+      return false;
+  }
+  if (pJson.isMember("inviting")) {
+    if (!validJsonOfField(4, "inviting", pJson["inviting"], err, false))
+      return false;
+  }
+  if (pJson.isMember("inviting_user_id")) {
+    if (!validJsonOfField(
+            5, "inviting_user_id", pJson["inviting_user_id"], err, false))
+      return false;
+  }
+  if (pJson.isMember("avatar_id")) {
+    if (!validJsonOfField(6, "avatar_id", pJson["avatar_id"], err, false))
+      return false;
+  }
+  if (pJson.isMember("uuu")) {
+    if (!validJsonOfField(7, "uuu", pJson["uuu"], err, false))
+      return false;
+  }
+  if (pJson.isMember("text")) {
+    if (!validJsonOfField(8, "text", pJson["text"], err, false))
+      return false;
+  }
+  if (pJson.isMember("avatar")) {
+    if (!validJsonOfField(9, "avatar", pJson["avatar"], err, false))
+      return false;
+  }
+  if (pJson.isMember("is_default")) {
+    if (!validJsonOfField(10, "is_default", pJson["is_default"], err, false))
+      return false;
+  }
+  return true;
 }
 
 bool Groups::validateMasqueradedJsonForUpdate(
     const Json::Value &pJson,
     const std::vector<std::string> &pMasqueradingVector,
-    std::string &err)
-{
-    if (pMasqueradingVector.size() != 11)
-    {
-        err = "Bad masquerading vector";
-        return false;
-    }
-    if (!pMasqueradingVector[0].empty() &&
-        pJson.isMember(pMasqueradingVector[0]))
-    {
-        if (!validJsonOfField(0,
-                              pMasqueradingVector[0],
-                              pJson[pMasqueradingVector[0]],
-                              err,
-                              false))
-            return false;
-    }
-    else
-    {
-        err =
-            "The value of primary key must be set in the json object for "
-            "update";
-        return false;
-    }
-    if (!pMasqueradingVector[1].empty() &&
-        pJson.isMember(pMasqueradingVector[1]))
-    {
-        if (!validJsonOfField(1,
-                              pMasqueradingVector[1],
-                              pJson[pMasqueradingVector[1]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[2].empty() &&
-        pJson.isMember(pMasqueradingVector[2]))
-    {
-        if (!validJsonOfField(2,
-                              pMasqueradingVector[2],
-                              pJson[pMasqueradingVector[2]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[3].empty() &&
-        pJson.isMember(pMasqueradingVector[3]))
-    {
-        if (!validJsonOfField(3,
-                              pMasqueradingVector[3],
-                              pJson[pMasqueradingVector[3]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[4].empty() &&
-        pJson.isMember(pMasqueradingVector[4]))
-    {
-        if (!validJsonOfField(4,
-                              pMasqueradingVector[4],
-                              pJson[pMasqueradingVector[4]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[5].empty() &&
-        pJson.isMember(pMasqueradingVector[5]))
-    {
-        if (!validJsonOfField(5,
-                              pMasqueradingVector[5],
-                              pJson[pMasqueradingVector[5]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[6].empty() &&
-        pJson.isMember(pMasqueradingVector[6]))
-    {
-        if (!validJsonOfField(6,
-                              pMasqueradingVector[6],
-                              pJson[pMasqueradingVector[6]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[7].empty() &&
-        pJson.isMember(pMasqueradingVector[7]))
-    {
-        if (!validJsonOfField(7,
-                              pMasqueradingVector[7],
-                              pJson[pMasqueradingVector[7]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[8].empty() &&
-        pJson.isMember(pMasqueradingVector[8]))
-    {
-        if (!validJsonOfField(8,
-                              pMasqueradingVector[8],
-                              pJson[pMasqueradingVector[8]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[9].empty() &&
-        pJson.isMember(pMasqueradingVector[9]))
-    {
-        if (!validJsonOfField(9,
-                              pMasqueradingVector[9],
-                              pJson[pMasqueradingVector[9]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[10].empty() &&
-        pJson.isMember(pMasqueradingVector[10]))
-    {
-        if (!validJsonOfField(10,
-                              pMasqueradingVector[10],
-                              pJson[pMasqueradingVector[10]],
-                              err,
-                              false))
-            return false;
-    }
-    return true;
+    std::string &err) {
+  if (pMasqueradingVector.size() != 11) {
+    err = "Bad masquerading vector";
+    return false;
+  }
+  if (!pMasqueradingVector[0].empty() &&
+      pJson.isMember(pMasqueradingVector[0])) {
+    if (!validJsonOfField(0,
+                          pMasqueradingVector[0],
+                          pJson[pMasqueradingVector[0]],
+                          err,
+                          false))
+      return false;
+  } else {
+    err =
+        "The value of primary key must be set in the json object for "
+        "update";
+    return false;
+  }
+  if (!pMasqueradingVector[1].empty() &&
+      pJson.isMember(pMasqueradingVector[1])) {
+    if (!validJsonOfField(1,
+                          pMasqueradingVector[1],
+                          pJson[pMasqueradingVector[1]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[2].empty() &&
+      pJson.isMember(pMasqueradingVector[2])) {
+    if (!validJsonOfField(2,
+                          pMasqueradingVector[2],
+                          pJson[pMasqueradingVector[2]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[3].empty() &&
+      pJson.isMember(pMasqueradingVector[3])) {
+    if (!validJsonOfField(3,
+                          pMasqueradingVector[3],
+                          pJson[pMasqueradingVector[3]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[4].empty() &&
+      pJson.isMember(pMasqueradingVector[4])) {
+    if (!validJsonOfField(4,
+                          pMasqueradingVector[4],
+                          pJson[pMasqueradingVector[4]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[5].empty() &&
+      pJson.isMember(pMasqueradingVector[5])) {
+    if (!validJsonOfField(5,
+                          pMasqueradingVector[5],
+                          pJson[pMasqueradingVector[5]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[6].empty() &&
+      pJson.isMember(pMasqueradingVector[6])) {
+    if (!validJsonOfField(6,
+                          pMasqueradingVector[6],
+                          pJson[pMasqueradingVector[6]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[7].empty() &&
+      pJson.isMember(pMasqueradingVector[7])) {
+    if (!validJsonOfField(7,
+                          pMasqueradingVector[7],
+                          pJson[pMasqueradingVector[7]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[8].empty() &&
+      pJson.isMember(pMasqueradingVector[8])) {
+    if (!validJsonOfField(8,
+                          pMasqueradingVector[8],
+                          pJson[pMasqueradingVector[8]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[9].empty() &&
+      pJson.isMember(pMasqueradingVector[9])) {
+    if (!validJsonOfField(9,
+                          pMasqueradingVector[9],
+                          pJson[pMasqueradingVector[9]],
+                          err,
+                          false))
+      return false;
+  }
+  if (!pMasqueradingVector[10].empty() &&
+      pJson.isMember(pMasqueradingVector[10])) {
+    if (!validJsonOfField(10,
+                          pMasqueradingVector[10],
+                          pJson[pMasqueradingVector[10]],
+                          err,
+                          false))
+      return false;
+  }
+  return true;
 }
 
 bool Groups::validJsonOfField(size_t index,
                               const std::string &fieldName,
                               const Json::Value &pJson,
                               std::string &err,
-                              bool isForCreation)
-{
-    switch (index)
-    {
-        case 0:
-            if (isForCreation)
-            {
-                err = "The automatic primary key cannot be set";
-                return false;
-            }
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isUInt64())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 1:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isString())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 2:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isUInt64())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 3:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isString())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 4:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isUInt64())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 5:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isUInt64())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 6:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isString())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 7:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isNumeric())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 8:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isString())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 9:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isString())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
-        case 10:
-            if (pJson.isNull())
-            {
-                return true;
-            }
-            if (!pJson.isBool())
-            {
-                err = "Type error in the " + fieldName + " field";
-                return false;
-            }
-            break;
+                              bool isForCreation) {
+  switch (index) {
+    case 0:
+      if (isForCreation) {
+        err = "The automatic primary key cannot be set";
+        return false;
+      }
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isUInt64()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 1:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isString()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 2:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isUInt64()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 3:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isString()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 4:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isUInt64()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 5:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isUInt64()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 6:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isString()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 7:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isNumeric()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 8:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isString()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 9:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isString()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
+    case 10:
+      if (pJson.isNull()) {
+        return true;
+      }
+      if (!pJson.isBool()) {
+        err = "Type error in the " + fieldName + " field";
+        return false;
+      }
+      break;
 
-        default:
-            err = "Internal error in the server";
-            return false;
-            break;
-    }
-    return true;
+    default:
+      err = "Internal error in the server";
+      return false;
+      break;
+  }
+  return true;
 }

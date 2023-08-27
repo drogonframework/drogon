@@ -25,137 +25,116 @@
 #include <mysql.h>
 #include <string>
 
-namespace drogon
-{
-namespace orm
-{
+namespace drogon {
+namespace orm {
 class MysqlConnection;
 using MysqlConnectionPtr = std::shared_ptr<MysqlConnection>;
 
 class MysqlConnection : public DbConnection,
-                        public std::enable_shared_from_this<MysqlConnection>
-{
-  public:
-    MysqlConnection(trantor::EventLoop *loop, const std::string &connInfo);
+                        public std::enable_shared_from_this<MysqlConnection> {
+ public:
+  MysqlConnection(trantor::EventLoop *loop, const std::string &connInfo);
 
-    ~MysqlConnection()
-    {
+  ~MysqlConnection() {
+  }
+
+  void execSql(std::string_view &&sql,
+               size_t paraNum,
+               std::vector<const char *> &&parameters,
+               std::vector<int> &&length,
+               std::vector<int> &&format,
+               ResultCallback &&rcb,
+               std::function<void(const std::exception_ptr &)> &&exceptCallback)
+      override {
+    if (loop_->isInLoopThread()) {
+      execSqlInLoop(std::move(sql),
+                    paraNum,
+                    std::move(parameters),
+                    std::move(length),
+                    std::move(format),
+                    std::move(rcb),
+                    std::move(exceptCallback));
+    } else {
+      auto thisPtr = shared_from_this();
+      loop_->queueInLoop(
+          [thisPtr,
+           sql = std::move(sql),
+           paraNum,
+           parameters = std::move(parameters),
+           length = std::move(length),
+           format = std::move(format),
+           rcb = std::move(rcb),
+           exceptCallback = std::move(exceptCallback)]() mutable {
+            thisPtr->execSqlInLoop(std::move(sql),
+                                   paraNum,
+                                   std::move(parameters),
+                                   std::move(length),
+                                   std::move(format),
+                                   std::move(rcb),
+                                   std::move(exceptCallback));
+          });
+    }
+  }
+
+  void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override {
+    LOG_FATAL << "The mysql library does not support batch mode";
+    exit(1);
+  }
+
+  void disconnect() override;
+
+ private:
+  class MysqlEnv {
+   public:
+    MysqlEnv() {
+      mysql_library_init(0, nullptr, nullptr);
     }
 
-    void execSql(std::string_view &&sql,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)>
-                     &&exceptCallback) override
-    {
-        if (loop_->isInLoopThread())
-        {
-            execSqlInLoop(std::move(sql),
-                          paraNum,
-                          std::move(parameters),
-                          std::move(length),
-                          std::move(format),
-                          std::move(rcb),
-                          std::move(exceptCallback));
-        }
-        else
-        {
-            auto thisPtr = shared_from_this();
-            loop_->queueInLoop(
-                [thisPtr,
-                 sql = std::move(sql),
-                 paraNum,
-                 parameters = std::move(parameters),
-                 length = std::move(length),
-                 format = std::move(format),
-                 rcb = std::move(rcb),
-                 exceptCallback = std::move(exceptCallback)]() mutable {
-                    thisPtr->execSqlInLoop(std::move(sql),
-                                           paraNum,
-                                           std::move(parameters),
-                                           std::move(length),
-                                           std::move(format),
-                                           std::move(rcb),
-                                           std::move(exceptCallback));
-                });
-        }
+    ~MysqlEnv() {
+      mysql_library_end();
+    }
+  };
+
+  class MysqlThreadEnv {
+   public:
+    MysqlThreadEnv() {
+      mysql_thread_init();
     }
 
-    void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
-    {
-        LOG_FATAL << "The mysql library does not support batch mode";
-        exit(1);
+    ~MysqlThreadEnv() {
+      mysql_thread_end();
     }
+  };
 
-    void disconnect() override;
+  void execSqlInLoop(
+      std::string_view &&sql,
+      size_t paraNum,
+      std::vector<const char *> &&parameters,
+      std::vector<int> &&length,
+      std::vector<int> &&format,
+      ResultCallback &&rcb,
+      std::function<void(const std::exception_ptr &)> &&exceptCallback);
+  void startSetCharacterSet();
+  void continueSetCharacterSet(int status);
+  std::unique_ptr<trantor::Channel> channelPtr_;
+  std::shared_ptr<MYSQL> mysqlPtr_;
+  std::string characterSet_;
+  void handleTimeout();
+  void handleCmd(int status);
+  void handleClosed();
+  void handleEvent();
+  void setChannel();
+  void getResult(MYSQL_RES *res);
+  void startQuery();
+  void startStoreResult(bool queueInLoop);
+  int waitStatus_;
+  unsigned int reconnect_{1};
+  enum class ExecStatus { None = 0, RealQuery, StoreResult, NextResult };
+  ExecStatus execStatus_{ExecStatus::None};
 
-  private:
-    class MysqlEnv
-    {
-      public:
-        MysqlEnv()
-        {
-            mysql_library_init(0, nullptr, nullptr);
-        }
-
-        ~MysqlEnv()
-        {
-            mysql_library_end();
-        }
-    };
-
-    class MysqlThreadEnv
-    {
-      public:
-        MysqlThreadEnv()
-        {
-            mysql_thread_init();
-        }
-
-        ~MysqlThreadEnv()
-        {
-            mysql_thread_end();
-        }
-    };
-
-    void execSqlInLoop(
-        std::string_view &&sql,
-        size_t paraNum,
-        std::vector<const char *> &&parameters,
-        std::vector<int> &&length,
-        std::vector<int> &&format,
-        ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback);
-    void startSetCharacterSet();
-    void continueSetCharacterSet(int status);
-    std::unique_ptr<trantor::Channel> channelPtr_;
-    std::shared_ptr<MYSQL> mysqlPtr_;
-    std::string characterSet_;
-    void handleTimeout();
-    void handleCmd(int status);
-    void handleClosed();
-    void handleEvent();
-    void setChannel();
-    void getResult(MYSQL_RES *res);
-    void startQuery();
-    void startStoreResult(bool queueInLoop);
-    int waitStatus_;
-    unsigned int reconnect_{1};
-    enum class ExecStatus
-    {
-        None = 0,
-        RealQuery,
-        StoreResult,
-        NextResult
-    };
-    ExecStatus execStatus_{ExecStatus::None};
-
-    void outputError();
-    std::string sql_;
-    std::string host_, user_, passwd_, dbname_, port_;
+  void outputError();
+  std::string sql_;
+  std::string host_, user_, passwd_, dbname_, port_;
 };
 
 }  // namespace orm

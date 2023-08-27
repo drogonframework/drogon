@@ -20,80 +20,75 @@ using namespace drogon;
 
 DbClient::~DbClient() = default;
 
-orm::internal::SqlBinder DbClient::operator<<(const std::string &sql)
-{
-    return orm::internal::SqlBinder(sql, *this, type_);
+orm::internal::SqlBinder DbClient::operator<<(const std::string &sql) {
+  return orm::internal::SqlBinder(sql, *this, type_);
 }
 
-orm::internal::SqlBinder DbClient::operator<<(std::string &&sql)
-{
-    return orm::internal::SqlBinder(std::move(sql), *this, type_);
+orm::internal::SqlBinder DbClient::operator<<(std::string &&sql) {
+  return orm::internal::SqlBinder(std::move(sql), *this, type_);
 }
 
 std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
                                                 size_t connNum,
-                                                bool autoBatch)
-{
+                                                bool autoBatch) {
 #if USE_POSTGRESQL
-    auto client = std::make_shared<DbClientImpl>(connInfo,
-                                                 connNum,
+  auto client = std::make_shared<DbClientImpl>(connInfo,
+                                               connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
-                                                 ClientType::PostgreSQL,
-                                                 autoBatch);
+                                               ClientType::PostgreSQL,
+                                               autoBatch);
 #else
-                                                 ClientType::PostgreSQL);
+                                               ClientType::PostgreSQL);
 #endif
-    client->init();
-    return client;
+  client->init();
+  return client;
 #else
-    LOG_FATAL << "PostgreSQL is not supported!";
-    exit(1);
-    (void)(connInfo);
-    (void)(connNum);
+  LOG_FATAL << "PostgreSQL is not supported!";
+  exit(1);
+  (void)(connInfo);
+  (void)(connNum);
 #endif
 }
 
 std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
-                                                   size_t connNum)
-{
+                                                   size_t connNum) {
 #if USE_MYSQL
-    auto client = std::make_shared<DbClientImpl>(connInfo,
-                                                 connNum,
+  auto client = std::make_shared<DbClientImpl>(connInfo,
+                                               connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
-                                                 ClientType::Mysql,
-                                                 false);
+                                               ClientType::Mysql,
+                                               false);
 #else
-                                                 ClientType::Mysql);
+                                               ClientType::Mysql);
 #endif
-    client->init();
-    return client;
+  client->init();
+  return client;
 #else
-    LOG_FATAL << "Mysql is not supported!";
-    exit(1);
-    (void)(connInfo);
-    (void)(connNum);
+  LOG_FATAL << "Mysql is not supported!";
+  exit(1);
+  (void)(connInfo);
+  (void)(connNum);
 #endif
 }
 
 std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     const std::string &connInfo,
-    size_t connNum)
-{
+    size_t connNum) {
 #if USE_SQLITE3
-    auto client = std::make_shared<DbClientImpl>(connInfo,
-                                                 connNum,
+  auto client = std::make_shared<DbClientImpl>(connInfo,
+                                               connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
-                                                 ClientType::Sqlite3,
-                                                 false);
+                                               ClientType::Sqlite3,
+                                               false);
 #else
-                                                 ClientType::Sqlite3);
+                                               ClientType::Sqlite3);
 #endif
-    client->init();
-    return client;
+  client->init();
+  return client;
 #else
-    LOG_FATAL << "Sqlite3 is not supported!";
-    exit(1);
-    (void)(connInfo);
-    (void)(connNum);
+  LOG_FATAL << "Sqlite3 is not supported!";
+  exit(1);
+  (void)(connInfo);
+  (void)(connNum);
 #endif
 }

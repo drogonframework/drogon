@@ -25,133 +25,119 @@
 #include <vector>
 #include "impl_forwards.h"
 
-namespace drogon
-{
-class HttpClientImpl final : public HttpClient,
-                             public std::enable_shared_from_this<HttpClientImpl>
-{
-  public:
-    HttpClientImpl(trantor::EventLoop *loop,
-                   const trantor::InetAddress &addr,
-                   bool useSSL = false,
-                   bool useOldTLS = false,
-                   bool validateCert = true);
-    HttpClientImpl(trantor::EventLoop *loop,
-                   const std::string &hostString,
-                   bool useOldTLS = false,
-                   bool validateCert = true);
-    void sendRequest(const HttpRequestPtr &req,
-                     const HttpReqCallback &callback,
-                     double timeout = 0) override;
-    void sendRequest(const HttpRequestPtr &req,
-                     HttpReqCallback &&callback,
-                     double timeout = 0) override;
+namespace drogon {
+class HttpClientImpl final
+    : public HttpClient,
+      public std::enable_shared_from_this<HttpClientImpl> {
+ public:
+  HttpClientImpl(trantor::EventLoop *loop,
+                 const trantor::InetAddress &addr,
+                 bool useSSL = false,
+                 bool useOldTLS = false,
+                 bool validateCert = true);
+  HttpClientImpl(trantor::EventLoop *loop,
+                 const std::string &hostString,
+                 bool useOldTLS = false,
+                 bool validateCert = true);
+  void sendRequest(const HttpRequestPtr &req,
+                   const HttpReqCallback &callback,
+                   double timeout = 0) override;
+  void sendRequest(const HttpRequestPtr &req,
+                   HttpReqCallback &&callback,
+                   double timeout = 0) override;
 
-    trantor::EventLoop *getLoop() override
-    {
-        return loop_;
-    }
+  trantor::EventLoop *getLoop() override {
+    return loop_;
+  }
 
-    void setPipeliningDepth(size_t depth) override
-    {
-        pipeliningDepth_ = depth;
-    }
+  void setPipeliningDepth(size_t depth) override {
+    pipeliningDepth_ = depth;
+  }
 
-    ~HttpClientImpl();
+  ~HttpClientImpl();
 
-    void enableCookies(bool flag = true) override
-    {
-        enableCookies_ = flag;
-    }
+  void enableCookies(bool flag = true) override {
+    enableCookies_ = flag;
+  }
 
-    void addCookie(const std::string &key, const std::string &value) override
-    {
-        validCookies_.emplace_back(Cookie(key, value));
-    }
+  void addCookie(const std::string &key, const std::string &value) override {
+    validCookies_.emplace_back(Cookie(key, value));
+  }
 
-    void addCookie(const Cookie &cookie) override
-    {
-        validCookies_.emplace_back(cookie);
-    }
+  void addCookie(const Cookie &cookie) override {
+    validCookies_.emplace_back(cookie);
+  }
 
-    size_t bytesSent() const override
-    {
-        return bytesSent_;
-    }
+  size_t bytesSent() const override {
+    return bytesSent_;
+  }
 
-    size_t bytesReceived() const override
-    {
-        return bytesReceived_;
-    }
+  size_t bytesReceived() const override {
+    return bytesReceived_;
+  }
 
-    void setUserAgent(const std::string &userAgent) override
-    {
-        userAgent_ = userAgent;
-    }
+  void setUserAgent(const std::string &userAgent) override {
+    userAgent_ = userAgent;
+  }
 
-    uint16_t port() const override
-    {
-        return serverAddr_.toPort();
-    }
+  uint16_t port() const override {
+    return serverAddr_.toPort();
+  }
 
-    std::string host() const override
-    {
-        if (domain_.empty())
-            return serverAddr_.toIp();
-        return domain_;
-    }
+  std::string host() const override {
+    if (domain_.empty())
+      return serverAddr_.toIp();
+    return domain_;
+  }
 
-    bool secure() const override
-    {
-        return useSSL_;
-    }
+  bool secure() const override {
+    return useSSL_;
+  }
 
-    void setCertPath(const std::string &cert, const std::string &key) override;
-    void addSSLConfigs(const std::vector<std::pair<std::string, std::string>>
-                           &sslConfCmds) override;
+  void setCertPath(const std::string &cert, const std::string &key) override;
+  void addSSLConfigs(const std::vector<std::pair<std::string, std::string>>
+                         &sslConfCmds) override;
 
-    void setSockOptCallback(std::function<void(int)> cb)
-    {
-        sockOptCallback_ = std::move(cb);
-    }
+  void setSockOptCallback(std::function<void(int)> cb) {
+    sockOptCallback_ = std::move(cb);
+  }
 
-  private:
-    std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
-    trantor::EventLoop *loop_;
-    trantor::InetAddress serverAddr_;
-    bool useSSL_;
-    bool validateCert_;
-    void sendReq(const trantor::TcpConnectionPtr &connPtr,
-                 const HttpRequestPtr &req);
-    void sendRequestInLoop(const HttpRequestPtr &req,
-                           HttpReqCallback &&callback);
-    void sendRequestInLoop(const HttpRequestPtr &req,
-                           HttpReqCallback &&callback,
-                           double timeout);
-    void handleCookies(const HttpResponseImplPtr &resp);
-    void handleResponse(const HttpResponseImplPtr &resp,
-                        std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
-                        const trantor::TcpConnectionPtr &connPtr);
-    void createTcpClient();
-    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
-    std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
-    void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
-    void onError(ReqResult result);
-    std::string domain_;
-    bool isDomainName_{true};  // true if domain_ is name
-    size_t pipeliningDepth_{0};
-    bool enableCookies_{false};
-    std::vector<Cookie> validCookies_;
-    size_t bytesSent_{0};
-    size_t bytesReceived_{0};
-    bool dns_{false};
-    std::shared_ptr<trantor::Resolver> resolverPtr_;
-    bool useOldTLS_{false};
-    std::string userAgent_{"DrogonClient"};
-    std::vector<std::pair<std::string, std::string>> sslConfCmds_;
-    std::string clientCertPath_;
-    std::string clientKeyPath_;
-    std::function<void(int)> sockOptCallback_;
+ private:
+  std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
+  trantor::EventLoop *loop_;
+  trantor::InetAddress serverAddr_;
+  bool useSSL_;
+  bool validateCert_;
+  void sendReq(const trantor::TcpConnectionPtr &connPtr,
+               const HttpRequestPtr &req);
+  void sendRequestInLoop(const HttpRequestPtr &req, HttpReqCallback &&callback);
+  void sendRequestInLoop(const HttpRequestPtr &req,
+                         HttpReqCallback &&callback,
+                         double timeout);
+  void handleCookies(const HttpResponseImplPtr &resp);
+  void handleResponse(const HttpResponseImplPtr &resp,
+                      std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
+                      const trantor::TcpConnectionPtr &connPtr);
+  void createTcpClient();
+  std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
+  std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
+  void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
+  void onError(ReqResult result);
+  std::string domain_;
+  bool isDomainName_{true};  // true if domain_ is name
+  size_t pipeliningDepth_{0};
+  bool enableCookies_{false};
+  std::vector<Cookie> validCookies_;
+  size_t bytesSent_{0};
+  size_t bytesReceived_{0};
+  bool dns_{false};
+  std::shared_ptr<trantor::Resolver> resolverPtr_;
+  bool useOldTLS_{false};
+  std::string userAgent_{"DrogonClient"};
+  std::vector<std::pair<std::string, std::string>> sslConfCmds_;
+  std::string clientCertPath_;
+  std::string clientKeyPath_;
+  std::function<void(int)> sockOptCallback_;
 };
 
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;

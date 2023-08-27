@@ -18,25 +18,20 @@
 #include "CommandHandler.h"
 using namespace drogon;
 
-namespace drogon_ctl
-{
-class version : public DrObject<version>, public CommandHandler
-{
-  public:
-    void handleCommand(std::vector<std::string> &parameters) override;
+namespace drogon_ctl {
+class version : public DrObject<version>, public CommandHandler {
+ public:
+  void handleCommand(std::vector<std::string> &parameters) override;
 
-    std::string script() override
-    {
-        return "display version of this tool";
-    }
+  std::string script() override {
+    return "display version of this tool";
+  }
 
-    bool isTopCommand() override
-    {
-        return true;
-    }
+  bool isTopCommand() override {
+    return true;
+  }
 
-    version()
-    {
-    }
+  version() {
+  }
 };
 }  // namespace drogon_ctl

@@ -19,60 +19,52 @@
 
 using namespace drogon::orm;
 
-Result::SizeType Sqlite3ResultImpl::size() const noexcept
-{
-    return result_.size();
+Result::SizeType Sqlite3ResultImpl::size() const noexcept {
+  return result_.size();
 }
 
-Result::RowSizeType Sqlite3ResultImpl::columns() const noexcept
-{
-    return result_.empty() ? 0 : result_[0].size();
+Result::RowSizeType Sqlite3ResultImpl::columns() const noexcept {
+  return result_.empty() ? 0 : result_[0].size();
 }
 
-const char *Sqlite3ResultImpl::columnName(RowSizeType number) const
-{
-    assert(number < columnNames_.size());
-    return columnNames_[number].c_str();
+const char *Sqlite3ResultImpl::columnName(RowSizeType number) const {
+  assert(number < columnNames_.size());
+  return columnNames_[number].c_str();
 }
 
-Result::SizeType Sqlite3ResultImpl::affectedRows() const noexcept
-{
-    return affectedRows_;
+Result::SizeType Sqlite3ResultImpl::affectedRows() const noexcept {
+  return affectedRows_;
 }
 
-Result::RowSizeType Sqlite3ResultImpl::columnNumber(const char colName[]) const
-{
-    auto name = std::string(colName);
-    std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
-    auto iter = columnNamesMap_.find(name);
-    if (iter != columnNamesMap_.end())
-    {
-        return iter->second;
-    }
-    throw RangeError(std::string("there is no column named ") + colName);
+Result::RowSizeType Sqlite3ResultImpl::columnNumber(
+    const char colName[]) const {
+  auto name = std::string(colName);
+  std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
+    return tolower(c);
+  });
+  auto iter = columnNamesMap_.find(name);
+  if (iter != columnNamesMap_.end()) {
+    return iter->second;
+  }
+  throw RangeError(std::string("there is no column named ") + colName);
 }
 
-const char *Sqlite3ResultImpl::getValue(SizeType row, RowSizeType column) const
-{
-    auto col = result_[row][column];
-    return col ? col->c_str() : nullptr;
+const char *Sqlite3ResultImpl::getValue(SizeType row,
+                                        RowSizeType column) const {
+  auto col = result_[row][column];
+  return col ? col->c_str() : nullptr;
 }
 
-bool Sqlite3ResultImpl::isNull(SizeType row, RowSizeType column) const
-{
-    return !result_[row][column];
+bool Sqlite3ResultImpl::isNull(SizeType row, RowSizeType column) const {
+  return !result_[row][column];
 }
 
 Result::FieldSizeType Sqlite3ResultImpl::getLength(SizeType row,
-                                                   RowSizeType column) const
-{
-    auto col = result_[row][column];
-    return col ? col->length() : 0;
+                                                   RowSizeType column) const {
+  auto col = result_[row][column];
+  return col ? col->length() : 0;
 }
 
-unsigned long long Sqlite3ResultImpl::insertId() const noexcept
-{
-    return insertId_;
+unsigned long long Sqlite3ResultImpl::insertId() const noexcept {
+  return insertId_;
 }

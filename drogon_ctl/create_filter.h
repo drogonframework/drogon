@@ -18,19 +18,16 @@
 #include "CommandHandler.h"
 using namespace drogon;
 
-namespace drogon_ctl
-{
-class create_filter : public DrObject<create_filter>, public CommandHandler
-{
-  public:
-    void handleCommand(std::vector<std::string> &parameters) override;
+namespace drogon_ctl {
+class create_filter : public DrObject<create_filter>, public CommandHandler {
+ public:
+  void handleCommand(std::vector<std::string> &parameters) override;
 
-    std::string script() override
-    {
-        return "create filter class files";
-    }
+  std::string script() override {
+    return "create filter class files";
+  }
 
-  protected:
-    std::string outputPath_{"."};
+ protected:
+  std::string outputPath_{"."};
 };
 }  // namespace drogon_ctl
