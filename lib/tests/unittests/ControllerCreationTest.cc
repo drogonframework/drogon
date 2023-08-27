@@ -10,7 +10,7 @@ class Ctrl : public drogon::HttpController<Ctrl, false> {
   };
 
   static bool created;
-}
+};
 
 class SimpleCtrl : public drogon::HttpController<Ctrl, false> {
  public:
@@ -19,7 +19,7 @@ class SimpleCtrl : public drogon::HttpController<Ctrl, false> {
   };
 
   static bool created;
-}
+};
 
 class WsCtrl : public drogon::WebSocketController<WsCtrl, false> {
  public:
@@ -28,7 +28,7 @@ class WsCtrl : public drogon::WebSocketController<WsCtrl, false> {
   };
 
   static bool created;
-}
+};
 
 bool Ctrl::created = false;
 bool SimpleCtrl::created = false;
