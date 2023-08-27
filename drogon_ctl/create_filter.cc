@@ -16,26 +16,25 @@
 #include <drogon/DrTemplateBase.h>
 #include <drogon/utils/Utilities.h>
 
-#include <string>
-#include <iostream>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
-#include <fstream>
-#include <regex>
-
 #include <sys/stat.h>
 #include <sys/types.h>
 
-using namespace drogon_ctl;
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <regex>
+#include <vector>
 
 static void createFilterHeaderFile(std::ofstream &file,
                                    const std::string &className,
                                    const std::string &fileName) {
   auto templ = drogon::DrTemplateBase::newTemplate("filter_h");
-  HttpViewData data;
+  drogon::HttpViewData data;
   if (className.find("::") != std::string::npos) {
-    auto namespaceVector = utils::splitString(className, "::");
+    auto namespaceVector = drogon::utils::splitString(className, "::");
     data.insert("className", namespaceVector.back());
     namespaceVector.pop_back();
     data.insert("namespaceVector", namespaceVector);
@@ -50,7 +49,7 @@ static void createFilterSourceFile(std::ofstream &file,
                                    const std::string &className,
                                    const std::string &fileName) {
   auto templ = drogon::DrTemplateBase::newTemplate("filter_cc");
-  HttpViewData data;
+  drogon::HttpViewData data;
   if (className.find("::") != std::string::npos) {
     auto pos = className.rfind("::");
     data.insert("namespaceString", className.substr(0, pos));
@@ -62,7 +61,8 @@ static void createFilterSourceFile(std::ofstream &file,
   file << templ->genText(data);
 }
 
-void create_filter::handleCommand(std::vector<std::string> &parameters) {
+void drogon_ctl::create_filter::handleCommand(
+    std::vector<std::string> &parameters) {
   if (parameters.size() < 1) {
     std::cout << "Invalid parameters!" << std::endl;
   }

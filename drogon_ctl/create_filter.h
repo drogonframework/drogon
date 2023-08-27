@@ -16,10 +16,13 @@
 
 #include <drogon/DrObject.h>
 #include "CommandHandler.h"
-using namespace drogon;
+
+#include <vector>
+#include <string>
 
 namespace drogon_ctl {
-class create_filter : public DrObject<create_filter>, public CommandHandler {
+class create_filter : public drogon::DrObject<create_filter>,
+                      public CommandHandler {
  public:
   void handleCommand(std::vector<std::string> &parameters) override;
 
