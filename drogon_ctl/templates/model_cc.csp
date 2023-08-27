@@ -975,7 +975,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
         {
             $$<<"const "<<col.colType_<<" &"<<className<<"::getValueOf"<<col.colTypeName_<<"() const noexcept\n";
             $$<<"{\n";
-            $$<<"    const static "<<col.colType_<<" defaultValue = "<<col.colType_<<"();\n";
+            $$<<"    static const "<<col.colType_<<" defaultValue = "<<col.colType_<<"();\n";
             $$<<"    if("<<col.colValName_<<"_)\n";
             $$<<"        return *"<<col.colValName_<<"_;\n";
             $$<<"    return defaultValue;\n";
@@ -984,7 +984,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
             {
                 $$<<"std::string "<<className<<"::getValueOf"<<col.colTypeName_<<"AsString() const noexcept\n";
                 $$<<"{\n";
-                $$<<"    const static std::string defaultValue = std::string();\n";
+                $$<<"    static const std::string defaultValue = std::string();\n";
                 $$<<"    if("<<col.colValName_<<"_)\n";
                 $$<<"        return std::string("<<col.colValName_<<"_->data(),"<<col.colValName_<<"_->size());\n";
                 $$<<"    return defaultValue;\n";
@@ -1625,7 +1625,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
             }
 %>
 {
-    const static std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
+    static const std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
             if(rdbms=="postgresql")
             {
                 $$<<"$1";
@@ -1710,7 +1710,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
             }
 %>
 {
-    const static std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
+    static const std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
             if(rdbms=="postgresql")
             {
                 $$<<"$1";
@@ -1794,7 +1794,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
             }
 %>
 {
-    const static std::string sql = "select * from {%name%},{%pivotTableName%} where {%pivotTableName%}.{%pivotOriginalKey%} = <%c++
+    static const std::string sql = "select * from {%name%},{%pivotTableName%} where {%pivotTableName%}.{%pivotOriginalKey%} = <%c++
             if(rdbms=="postgresql")
             {
                 $$<<"$1";

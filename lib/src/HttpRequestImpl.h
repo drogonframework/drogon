@@ -142,7 +142,7 @@ class HttpRequestImpl : public HttpRequest {
   }
 
   const std::string &getParameter(const std::string &key) const override {
-    const static std::string defaultVal;
+    static const std::string defaultVal;
     parseParametersOnce();
     auto iter = parameters_.find(key);
     if (iter != parameters_.end())
@@ -259,7 +259,7 @@ class HttpRequestImpl : public HttpRequest {
   }
 
   const std::string &getHeaderBy(const std::string &lowerField) const {
-    const static std::string defaultVal;
+    static const std::string defaultVal;
     auto it = headers_.find(lowerField);
     if (it != headers_.end()) {
       return it->second;
@@ -268,7 +268,7 @@ class HttpRequestImpl : public HttpRequest {
   }
 
   const std::string &getCookie(const std::string &field) const override {
-    const static std::string defaultVal;
+    static const std::string defaultVal;
     auto it = cookies_.find(field);
     if (it != cookies_.end()) {
       return it->second;
@@ -414,7 +414,7 @@ class HttpRequestImpl : public HttpRequest {
   }
 
   const std::string &expect() const {
-    const static std::string none{""};
+    static const std::string none{""};
     if (expectPtr_)
       return *expectPtr_;
     return none;
@@ -429,7 +429,7 @@ class HttpRequestImpl : public HttpRequest {
   }
 
   const std::string &getJsonError() const override {
-    const static std::string none{""};
+    static const std::string none{""};
     if (jsonParsingErrorPtr_)
       return *jsonParsingErrorPtr_;
     return none;

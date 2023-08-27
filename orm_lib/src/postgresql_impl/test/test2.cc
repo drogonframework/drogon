@@ -12,9 +12,9 @@ using namespace drogon::orm;
 
 class User {
  public:
-  const static std::string primaryKeyName;
-  const static bool hasPrimaryKey;
-  const static std::string tableName;
+  static const std::string primaryKeyName;
+  static const bool hasPrimaryKey;
+  static const std::string tableName;
 
   using PrimaryKeyType = int;
 
@@ -27,7 +27,7 @@ class User {
   std::string userName_;
 
   static const std::string &sqlForFindingByPrimaryKey() {
-    const static std::string sql = "select * from users where user_uuid = $1";
+    static const std::string sql = "select * from users where user_uuid = $1";
     return sql;
   }
 };

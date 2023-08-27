@@ -34,7 +34,7 @@ class DROGON_EXPORT HttpViewData {
   /// parameter.
   template <typename T>
   const T &get(const std::string &key) const {
-    const static T nullVal = T();
+    static const T nullVal = T();
     auto it = viewData_.find(key);
     if (it != viewData_.end()) {
       if (typeid(T) == it->second.type()) {

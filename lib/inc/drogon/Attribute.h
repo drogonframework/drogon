@@ -36,7 +36,7 @@ class Attributes {
    */
   template <typename T>
   const T &get(const std::string &key) const {
-    const static T nullVal = T();
+    static const T nullVal = T();
     auto it = attributesMap_.find(key);
     if (it != attributesMap_.end()) {
       if (typeid(T) == it->second.type()) {
