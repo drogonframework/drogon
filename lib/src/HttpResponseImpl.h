@@ -117,8 +117,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse {
   }
 
   const std::
-      unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-          &headers() const override {
+      unordered_map<std::string, std::string, utils::internal::SafeStringHash> &
+      headers() const override {
     return headers_;
   }
 
@@ -175,8 +175,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse {
     return defaultCookie;
   }
 
-  const std::unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
-      &cookies() const override {
+  const std::
+      unordered_map<std::string, Cookie, utils::internal::SafeStringHash> &
+      cookies() const override {
     return cookies_;
   }
 
@@ -319,7 +320,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse {
       auto gunzipBody =
           utils::gzipDecompress(bodyPtr_->data(), bodyPtr_->length());
       removeHeaderBy("content-encoding");
-      bodyPtr_ = std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+      bodyPtr_ = std::make_shared<HttpMessageStringBody>(std::move(gunzipBody));
       addHeader("content-length", std::to_string(bodyPtr_->length()));
     }
   }
@@ -329,7 +330,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse {
       auto gunzipBody =
           utils::brotliDecompress(bodyPtr_->data(), bodyPtr_->length());
       removeHeaderBy("content-encoding");
-      bodyPtr_ = std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+      bodyPtr_ = std::make_shared<HttpMessageStringBody>(std::move(gunzipBody));
       addHeader("content-length", std::to_string(bodyPtr_->length()));
     }
   }

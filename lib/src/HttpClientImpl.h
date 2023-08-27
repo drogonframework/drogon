@@ -98,7 +98,7 @@ class HttpClientImpl final
   void addSSLConfigs(const std::vector<std::pair<std::string, std::string>>
                          &sslConfCmds) override;
 
-  void setSockOptCallback(std::function<void(int)> cb) {
+  void setSockOptCallback(std::function<void(int)> cb) override {
     sockOptCallback_ = std::move(cb);
   }
 

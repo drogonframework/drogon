@@ -52,10 +52,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework {
 
   PluginBase *getPlugin(const std::string &name) override;
   std::shared_ptr<PluginBase> getSharedPlugin(const std::string &name) override;
-  void addPlugins(const Json::Value &configs);
+  void addPlugins(const Json::Value &configs) override;
   void addPlugin(const std::string &name,
                  const std::vector<std::string> &dependencies,
-                 const Json::Value &config);
+                 const Json::Value &config) override;
   HttpAppFramework &addListener(
       const std::string &ip,
       uint16_t port,
@@ -130,8 +130,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework {
     return *this;
   }
 
-  const std::vector<std::function<void(const HttpResponsePtr &)>>
-      &getResponseCreationAdvices() const {
+  const std::vector<std::function<void(const HttpResponsePtr &)>> &
+  getResponseCreationAdvices() const {
     return responseCreationAdvices_;
   }
 
