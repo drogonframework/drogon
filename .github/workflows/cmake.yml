@@ -123,6 +123,7 @@ jobs:
           - buildname: "ubuntu-22.04/gcc"
             link: STATIC
           - buildname: "ubuntu-22.04/coroutines"
+            link: STATIC
     steps:
       - name: Checkout Drogon source code
         uses: actions/checkout@v2
