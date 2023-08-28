@@ -329,36 +329,60 @@ class Users {
     char placeholderStr[64];
     size_t n = 0;
     if (dirtyFlag_[0]) {
-      n = sprintf(placeholderStr, "$%d,", placeholder++);
+      n = snprintf(placeholderStr,
+                   sizeof(placeholderStr),
+                   "$%d,",
+                   placeholder++);
       sql.append(placeholderStr, n);
     }
     if (dirtyFlag_[1]) {
-      n = sprintf(placeholderStr, "$%d,", placeholder++);
+      n = snprintf(placeholderStr,
+                   sizeof(placeholderStr),
+                   "$%d,",
+                   placeholder++);
       sql.append(placeholderStr, n);
     }
     if (dirtyFlag_[2]) {
-      n = sprintf(placeholderStr, "$%d,", placeholder++);
+      n = snprintf(placeholderStr,
+                   sizeof(placeholderStr),
+                   "$%d,",
+                   placeholder++);
       sql.append(placeholderStr, n);
     }
     if (dirtyFlag_[3]) {
-      n = sprintf(placeholderStr, "$%d,", placeholder++);
+      n = snprintf(placeholderStr,
+                   sizeof(placeholderStr),
+                   "$%d,",
+                   placeholder++);
       sql.append(placeholderStr, n);
     }
     if (dirtyFlag_[4]) {
-      n = sprintf(placeholderStr, "$%d,", placeholder++);
+      n = snprintf(placeholderStr,
+                   sizeof(placeholderStr),
+                   "$%d,",
+                   placeholder++);
       sql.append(placeholderStr, n);
     }
     if (dirtyFlag_[5]) {
-      n = sprintf(placeholderStr, "$%d,", placeholder++);
+      n = snprintf(placeholderStr,
+                   sizeof(placeholderStr),
+                   "$%d,",
+                   placeholder++);
       sql.append(placeholderStr, n);
     }
     sql += "default,";
     if (dirtyFlag_[7]) {
-      n = sprintf(placeholderStr, "$%d,", placeholder++);
+      n = snprintf(placeholderStr,
+                   sizeof(placeholderStr),
+                   "$%d,",
+                   placeholder++);
       sql.append(placeholderStr, n);
     }
     if (dirtyFlag_[8]) {
-      n = sprintf(placeholderStr, "$%d,", placeholder++);
+      n = snprintf(placeholderStr,
+                   sizeof(placeholderStr),
+                   "$%d,",
+                   placeholder++);
       sql.append(placeholderStr, n);
     } else {
       sql += "default,";
