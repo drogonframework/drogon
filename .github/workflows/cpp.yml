@@ -2,11 +2,7 @@ name: C++
 
 on:
   push:
-<<<<<<< HEAD
     branches: [master]
-=======
-    branches: [main]
->>>>>>> 5a3efaee (Update cpplint command)
   pull_request:
 
 permissions:
