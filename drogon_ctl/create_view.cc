@@ -20,6 +20,7 @@
 #include <string>
 #include <algorithm>
 #include <regex>
+#include <vector>
 
 static const std::string cxx_include = "<%inc";
 static const std::string cxx_end = "%>";

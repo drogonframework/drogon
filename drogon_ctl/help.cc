@@ -16,6 +16,9 @@
 #include <drogon/DrClassMap.h>
 #include <iostream>
 #include <memory>
+#include <vector>
+#include <string>
+
 using namespace drogon_ctl;
 
 void help::handleCommand(std::vector<std::string> &parameters) {

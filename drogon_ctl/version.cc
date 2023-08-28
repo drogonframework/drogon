@@ -19,6 +19,8 @@
 #include <trantor/net/Resolver.h>
 #include <trantor/utils/Utilities.h>
 #include <iostream>
+#include <vector>
+#include <string>
 
 using namespace drogon_ctl;
 static const char banner[] =

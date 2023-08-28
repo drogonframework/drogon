@@ -16,6 +16,10 @@
 
 #include <drogon/DrObject.h>
 #include "CommandHandler.h"
+
+#include <vector>
+#include <string>
+
 using namespace drogon;
 
 namespace drogon_ctl {

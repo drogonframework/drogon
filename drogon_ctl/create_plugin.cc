@@ -23,6 +23,7 @@
 #endif
 #include <fstream>
 #include <regex>
+#include <vector>
 
 #include <sys/stat.h>
 #include <sys/types.h>

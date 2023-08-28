@@ -25,6 +25,8 @@
 #include <direct.h>
 #endif
 #include <fstream>
+#include <vector>
+#include <string>
 
 using namespace drogon_ctl;
 

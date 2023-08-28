@@ -1,5 +1,7 @@
 #include "Client.h"
 
+#include <string>
+
 using namespace drogon;
 
 void Client::get(const HttpRequestPtr &,

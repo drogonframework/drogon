@@ -23,6 +23,8 @@ using namespace drogon::orm;
 #include "CommandHandler.h"
 #include <string>
 #include <algorithm>
+#include <map>
+#include <vector>
 
 using namespace drogon;
 
