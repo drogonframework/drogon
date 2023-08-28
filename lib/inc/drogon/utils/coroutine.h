@@ -86,7 +86,7 @@ constexpr bool is_awaitable_v = is_awaitable<T>::value;
 /**
  * @struct final_awaiter
  * @brief An awaiter for `Task::promise_type::final_suspend()`. Transfer
- * execution back to the Task who is co_awaiting this Task.
+ * execution back to the coroutine who is co_awaiting this Task.
  */
 struct final_awaiter
 {
@@ -108,7 +108,11 @@ struct final_awaiter
 
 /**
  * @struct task_awaiter
- * @brief Convert Task to an awaiter when it is co_awaited
+ * @brief Convert Task to an awaiter when it is co_awaited.
+ * Following things will happen:
+ * 1. Suspend current coroutine
+ * 2. Set current coroutine as continuation of this Task
+ * 3. Transfer execution to the co_awaited Task
  */
 template <typename Promise>
 struct task_awaiter
