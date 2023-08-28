@@ -90,7 +90,7 @@ jobs:
       - name: Build
         working-directory: ./build
         # Execute the build.  You can specify a specific target with "--target <NAME>"
-        run: ninja && sudo make install
+        run: ninja && sudo ninja install
 
       - name: Prepare for testing
         run: |
@@ -172,7 +172,7 @@ jobs:
       - name: Build
         working-directory: ./build
         # Execute the build.  You can specify a specific target with "--target <NAME>"
-        run: ninja && sudo make install
+        run: ninja && sudo ninja install
 
       - name: Prepare for testing
         run: |
