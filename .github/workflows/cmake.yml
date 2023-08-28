@@ -76,13 +76,13 @@ jobs:
 
       - name: Install dependencies
         # Already installed: brotli, zlib, postgresql@14, lz4, sqlite3
-        run: brew install jsoncpp mariadb hiredis redis
+        run: brew install ninja jsoncpp mariadb hiredis redis
 
       - name: Create Build Environment & Configure Cmake
         # Some projects don't allow in-source building, so create a separate build directory
         # We'll use this as our working directory for all subsequent commands
         run: |
-          cmake -B build                   \
+          cmake -B build -G Ninja          \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
             -DBUILD_TESTING=on             \
             -DBUILD_SHARED_LIBS=OFF
@@ -90,7 +90,7 @@ jobs:
       - name: Build
         working-directory: ./build
         # Execute the build.  You can specify a specific target with "--target <NAME>"
-        run: make -j $(nproc) && sudo make install
+        run: ninja && sudo ninja install
 
       - name: Prepare for testing
         run: |
@@ -137,7 +137,7 @@ jobs:
           sudo apt update
           # These aren't available or don't work well in vcpkg
           sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
-          sudo apt-get install -y libbrotli-dev
+          sudo apt-get install -y ninja-build libbrotli-dev
 
       - name: Install postgresql
         run: |
@@ -154,7 +154,7 @@ jobs:
         # We'll use this as our working directory for all subsequent commands
         if: matrix.buildname != 'ubuntu-22.04/coroutines'
         run: |
-          cmake -B build                   \
+          cmake -B build -G Ninja          \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
             -DBUILD_TESTING=on             \
             -DBUILD_SHARED_LIBS=$shared
@@ -163,7 +163,7 @@ jobs:
         # We'll use this as our working directory for all subsequent commands
         if: matrix.buildname == 'ubuntu-22.04/coroutines'
         run: |
-          cmake -B build                     \
+          cmake -B build -G Ninja            \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
             -DBUILD_TESTING=on               \
             -DCMAKE_CXX_FLAGS="-fcoroutines" \
@@ -172,7 +172,7 @@ jobs:
       - name: Build
         working-directory: ./build
         # Execute the build.  You can specify a specific target with "--target <NAME>"
-        run: make -j $(nproc) && sudo make install
+        run: ninja && sudo ninja install
 
       - name: Prepare for testing
         run: |
