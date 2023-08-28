@@ -508,7 +508,7 @@ if(@@.get<std::string>("rdbms")=="postgresql")
                 if(@@.get<std::string>("rdbms")=="postgresql")
                 {
 %>
-            n = sprintf(placeholderStr,"$%d,",placeholder++);
+            n = snprintf(placeholderStr,sizeof(placeholderStr),"$%d,",placeholder++);
             sql.append(placeholderStr, n);
 <%c++
                 }else
