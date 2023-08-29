@@ -380,8 +380,6 @@ struct AsyncTask
 
     struct promise_type
     {
-        std::coroutine_handle<> continuation_;
-
         AsyncTask get_return_object() noexcept
         {
             return {std::coroutine_handle<promise_type>::from_promise(*this)};
@@ -402,50 +400,11 @@ struct AsyncTask
         {
         }
 
-        void setContinuation(std::coroutine_handle<> handle)
+        std::suspend_never final_suspend() const noexcept
         {
-            continuation_ = handle;
-        }
-
-        auto final_suspend() const noexcept
-        {
-            // Can't simply use suspend_never because we need symmetric transfer
-            struct awaiter final
-            {
-                bool await_ready() const noexcept
-                {
-                    return true;
-                }
-
-                auto await_suspend(
-                    std::coroutine_handle<promise_type> coro) const noexcept
-                {
-                    return coro.promise().continuation_;
-                }
-
-                void await_resume() const noexcept
-                {
-                }
-            };
-
-            return awaiter{};
+            return {};
         }
     };
-
-    bool await_ready() const noexcept
-    {
-        return coro_.done();
-    }
-
-    void await_resume() const noexcept
-    {
-    }
-
-    auto await_suspend(std::coroutine_handle<> coroutine) noexcept
-    {
-        coro_.promise().setContinuation(coroutine);
-        return coro_;
-    }
 
     handle_type coro_;
 };
