@@ -31,7 +31,7 @@ struct StructAwaiter : public CallbackAwaiter<std::shared_ptr<SomeStruct>>
 
 }  // namespace drogon::internal
 
-// Workarround limitation of macros
+// Workaround limitation of macros
 template <typename T>
 using is_int = std::is_same<T, int>;
 template <typename T>
@@ -69,7 +69,7 @@ DROGON_TEST(CroutineBasics)
     }());
     CHECK(n == 1);
 
-    // Testing that exceptions can property through coroutines
+    // Testing that exceptions can propagate through coroutines
     auto throw_in_task = [TEST_CTX]() -> Task<> {
         auto f = []() -> Task<> { throw std::runtime_error("test error"); };
 

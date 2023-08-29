@@ -139,7 +139,8 @@ struct task_awaiter
     {
         if constexpr (std::is_void_v<decltype(coro_.promise().result())>)
         {
-            return coro_.promise().result();
+            // throw exception if any, return void
+            coro_.promise().result();
         }
         else
         {
