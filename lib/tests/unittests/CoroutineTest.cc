@@ -31,7 +31,7 @@ struct StructAwaiter : public CallbackAwaiter<std::shared_ptr<SomeStruct>>
 
 }  // namespace drogon::internal
 
-// Workarround limitation of macros
+// Workaround limitation of macros
 template <typename T>
 using is_int = std::is_same<T, int>;
 template <typename T>
@@ -69,7 +69,7 @@ DROGON_TEST(CroutineBasics)
     }());
     CHECK(n == 1);
 
-    // Testing that exceptions can propergate through coroutines
+    // Testing that exceptions can propagate through coroutines
     auto throw_in_task = [TEST_CTX]() -> Task<> {
         auto f = []() -> Task<> { throw std::runtime_error("test error"); };
 
@@ -77,7 +77,7 @@ DROGON_TEST(CroutineBasics)
     };
     sync_wait(throw_in_task());
 
-    // Test sync_wait propergrates exception
+    // Test sync_wait propagates exception
     auto throws = []() -> Task<> {
         throw std::runtime_error("bla");
         co_return;
@@ -100,7 +100,7 @@ DROGON_TEST(CroutineBasics)
     };
     sync_wait(await_non_copyable());
 
-    // This only works because async_run tries to run the corouine as soon as
+    // This only works because async_run tries to run the coroutine as soon as
     // possible and the coroutine does not wait
     int testVar = 0;
     async_run([&testVar]() -> Task<void> {
