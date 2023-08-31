@@ -164,26 +164,40 @@ class DROGON_EXPORT RedisClient
                       std::string_view command,
                       Args &&...args)
     {
-        std::shared_ptr<std::promise<T>> pro(new std::promise<T>);
-        std::future<T> f = pro->get_future();
+        return execCommandSync<std::decay_t<decltype(processFunc)>>(
+            std::move(processFunc), command, std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief Execute a redis command synchronously
+     * Return type can be deduced automatically in this version.
+     */
+    template <typename F, typename... Args>
+    std::invoke_result_t<F, const RedisResult &> execCommandSync(
+        F &&processFunc,
+        std::string_view command,
+        Args &&...args)
+    {
+        using Ret = std::invoke_result_t<F, const RedisResult &>;
+        std::promise<Ret> prom;
         execCommandAsync(
-            [process = std::move(processFunc), pro](const RedisResult &result) {
+            [&processFunc, &prom](const RedisResult &result) {
                 try
                 {
-                    pro->set_value(process(result));
+                    prom.set_value(processFunc(result));
                 }
                 catch (...)
                 {
-                    pro->set_exception(std::current_exception());
+                    prom.set_exception(std::current_exception());
                 }
             },
-            [pro](const RedisException &err) {
-                pro->set_exception(std::make_exception_ptr(err));
+            [&prom](const RedisException &err) {
+                prom.set_exception(std::make_exception_ptr(err));
             },
             command,
             std::forward<Args>(args)...);
 
-        return f.get();
+        return prom.get_future().get();
     }
 
     /**
