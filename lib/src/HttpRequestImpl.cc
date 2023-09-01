@@ -583,6 +583,7 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(loop_, that.loop_);
     swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
+    swap(routingParams_, that.routingParams_);
 }
 
 const char *HttpRequestImpl::versionString() const

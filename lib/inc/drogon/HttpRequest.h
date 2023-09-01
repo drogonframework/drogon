@@ -247,6 +247,13 @@ class DROGON_EXPORT HttpRequest
                                 matchedPathPatternLength());
     }
 
+    /// Get the matched path pattern after routing (including matched parameters
+    /// in the query string)
+    virtual const std::vector<std::string> &getRoutingParameters() const = 0;
+
+    /// This method usually is called by the framework.
+    virtual void setRoutingParameters(std::vector<std::string> &&params) = 0;
+
     virtual const char *matchedPathPatternData() const = 0;
     virtual size_t matchedPathPatternLength() const = 0;
 

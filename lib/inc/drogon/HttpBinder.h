@@ -115,6 +115,16 @@ class HttpBinder : public HttpBinderBase
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) override
     {
+        if (!pathArguments.empty())
+        {
+            std::vector<std::string> args;
+            args.reserve(pathArguments.size());
+            for (auto &arg : pathArguments)
+            {
+                args.emplace_back(arg);
+            }
+            req->setRoutingParameters(std::move(args));
+        }
         run(pathArguments, req, std::move(callback));
     }
 

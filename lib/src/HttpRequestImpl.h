@@ -79,6 +79,7 @@ class HttpRequestImpl : public HttpRequest
         keepAlive_ = true;
         jsonParsingErrorPtr_.reset();
         peerCertificate_.reset();
+        routingParams_.clear();
     }
 
     trantor::EventLoop *getLoop()
@@ -141,6 +142,16 @@ class HttpRequestImpl : public HttpRequest
         {
             path_.append(start, end);
         }
+    }
+
+    const std::vector<std::string> &getRoutingParameters() const override
+    {
+        return routingParams_;
+    }
+
+    void setRoutingParameters(std::vector<std::string> &&params)
+    {
+        routingParams_ = std::move(params);
     }
 
     void setPath(const std::string &path) override
@@ -614,6 +625,7 @@ class HttpRequestImpl : public HttpRequest
     bool keepAlive_{true};
     bool isOnSecureConnection_{false};
     bool passThrough_{false};
+    std::vector<std::string> routingParams_;
 
   protected:
     std::string content_;
