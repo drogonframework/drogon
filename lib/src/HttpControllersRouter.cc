@@ -675,11 +675,11 @@ void HttpControllersRouter::doControllerHandler(
         }
     }
 
-    std::deque<std::string> params(ctrlBinderPtr->parameterPlaces_.size());
     auto &paramsVector = req->getRoutingParameters();
-    for (auto &para : paramsVector)
+    std::deque<std::string> params(paramsVector.size());
+    for (int i = 0; i < paramsVector.size(); i++)
     {
-        params.emplace_back(para);
+        params[i] = paramsVector[i];
     }
     ctrlBinderPtr->binderPtr_->handleHttpRequest(
         params,
