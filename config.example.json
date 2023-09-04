@@ -244,19 +244,19 @@
         //0 means cache forever, the negative value means no cache
         "static_files_cache_time": 5,
         //simple_controllers_map: Used to configure mapping from path to simple controller
-        "simple_controllers_map": [
-            {
-                "path": "/path/name",
-                "controller": "controllerClassName",
-                "http_methods": [
-                    "get",
-                    "post"
-                ],
-                "filters": [
-                    "FilterClassName"
-                ]
-            }
-        ],
+        //"simple_controllers_map": [
+        //    {
+        //        "path": "/path/name",
+        //        "controller": "controllerClassName",
+        //        "http_methods": [
+        //            "get",
+        //            "post"
+        //        ],
+        //        "filters": [
+        //            "FilterClassName"
+        //        ]
+        //    }
+        //],
         //idle_connection_timeout: Defaults to 60 seconds, the lifetime 
         //of the connection without read or write
         "idle_connection_timeout": 60,
@@ -307,16 +307,13 @@
     "plugins": [
         {
             //name: The class name of the plugin
-            //"name": "drogon::plugin::SecureSSLRedirector",
+            "name": "drogon::plugin::PromExporter",
             //dependencies: Plugins that the plugin depends on. It can be commented out
             "dependencies": [],
             //config: The configuration of the plugin. This json object is the parameter to initialize the plugin.
             //It can be commented out
             "config": {
-                "ssl_redirect_exempt": [
-                    ".*\\.jpg"
-                ],
-                "secure_ssl_host": "localhost:8849"
+                "path": "/metrics"
             }
         }
     ],

@@ -230,12 +230,18 @@ endif (BUILD_BROTLI)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
+    lib/src/AccessLogger.cc
     lib/src/CacheFile.cc
+    lib/src/ConfigAdapterManager.cc
     lib/src/ConfigLoader.cc
     lib/src/Cookie.cc
     lib/src/DrClassMap.cc
     lib/src/DrTemplateBase.cc
     lib/src/FiltersFunction.cc
+    lib/src/FixedWindowRateLimiter.cc
+    lib/src/GlobalFilters.cc
+    lib/src/Histogram.cc
+    lib/src/Hodor.cc
     lib/src/HttpAppFrameworkImpl.cc
     lib/src/HttpBinder.cc
     lib/src/HttpClientImpl.cc
@@ -251,33 +257,29 @@ set(DROGON_SOURCES
     lib/src/HttpUtils.cc
     lib/src/HttpViewData.cc
     lib/src/IntranetIpFilter.cc
+    lib/src/JsonConfigAdapter.cc
     lib/src/ListenerManager.cc
     lib/src/LocalHostFilter.cc
     lib/src/MultiPart.cc
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
+    lib/src/PromExporter.cc
     lib/src/RangeParser.cc
-    lib/src/SecureSSLRedirector.cc
-    lib/src/GlobalFilters.cc
-    lib/src/AccessLogger.cc
+    lib/src/RateLimiter.cc
     lib/src/RealIpResolver.cc
+    lib/src/SecureSSLRedirector.cc
     lib/src/SessionManager.cc
+    lib/src/SlashRemover.cc
+    lib/src/SlidingWindowRateLimiter.cc
     lib/src/StaticFileRouter.cc
     lib/src/TaskTimeoutFlag.cc
+    lib/src/TokenBucketRateLimiter.cc
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
     lib/src/WebsocketControllersRouter.cc
-    lib/src/RateLimiter.cc
-    lib/src/FixedWindowRateLimiter.cc
-    lib/src/SlidingWindowRateLimiter.cc
-    lib/src/TokenBucketRateLimiter.cc
-    lib/src/Hodor.cc
-    lib/src/SlashRemover.cc
-    lib/src/drogon_test.cc
-    lib/src/ConfigAdapterManager.cc
-    lib/src/JsonConfigAdapter.cc
-    lib/src/YamlConfigAdapter.cc)
+    lib/src/YamlConfigAdapter.cc
+    lib/src/drogon_test.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -689,9 +691,22 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/HttpConstraint.h
     lib/inc/drogon/utils/OStringStream.h
-    lib/inc/drogon/utils/Utilities.h)
+    lib/inc/drogon/utils/Utilities.h
+    lib/inc/drogon/utils/monitoring.h)
 install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
+
+set(DROGON_MONITORING_HEADERS
+    lib/inc/drogon/utils/monitoring/Counter.h
+    lib/inc/drogon/utils/monitoring/Metric.h
+    lib/inc/drogon/utils/monitoring/Registry.h
+    lib/inc/drogon/utils/monitoring/Collector.h
+    lib/inc/drogon/utils/monitoring/Sample.h
+    lib/inc/drogon/utils/monitoring/Gauge.h
+    lib/inc/drogon/utils/monitoring/Histogram.h)
+
+install(FILES ${DROGON_MONITORING_HEADERS}
+    DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils/monitoring)
 
 set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/Plugin.h
@@ -700,7 +715,8 @@ set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/RealIpResolver.h
     lib/inc/drogon/plugins/Hodor.h
     lib/inc/drogon/plugins/SlashRemover.h
-    lib/inc/drogon/plugins/GlobalFilters.h)
+    lib/inc/drogon/plugins/GlobalFilters.h
+    lib/inc/drogon/plugins/PromExporter.h)
 
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
@@ -712,7 +728,8 @@ target_sources(${PROJECT_NAME} PRIVATE
                ${ORM_HEADERS}
                ${DROGON_UTIL_HEADERS}
                ${DROGON_PLUGIN_HEADERS}
-               ${NOSQL_HEADERS})
+               ${NOSQL_HEADERS}
+               ${DROGON_MONITORING_HEADERS})
 
 source_group("Public API"
     FILES
@@ -720,7 +737,8 @@ source_group("Public API"
     ${ORM_HEADERS}
     ${DROGON_UTIL_HEADERS}
     ${DROGON_PLUGIN_HEADERS}
-    ${NOSQL_HEADERS})
+    ${NOSQL_HEADERS}
+    ${DROGON_MONITORING_HEADERS})
 source_group("Private Headers"
              FILES
              ${private_headers})

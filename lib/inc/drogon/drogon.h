@@ -33,6 +33,7 @@
 #include <drogon/plugins/Hodor.h>
 #include <drogon/plugins/SlashRemover.h>
 #include <drogon/plugins/GlobalFilters.h>
+#include <drogon/plugins/PromExporter.h>
 #include <drogon/IntranetIpFilter.h>
 #include <drogon/LocalHostFilter.h>
 #include <drogon/Cookie.h>
