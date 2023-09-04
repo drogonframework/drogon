@@ -524,6 +524,42 @@ void HttpControllersRouter::route(
         }
         return;
     }
+    std::vector<std::string> params;
+    for (size_t j = 1; j < result.size(); ++j)
+    {
+        if (!result[j].matched)
+            continue;
+        size_t place = j;
+        if (j <= binder->parameterPlaces_.size())
+        {
+            place = binder->parameterPlaces_[j - 1];
+        }
+        if (place > params.size())
+            params.resize(place);
+        params[place - 1] = result[j].str();
+        LOG_TRACE << "place=" << place << " para:" << params[place - 1];
+    }
+
+    if (!binder->queryParametersPlaces_.empty())
+    {
+        auto &queryPara = req->getParameters();
+        for (auto const &paraPlace : binder->queryParametersPlaces_)
+        {
+            auto place = paraPlace.second;
+            if (place > params.size())
+                params.resize(place);
+            auto iter = queryPara.find(paraPlace.first);
+            if (iter != queryPara.end())
+            {
+                params[place - 1] = iter->second;
+            }
+            else
+            {
+                params[place - 1] = std::string{};
+            }
+        }
+    }
+    req->setRoutingParameters(std::move(params));
     if (!postRoutingObservers_.empty())
     {
         for (auto &observer : postRoutingObservers_)
@@ -639,41 +675,11 @@ void HttpControllersRouter::doControllerHandler(
         }
     }
 
-    std::deque<std::string> params(ctrlBinderPtr->parameterPlaces_.size());
-
-    for (size_t j = 1; j < matchResult.size(); ++j)
+    auto &paramsVector = req->getRoutingParameters();
+    std::deque<std::string> params(paramsVector.size());
+    for (int i = 0; i < paramsVector.size(); i++)
     {
-        if (!matchResult[j].matched)
-            continue;
-        size_t place = j;
-        if (j <= ctrlBinderPtr->parameterPlaces_.size())
-        {
-            place = ctrlBinderPtr->parameterPlaces_[j - 1];
-        }
-        if (place > params.size())
-            params.resize(place);
-        params[place - 1] = matchResult[j].str();
-        LOG_TRACE << "place=" << place << " para:" << params[place - 1];
-    }
-
-    if (!ctrlBinderPtr->queryParametersPlaces_.empty())
-    {
-        auto &queryPara = req->getParameters();
-        for (auto const &paraPlace : ctrlBinderPtr->queryParametersPlaces_)
-        {
-            auto place = paraPlace.second;
-            if (place > params.size())
-                params.resize(place);
-            auto iter = queryPara.find(paraPlace.first);
-            if (iter != queryPara.end())
-            {
-                params[place - 1] = iter->second;
-            }
-            else
-            {
-                params[place - 1] = std::string{};
-            }
-        }
+        params[i] = paramsVector[i];
     }
     ctrlBinderPtr->binderPtr_->handleHttpRequest(
         params,
