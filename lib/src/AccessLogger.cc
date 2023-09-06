@@ -37,6 +37,9 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #ifdef _WIN32
 #include <spdlog/sinks/msvc_sink.h>
+// Damn antedeluvian M$ macros
+#undef min
+#undef max
 #endif
 #ifndef _WIN32
 #include <sys/wait.h>
@@ -115,9 +118,13 @@ void AccessLogger::initAndStart(const Json::Value &config)
     if (logWithSpdlog)
     {
         logIndex_ = config.get("log_index", 0).asInt();
-        if (!trantor::Logger::getSpdlogger(logIndex_))
-        {
-            std::list<spdlog::sink_ptr> sinks;
+        // Do nothing if already initialized...
+        if (!trantor::Logger::getSpdLogger(logIndex_)) {
+            trantor::Logger::enableSpdLog(logIndex_);
+            // Get the new logger & replace its sinks with the ones of the
+            // config
+            auto logger = trantor::Logger::getSpdLogger(logIndex_);
+            std::vector<spdlog::sink_ptr> sinks;
             while (!logPath.empty())
             {
                 // 1. check existence of folder or try to create it
@@ -136,7 +143,8 @@ void AccessLogger::initAndStart(const Json::Value &config)
                     LOG_ERROR << "cannot create files in log folder";
                     break;
                 }
-                std::filesystem::path fileName(config.get("log_file", "access.log").asString());
+                std::filesystem::path fileName(
+                    config.get("log_file", "access.log").asString());
                 if (fileName.empty())
                     fileName = "access.log";
                 else
@@ -144,12 +152,15 @@ void AccessLogger::initAndStart(const Json::Value &config)
                 auto sizeLimit = config.get("log_size_limit", 0).asUInt64();
                 if (sizeLimit == 0)
                     sizeLimit = config.get("size_limit", 0).asUInt64();
-                auto maxFiles = config.get("max_files", 0).asUInt();
+                if (sizeLimit == 0) // 0 is not allowed by this sink
+                    sizeLimit = std::numeric_limits<std::size_t>::max();
+                std::size_t maxFiles = config.get("max_files", 0).asUInt();
                 sinks.push_back(
                     std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                         (fsLogPath / fileName).string(),
                         sizeLimit,
-                        maxFiles,
+                        // spdlog limitation
+                        std::min(maxFiles, std::size_t(20000)),
                         false));
                 break;
             }
@@ -161,18 +172,11 @@ void AccessLogger::initAndStart(const Json::Value &config)
             // directly in the Visual Studio / WinDbg console
             sinks.push_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
 #endif
-            auto logger = std::make_shared<spdlog::logger>((logIndex_ < 0) ? "drogon" : fmt::format("drogon{}", logIndex_),
-                                                           sinks.begin(),
-                                                           sinks.end());
-            // let AccessLogger format the output
+            logger->sinks() = sinks;
+            // Override the pattern set in
+            // trantor::Logger::getDefaultSpdLogger() and let AccessLogger
+            // format the output
             logger->set_pattern("%v");
-            // the filtering is done by trantor::Logger, so no need to filter
-            // here
-            for (auto &sink : sinks)
-                sink->set_level(spdlog::level::trace);
-            logger->set_level(spdlog::level::trace);
-            spdlog::register_logger(logger);
-            trantor::Logger::enableSpdLog(logIndex_, logger);
         }
     }
     else
