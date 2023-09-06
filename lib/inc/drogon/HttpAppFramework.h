@@ -144,7 +144,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual trantor::EventLoop *getLoop() const = 0;
 
-    /// Get an IO loop with id. E.g. 0 <= id < #Total thread-loops
+    /// Get an IO loop with id. E.g. 0 <= id < \#Total thread-loops
     /**
      * @note
      * The event loop is one of the network IO loops. Use the loop
@@ -426,14 +426,14 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 
     /// Load the configuration file with json format.
     /**
-     * @param filename the configuration file
+     * @param fileName the configuration file
      */
     virtual HttpAppFramework &loadConfigFile(
         const std::string &fileName) noexcept(false) = 0;
 
     /// Load the configuration from a Json::Value Object.
     /**
-     * @param Json::Value Object containing the configuration.
+     * @param data Json::Value Object containing the configuration.
      * @note Please refer to the configuration file for the content of the json
      * object.
      */
@@ -442,7 +442,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 
     /// Load the configuration from a Json::Value Object.
     /**
-     * @param rvalue reference to a Json::Value object containing the
+     * @param data rvalue reference to a Json::Value object containing the
      * configuration.
      * @note Please refer to the configuration file for the content of the json
      * object.
@@ -671,8 +671,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /// not find any file corresponding to the request. Thus it replaces
     /// the default 404 not found response.
     /**
-     * @param function indicates any type of callable object with a valid
-     * processing interface.
+     * @param handler function indicates any type of callable object with
+     * a valid processing interface.
      */
     virtual HttpAppFramework &setDefaultHandler(DefaultHandler handler) = 0;
 
@@ -793,8 +793,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @param keyFile specify the cert file and the private key file for this
      * listener. If they are empty, the global configuration set by the above
      * method is used.
-     * @param useOldTLS If true, the TLS1.0/1.1 are enabled for HTTPS
+     * @param useOldTLS if true, the TLS1.0/1.1 are enabled for HTTPS
      * connections.
+     * @param sslConfCmds vector of ssl configuration key/value pairs.
      *
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -933,21 +934,21 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setFileTypes(
         const std::vector<std::string> &types) = 0;
 
-/// Enable supporting for dynamic views loading.
-/**
- *
- * @param libPaths is a vector that contains paths to view files.
- *
- * @param outputPath is the directory where the output source files locate. if
- * it is set to an empty string, drogon use libPaths as output paths. If the
- * path isn't prefixed with /, it is relative path of the current working
- * directory.
- *
- * @note
- * It is disabled by default.
- * This operation can be performed by an option in the configuration file.
- */
 #ifndef _WIN32
+    /// Enable supporting for dynamic views loading.
+    /**
+     *
+     * @param libPaths is a vector that contains paths to view files.
+     *
+     * @param outputPath is the directory where the output source files locate. if
+     * it is set to an empty string, drogon use libPaths as output paths. If the
+     * path isn't prefixed with /, it is relative path of the current working
+     * directory.
+     *
+     * @note
+     * It is disabled by default.
+     * This operation can be performed by an option in the configuration file.
+     */
     virtual HttpAppFramework &enableDynamicViewsLoading(
         const std::vector<std::string> &libPaths,
         const std::string &outputPath = "") = 0;
@@ -1000,11 +1001,14 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &enableRelaunchOnError() = 0;
 
-    /// Set the output path of logs.
     /**
-     * @param logPath The path to logs.
-     * @param logfileBaseName The base name of log files.
+     * @brief Set the output path of logs.
+     * @param logPath The path to logs - logs to console if empty.
+     * @param logfileBaseName The base name of log files - defaults to "drogon"
+     * if empty.
      * @param logSize indicates the maximum size of a log file.
+     * @param maxFiles max count of log file - 0 = unlimited.
+     * @param useSpdlog Use spdlog for logging (if compiled-in).
      *
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -1013,10 +1017,11 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &logPath,
         const std::string &logfileBaseName = "",
         size_t logSize = 100000000,
-        size_t maxFiles = 0) = 0;
+        size_t maxFiles = 0,
+        bool useSpdlog = false) = 0;
 
-    /// Set the log level
     /**
+     * @brief Set the log level.
      * @param level is one of TRACE, DEBUG, INFO, WARN. The Default value is
      * DEBUG.
      *
@@ -1359,7 +1364,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual size_t getJsonParserStackLimit() const noexcept = 0;
     /**
-     * @brief This method is to enable or disable the unicode escaping (\u) in
+     * @brief This method is to enable or disable the unicode escaping (\\u) in
      * the json string of HTTP responses or requests. it works (disable
      * successfully) when the version of JsonCpp >= 1.9.3, the unicode escaping
      * is enabled by default.
@@ -1399,11 +1404,11 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * "postgresql","mysql","sqlite3".
      * @param host IP or host name.
      * @param port The port on which the database server is listening.
-     * @databaseName Database name
+     * @param databaseName Database name
      * @param userName User name
      * @param password Password for the database server
      * @param connectionNum The number of connections to the database server.
-     * It's valid only if @param isFast is false.
+     * It's valid only if @p isFast is false.
      * @param filename The file name of sqlite3 database file.
      * @param name The client name.
      * @param isFast Indicates if the client is a fast database client.

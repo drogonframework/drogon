@@ -30,6 +30,30 @@
 #include <pthread_np.h>
 #endif
 
+#ifdef TRANTOR_SPDLOG_SUPPORT
+#include <spdlog/spdlog.h>
+#include <spdlog/logger.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+#ifdef _WIN32
+#include <spdlog/sinks/msvc_sink.h>
+#endif
+#ifndef _WIN32
+#include <sys/wait.h>
+#include <unistd.h>
+#define os_access access
+#elif !defined(_WIN32) || defined(__MINGW32__)
+#include <sys/file.h>
+#include <unistd.h>
+#define os_access access
+#else
+#include <io.h>
+#define os_access _waccess
+#define R_OK 04
+#define W_OK 02
+#endif
+#endif
+
 using namespace drogon;
 using namespace drogon::plugin;
 
@@ -86,6 +110,73 @@ void AccessLogger::initAndStart(const Json::Value &config)
     }
     createLogFunctions(format);
     auto logPath = config.get("log_path", "").asString();
+#ifdef TRANTOR_SPDLOG_SUPPORT
+    auto logWithSpdlog = config.get("use_spdlog", false).asBool();
+    if (logWithSpdlog)
+    {
+        logIndex_ = config.get("log_index", 0).asInt();
+        if (!trantor::Logger::getSpdlogger(logIndex_))
+        {
+            std::list<spdlog::sink_ptr> sinks;
+            while (!logPath.empty())
+            {
+                // 1. check existence of folder or try to create it
+                auto fsLogPath =
+                    std::filesystem::path(utils::toNativePath(logPath));
+                std::error_code fsErr;
+                if (!std::filesystem::create_directories(fsLogPath, fsErr) &&
+                    fsErr)
+                {
+                    LOG_ERROR << "could not create log file path";
+                    break;
+                }
+                // 2. check if we have rights to create files in the folder
+                if (os_access(fsLogPath.native().c_str(), W_OK) != 0)
+                {
+                    LOG_ERROR << "cannot create files in log folder";
+                    break;
+                }
+                std::filesystem::path fileName(config.get("log_file", "access.log").asString());
+                if (fileName.empty())
+                    fileName = "access.log";
+                else
+                    fileName.replace_extension(".log");
+                auto sizeLimit = config.get("log_size_limit", 0).asUInt64();
+                if (sizeLimit == 0)
+                    sizeLimit = config.get("size_limit", 0).asUInt64();
+                auto maxFiles = config.get("max_files", 0).asUInt();
+                sinks.push_back(
+                    std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                        (fsLogPath / fileName).string(),
+                        sizeLimit,
+                        maxFiles,
+                        false));
+                break;
+            }
+            if (sinks.empty())
+                sinks.push_back(
+                    std::make_shared<spdlog::sinks::stderr_color_sink_mt>());
+#if defined(_WIN32) && defined(_DEBUG)
+            // On Windows with debug, it may be interesting to have the logs
+            // directly in the Visual Studio / WinDbg console
+            sinks.push_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
+#endif
+            auto logger = std::make_shared<spdlog::logger>((logIndex_ < 0) ? "drogon" : fmt::format("drogon{}", logIndex_),
+                                                           sinks.begin(),
+                                                           sinks.end());
+            // let AccessLogger format the output
+            logger->set_pattern("%v");
+            // the filtering is done by trantor::Logger, so no need to filter
+            // here
+            for (auto &sink : sinks)
+                sink->set_level(spdlog::level::trace);
+            logger->set_level(spdlog::level::trace);
+            spdlog::register_logger(logger);
+            trantor::Logger::enableSpdLog(logIndex_, logger);
+        }
+    }
+    else
+#endif
     if (!logPath.empty())
     {
         auto fileName = config.get("log_file", "access.log").asString();

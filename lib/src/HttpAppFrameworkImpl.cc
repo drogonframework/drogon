@@ -64,6 +64,16 @@
 #define W_OK 02
 #endif
 
+#ifdef TRANTOR_SPDLOG_SUPPORT
+#include <spdlog/spdlog.h>
+#include <spdlog/logger.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+#ifdef _WIN32
+#include <spdlog/sinks/msvc_sink.h>
+#endif
+#endif
+
 using namespace drogon;
 using namespace std::placeholders;
 
@@ -453,8 +463,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     const std::string &logPath,
     const std::string &logfileBaseName,
     size_t logfileSize,
-    size_t maxFiles)
+    size_t maxFiles,
+    bool useSpdlog)
 {
+#ifdef TRANTOR_SPDLOG_SUPPORT
+    logWithSpdlog_ = useSpdlog;
+#endif
     if (logPath.empty())
         return *this;
     // std::filesystem does not provide a method to check access permissions, so
@@ -1233,6 +1247,61 @@ HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
 
 HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
 {
+#ifdef TRANTOR_SPDLOG_SUPPORT
+    if (logWithSpdlog_ && !trantor::Logger::getSpdlogger())
+    {
+        std::list<spdlog::sink_ptr> sinks;
+        if (!logPath_.empty())
+        {
+            // 1. check existence of folder or try to create it
+            auto fsLogPath =
+                std::filesystem::path(utils::toNativePath(logPath_));
+            std::error_code fsErr;
+            if (!std::filesystem::create_directories(fsLogPath, fsErr) && fsErr)
+            {
+                LOG_ERROR << "could not create log file path";
+                abort();
+            }
+            // 2. check if we have rights to create files in the folder
+            if (os_access(fsLogPath.native().c_str(), W_OK) != 0)
+            {
+                LOG_ERROR << "cannot create files in log folder";
+                abort();
+            }
+            std::filesystem::path baseName(logfileBaseName_);
+            if (baseName.empty())
+                baseName = "drogon.log";
+            else
+                baseName.replace_extension(".log");
+            sinks.push_back(
+                std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                    (fsLogPath / baseName).string(),
+                    logfileSize_,
+                    logfileMaxNum_,
+                    false));
+        }
+        else
+            sinks.push_back(
+                std::make_shared<spdlog::sinks::stderr_color_sink_mt>());
+#if defined(_WIN32) && defined(_DEBUG)
+        // On Windows with debug, it may be interesting to have the logs directly in the Visual Studio / WinDbg console
+        sinks.push_back(
+            std::make_shared<spdlog::sinks::msvc_sink_mt>());
+#endif
+        auto logger = std::make_shared<spdlog::logger>("drogon", sinks.begin(), sinks.end());
+        // keep a log format similar to the existing one, but with coloured
+        // level on console since it's nice :)
+        // see reference: https://github.com/gabime/spdlog/wiki/3.-Custom-formatting
+        logger->set_pattern("%Y%m%d %T.%f %6t %^%=8l%$ [%!] %v - %s:%#");
+        // the filtering is done by trantor::Logger, so no need to filter here
+        for (auto& sink: sinks)
+            sink->set_level(spdlog::level::trace);
+        logger->set_level(spdlog::level::trace);
+        spdlog::register_logger(logger);
+        trantor::Logger::enableSpdLog(logger);
+        return *this;
+    }
+#endif  // TRANTOR_SPDLOG_SUPPORT
     if (!logPath_.empty() && !asyncFileLoggerPtr_)
     {
         // std::filesystem does not provide a method to check access

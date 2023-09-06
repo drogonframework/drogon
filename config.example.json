@@ -210,6 +210,9 @@
         },
         //log: Set log output, drogon output logs to stdout by default
         "log": {
+            //use_spdlog: Use spdlog library to log
+            //"use_spdlog": false
+            "use_spdlog": false,
             //log_path: Log file path,empty by default,in which case,logs are output to the stdout
             //"log_path": "./",
             //logfile_base_name: Log file base name,empty by default which means drogon names logfile as
