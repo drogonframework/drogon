@@ -37,11 +37,7 @@ class RedisClientImpl final
       public std::enable_shared_from_this<RedisClientImpl>
 {
   public:
-    RedisClientImpl(const trantor::InetAddress &serverAddress,
-                    size_t numberOfConnections,
-                    std::string username = "",
-                    std::string password = "",
-                    unsigned int db = 0);
+    RedisClientImpl(RedisConnectionInfo connInfo, size_t numberOfConnections);
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
                           std::string_view command,
@@ -84,10 +80,6 @@ class RedisClientImpl final
     std::unordered_set<RedisConnectionPtr> connections_;
     std::vector<RedisConnectionPtr> readyConnections_;
     size_t connectionPos_{0};
-    const trantor::InetAddress serverAddr_;
-    const std::string username_;
-    const std::string password_;
-    const unsigned int db_;
     const size_t numberOfConnections_;
     double timeout_{-1.0};
     std::list<std::shared_ptr<std::function<void(const RedisConnectionPtr &)>>>

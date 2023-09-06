@@ -82,6 +82,14 @@ struct [[nodiscard]] RedisTransactionAwaiter
 
 class RedisTransaction;
 
+struct RedisConnectionInfo
+{
+    trantor::InetAddress addr;
+    std::string username;
+    std::string password;
+    unsigned int db = 0;
+};
+
 /**
  * @brief This class represents a redis client that contains several connections
  * to a redis server.
@@ -100,11 +108,23 @@ class DROGON_EXPORT RedisClient
      * @return std::shared_ptr<RedisClient>
      */
     static std::shared_ptr<RedisClient> newRedisClient(
-        const trantor::InetAddress &serverAddress,
+        trantor::InetAddress serverAddress,
         size_t numberOfConnections = 1,
-        const std::string &password = "",
+        std::string password = "",
         unsigned int db = 0,
-        const std::string &username = "");
+        std::string username = "")
+    {
+        return newRedisClient({.addr = std::move(serverAddress),
+                               .username = std::move(username),
+                               .password = std::move(password),
+                               .db = db},
+                              numberOfConnections);
+    }
+
+    static std::shared_ptr<RedisClient> newRedisClient(
+        RedisConnectionInfo connInfo,
+        size_t numberOfConnections = 1);
+
     /**
      * @brief Execute a redis command
      *
@@ -310,6 +330,14 @@ class DROGON_EXPORT RedisClient
         return internal::RedisTransactionAwaiter(this);
     }
 #endif
+
+    const RedisConnectionInfo &connectionInfo() const
+    {
+        return connInfo_;
+    }
+
+  protected:
+    RedisConnectionInfo connInfo_;
 };
 
 class DROGON_EXPORT RedisTransaction : public RedisClient

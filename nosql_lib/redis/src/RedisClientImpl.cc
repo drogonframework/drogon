@@ -17,37 +17,29 @@
 #include "RedisSubscriberImpl.h"
 #include "RedisTransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
+#include "drogon/nosql/RedisClient.h"
 
 using namespace drogon::nosql;
 
 std::shared_ptr<RedisClient> RedisClient::newRedisClient(
-    const trantor::InetAddress &serverAddress,
-    size_t connectionNumber,
-    const std::string &password,
-    unsigned int db,
-    const std::string &username)
+    RedisConnectionInfo connInfo,
+    size_t numberOfConnections)
 {
-    auto client = std::make_shared<RedisClientImpl>(
-        serverAddress, connectionNumber, username, password, db);
+    auto client = std::make_shared<RedisClientImpl>(std::move(connInfo),
+                                                    numberOfConnections);
     client->init();
     return client;
 }
 
-RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
-                                 size_t numberOfConnections,
-                                 std::string username,
-                                 std::string password,
-                                 unsigned int db)
+RedisClientImpl::RedisClientImpl(RedisConnectionInfo connInfo,
+                                 size_t numberOfConnections)
     : loops_(numberOfConnections < std::thread::hardware_concurrency()
                  ? numberOfConnections
                  : std::thread::hardware_concurrency(),
              "RedisLoop"),
-      serverAddr_(serverAddress),
-      username_(std::move(username)),
-      password_(std::move(password)),
-      db_(db),
       numberOfConnections_(numberOfConnections)
 {
+    connInfo_ = std::move(connInfo);
 }
 
 void RedisClientImpl::init()
@@ -65,8 +57,7 @@ void RedisClientImpl::init()
 
 RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 {
-    auto conn = std::make_shared<RedisConnection>(
-        serverAddr_, username_, password_, db_, loop);
+    auto conn = std::make_shared<RedisConnection>(connInfo_, loop);
     std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();
@@ -118,8 +109,7 @@ RedisConnectionPtr RedisClientImpl::newSubscribeConnection(
     trantor::EventLoop *loop,
     const std::shared_ptr<RedisSubscriberImpl> &subscriber)
 {
-    auto conn = std::make_shared<RedisConnection>(
-        serverAddr_, username_, password_, db_, loop);
+    auto conn = std::make_shared<RedisConnection>(connInfo_, loop);
     std::weak_ptr<RedisClientImpl> weakThis = shared_from_this();
     std::weak_ptr<RedisSubscriberImpl> weakSub(subscriber);
     conn->setConnectCallback([weakThis, weakSub](RedisConnectionPtr &&conn) {

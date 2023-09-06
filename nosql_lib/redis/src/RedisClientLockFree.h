@@ -36,12 +36,9 @@ class RedisClientLockFree final
       public std::enable_shared_from_this<RedisClientLockFree>
 {
   public:
-    RedisClientLockFree(const trantor::InetAddress &serverAddress,
+    RedisClientLockFree(RedisConnectionInfo conInfo,
                         size_t numberOfConnections,
-                        trantor::EventLoop *loop,
-                        std::string username = "",
-                        std::string password = "",
-                        unsigned int db = 0);
+                        trantor::EventLoop *loop);
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
                           std::string_view command,
@@ -75,10 +72,6 @@ class RedisClientLockFree final
     std::unordered_set<RedisConnectionPtr> connections_;
     std::vector<RedisConnectionPtr> readyConnections_;
     size_t connectionPos_{0};
-    const trantor::InetAddress serverAddr_;
-    const std::string username_;
-    const std::string password_;
-    const unsigned int db_;
     const size_t numberOfConnections_;
     std::list<std::shared_ptr<std::function<void(const RedisConnectionPtr &)>>>
         tasks_;

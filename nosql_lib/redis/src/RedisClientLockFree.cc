@@ -19,21 +19,13 @@
 #include "../../lib/src/TaskTimeoutFlag.h"
 using namespace drogon::nosql;
 
-RedisClientLockFree::RedisClientLockFree(
-    const trantor::InetAddress &serverAddress,
-    size_t numberOfConnections,
-    trantor::EventLoop *loop,
-    std::string username,
-    std::string password,
-    unsigned int db)
-    : loop_(loop),
-      serverAddr_(serverAddress),
-      username_(std::move(username)),
-      password_(std::move(password)),
-      db_(db),
-      numberOfConnections_(numberOfConnections)
+RedisClientLockFree::RedisClientLockFree(RedisConnectionInfo connInfo,
+                                         size_t numberOfConnections,
+                                         trantor::EventLoop *loop)
+    : loop_(loop), numberOfConnections_(numberOfConnections)
 {
     assert(loop_);
+    connInfo_ = std::move(connInfo);
     for (size_t i = 0; i < numberOfConnections_; ++i)
     {
         loop_->queueInLoop([this]() { connections_.insert(newConnection()); });
@@ -43,8 +35,7 @@ RedisClientLockFree::RedisClientLockFree(
 RedisConnectionPtr RedisClientLockFree::newConnection()
 {
     loop_->assertInLoopThread();
-    auto conn = std::make_shared<RedisConnection>(
-        serverAddr_, username_, password_, db_, loop_);
+    auto conn = std::make_shared<RedisConnection>(connInfo_, loop_);
     std::weak_ptr<RedisClientLockFree> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();
@@ -89,8 +80,7 @@ RedisConnectionPtr RedisClientLockFree::newSubscribeConnection(
     const std::shared_ptr<RedisSubscriberImpl> &subscriber)
 {
     loop_->assertInLoopThread();
-    auto conn = std::make_shared<RedisConnection>(
-        serverAddr_, username_, password_, db_, loop_);
+    auto conn = std::make_shared<RedisConnection>(connInfo_, loop_);
     std::weak_ptr<RedisClientLockFree> weakThis = shared_from_this();
     std::weak_ptr<RedisSubscriberImpl> weakSub(subscriber);
     conn->setConnectCallback([weakThis, weakSub](RedisConnectionPtr &&conn) {
