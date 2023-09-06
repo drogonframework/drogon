@@ -19,8 +19,9 @@ namespace drogon
 namespace nosql
 {
 
-std::shared_ptr<RedisClient> newRedisClient(RedisConnectionInfo,
-                                            size_t /*numberOfConnections*/)
+std::shared_ptr<RedisClient> RedisClient::newRedisClient(
+    RedisConnectionInfo,
+    size_t /*numberOfConnections*/)
 {
     LOG_FATAL << "Redis is not supported by drogon, please install the "
                  "hiredis library first.";
