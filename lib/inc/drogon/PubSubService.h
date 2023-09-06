@@ -175,6 +175,9 @@ class PubSubService : public trantor::NonCopyable
     /**
      * @brief Subscribe to a topic. When a message is published to the topic,
      * the handler is invoked by passing the topic and message as parameters.
+     * @param topicName Topic name.
+     * @param handler The message handler.
+     * @return The subscriber ID.
      */
     SubscriberID subscribe(const std::string &topicName,
                            MessageHandler &&handler)
@@ -189,7 +192,7 @@ class PubSubService : public trantor::NonCopyable
     /**
      * @brief Unsubscribe from a topic.
      *
-     * @param topic
+     * @param topicName Topic name.
      * @param id The subscriber ID returned from the subscribe method.
      */
     void unsubscribe(const std::string &topicName, SubscriberID id)

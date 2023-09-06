@@ -130,8 +130,10 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     /// Async and nonblocking method
     /**
      * @param sql is the SQL statement to be executed;
-     * @param FUNCTION1 is usually the ResultCallback type;
-     * @param FUNCTION2 is usually the ExceptionCallback type;
+     * @tparam FUNCTION1 is usually the ResultCallback type;
+     * @tparam FUNCTION2 is usually the ExceptionCallback type;
+     * @param rCallback callback function;
+     * @param exceptCallback callback function on exception;
      * @param args are parameters that are bound to placeholders in the sql
      * parameter;
      *

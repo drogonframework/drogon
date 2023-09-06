@@ -81,7 +81,11 @@ class CacheMap
      * number of wheels
      * @param bucketsNumPerWheel
      * buckets number per wheel
-     * The max delay of the CacheMap is about
+     * @param fnOnInsert
+     * function to execute on insertion
+     * @param fnOnErase
+     * function to execute on erase
+     * @details The max delay of the CacheMap is about
      * tickInterval*(bucketsNumPerWheel^wheelsNum) seconds.
      */
     CacheMap(trantor::EventLoop *loop,
