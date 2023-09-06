@@ -53,6 +53,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
             -DBUILD_CTL=ON                                 \
             -DBUILD_EXAMPLES=ON                            \
+            -DUSE_SPDLOG=ON                                \
             -DCMAKE_INSTALL_PREFIX=../install              \
             -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             \
             -DCMAKE_CXX_STANDARD=17
@@ -76,7 +77,7 @@ jobs:
 
       - name: Install dependencies
         # Already installed: brotli, zlib, postgresql@14, lz4, sqlite3
-        run: brew install ninja jsoncpp mariadb hiredis redis
+        run: brew install ninja jsoncpp mariadb hiredis redis spdlog
 
       - name: Create Build Environment & Configure Cmake
         # Some projects don't allow in-source building, so create a separate build directory
@@ -85,7 +86,8 @@ jobs:
           cmake -B build -G Ninja          \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
             -DBUILD_TESTING=on             \
-            -DBUILD_SHARED_LIBS=OFF
+            -DBUILD_SHARED_LIBS=OFF        \
+            -DUSE_SPDLOG=ON
 
       - name: Build
         working-directory: ./build
@@ -157,6 +159,7 @@ jobs:
           cmake -B build -G Ninja          \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
             -DBUILD_TESTING=on             \
+            -DUSE_SPDLOG=ON                \
             -DBUILD_SHARED_LIBS=$shared
       - name: Create Build Environment & Configure Cmake (coroutines)
         # Some projects don't allow in-source building, so create a separate build directory
@@ -166,8 +169,9 @@ jobs:
           cmake -B build -G Ninja            \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
             -DBUILD_TESTING=on               \
+            -DUSE_SPDLOG=ON                  \
             -DCMAKE_CXX_FLAGS="-fcoroutines" \
-            -DBUILD_SHARED_LIBS=$shared
+            -DBUILD_SHARED_LIBS=$shared      \
 
       - name: Build
         working-directory: ./build
