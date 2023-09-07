@@ -86,8 +86,8 @@ jobs:
           cmake -B build -G Ninja          \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
             -DBUILD_TESTING=on             \
-            -DBUILD_SHARED_LIBS=OFF        \
-            -DUSE_SPDLOG=ON
+            -DUSE_SPDLOG=ON                \
+            -DBUILD_SHARED_LIBS=OFF
 
       - name: Build
         working-directory: ./build
@@ -140,7 +140,7 @@ jobs:
           # These aren't available or don't work well in vcpkg
           sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
           sudo apt-get install -y ninja-build libbrotli-dev
-          sudi apt-get install -y libspdlog-dev
+          sudo apt-get install -y libspdlog-dev
 
       - name: Install postgresql
         run: |
