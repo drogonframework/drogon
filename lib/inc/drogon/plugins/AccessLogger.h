@@ -70,7 +70,7 @@ namespace plugin
  * $local_addr) $status $body_bytes_sent $processing_time" is applied.
  *
  * use_spdlog: log using spdlog, disabled by default.
- * 
+ *
  * log_path: Log file path, empty by default,in which case,logs are output to
  * the regular log file (or stdout based on the log configuration).
  *

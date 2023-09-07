@@ -119,7 +119,8 @@ void AccessLogger::initAndStart(const Json::Value &config)
     {
         logIndex_ = config.get("log_index", 0).asInt();
         // Do nothing if already initialized...
-        if (!trantor::Logger::getSpdLogger(logIndex_)) {
+        if (!trantor::Logger::getSpdLogger(logIndex_))
+        {
             trantor::Logger::enableSpdLog(logIndex_);
             // Get the new logger & replace its sinks with the ones of the
             // config
@@ -152,7 +153,7 @@ void AccessLogger::initAndStart(const Json::Value &config)
                 auto sizeLimit = config.get("log_size_limit", 0).asUInt64();
                 if (sizeLimit == 0)
                     sizeLimit = config.get("size_limit", 0).asUInt64();
-                if (sizeLimit == 0) // 0 is not allowed by this sink
+                if (sizeLimit == 0)  // 0 is not allowed by this sink
                     sizeLimit = std::numeric_limits<std::size_t>::max();
                 std::size_t maxFiles = config.get("max_files", 0).asUInt();
                 sinks.push_back(
@@ -181,7 +182,7 @@ void AccessLogger::initAndStart(const Json::Value &config)
     }
     else
 #endif
-    if (!logPath.empty())
+        if (!logPath.empty())
     {
         auto fileName = config.get("log_file", "access.log").asString();
         auto extension = std::string(".log");

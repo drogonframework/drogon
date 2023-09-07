@@ -1303,8 +1303,8 @@ HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
             // directly in the Visual Studio / WinDbg console
             sinks.push_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
 #endif
-            // Note: the new sinks won't use the format pattern set on the logger,
-            // and there is currently not way to retrieve it.
+            // Note: the new sinks won't use the format pattern set on the
+            // logger, and there is currently not way to retrieve it.
             // So, set the same pattern as the one set on the logger in
             // trantor::Logger::getDefaultSpdLogger()
             for (auto &sink : sinks)
