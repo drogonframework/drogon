@@ -19,7 +19,9 @@
 #include <mutex>
 #include <utility>
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 class SubscribeContext
 {
@@ -112,4 +114,5 @@ class SubscribeContext
     bool disabled_{false};
 };
 
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon

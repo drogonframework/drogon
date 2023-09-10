@@ -22,7 +22,9 @@
 #include <memory>
 #include <list>
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 class RedisSubscriberImpl
     : public RedisSubscriber,
@@ -59,4 +61,5 @@ class RedisSubscriberImpl
     std::mutex mutex_;
 };
 
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon

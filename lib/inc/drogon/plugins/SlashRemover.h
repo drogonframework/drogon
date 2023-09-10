@@ -17,7 +17,9 @@
 #include "drogon/utils/FunctionTraits.h"
 #include <json/value.h>
 
-namespace drogon::plugin
+namespace drogon
+{
+namespace plugin
 {
 /**
  * @brief The SlashRemover plugin redirects requests to proper paths if they
@@ -57,4 +59,5 @@ class DROGON_EXPORT SlashRemover : public drogon::Plugin<SlashRemover>
   private:
     bool trailingSlashes_{true}, duplicateSlashes_{true}, redirect_{true};
 };
-}  // namespace drogon::plugin
+}  // namespace plugin
+}  // namespace drogon
