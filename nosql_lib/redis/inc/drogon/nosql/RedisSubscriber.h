@@ -16,7 +16,9 @@
 #include <string>
 #include <drogon/nosql/RedisResult.h>
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 class RedisSubscriber
 {
@@ -58,4 +60,5 @@ class RedisSubscriber
     virtual ~RedisSubscriber() = default;
 };
 
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon

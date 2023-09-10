@@ -6,7 +6,10 @@
 
 using namespace drogon;
 
-namespace drogon::internal
+namespace drogon
+{
+namespace internal
+
 {
 struct SomeStruct
 {
@@ -28,7 +31,8 @@ struct StructAwaiter : public CallbackAwaiter<std::shared_ptr<SomeStruct>>
     }
 };
 
-}  // namespace drogon::internal
+}  // namespace internal
+}  // namespace drogon
 
 // Workarround limitation of macros
 template <typename T>
