@@ -268,6 +268,7 @@ set(DROGON_SOURCES
     lib/src/RateLimiter.cc
     lib/src/RealIpResolver.cc
     lib/src/SecureSSLRedirector.cc
+    lib/src/Redirector.cc
     lib/src/SessionManager.cc
     lib/src/SlashRemover.cc
     lib/src/SlidingWindowRateLimiter.cc
@@ -710,6 +711,7 @@ install(FILES ${DROGON_MONITORING_HEADERS}
 
 set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/Plugin.h
+    lib/inc/drogon/plugins/Redirector.h
     lib/inc/drogon/plugins/SecureSSLRedirector.h
     lib/inc/drogon/plugins/AccessLogger.h
     lib/inc/drogon/plugins/RealIpResolver.h
