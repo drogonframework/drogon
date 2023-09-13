@@ -105,10 +105,11 @@ void SlashRemover::initAndStart(const Json::Value& config)
                     }
                     else
                     {
-                        if (location.starts_with("http"))
+                        if (location.find("http") == 0)
                         {
                             auto pos = location.find_first_of('/', 8);
-                            location.resize(pos);
+                            if (pos != string::npos)
+                                location.resize(pos);
                         }
                         location.append(newPath);
                         if (!req->query().empty())
