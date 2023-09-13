@@ -29,7 +29,7 @@ using RedirectorHandler =
                        std::string &)>;  // path
 
 /**
- * @brief This plugin is used to redirect requests to proper paths. It is a
+ * @brief This plugin is used to redirect requests to proper URLs. It is a
  * helper plugin for other plugins, e.g. SlashRemover.
  */
 class DROGON_EXPORT Redirector : public drogon::Plugin<Redirector>,

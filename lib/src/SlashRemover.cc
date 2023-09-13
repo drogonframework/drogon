@@ -76,6 +76,11 @@ void SlashRemover::initAndStart(const Json::Value& config)
     if (!removeMode)
         return;
     auto redirector = app().getPlugin<Redirector>();
+    if (!redirector)
+    {
+        LOG_ERROR << "Redirector plugin is not found!";
+        return;
+    }
     redirector->registerHandler(
         [removeMode, redirect = redirect_](const HttpRequestPtr& req,
                                            std::string& protocol,

@@ -44,6 +44,11 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
     secureHost_ = config.get("secure_ssl_host", "").asString();
     std::weak_ptr<SecureSSLRedirector> weakPtr = shared_from_this();
     auto redirector = drogon::app().getPlugin<Redirector>();
+    if (!redirector)
+    {
+        LOG_ERROR << "Redirector plugin is not found!";
+        return;
+    }
     redirector->registerHandler([weakPtr](const drogon::HttpRequestPtr &req,
                                           std::string &protocol,
                                           std::string &host,
