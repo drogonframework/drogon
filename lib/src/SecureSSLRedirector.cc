@@ -67,7 +67,7 @@ bool SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
                                             std::string &host,
                                             std::string &path) const
 {
-    if (req->isOnSecureConnection())
+    if (req->isOnSecureConnection() || protocol == "https://")
     {
         return true;
     }
@@ -115,5 +115,11 @@ bool SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
         {
             return false;
         }
+    }
+    else
+    {
+        protocol = "https://";
+        path = req->path();
+        return true;
     }
 }
