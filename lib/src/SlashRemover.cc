@@ -1,11 +1,13 @@
-#include "drogon/plugins/SlashRemover.h"
-#include "drogon/HttpAppFramework.h"
+#include <drogon/plugins/SlashRemover.h>
+#include <drogon/plugins/Redirector.h>
+#include <drogon/HttpAppFramework.h>
 #include "drogon/utils/FunctionTraits.h"
 #include <functional>
 #include <string>
+#include <regex>
 
 using namespace drogon;
-using namespace plugin;
+using namespace drogon::plugin;
 using std::string;
 
 #define TRAILING_SLASH_REGEX ".+\\/$"
@@ -73,31 +75,52 @@ void SlashRemover::initAndStart(const Json::Value& config)
         (trailingSlashes_ * trailing) | (duplicateSlashes_ * duplicate);
     if (!removeMode)
         return;
-    app().registerHandlerViaRegex(
-        regexes[removeMode - 1],
-        [removeMode,
-         this](const HttpRequestPtr& req,
-               std::function<void(const HttpResponsePtr&)>&& callback) {
-            string newPath = req->path();
-            switch (removeMode)
+    auto redirector = app().getPlugin<Redirector>();
+    redirector->registerHandler(
+        [removeMode, redirect = redirect_](const HttpRequestPtr& req,
+                                           std::string& location) {
+            static const std::regex regex(regexes[removeMode - 1]);
+            if (std::regex_match(req->path(), regex))
             {
-                case trailing:
-                    removeTrailingSlashes(newPath);
-                    break;
-                case duplicate:
-                    removeDuplicateSlashes(newPath);
-                    break;
-                case both:
-                default:
-                    removeExcessiveSlashes(newPath);
-                    break;
-            }
-            if (redirect_)
-                callback(HttpResponse::newRedirectionResponse(newPath));
-            else
-            {
-                req->setPath(newPath);
-                app().forward(req, std::move(callback));
+                string newPath = req->path();
+                switch (removeMode)
+                {
+                    case trailing:
+                        removeTrailingSlashes(newPath);
+                        break;
+                    case duplicate:
+                        removeDuplicateSlashes(newPath);
+                        break;
+                    case both:
+                    default:
+                        removeExcessiveSlashes(newPath);
+                        break;
+                }
+                if (redirect)
+                {
+                    req->setPath(newPath);
+                    if (location.empty())
+                    {
+                        location = std::move(newPath);
+                    }
+                    else
+                    {
+                        if (location.starts_with("http"))
+                        {
+                            auto pos = location.find_first_of('/', 8);
+                            location.resize(pos);
+                        }
+                        location.append(newPath);
+                        if (!req->query().empty())
+                        {
+                            location.append("?").append(req->query());
+                        }
+                    }
+                }
+                else
+                {
+                    req->setPath(newPath);
+                }
             }
         });
 }

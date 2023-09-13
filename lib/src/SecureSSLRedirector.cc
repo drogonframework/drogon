@@ -5,6 +5,7 @@
  */
 #include <drogon/drogon.h>
 #include <drogon/plugins/SecureSSLRedirector.h>
+#include <drogon/plugins/Redirector.h>
 #include <string>
 
 using namespace drogon;
@@ -42,14 +43,16 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
     }
     secureHost_ = config.get("secure_ssl_host", "").asString();
     std::weak_ptr<SecureSSLRedirector> weakPtr = shared_from_this();
-    app().registerSyncAdvice([weakPtr](const HttpRequestPtr &req) {
-        auto thisPtr = weakPtr.lock();
-        if (!thisPtr)
-        {
-            return HttpResponsePtr{};
-        }
-        return thisPtr->redirectingAdvice(req);
-    });
+    auto redirector = drogon::app().getPlugin<Redirector>();
+    redirector->registerHandler(
+        [weakPtr](const drogon::HttpRequestPtr &req, std::string &location) {
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+            {
+                return;
+            }
+            thisPtr->redirectingAdvice(req, location);
+        });
 }
 
 void SecureSSLRedirector::shutdown()
@@ -57,60 +60,62 @@ void SecureSSLRedirector::shutdown()
     /// Shutdown the plugin
 }
 
-HttpResponsePtr SecureSSLRedirector::redirectingAdvice(
-    const HttpRequestPtr &req) const
+void SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
+                                            std::string &location) const
 {
     if (req->isOnSecureConnection())
     {
-        return HttpResponsePtr{};
+        return;
     }
     else if (regexFlag_)
     {
         std::smatch regexResult;
         if (std::regex_match(req->path(), regexResult, exemptPegex_))
         {
-            return HttpResponsePtr{};
+            return;
         }
         else
         {
-            return redirectToSSL(req);
+            redirectToSSL(req, location);
+            return;
         }
     }
     else
     {
-        return redirectToSSL(req);
+        redirectToSSL(req, location);
+        return;
     }
 }
 
-HttpResponsePtr SecureSSLRedirector::redirectToSSL(
-    const HttpRequestPtr &req) const
+void SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
+                                        std::string &location) const
 {
     if (!secureHost_.empty())
     {
         static std::string urlPrefix{"https://" + secureHost_};
-        std::string query{urlPrefix + req->path()};
+        location = urlPrefix + req->path();
         if (!req->query().empty())
         {
-            query += "?" + req->query();
+            location += "?" + req->query();
         }
-        return HttpResponse::newRedirectionResponse(query);
+        return;
     }
     else
     {
         const auto &host = req->getHeader("host");
         if (!host.empty())
         {
-            std::string query{"https://" + host};
-            query += req->path();
+            location = "https://" + host;
+            location += req->path();
             if (!req->query().empty())
             {
-                query += "?" + req->query();
+                location += "?" + req->query();
             }
-            return HttpResponse::newRedirectionResponse(query);
+            return;
         }
         else
         {
-            return HttpResponse::newNotFoundResponse();
+            return;
         }
     }
 }

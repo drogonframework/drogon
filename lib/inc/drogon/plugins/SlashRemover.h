@@ -27,7 +27,7 @@ namespace drogon::plugin
  * @code
   {
      "name": "drogon::plugin::SlashRemover",
-     "dependencies": [],
+     "dependencies": ["drogon::plugin::Redirector"],
      "config": {
         // If true, it removes all trailing slashes, e.g.
 ///home// -> ///home
