@@ -23,10 +23,17 @@ namespace drogon
 namespace plugin
 {
 using RedirectorHandler =
-    std::function<void(const drogon::HttpRequestPtr &, std::string &)>;
+    std::function<bool(const drogon::HttpRequestPtr &,
+                       std::string &,    //"http://" or "https://"
+                       std::string &,    // host
+                       std::string &)>;  // path
 
-class Redirector : public drogon::Plugin<Redirector>,
-                   public std::enable_shared_from_this<Redirector>
+/**
+ * @brief This plugin is used to redirect requests to proper paths. It is a
+ * helper plugin for other plugins, e.g. SlashRemover.
+ */
+class DROGON_EXPORT Redirector : public drogon::Plugin<Redirector>,
+                                 public std::enable_shared_from_this<Redirector>
 {
   public:
     Redirector()

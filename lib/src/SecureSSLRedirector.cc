@@ -44,15 +44,17 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
     secureHost_ = config.get("secure_ssl_host", "").asString();
     std::weak_ptr<SecureSSLRedirector> weakPtr = shared_from_this();
     auto redirector = drogon::app().getPlugin<Redirector>();
-    redirector->registerHandler(
-        [weakPtr](const drogon::HttpRequestPtr &req, std::string &location) {
-            auto thisPtr = weakPtr.lock();
-            if (!thisPtr)
-            {
-                return;
-            }
-            thisPtr->redirectingAdvice(req, location);
-        });
+    redirector->registerHandler([weakPtr](const drogon::HttpRequestPtr &req,
+                                          std::string &protocol,
+                                          std::string &host,
+                                          std::string &path) -> bool {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+        {
+            return false;
+        }
+        return thisPtr->redirectingAdvice(req, protocol, host, path);
+    });
 }
 
 void SecureSSLRedirector::shutdown()
@@ -60,62 +62,58 @@ void SecureSSLRedirector::shutdown()
     /// Shutdown the plugin
 }
 
-void SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
-                                            std::string &location) const
+bool SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
+                                            std::string &protocol,
+                                            std::string &host,
+                                            std::string &path) const
 {
     if (req->isOnSecureConnection())
     {
-        return;
+        return true;
     }
     else if (regexFlag_)
     {
         std::smatch regexResult;
         if (std::regex_match(req->path(), regexResult, exemptPegex_))
         {
-            return;
+            return true;
         }
         else
         {
-            redirectToSSL(req, location);
-            return;
+            return redirectToSSL(req, protocol, host, path);
         }
     }
     else
     {
-        redirectToSSL(req, location);
-        return;
+        return redirectToSSL(req, protocol, host, path);
     }
 }
 
-void SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
-                                        std::string &location) const
+bool SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
+                                        std::string &protocol,
+                                        std::string &host,
+                                        std::string &path) const
 {
     if (!secureHost_.empty())
     {
-        static std::string urlPrefix{"https://" + secureHost_};
-        location = urlPrefix + req->path();
-        if (!req->query().empty())
-        {
-            location += "?" + req->query();
-        }
-        return;
+        host = secureHost_;
+        protocol = "https://";
+        path = req->path();
+        return true;
     }
-    else
+    else if (host.empty())
     {
-        const auto &host = req->getHeader("host");
-        if (!host.empty())
+        const auto &reqHost = req->getHeader("host");
+        if (!reqHost.empty())
         {
-            location = "https://" + host;
-            location += req->path();
-            if (!req->query().empty())
-            {
-                location += "?" + req->query();
-            }
-            return;
+            host = reqHost;
+            protocol = "https://";
+            path = req->path();
+            return true;
         }
         else
         {
-            return;
+            return false;
         }
     }
 }

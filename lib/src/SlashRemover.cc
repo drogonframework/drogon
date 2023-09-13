@@ -78,7 +78,9 @@ void SlashRemover::initAndStart(const Json::Value& config)
     auto redirector = app().getPlugin<Redirector>();
     redirector->registerHandler(
         [removeMode, redirect = redirect_](const HttpRequestPtr& req,
-                                           std::string& location) {
+                                           std::string& protocol,
+                                           std::string& host,
+                                           std::string& path) -> bool {
             static const std::regex regex(regexes[removeMode - 1]);
             if (std::regex_match(req->path(), regex))
             {
@@ -96,33 +98,13 @@ void SlashRemover::initAndStart(const Json::Value& config)
                         removeExcessiveSlashes(newPath);
                         break;
                 }
+                req->setPath(newPath);
                 if (redirect)
                 {
-                    req->setPath(newPath);
-                    if (location.empty())
-                    {
-                        location = std::move(newPath);
-                    }
-                    else
-                    {
-                        if (location.find("http") == 0)
-                        {
-                            auto pos = location.find_first_of('/', 8);
-                            if (pos != string::npos)
-                                location.resize(pos);
-                        }
-                        location.append(newPath);
-                        if (!req->query().empty())
-                        {
-                            location.append("?").append(req->query());
-                        }
-                    }
-                }
-                else
-                {
-                    req->setPath(newPath);
+                    path = std::move(newPath);
                 }
             }
+            return true;
         });
 }
 

@@ -28,14 +28,23 @@ void Redirector::initAndStart(const Json::Value &config)
             {
                 return HttpResponsePtr{};
             }
-            std::string location;
+            std::string protocol, host, path;
             for (auto &handler : thisPtr->handlers_)
             {
-                handler(req, location);
+                if (!handler(req, protocol, host, path))
+                {
+                    return HttpResponse::newNotFoundResponse();
+                }
             }
-            if (!location.empty())
+            if (!host.empty() || !path.empty())
             {
-                return HttpResponse::newRedirectionResponse(location);
+                auto url = protocol + host + path;
+                auto &query = req->query();
+                if (!query.empty())
+                {
+                    url.append("?").append(query);
+                }
+                return HttpResponse::newRedirectionResponse(url);
             }
             return HttpResponsePtr{};
         });

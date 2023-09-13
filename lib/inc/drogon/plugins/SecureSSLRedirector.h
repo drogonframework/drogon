@@ -64,8 +64,14 @@ class DROGON_EXPORT SecureSSLRedirector
     void shutdown() override;
 
   private:
-    void redirectingAdvice(const HttpRequestPtr &, std::string &) const;
-    void redirectToSSL(const HttpRequestPtr &, std::string &) const;
+    bool redirectingAdvice(const HttpRequestPtr &,
+                           std::string &,
+                           std::string &,
+                           std::string &) const;
+    bool redirectToSSL(const HttpRequestPtr &,
+                       std::string &,
+                       std::string &,
+                       std::string &) const;
 
     std::regex exemptPegex_;
     bool regexFlag_{false};
