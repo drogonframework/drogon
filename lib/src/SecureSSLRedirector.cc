@@ -103,7 +103,6 @@ bool SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
     {
         host = secureHost_;
         protocol = "https://";
-        path = req->path();
         return true;
     }
     else if (host.empty())
@@ -111,9 +110,7 @@ bool SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
         const auto &reqHost = req->getHeader("host");
         if (!reqHost.empty())
         {
-            host = reqHost;
             protocol = "https://";
-            path = req->path();
             return true;
         }
         else
@@ -124,7 +121,6 @@ bool SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
     else
     {
         protocol = "https://";
-        path = req->path();
         return true;
     }
 }

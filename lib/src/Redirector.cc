@@ -36,9 +36,53 @@ void Redirector::initAndStart(const Json::Value &config)
                     return HttpResponse::newNotFoundResponse();
                 }
             }
-            if (!host.empty() || !path.empty())
+            if (!protocol.empty() || !host.empty() || !path.empty())
             {
-                auto url = protocol + host + path;
+                std::string url;
+                if (protocol.empty())
+                {
+                    if (!host.empty())
+                    {
+                        url = req->isOnSecureConnection() ? "https://"
+                                                          : "http://";
+                        url.append(host);
+                    }
+                    if (!path.empty())
+                    {
+                        if (url.empty())
+                        {
+                            url = std::move(path);
+                        }
+                        else
+                        {
+                            url.append(path);
+                        }
+                    }
+                    else
+                    {
+                        url.append(req->path());
+                    }
+                }
+                else
+                {
+                    url = std::move(protocol);
+                    if (!host.empty())
+                    {
+                        url.append(host);
+                    }
+                    else
+                    {
+                        url.append(req->getHeader("host"));
+                    }
+                    if (!path.empty())
+                    {
+                        url.append(path);
+                    }
+                    else
+                    {
+                        url.append(req->path());
+                    }
+                }
                 auto &query = req->query();
                 if (!query.empty())
                 {
