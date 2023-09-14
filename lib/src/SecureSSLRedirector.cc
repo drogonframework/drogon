@@ -52,13 +52,13 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
     redirector->registerHandler([weakPtr](const drogon::HttpRequestPtr &req,
                                           std::string &protocol,
                                           std::string &host,
-                                          std::string &path) -> bool {
+                                          bool &pathChanged) -> bool {
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
         {
             return false;
         }
-        return thisPtr->redirectingAdvice(req, protocol, host, path);
+        return thisPtr->redirectingAdvice(req, protocol, host, pathChanged);
     });
 }
 
