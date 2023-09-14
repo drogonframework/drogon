@@ -31,6 +31,8 @@ using RedirectorHandler =
 /**
  * @brief This plugin is used to redirect requests to proper URLs. It is a
  * helper plugin for other plugins, e.g. SlashRemover.
+ * Users can register a handler to this plugin to redirect requests. All
+ * handlers will be called in the order of registration.
  */
 class DROGON_EXPORT Redirector : public drogon::Plugin<Redirector>,
                                  public std::enable_shared_from_this<Redirector>
