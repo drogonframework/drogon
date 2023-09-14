@@ -33,6 +33,17 @@ using RedirectorHandler =
  * helper plugin for other plugins, e.g. SlashRemover.
  * Users can register a handler to this plugin to redirect requests. All
  * handlers will be called in the order of registration.
+ * The json configuration is as follows:
+ *
+ * @code
+   {
+      "name": "drogon::plugin::Redirector",
+      "dependencies": [],
+      "config": {
+      }
+   }
+   @endcode
+ *
  */
 class DROGON_EXPORT Redirector : public drogon::Plugin<Redirector>,
                                  public std::enable_shared_from_this<Redirector>
