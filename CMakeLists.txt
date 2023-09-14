@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
-set(CMAKE_TOOLCHAIN_FILE "C:/Users/23931/Desktop/vcpkg-2023.08.09/scripts/buildsystems/vcpkg.cmake")
+
 project(drogon)
-#set(CMAKE_CXX_STANDARD 17)
 
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 
