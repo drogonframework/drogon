@@ -31,6 +31,7 @@ void WebsocketControllersRouter::registerWebSocketController(
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
+    static const std::regex regex("\\{([^/]*)\\}");
     std::string path(pathName);
     std::transform(pathName.begin(),
                    pathName.end(),
@@ -54,7 +55,7 @@ void WebsocketControllersRouter::registerWebSocketController(
             exit(1);
         }
     }
-    auto &item = wsCtrlMap_[path];
+    auto pathPattern = std::regex_replace(pathName, regex, "([^/]*)");
     auto binder = std::make_shared<CtrlBinder>();
     binder->controllerName_ = ctrlName;
     binder->filterNames_ = filters;
@@ -64,12 +65,15 @@ void WebsocketControllersRouter::registerWebSocketController(
             std::dynamic_pointer_cast<WebSocketControllerBase>(object_);
         binder->controller_ = controller;
     });
+    struct WebSocketControllerRouterItem router;
+    router.path_ = path;
+    bool routingRequiresRegex = (pathName != pathPattern);
 
     if (validMethods.size() > 0)
     {
         for (auto const &method : validMethods)
         {
-            item.binders_[method] = binder;
+            router.binders_[method] = binder;
             if (method == Options)
             {
                 binder->isCORS_ = true;
@@ -81,9 +85,18 @@ void WebsocketControllersRouter::registerWebSocketController(
         // All HTTP methods are valid
         for (size_t i = 0; i < Invalid; ++i)
         {
-            item.binders_[i] = binder;
+            router.binders_[i] = binder;
         }
         binder->isCORS_ = true;
+    }
+
+    if (routingRequiresRegex)
+    {
+        wsCtrlVector_.push_back(std::move(router));
+    }
+    else
+    {
+        wsCtrlMap_[path] = std::move(router);
     }
 }
 
@@ -184,15 +197,34 @@ void WebsocketControllersRouter::route(
     std::string wsKey = req->getHeaderBy("sec-websocket-key");
     if (!wsKey.empty())
     {
+        std::smatch result;
         std::string pathLower(req->path().length(), 0);
         std::transform(req->path().begin(),
                        req->path().end(),
                        pathLower.begin(),
                        [](unsigned char c) { return tolower(c); });
+        WebSocketControllerRouterItem *wsCtrlInfoPtr = nullptr;
         auto iter = wsCtrlMap_.find(pathLower);
-        if (iter != wsCtrlMap_.end())
+        if (iter == wsCtrlMap_.end())
         {
-            auto &ctrlInfo = iter->second;
+            for (auto &item : wsCtrlVector_)
+            {
+                auto const &wsCtrlRegex = item.regex_;
+                if (item.binders_[req->method()] &&
+                    std::regex_match(req->path(), result, wsCtrlRegex))
+                {
+                    wsCtrlInfoPtr = &item;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            wsCtrlInfoPtr = &iter->second;
+        }
+        if (wsCtrlInfoPtr != nullptr)
+        {
+            auto &ctrlInfo = *wsCtrlInfoPtr;
             req->setMatchedPathPattern(iter->first);
             auto &binder = ctrlInfo.binders_[req->method()];
             if (!binder)
@@ -323,6 +355,21 @@ WebsocketControllersRouter::getHandlersInfo() const
             }
         }
     }
+    for (auto &item : wsCtrlVector_)
+    {
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            if (item.binders_[i])
+            {
+                auto info = std::tuple<std::string, HttpMethod, std::string>(
+                    item.path_,
+                    (HttpMethod)i,
+                    std::string("WebsocketController: ") +
+                        item.binders_[i]->controllerName_);
+                ret.emplace_back(std::move(info));
+            }
+        }
+    }
     return ret;
 }
 
@@ -368,6 +415,21 @@ void WebsocketControllersRouter::init()
     for (auto &iter : wsCtrlMap_)
     {
         auto &item = iter.second;
+        item.regex_ = std::regex(item.path_, std::regex_constants::icase);
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            auto &binder = item.binders_[i];
+            if (binder)
+            {
+                binder->filters_ =
+                    filters_function::createFilters(binder->filterNames_);
+            }
+        }
+    }
+
+    for (auto &item : wsCtrlVector_)
+    {
+        item.regex_ = std::regex(item.path_, std::regex_constants::icase);
         for (size_t i = 0; i < Invalid; ++i)
         {
             auto &binder = item.binders_[i];

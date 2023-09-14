@@ -81,9 +81,12 @@ class WebsocketControllersRouter : public trantor::NonCopyable
 
     struct WebSocketControllerRouterItem
     {
+        std::string path_;
+        std::regex regex_;
         CtrlBinderPtr binders_[Invalid];
     };
     std::unordered_map<std::string, WebSocketControllerRouterItem> wsCtrlMap_;
+    std::vector<WebSocketControllerRouterItem> wsCtrlVector_;
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
                                          AdviceChainCallback &&)>>
