@@ -28,15 +28,16 @@ void Redirector::initAndStart(const Json::Value &config)
             {
                 return HttpResponsePtr{};
             }
-            std::string protocol, host, path;
+            std::string protocol, host;
+            bool pathChanged{false};
             for (auto &handler : thisPtr->handlers_)
             {
-                if (!handler(req, protocol, host, path))
+                if (!handler(req, protocol, host, pathChanged))
                 {
                     return HttpResponse::newNotFoundResponse();
                 }
             }
-            if (!protocol.empty() || !host.empty() || !path.empty())
+            if (!protocol.empty() || !host.empty() || pathChanged)
             {
                 std::string url;
                 if (protocol.empty())
@@ -47,18 +48,7 @@ void Redirector::initAndStart(const Json::Value &config)
                                                           : "http://";
                         url.append(host);
                     }
-                    if (!path.empty())
-                    {
-                        if (url.empty())
-                        {
-                            url = std::move(path);
-                        }
-                        else
-                        {
-                            url.append(path);
-                        }
-                    }
-                    else
+                    if (pathChanged)
                     {
                         url.append(req->path());
                     }
@@ -74,11 +64,7 @@ void Redirector::initAndStart(const Json::Value &config)
                     {
                         url.append(req->getHeader("host"));
                     }
-                    if (!path.empty())
-                    {
-                        url.append(path);
-                    }
-                    else
+                    if (pathChanged)
                     {
                         url.append(req->path());
                     }

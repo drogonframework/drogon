@@ -67,11 +67,11 @@ class DROGON_EXPORT SecureSSLRedirector
     bool redirectingAdvice(const HttpRequestPtr &,
                            std::string &,
                            std::string &,
-                           std::string &) const;
+                           bool &) const;
     bool redirectToSSL(const HttpRequestPtr &,
                        std::string &,
                        std::string &,
-                       std::string &) const;
+                       bool &) const;
 
     std::regex exemptPegex_;
     bool regexFlag_{false};

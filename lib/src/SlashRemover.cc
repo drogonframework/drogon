@@ -85,7 +85,7 @@ void SlashRemover::initAndStart(const Json::Value& config)
         [removeMode, redirect = redirect_](const HttpRequestPtr& req,
                                            std::string& protocol,
                                            std::string& host,
-                                           std::string& path) -> bool {
+                                           bool& pathChanged) -> bool {
             static const std::regex regex(regexes[removeMode - 1]);
             if (std::regex_match(req->path(), regex))
             {
@@ -103,10 +103,10 @@ void SlashRemover::initAndStart(const Json::Value& config)
                         removeExcessiveSlashes(newPath);
                         break;
                 }
-                req->setPath(newPath);
+                req->setPath(std::move(newPath));
                 if (redirect)
                 {
-                    path = std::move(newPath);
+                    pathChanged = true;
                 }
             }
             return true;

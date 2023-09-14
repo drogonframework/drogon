@@ -70,7 +70,7 @@ void SecureSSLRedirector::shutdown()
 bool SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
                                             std::string &protocol,
                                             std::string &host,
-                                            std::string &path) const
+                                            bool &pathChanged) const
 {
     if (req->isOnSecureConnection() || protocol == "https://")
     {
@@ -85,20 +85,21 @@ bool SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
         }
         else
         {
-            return redirectToSSL(req, protocol, host, path);
+            return redirectToSSL(req, protocol, host, pathChanged);
         }
     }
     else
     {
-        return redirectToSSL(req, protocol, host, path);
+        return redirectToSSL(req, protocol, host, pathChanged);
     }
 }
 
 bool SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
                                         std::string &protocol,
                                         std::string &host,
-                                        std::string &path) const
+                                        bool &pathChanged) const
 {
+    (void)pathChanged;
     if (!secureHost_.empty())
     {
         host = secureHost_;

@@ -24,9 +24,9 @@ namespace plugin
 {
 using RedirectorHandler =
     std::function<bool(const drogon::HttpRequestPtr &,
-                       std::string &,    //"http://" or "https://"
-                       std::string &,    // host
-                       std::string &)>;  // path
+                       std::string &,  //"http://" or "https://"
+                       std::string &,  // host
+                       bool &)>;       // path changed or not
 
 /**
  * @brief This plugin is used to redirect requests to proper URLs. It is a
