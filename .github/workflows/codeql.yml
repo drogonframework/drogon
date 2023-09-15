@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: '46 7 * * 5'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
@@ -36,7 +40,7 @@ jobs:
 
     steps:
     - name: Checkout Drogon source code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
         fetch-depth: 0
@@ -45,13 +49,13 @@ jobs:
       run: |
         sudo apt update
         sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
-        sudo apt-get install -y libbrotli-dev
+        sudo apt-get install -y ninja-build libbrotli-dev
 
     - name: Create Build Environment & Configure Cmake
       run: |
-        cmake -B build \
+        cmake -B build -G Ninja          \
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-          -DBUILD_TESTING=on \
+          -DBUILD_TESTING=on             \
           -DBUILD_SHARED_LIBS=$SHARED
 
     # Initializes the CodeQL tools for scanning.
@@ -68,7 +72,7 @@ jobs:
 
     - name: Build
       working-directory: ./build
-      run: make -j $(nproc) && sudo make install
+      run: ninja && sudo ninja install
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2

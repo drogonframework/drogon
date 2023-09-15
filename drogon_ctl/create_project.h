@@ -16,12 +16,14 @@
 #include <drogon/DrObject.h>
 #include "CommandHandler.h"
 using namespace drogon;
+
 namespace drogon_ctl
 {
 class create_project : public DrObject<create_project>, public CommandHandler
 {
   public:
     void handleCommand(std::vector<std::string> &parameters) override;
+
     std::string script() override
     {
         return "create a project";

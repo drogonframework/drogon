@@ -13,6 +13,7 @@ class handler : public drogon::DrObject<T>
         return handler<T>::classTypeName();
     }
 };
+
 class hh : public handler<hh>
 {
 };

@@ -59,11 +59,11 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                 auto &id = resp->getCookie("JSESSIONID");
                                 REQUIRE(id);
 
+                                haveCert = resp->peerCertificate() != nullptr;
+
                                 sessionID = id;
                                 client->addCookie(id);
                                 waitCookie.set_value(1);
-
-                                haveCert = resp->peerCertificate() != nullptr;
                             });
         f.get();
         CHECK(haveCert == client->secure());

@@ -1,4 +1,5 @@
 #include "JsonCtrl.h"
+
 void JsonCtrl::asyncHandleHttpRequest(
     const HttpRequestPtr &,
     std::function<void(const HttpResponsePtr &)> &&callback)

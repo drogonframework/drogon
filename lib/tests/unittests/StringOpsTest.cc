@@ -33,6 +33,7 @@ inline bool operator==(const Container1& a, const SameContent& wrapper)
 }
 
 using namespace drogon;
+
 DROGON_TEST(StringOpsTest)
 {
     SUBSECTION(SplitString)

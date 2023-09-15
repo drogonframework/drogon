@@ -14,6 +14,7 @@ struct DataPack
 };
 
 static WebSocketClientPtr wsPtr_;
+
 DROGON_TEST(WebSocketTest)
 {
     wsPtr_ = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);

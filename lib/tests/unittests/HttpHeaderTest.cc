@@ -15,6 +15,7 @@ DROGON_TEST(HttpHeaderRequest)
     req->removeHeader("Abc");
     CHECK(req->getHeader("abc") == "");
 }
+
 DROGON_TEST(HttpHeaderResponse)
 {
     auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(

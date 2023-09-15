@@ -2,6 +2,7 @@
 #include <drogon/WebSocketController.h>
 #include <drogon/PubSubService.h>
 using namespace drogon;
+
 namespace example
 {
 class WebSocketTest : public drogon::WebSocketController<WebSocketTest>

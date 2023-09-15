@@ -32,28 +32,33 @@ class RedisTransactionImpl final
                  RedisExceptionCallback &&exceptionCallback) override;
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
-                          string_view command,
+                          std::string_view command,
                           ...) noexcept override;
+
     std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override
     {
         LOG_ERROR << "You can't create subscriber from redis transaction";
         assert(0);
         return nullptr;
     }
+
     std::shared_ptr<RedisTransaction> newTransaction() override
     {
         return shared_from_this();
     }
+
     void newTransactionAsync(
         const std::function<void(const std::shared_ptr<RedisTransaction> &)>
             &callback) override
     {
         callback(shared_from_this());
     }
+
     void setTimeout(double timeout) override
     {
         timeout_ = timeout;
     }
+
     void doBegin();
     ~RedisTransactionImpl() override;
 

@@ -26,10 +26,12 @@ class HttpFileUploadRequest : public HttpRequestImpl
     {
         return boundary_;
     }
+
     const std::vector<UploadFile> &files() const
     {
         return files_;
     }
+
     explicit HttpFileUploadRequest(const std::vector<UploadFile> &files);
 
   private:

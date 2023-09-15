@@ -28,6 +28,7 @@ class WebSocketMessageParser
 {
   public:
     bool parse(trantor::MsgBuffer *buffer);
+
     bool gotAll(std::string &message, WebSocketMessageType &type)
     {
         assert(message.empty());

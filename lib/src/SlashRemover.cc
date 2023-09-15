@@ -35,6 +35,7 @@ static inline bool removeTrailingSlashes(string& url)
     url.resize(notSlashIndex + 1);
     return false;
 }
+
 static inline void removeDuplicateSlashes(string& url)
 {
     size_t a = 1, len = url.size();
@@ -51,6 +52,7 @@ static inline void removeDuplicateSlashes(string& url)
     }
     url.resize(a + 1);
 }
+
 static inline void removeExcessiveSlashes(string& url)
 {
     if (url.back() == '/' &&  // This check is so we don't search if there is no

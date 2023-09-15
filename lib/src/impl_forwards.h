@@ -42,6 +42,7 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 class DbClientManager;
 }  // namespace orm
+
 namespace nosql
 {
 class RedisClient;

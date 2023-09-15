@@ -1,10 +1,14 @@
-name: Build Drogon
+name: Build & Test
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -17,10 +21,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        link: [ 'STATIC', 'SHARED' ]
+        link: ["STATIC", "SHARED"]
     steps:
       - name: Checkout Drogon source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: true
           fetch-depth: 0
@@ -60,144 +64,123 @@ jobs:
         shell: bash
         run: ./test.sh -w
 
-  unix:
+  macos:
+    name: macos/clang
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Drogon source code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Install dependencies
+        # Already installed: brotli, zlib, postgresql@14, lz4, sqlite3
+        run: brew install ninja jsoncpp mariadb hiredis redis
+
+      - name: Create Build Environment & Configure Cmake
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        run: |
+          cmake -B build -G Ninja          \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DBUILD_TESTING=on             \
+            -DBUILD_SHARED_LIBS=OFF
+
+      - name: Build
+        working-directory: ./build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: ninja && sudo ninja install
+
+      - name: Prepare for testing
+        run: |
+          brew tap homebrew/services
+          brew services restart postgresql@14
+          brew services start mariadb
+          brew services start redis
+          sleep 4
+          mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')"
+          mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'"
+          mariadb -e "FLUSH PRIVILEGES"
+          brew services restart mariadb
+          sleep 4
+          psql -c 'create user postgres superuser;' postgres
+
+      - name: Test
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ./test.sh -t
+
+  ubuntu:
     name: ${{ matrix.buildname }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc'
+          - buildname: "ubuntu-22.04/gcc"
             link: SHARED
-            triplet: x64-linux
-            compiler: gcc_64
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc'
+          - buildname: "ubuntu-22.04/gcc"
             link: STATIC
-            triplet: x64-linux
-            compiler: gcc_64
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc-10'
+          - buildname: "ubuntu-22.04/coroutines"
             link: STATIC
-            triplet: x64-linux
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/c++14'
-            link: STATIC
-            triplet: x64-linux
-            compiler: gcc_64
-          - os: macos-latest
-            buildname: 'macos/clang'
-            link: STATIC
-            triplet: x64-osx
-            compiler: clang_64
     steps:
-    - name: Checkout Drogon source code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-        fetch-depth: 0
+      - name: Checkout Drogon source code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
 
-    - name: (macOS) Install dependencies
-      if: runner.os == 'macOS'
-      # Already installed: brotli, zlib, postgresql@14, lz4, sqlite3
-      run: brew install jsoncpp mariadb hiredis redis
+      - name: Install dependencies
+        run: |
+          # Installing packages might fail as the github image becomes outdated
+          sudo apt update
+          # These aren't available or don't work well in vcpkg
+          sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
+          sudo apt-get install -y ninja-build libbrotli-dev
 
-    - name: (Linux) Install dependencies
-      if: runner.os == 'Linux'
-      run: |
-        # Installing packages might fail as the github image becomes outdated
-        sudo apt update
-        # These aren't available or don't work well in vcpkg
-        sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
-        sudo apt-get install -y libbrotli-dev
-    - name: (Linux) Install gcc-10
-      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
-      run: sudo apt-get install -y gcc-10 g++-10
-    - name: (Linux) Install boost
-      if: matrix.buildname == 'ubuntu-20.04/c++14'
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libboost-all-dev
+      - name: Install postgresql
+        run: |
+          sudo apt-get --purge remove postgresql postgresql-doc postgresql-common postgresql-client-common
+          sudo apt-get -y install postgresql-all
 
-    - name: (Linux) Install postgresql
-      if: matrix.os == 'ubuntu-20.04'
-      run: sudo apt-get -y install postgresql-all
+      - name: Export `shared`
+        run: |
+          [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
+          echo "shared=$shared" >> $GITHUB_ENV
 
-    - name: Export `shared`
-      run: |
-        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        echo "shared=$shared" >> $GITHUB_ENV
+      - name: Create Build Environment & Configure Cmake
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        if: matrix.buildname != 'ubuntu-22.04/coroutines'
+        run: |
+          cmake -B build -G Ninja          \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DBUILD_TESTING=on             \
+            -DBUILD_SHARED_LIBS=$shared
+      - name: Create Build Environment & Configure Cmake (coroutines)
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        if: matrix.buildname == 'ubuntu-22.04/coroutines'
+        run: |
+          cmake -B build -G Ninja            \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
+            -DBUILD_TESTING=on               \
+            -DCMAKE_CXX_FLAGS="-fcoroutines" \
+            -DBUILD_SHARED_LIBS=$shared
 
-    - name: Create Build Environment & Configure Cmake
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      if: matrix.buildname != 'ubuntu-20.04/gcc-10' && matrix.buildname != 'ubuntu-20.04/c++14'
-      run: |
-        cmake -B build                   \
-          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-          -DBUILD_TESTING=on             \
-          -DBUILD_SHARED_LIBS=$shared
+      - name: Build
+        working-directory: ./build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: ninja && sudo ninja install
 
-    - name: Create Build Environment & Configure Cmake (gcc-10)
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
-      run: |
-        cmake -B build                     \
-          -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
-          -DBUILD_TESTING=on               \
-          -DCMAKE_CXX_FLAGS="-fcoroutines" \
-          -DBUILD_SHARED_LIBS=$shared
-      env:
-        CC: gcc-10
-        CXX: g++-10
+      - name: Prepare for testing
+        run: |
+          sudo systemctl start postgresql
+          sleep 1
+          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
 
-    - name: Create Build Environment & Configure Cmake (C++14)
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      if: matrix.buildname == 'ubuntu-20.04/C++14'
-      run: |
-        cmake -B build                   \
-          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-          -DBUILD_TESTING=on             \
-          -DCMAKE_CXX_STANDARD=14        \
-          -DBUILD_SHARED_LIBS=$shared
-
-    - name: Build
-      working-directory: ./build
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: make -j $(nproc) && sudo make install
-
-    - name: (macOS) Prepare for testing
-      if: runner.os == 'macOS'
-      run: |
-        brew tap homebrew/services
-        brew services restart postgresql@14
-        brew services start mariadb
-        brew services start redis
-        sleep 4
-        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')"
-        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'"
-        mariadb -e "FLUSH PRIVILEGES"
-        brew services restart mariadb
-        sleep 4
-        psql -c 'create user postgres superuser;' postgres
-
-    - name: (Linux) Prepare for testing
-      if: runner.os == 'Linux'
-      run: |
-        sudo systemctl start postgresql
-        sleep 1
-        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
-
-    - name: Test
-      # Execute tests defined by the CMake configuration.
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ./test.sh -t
-
-    - name: Lint
-      if: matrix.os == 'ubuntu-20.04'
-      run: |
-        sudo apt install -y dos2unix
-        ./format.sh && git diff --exit-code
+      - name: Test
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ./test.sh -t

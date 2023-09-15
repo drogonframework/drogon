@@ -53,11 +53,6 @@ void version::handleCommand(std::vector<std::string> &parameters)
 #else
     std::cout << "  brotli: no\n";
 #endif
-#ifdef Boost_FOUND
-    std::cout << "  boost: yes\n";
-#else
-    std::cout << "  boost: no\n";
-#endif
 #ifdef USE_REDIS
     std::cout << "  hiredis: yes\n";
 #else

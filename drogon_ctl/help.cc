@@ -17,6 +17,7 @@
 #include <iostream>
 #include <memory>
 using namespace drogon_ctl;
+
 void help::handleCommand(std::vector<std::string> &parameters)
 {
     if (parameters.size() == 0)

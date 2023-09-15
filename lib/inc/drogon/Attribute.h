@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include <drogon/utils/any.h>
 #include <trantor/utils/Logger.h>
 #include <map>
 #include <memory>
+#include <any>
 
 namespace drogon
 {
@@ -45,7 +45,7 @@ class Attributes
         {
             if (typeid(T) == it->second.type())
             {
-                return *(any_cast<T>(&(it->second)));
+                return *(std::any_cast<T>(&(it->second)));
             }
             else
             {
@@ -58,7 +58,7 @@ class Attributes
     /**
      * @brief Get the 'any' object identified by the given key
      */
-    any &operator[](const std::string &key)
+    std::any &operator[](const std::string &key)
     {
         return attributesMap_[key];
     }
@@ -70,7 +70,7 @@ class Attributes
        attributesPtr->insert("user name", userNameString);
        @endcode
      */
-    void insert(const std::string &key, const any &obj)
+    void insert(const std::string &key, const std::any &obj)
     {
         attributesMap_[key] = obj;
     }
@@ -82,7 +82,7 @@ class Attributes
        attributesPtr->insert("user name", userNameString);
        @endcode
      */
-    void insert(const std::string &key, any &&obj)
+    void insert(const std::string &key, std::any &&obj)
     {
         attributesMap_[key] = std::move(obj);
     }
@@ -121,7 +121,7 @@ class Attributes
     Attributes() = default;
 
   private:
-    using AttributesMap = std::map<std::string, any>;
+    using AttributesMap = std::map<std::string, std::any>;
     AttributesMap attributesMap_;
 };
 

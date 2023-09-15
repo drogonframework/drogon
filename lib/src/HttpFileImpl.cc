@@ -14,11 +14,12 @@
 
 #include "HttpFileImpl.h"
 #include "HttpAppFrameworkImpl.h"
-#include "filesystem.h"
 #include <drogon/MultiPart.h>
+#include <drogon/utils/Utilities.h>
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <filesystem>
 
 using namespace drogon;
 
@@ -32,7 +33,7 @@ int HttpFileImpl::save(const std::string &path) const noexcept
     assert(!path.empty());
     if (fileName_.empty())
         return -1;
-    filesystem::path fsUploadDir(utils::toNativePath(path));
+    std::filesystem::path fsUploadDir(utils::toNativePath(path));
 
     if (fsUploadDir.is_absolute())
     {  // do nothing
@@ -47,16 +48,16 @@ int HttpFileImpl::save(const std::string &path) const noexcept
     }
     else
     {
-        fsUploadDir = filesystem::current_path() / fsUploadDir;
+        fsUploadDir = std::filesystem::current_path() / fsUploadDir;
     }
 
-    fsUploadDir = filesystem::weakly_canonical(fsUploadDir);
+    fsUploadDir = std::filesystem::weakly_canonical(fsUploadDir);
 
-    if (!filesystem::exists(fsUploadDir))
+    if (!std::filesystem::exists(fsUploadDir))
     {
         LOG_TRACE << "create path:" << fsUploadDir;
-        drogon::error_code err;
-        filesystem::create_directories(fsUploadDir, err);
+        std::error_code err;
+        std::filesystem::create_directories(fsUploadDir, err);
         if (err)
         {
             LOG_SYSERR;
@@ -64,7 +65,7 @@ int HttpFileImpl::save(const std::string &path) const noexcept
         }
     }
 
-    filesystem::path fsSaveToPath(filesystem::weakly_canonical(
+    std::filesystem::path fsSaveToPath(std::filesystem::weakly_canonical(
         fsUploadDir / utils::toNativePath(fileName_)));
     LOG_TRACE << "save to path:" << fsSaveToPath;
     if (!std::equal(fsUploadDir.begin(),
@@ -79,24 +80,25 @@ int HttpFileImpl::save(const std::string &path) const noexcept
 
     return saveTo(fsSaveToPath);
 }
+
 int HttpFileImpl::saveAs(const std::string &fileName) const noexcept
 {
     assert(!fileName.empty());
-    filesystem::path fsFileName(utils::toNativePath(fileName));
+    std::filesystem::path fsFileName(utils::toNativePath(fileName));
     if (!fsFileName.is_absolute() && (!fsFileName.has_parent_path() ||
                                       (fsFileName.begin()->string() != "." &&
                                        fsFileName.begin()->string() != "..")))
     {
-        filesystem::path fsUploadPath(utils::toNativePath(
+        std::filesystem::path fsUploadPath(utils::toNativePath(
             HttpAppFrameworkImpl::instance().getUploadPath()));
         fsFileName = fsUploadPath / fsFileName;
     }
     if (fsFileName.has_parent_path() &&
-        !filesystem::exists(fsFileName.parent_path()))
+        !std::filesystem::exists(fsFileName.parent_path()))
     {
         LOG_TRACE << "create path:" << fsFileName.parent_path();
-        drogon::error_code err;
-        filesystem::create_directories(fsFileName.parent_path(), err);
+        std::error_code err;
+        std::filesystem::create_directories(fsFileName.parent_path(), err);
         if (err)
         {
             LOG_SYSERR;
@@ -105,7 +107,9 @@ int HttpFileImpl::saveAs(const std::string &fileName) const noexcept
     }
     return saveTo(fsFileName);
 }
-int HttpFileImpl::saveTo(const filesystem::path &pathAndFileName) const noexcept
+
+int HttpFileImpl::saveTo(
+    const std::filesystem::path &pathAndFileName) const noexcept
 {
     LOG_TRACE << "save uploaded file:" << pathAndFileName;
     auto wPath = utils::toNativePath(pathAndFileName.native());
@@ -148,7 +152,7 @@ void HttpFile::setFileName(const std::string &fileName) noexcept
     implPtr_->setFileName(fileName);
 }
 
-string_view HttpFile::getFileExtension() const noexcept
+std::string_view HttpFile::getFileExtension() const noexcept
 {
     return implPtr_->getFileExtension();
 }
@@ -197,10 +201,12 @@ std::string HttpFile::getMd5() const noexcept
 {
     return implPtr_->getMd5();
 }
+
 const std::string &HttpFile::getContentTransferEncoding() const noexcept
 {
     return implPtr_->getContentTransferEncoding();
 }
+
 HttpFile::HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr) noexcept
     : implPtr_(std::move(implPtr))
 {

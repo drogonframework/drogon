@@ -86,6 +86,7 @@ void PluginsManager::initializeAllPlugins(
         forEachCallback(plugin);
     }
 }
+
 void PluginsManager::createPlugin(const std::string &pluginName)
 {
     auto pluginPtr = std::dynamic_pointer_cast<PluginBase>(
@@ -97,6 +98,7 @@ void PluginsManager::createPlugin(const std::string &pluginName)
     }
     pluginsMap_[pluginName] = pluginPtr;
 }
+
 PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
 {
     auto iter = pluginsMap_.find(pluginName);

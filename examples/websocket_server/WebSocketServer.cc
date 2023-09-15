@@ -26,6 +26,7 @@ struct Subscriber
     std::string chatRoomName_;
     drogon::SubscriberID id_;
 };
+
 void WebSocketChat::handleNewMessage(const WebSocketConnectionPtr &wsConnPtr,
                                      std::string &&message,
                                      const WebSocketMessageType &type)

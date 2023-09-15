@@ -24,6 +24,7 @@
 #endif
 
 using namespace drogon_ctl;
+
 std::string press::detail()
 {
     return "Use press command to do stress testing\n"
@@ -37,11 +38,12 @@ std::string press::detail()
            "http://localhost:8080/index.html\n";
 }
 
-void outputErrorAndExit(const string_view &err)
+void outputErrorAndExit(const std::string_view &err)
 {
     std::cout << err << std::endl;
     exit(1);
 }
+
 void press::handleCommand(std::vector<std::string> &parameters)
 {
     for (auto iter = parameters.begin(); iter != parameters.end(); iter++)

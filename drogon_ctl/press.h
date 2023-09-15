@@ -39,19 +39,23 @@ struct Statistics
     trantor::Date startDate_;
     trantor::Date endDate_;
 };
+
 class press : public DrObject<press>, public CommandHandler
 {
   public:
     void handleCommand(std::vector<std::string> &parameters) override;
+
     std::string script() override
     {
         return "Do stress testing(Use 'drogon_ctl help press' for more "
                "information)";
     }
+
     bool isTopCommand() override
     {
         return true;
     }
+
     std::string detail() override;
 
   private:

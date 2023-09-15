@@ -1,6 +1,7 @@
 #pragma once
 #include <drogon/HttpController.h>
 using namespace drogon;
+
 class Client : public drogon::HttpController<Client>
 {
   public:

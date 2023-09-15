@@ -53,6 +53,7 @@ class SpinLock
             std::this_thread::yield();
         }
     }
+
     inline ~SpinLock()
     {
         flag_.store(false, std::memory_order_release);
@@ -73,6 +74,7 @@ class SimpleSpinLock
             _mm_pause();
         }
     }
+
     inline ~SimpleSpinLock()
     {
         flag_.clear(std::memory_order_release);

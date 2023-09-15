@@ -17,16 +17,19 @@
 #include <drogon/DrObject.h>
 #include "CommandHandler.h"
 using namespace drogon;
+
 namespace drogon_ctl
 {
 class help : public DrObject<help>, public CommandHandler
 {
   public:
     void handleCommand(std::vector<std::string> &parameters) override;
+
     std::string script() override
     {
         return "display this message";
     }
+
     bool isTopCommand() override
     {
         return true;

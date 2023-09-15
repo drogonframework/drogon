@@ -14,7 +14,6 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/string_view.h>
 #include <trantor/net/Certificate.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
@@ -24,6 +23,7 @@
 #include <json/json.h>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace drogon
 {
@@ -56,10 +56,12 @@ HttpResponsePtr toResponse(T &&)
               << DrClassMap::demangle(typeid(T).name());
     exit(1);
 }
+
 template <>
 HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson);
 template <>
 HttpResponsePtr toResponse(Json::Value &&pJson);
+
 template <>
 inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
 {
@@ -99,6 +101,7 @@ class DROGON_EXPORT HttpResponse
 
     /// Get the status code such as 200, 404
     virtual HttpStatusCode statusCode() const = 0;
+
     HttpStatusCode getStatusCode() const
     {
         return statusCode();
@@ -107,13 +110,15 @@ class DROGON_EXPORT HttpResponse
     /// Set the status code of the response.
     virtual void setStatusCode(HttpStatusCode code) = 0;
 
-    void setCustomStatusCode(int code, string_view message = string_view{})
+    void setCustomStatusCode(int code,
+                             std::string_view message = std::string_view{})
     {
         setCustomStatusCode(code, message.data(), message.length());
     }
 
     /// Get the creation timestamp of the response.
     virtual const trantor::Date &creationDate() const = 0;
+
     const trantor::Date &getCreationDate() const
     {
         return creationDate();
@@ -142,7 +147,7 @@ class DROGON_EXPORT HttpResponse
     /// Set the content-type string, The string may contain the header name and
     /// CRLF. Or just the MIME type For example, "content-type: text/plain\r\n"
     /// or "text/plain"
-    void setContentTypeString(const string_view &typeString)
+    void setContentTypeString(const std::string_view &typeString)
     {
         setContentTypeString(typeString.data(), typeString.size());
     }
@@ -151,12 +156,13 @@ class DROGON_EXPORT HttpResponse
     /// may contain the header name and CRLF. Or just the MIME type
     /// For example, "content-type: text/plain\r\n" or "text/plain"
     void setContentTypeCodeAndCustomString(ContentType type,
-                                           const string_view &typeString)
+                                           const std::string_view &typeString)
     {
         setContentTypeCodeAndCustomString(type,
                                           typeString.data(),
                                           typeString.length());
     }
+
     template <int N>
     void setContentTypeCodeAndCustomString(ContentType type,
                                            const char (&typeString)[N])
@@ -171,6 +177,7 @@ class DROGON_EXPORT HttpResponse
 
     /// Get the response content type.
     virtual ContentType contentType() const = 0;
+
     ContentType getContentType() const
     {
         return contentType();
@@ -260,13 +267,13 @@ class DROGON_EXPORT HttpResponse
     }
 
     /// Get the response body.
-    string_view body() const
+    std::string_view body() const
     {
-        return string_view{getBodyData(), getBodyLength()};
+        return std::string_view{getBodyData(), getBodyLength()};
     }
 
     /// Get the response body.
-    string_view getBody() const
+    std::string_view getBody() const
     {
         return body();
     }
@@ -274,6 +281,7 @@ class DROGON_EXPORT HttpResponse
     /// Return the string of http version of request, such as HTTP/1.0,
     /// HTTP/1.1, etc.
     virtual const char *versionString() const = 0;
+
     const char *getVersionString() const
     {
         return versionString();
@@ -302,6 +310,7 @@ class DROGON_EXPORT HttpResponse
 
     /// Get the expiration time of the response.
     virtual ssize_t expiredTime() const = 0;
+
     ssize_t getExpiredTime() const
     {
         return expiredTime();
@@ -311,6 +320,7 @@ class DROGON_EXPORT HttpResponse
     /// If the response is not in json format, then a empty shared_ptr is
     /// retured.
     virtual const std::shared_ptr<Json::Value> &jsonObject() const = 0;
+
     const std::shared_ptr<Json::Value> &getJsonObject() const
     {
         return jsonObject();
@@ -342,6 +352,7 @@ class DROGON_EXPORT HttpResponse
      * @return The certificate of the peer. nullptr is none.
      */
     virtual const trantor::CertificatePtr &peerCertificate() const = 0;
+
     const trantor::CertificatePtr &getPeerCertificate() const
     {
         return peerCertificate();
@@ -525,6 +536,7 @@ class DROGON_EXPORT HttpResponse
                                      const char *message,
                                      size_t messageLength) = 0;
 };
+
 template <>
 inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)
 {

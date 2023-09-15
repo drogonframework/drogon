@@ -18,7 +18,7 @@
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Funcs.h>
 #include <trantor/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
+#include <trantor/utils/LogStream.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -26,6 +26,8 @@
 #include <limits>
 #include <sstream>
 #include <algorithm>
+#include <filesystem>
+#include <string_view>
 #ifdef _WIN32
 #include <time.h>
 DROGON_EXPORT char *strptime(const char *s, const char *f, struct tm *tm);
@@ -55,17 +57,18 @@ struct CanConvertFromStringStream
                      yes>::value;
 };
 }  // namespace internal
+
 namespace utils
 {
 /// Determine if the string is an integer
 DROGON_EXPORT bool isInteger(const std::string &str);
 /// Determine if the string is an integer
-DROGON_EXPORT bool isInteger(string_view str);
+DROGON_EXPORT bool isInteger(std::string_view str);
 
 /// Determine if the string is base64 encoded
 DROGON_EXPORT bool isBase64(const std::string &str);
 /// Determine if the string is base64 encoded
-DROGON_EXPORT bool isBase64(string_view str);
+DROGON_EXPORT bool isBase64(std::string_view str);
 
 /// Generate random a string
 /**
@@ -106,19 +109,19 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
 DROGON_EXPORT std::string getUuid();
 
 /// Get the encoded length of base64.
-constexpr size_t base64EncodedLength(unsigned int in_len, bool padded = true)
+constexpr size_t base64EncodedLength(size_t in_len, bool padded = true)
 {
     return padded ? ((in_len + 3 - 1) / 3) * 4 : (in_len * 8 + 6 - 1) / 6;
 }
 
 /// Encode the string to base64 format.
 DROGON_EXPORT std::string base64Encode(const unsigned char *bytes_to_encode,
-                                       unsigned int in_len,
+                                       size_t in_len,
                                        bool url_safe = false,
                                        bool padded = true);
 
 /// Encode the string to base64 format.
-inline std::string base64Encode(string_view data,
+inline std::string base64Encode(std::string_view data,
                                 bool url_safe = false,
                                 bool padded = true)
 {
@@ -130,40 +133,43 @@ inline std::string base64Encode(string_view data,
 
 /// Encode the string to base64 format with no padding.
 inline std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
-                                        unsigned int in_len,
+                                        size_t in_len,
                                         bool url_safe = false)
 {
     return base64Encode(bytes_to_encode, in_len, url_safe, false);
 }
 
 /// Encode the string to base64 format with no padding.
-inline std::string base64EncodeUnpadded(string_view data, bool url_safe = false)
+inline std::string base64EncodeUnpadded(std::string_view data,
+                                        bool url_safe = false)
 {
     return base64Encode(data, url_safe, false);
 }
 
 /// Get the decoded length of base64.
-constexpr size_t base64DecodedLength(unsigned int in_len)
+constexpr size_t base64DecodedLength(size_t in_len)
 {
     return (in_len * 3) / 4;
 }
 
 /// Decode the base64 format string.
-DROGON_EXPORT std::string base64Decode(string_view encoded_string);
+DROGON_EXPORT std::string base64Decode(std::string_view encoded_string);
 DROGON_EXPORT std::vector<char> base64DecodeToVector(
-    string_view encoded_string);
+    std::string_view encoded_string);
 
 /// Check if the string need decoding
 DROGON_EXPORT bool needUrlDecoding(const char *begin, const char *end);
 
 /// Decode from or encode to the URL format string
 DROGON_EXPORT std::string urlDecode(const char *begin, const char *end);
+
 inline std::string urlDecode(const std::string &szToDecode)
 {
     auto begin = szToDecode.data();
     return urlDecode(begin, begin + szToDecode.length());
 }
-inline std::string urlDecode(const string_view &szToDecode)
+
+inline std::string urlDecode(const std::string_view &szToDecode)
 {
     auto begin = szToDecode.data();
     return urlDecode(begin, begin + szToDecode.length());
@@ -174,30 +180,35 @@ DROGON_EXPORT std::string urlEncodeComponent(const std::string &);
 
 /// Get the MD5 digest of a string.
 DROGON_EXPORT std::string getMd5(const char *data, const size_t dataLen);
+
 inline std::string getMd5(const std::string &originalString)
 {
     return getMd5(originalString.data(), originalString.length());
 }
 
 DROGON_EXPORT std::string getSha1(const char *data, const size_t dataLen);
+
 inline std::string getSha1(const std::string &originalString)
 {
     return getSha1(originalString.data(), originalString.length());
 }
 
 DROGON_EXPORT std::string getSha256(const char *data, const size_t dataLen);
+
 inline std::string getSha256(const std::string &originalString)
 {
     return getSha256(originalString.data(), originalString.length());
 }
 
 DROGON_EXPORT std::string getSha3(const char *data, const size_t dataLen);
+
 inline std::string getSha3(const std::string &originalString)
 {
     return getSha3(originalString.data(), originalString.length());
 }
 
 DROGON_EXPORT std::string getBlake2b(const char *data, const size_t dataLen);
+
 inline std::string getBlake2b(const std::string &originalString)
 {
     return getBlake2b(originalString.data(), originalString.length());
@@ -312,6 +323,7 @@ inline std::wstring toNativePath(const std::string &strPath)
 {
     return trantor::utils::toNativePath(strPath);
 }
+
 inline const std::wstring &toNativePath(const std::wstring &strPath)
 {
     return trantor::utils::toNativePath(strPath);
@@ -321,6 +333,7 @@ inline const std::string &toNativePath(const std::string &strPath)
 {
     return trantor::utils::toNativePath(strPath);
 }
+
 inline std::string toNativePath(const std::wstring &strPath)
 {
     return trantor::utils::toNativePath(strPath);
@@ -347,6 +360,7 @@ inline const std::string &fromNativePath(const std::string &strPath)
 {
     return trantor::utils::fromNativePath(strPath);
 }
+
 // Convert on all systems
 inline std::string fromNativePath(const std::wstring &strPath)
 {
@@ -489,6 +503,7 @@ DROGON_EXPORT bool supportsTls() noexcept;
 namespace internal
 {
 DROGON_EXPORT extern const size_t fixedRandomNumber;
+
 struct SafeStringHash
 {
     size_t operator()(const std::string &str) const
@@ -504,3 +519,17 @@ struct SafeStringHash
 }  // namespace internal
 }  // namespace utils
 }  // namespace drogon
+
+namespace trantor
+{
+inline LogStream &operator<<(LogStream &ls, const std::string_view &v)
+{
+    ls.append(v.data(), v.length());
+    return ls;
+}
+
+inline LogStream &operator<<(LogStream &ls, const std::filesystem::path &p)
+{
+    return ls << p.string();
+}
+}  // namespace trantor

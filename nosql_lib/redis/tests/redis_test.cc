@@ -9,6 +9,7 @@ using namespace std::chrono_literals;
 using namespace drogon::nosql;
 
 RedisClientPtr redisClient;
+
 DROGON_TEST(RedisTest)
 {
     redisClient = drogon::nosql::RedisClient::newRedisClient(
@@ -167,11 +168,14 @@ DROGON_TEST(RedisTest)
         SUCCESS();
     }
 
+    // 12. Test omit template parameter
     try
     {
-        redisClient->execCommandSync<int>([](const RedisResult &) { return 1; },
-                                          "del %s",
-                                          "sync_key");
+        auto i = redisClient->execCommandSync(
+            [](const RedisResult &r) { return r.asInteger(); },
+            "del %s",
+            "sync_key");
+        MANDATE(i == 1);
     }
     catch (const RedisException &err)
     {

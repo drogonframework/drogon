@@ -18,7 +18,7 @@
 #include <exception>
 #include <drogon/orm/DbTypes.h>
 #include <drogon/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <errmsg.h>
 #ifndef _WIN32
 #include <poll.h>
@@ -31,6 +31,7 @@
 
 using namespace drogon;
 using namespace drogon::orm;
+
 namespace drogon
 {
 namespace orm
@@ -167,6 +168,7 @@ void MysqlConnection::handleClosed()
     auto thisPtr = shared_from_this();
     closeCallback_(thisPtr);
 }
+
 void MysqlConnection::disconnect()
 {
     auto thisPtr = shared_from_this();
@@ -181,6 +183,7 @@ void MysqlConnection::disconnect()
     });
     f.get();
 }
+
 void MysqlConnection::handleTimeout()
 {
     int status = 0;
@@ -226,6 +229,7 @@ void MysqlConnection::handleTimeout()
     {
     }
 }
+
 void MysqlConnection::handleCmd(int status)
 {
     switch (execStatus_)
@@ -298,6 +302,7 @@ void MysqlConnection::handleCmd(int status)
             return;
     }
 }
+
 void MysqlConnection::handleEvent()
 {
     int status = 0;
@@ -350,6 +355,7 @@ void MysqlConnection::handleEvent()
         continueSetCharacterSet(status);
     }
 }
+
 void MysqlConnection::continueSetCharacterSet(int status)
 {
     int err;
@@ -373,6 +379,7 @@ void MysqlConnection::continueSetCharacterSet(int status)
     }
     setChannel();
 }
+
 void MysqlConnection::startSetCharacterSet()
 {
     int err;
@@ -402,8 +409,9 @@ void MysqlConnection::startSetCharacterSet()
     }
     setChannel();
 }
+
 void MysqlConnection::execSqlInLoop(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -526,6 +534,7 @@ void MysqlConnection::outputError()
         handleClosed();
     }
 }
+
 void MysqlConnection::startQuery()
 {
     int err;
@@ -549,6 +558,7 @@ void MysqlConnection::startQuery()
         startStoreResult(true);
     }
 }
+
 void MysqlConnection::startStoreResult(bool queueInLoop)
 {
     MYSQL_RES *ret;
@@ -583,6 +593,7 @@ void MysqlConnection::startStoreResult(bool queueInLoop)
         }
     }
 }
+
 void MysqlConnection::getResult(MYSQL_RES *res)
 {
     auto resultPtr = std::shared_ptr<MYSQL_RES>(res, [](MYSQL_RES *r) {

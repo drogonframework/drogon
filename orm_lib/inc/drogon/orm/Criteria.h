@@ -16,7 +16,6 @@
 
 #include <drogon/exports.h>
 #include <drogon/orm/SqlBinder.h>
-#include <drogon/utils/apply.h>
 #include <assert.h>
 #include <memory>
 #include <string>
@@ -27,6 +26,7 @@ namespace Json
 {
 class Value;
 }
+
 namespace drogon
 {
 namespace orm
@@ -55,6 +55,7 @@ struct CustomSql
     explicit CustomSql(std::string content) : content_(std::move(content))
     {
     }
+
     std::string content_;
 };
 
@@ -118,7 +119,7 @@ class DROGON_EXPORT Criteria
         outputArgumentsFunc_ =
             [args = std::make_tuple(std::forward<Arguments>(args)...)](
                 internal::SqlBinder &binder) mutable {
-                return apply(
+                return std::apply(
                     [&binder](auto &&...args) {
                         (void)std::initializer_list<int>{
                             (binder << std::forward<Arguments>(args), 0)...};
@@ -134,7 +135,7 @@ class DROGON_EXPORT Criteria
         outputArgumentsFunc_ =
             [args = std::make_tuple(std::forward<Arguments>(args)...)](
                 internal::SqlBinder &binder) mutable {
-                return apply(
+                return std::apply(
                     [&binder](auto &&...args) {
                         (void)std::initializer_list<int>{
                             (binder << std::forward<Arguments>(args), 0)...};
@@ -308,10 +309,12 @@ class DROGON_EXPORT Criteria
                 break;
         }
     }
+
     Criteria(const std::string &colName, CompareOperator &opera)
         : Criteria(colName, (const CompareOperator &)opera)
     {
     }
+
     Criteria(const std::string &colName, CompareOperator &&opera)
         : Criteria(colName, (const CompareOperator &)opera)
     {

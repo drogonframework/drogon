@@ -1,4 +1,5 @@
 #include "ListParaCtl.h"
+
 void ListParaCtl::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)

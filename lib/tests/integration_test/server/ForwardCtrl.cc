@@ -1,4 +1,5 @@
 #include "ForwardCtrl.h"
+
 void ForwardCtrl::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)

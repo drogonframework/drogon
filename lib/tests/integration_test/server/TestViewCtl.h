@@ -1,6 +1,7 @@
 #pragma once
 #include <drogon/HttpSimpleController.h>
 using namespace drogon;
+
 class TestViewCtl : public drogon::HttpSimpleController<TestViewCtl>
 {
   public:

@@ -27,6 +27,7 @@ namespace trantor
 {
 class InetAddress;
 }
+
 namespace drogon
 {
 class ListenerManager : public trantor::NonCopyable
@@ -80,6 +81,7 @@ class ListenerManager : public trantor::NonCopyable
               sslConfCmds_(std::move(sslConfCmds))
         {
         }
+
         std::string ip_;
         uint16_t port_;
         bool useSSL_;
@@ -88,6 +90,7 @@ class ListenerManager : public trantor::NonCopyable
         bool useOldTLS_;
         std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     };
+
     std::vector<ListenerInfo> listeners_;
     std::vector<std::shared_ptr<HttpServer>> servers_;
 

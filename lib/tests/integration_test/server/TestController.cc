@@ -1,10 +1,12 @@
 #include "TestController.h"
 using namespace example;
+
 void TestController::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     // write your application logic here
+    counter_->increment();
     LOG_WARN << req->matchedPathPatternData();
     LOG_DEBUG << "index=" << threadIndex_.getThreadData();
     ++(threadIndex_.getThreadData());

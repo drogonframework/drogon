@@ -80,6 +80,7 @@ class HttpCoroFilter : public DrObject<T>, public HttpFilterBase
   public:
     static constexpr bool isAutoCreation{AutoCreation};
     ~HttpCoroFilter() override = default;
+
     void doFilter(const HttpRequestPtr &req,
                   FilterCallback &&fcb,
                   FilterChainCallback &&fccb) final

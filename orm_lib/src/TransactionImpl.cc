@@ -14,7 +14,7 @@
 
 #include "TransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <trantor/utils/Logger.h>
 
 using namespace drogon::orm;
@@ -84,8 +84,9 @@ TransactionImpl::~TransactionImpl()
         }
     }
 }
+
 void TransactionImpl::execSqlInLoop(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -293,7 +294,7 @@ void TransactionImpl::doBegin()
 }
 
 void TransactionImpl::execSqlInLoopWithTimeout(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,

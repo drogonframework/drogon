@@ -53,6 +53,7 @@ class DROGON_EXPORT SlashRemover : public drogon::Plugin<SlashRemover>
     SlashRemover()
     {
     }
+
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 

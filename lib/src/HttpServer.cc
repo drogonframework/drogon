@@ -109,10 +109,12 @@ void HttpServer::start()
               << server_.ipPort();
     server_.start();
 }
+
 void HttpServer::stop()
 {
     server_.stop();
 }
+
 void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (conn->connected())
@@ -180,7 +182,54 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         req->setCreationDate(trantor::Date::date());
         req->setSecure(conn->isSSLConnection());
         req->setPeerCertificate(conn->peerCertificate());
-        if (requestParser->firstReq() && isWebSocket(req))
+        requests.push_back(req);
+        requestParser->reset();
+    }
+    onRequests(conn, requests, requestParser);
+    requests.clear();
+}
+
+struct CallbackParamPack
+{
+    CallbackParamPack(trantor::TcpConnectionPtr conn,
+                      HttpRequestImplPtr req,
+                      std::shared_ptr<bool> loopFlag,
+                      std::shared_ptr<HttpRequestParser> requestParser,
+                      bool isHeadMethod)
+        : conn_(std::move(conn)),
+          req_(std::move(req)),
+          loopFlag_(std::move(loopFlag)),
+          requestParser_(std::move(requestParser)),
+          isHeadMethod_(isHeadMethod)
+    {
+    }
+
+    trantor::TcpConnectionPtr conn_;
+    HttpRequestImplPtr req_;
+    std::shared_ptr<bool> loopFlag_;
+    std::shared_ptr<HttpRequestParser> requestParser_;
+    bool isHeadMethod_;
+    std::atomic<bool> responseSent_{false};
+};
+
+void HttpServer::onRequests(
+    const TcpConnectionPtr &conn,
+    const std::vector<HttpRequestImplPtr> &requests,
+    const std::shared_ptr<HttpRequestParser> &requestParser)
+{
+    if (requests.empty())
+        return;
+
+    // will only be checked for the first request
+    if (requestParser->firstReq() && requests.size() == 1 &&
+        isWebSocket(requests[0]))
+    {
+        auto &req = requests[0];
+        if (passSyncAdvices(req,
+                            requestParser,
+                            syncAdvices_,
+                            false /* Not pipelined */,
+                            false /* Not HEAD */))
         {
             auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
             wsConn->setPingMessage("", std::chrono::seconds{30});
@@ -205,46 +254,20 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                     }
                 },
                 wsConn);
+            return;
         }
-        else
+
+        // flush response for not passing sync advices
+        if (conn->connected() && !requestParser->getResponseBuffer().empty())
         {
-            requests.push_back(req);
+            sendResponses(conn,
+                          requestParser->getResponseBuffer(),
+                          requestParser->getBuffer());
+            requestParser->getResponseBuffer().clear();
         }
-        requestParser->reset();
-    }
-    onRequests(conn, requests, requestParser);
-    requests.clear();
-}
-
-struct CallbackParamPack
-{
-    CallbackParamPack(trantor::TcpConnectionPtr conn,
-                      HttpRequestImplPtr req,
-                      std::shared_ptr<bool> loopFlag,
-                      std::shared_ptr<HttpRequestParser> requestParser,
-                      bool isHeadMethod)
-        : conn_(std::move(conn)),
-          req_(std::move(req)),
-          loopFlag_(std::move(loopFlag)),
-          requestParser_(std::move(requestParser)),
-          isHeadMethod_(isHeadMethod)
-    {
-    }
-    trantor::TcpConnectionPtr conn_;
-    HttpRequestImplPtr req_;
-    std::shared_ptr<bool> loopFlag_;
-    std::shared_ptr<HttpRequestParser> requestParser_;
-    bool isHeadMethod_;
-    std::atomic<bool> responseSent_{false};
-};
-
-void HttpServer::onRequests(
-    const TcpConnectionPtr &conn,
-    const std::vector<HttpRequestImplPtr> &requests,
-    const std::shared_ptr<HttpRequestParser> &requestParser)
-{
-    if (requests.empty())
         return;
+    }
+
     if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
         requestParser->numberOfRequestsParsed() >=
             HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
@@ -280,8 +303,7 @@ void HttpServer::onRequests(
             requestParser->pushRequestToPipelining(req, isHeadMethod);
             reqPipelined = true;
         }
-        if (!syncAdvices_.empty() &&
-            !passSyncAdvices(
+        if (!passSyncAdvices(
                 req, requestParser, syncAdvices_, reqPipelined, isHeadMethod))
         {
             continue;
@@ -422,9 +444,11 @@ void HttpServer::handleResponse(
 struct ChunkingParams
 {
     using DataCallback = std::function<std::size_t(char *, std::size_t)>;
+
     explicit ChunkingParams(DataCallback cb) : dataCallback(std::move(cb))
     {
     }
+
     DataCallback dataCallback;
     bool bFinished{false};
 #ifndef NDEBUG  // defined by CMake for release build
@@ -460,6 +484,7 @@ static std::size_t chunkingCallback(
 #endif
         return 0;
     }
+
     // Reserve size to prepend the chunk size & append cr/lf, and get data
     struct
     {
@@ -468,6 +493,7 @@ static std::size_t chunkingCallback(
             return n == 0 ? 0 : 1 + (*this)(n >> 4);
         }
     } neededDigits;
+
     auto nHeaderSize = neededDigits(nSize) + 2;
     auto nDataSize =
         cbParams->dataCallback(pBuffer + nHeaderSize, nSize - nHeaderSize - 2);
@@ -671,10 +697,14 @@ void HttpServer::sendResponses(
 
 static inline bool isWebSocket(const HttpRequestImplPtr &req)
 {
+    if (req->method() != Get)
+        return false;
+
     auto &headers = req->headers();
     if (headers.find("upgrade") == headers.end() ||
         headers.find("connection") == headers.end())
         return false;
+
     auto connectionField = req->getHeaderBy("connection");
     std::transform(connectionField.begin(),
                    connectionField.end(),

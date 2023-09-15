@@ -1,6 +1,7 @@
 #pragma once
 #include <drogon/HttpSimpleController.h>
 using namespace drogon;
+
 class JsonCtrl : public drogon::HttpSimpleController<JsonCtrl>
 {
   public:

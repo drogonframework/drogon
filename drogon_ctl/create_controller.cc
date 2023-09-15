@@ -135,6 +135,7 @@ void create_controller::newSimpleControllerHeaderFile(
         file << "}\n";
     }
 }
+
 void create_controller::newSimpleControllerSourceFile(
     std::ofstream &file,
     const std::string &className,
@@ -207,6 +208,7 @@ void create_controller::newWebsockControllerHeaderFile(
         file << "}\n";
     }
 }
+
 void create_controller::newWebsockControllerSourceFile(
     std::ofstream &file,
     const std::string &className,
@@ -303,6 +305,7 @@ void create_controller::newHttpControllerHeaderFile(
         file << "}\n";
     }
 }
+
 void create_controller::newHttpControllerSourceFile(
     std::ofstream &file,
     const std::string &className,
