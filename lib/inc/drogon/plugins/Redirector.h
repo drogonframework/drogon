@@ -27,6 +27,7 @@ using RedirectorHandler =
                        std::string &,  //"http://" or "https://"
                        std::string &,  // host
                        bool &)>;       // path changed or not
+using ForwardHandler = std::function<void(const drogon::HttpRequestPtr &)>;
 
 /**
  * @brief This plugin is used to redirect requests to proper URLs. It is a
@@ -56,18 +57,29 @@ class DROGON_EXPORT Redirector : public drogon::Plugin<Redirector>,
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 
-    void registerHandler(RedirectorHandler &&handler)
+    void registerRedirectHandler(RedirectorHandler &&handler)
     {
         handlers_.emplace_back(std::move(handler));
     }
 
-    void registerHandler(const RedirectorHandler &handler)
+    void registerRedirectHandler(const RedirectorHandler &handler)
     {
         handlers_.emplace_back(handler);
     }
 
+    void registerForwardHandler(ForwardHandler &&handler)
+    {
+        forwardHandlers_.emplace_back(std::move(handler));
+    }
+
+    void registerForwardHandler(const ForwardHandler &handler)
+    {
+        forwardHandlers_.emplace_back(handler);
+    }
+
   private:
     std::vector<RedirectorHandler> handlers_;
+    std::vector<ForwardHandler> forwardHandlers_;
 };
 
 }  // namespace plugin

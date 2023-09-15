@@ -48,10 +48,6 @@ void Redirector::initAndStart(const Json::Value &config)
                                                           : "http://";
                         url.append(host);
                     }
-                    if (pathChanged)
-                    {
-                        url.append(req->path());
-                    }
                 }
                 else
                 {
@@ -64,17 +60,18 @@ void Redirector::initAndStart(const Json::Value &config)
                     {
                         url.append(req->getHeader("host"));
                     }
-                    if (pathChanged)
-                    {
-                        url.append(req->path());
-                    }
                 }
+                url.append(req->path());
                 auto &query = req->query();
                 if (!query.empty())
                 {
                     url.append("?").append(query);
                 }
                 return HttpResponse::newRedirectionResponse(url);
+            }
+            for (auto &handler : thisPtr->forwardHandlers_)
+            {
+                handler(req);
             }
             return HttpResponsePtr{};
         });

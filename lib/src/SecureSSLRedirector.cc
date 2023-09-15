@@ -49,17 +49,18 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
         LOG_ERROR << "Redirector plugin is not found!";
         return;
     }
-    redirector->registerHandler([weakPtr](const drogon::HttpRequestPtr &req,
-                                          std::string &protocol,
-                                          std::string &host,
-                                          bool &pathChanged) -> bool {
-        auto thisPtr = weakPtr.lock();
-        if (!thisPtr)
-        {
-            return false;
-        }
-        return thisPtr->redirectingAdvice(req, protocol, host, pathChanged);
-    });
+    redirector->registerRedirectHandler(
+        [weakPtr](const drogon::HttpRequestPtr &req,
+                  std::string &protocol,
+                  std::string &host,
+                  bool &pathChanged) -> bool {
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+            {
+                return false;
+            }
+            return thisPtr->redirectingAdvice(req, protocol, host, pathChanged);
+        });
 }
 
 void SecureSSLRedirector::shutdown()

@@ -66,6 +66,31 @@ static inline void removeExcessiveSlashes(string& url)
     removeDuplicateSlashes(url);
 }
 
+static inline bool handleReq(const drogon::HttpRequestPtr& req, int removeMode)
+{
+    static const std::regex regex(regexes[removeMode - 1]);
+    if (std::regex_match(req->path(), regex))
+    {
+        string newPath = req->path();
+        switch (removeMode)
+        {
+            case trailing:
+                removeTrailingSlashes(newPath);
+                break;
+            case duplicate:
+                removeDuplicateSlashes(newPath);
+                break;
+            case both:
+            default:
+                removeExcessiveSlashes(newPath);
+                break;
+        }
+        req->setPath(std::move(newPath));
+        return true;
+    }
+    return false;
+}
+
 void SlashRemover::initAndStart(const Json::Value& config)
 {
     trailingSlashes_ = config.get("remove_trailing_slashes", true).asBool();
@@ -81,36 +106,24 @@ void SlashRemover::initAndStart(const Json::Value& config)
         LOG_ERROR << "Redirector plugin is not found!";
         return;
     }
-    redirector->registerHandler(
-        [removeMode, redirect = redirect_](const HttpRequestPtr& req,
-                                           std::string& protocol,
-                                           std::string& host,
-                                           bool& pathChanged) -> bool {
-            static const std::regex regex(regexes[removeMode - 1]);
-            if (std::regex_match(req->path(), regex))
-            {
-                string newPath = req->path();
-                switch (removeMode)
-                {
-                    case trailing:
-                        removeTrailingSlashes(newPath);
-                        break;
-                    case duplicate:
-                        removeDuplicateSlashes(newPath);
-                        break;
-                    case both:
-                    default:
-                        removeExcessiveSlashes(newPath);
-                        break;
-                }
-                req->setPath(std::move(newPath));
-                if (redirect)
-                {
-                    pathChanged = true;
-                }
-            }
-            return true;
-        });
+    if (redirect_)
+    {
+        redirector->registerRedirectHandler(
+            [removeMode](const HttpRequestPtr& req,
+                         std::string& protocol,
+                         std::string& host,
+                         bool& pathChanged) -> bool {
+                pathChanged = handleReq(req, removeMode);
+                return true;
+            });
+    }
+    else
+    {
+        redirector->registerForwardHandler(
+            [removeMode](const HttpRequestPtr& req) {
+                (void)handleReq(req, removeMode);
+            });
+    }
 }
 
 void SlashRemover::shutdown()
