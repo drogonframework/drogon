@@ -87,6 +87,66 @@ void WebsocketControllersRouter::registerWebSocketController(
     }
 }
 
+void WebsocketControllersRouter::registerWebSocketControllerRegex(
+    const std::string &regExp,
+    const std::string &ctrlName,
+    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+{
+    assert(!regExp.empty());
+    assert(!ctrlName.empty());
+    std::vector<HttpMethod> validMethods;
+    std::vector<std::string> filters;
+    for (auto const &filterOrMethod : filtersAndMethods)
+    {
+        if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
+        {
+            filters.push_back(filterOrMethod.getFilterName());
+        }
+        else if (filterOrMethod.type() == internal::ConstraintType::HttpMethod)
+        {
+            validMethods.push_back(filterOrMethod.getHttpMethod());
+        }
+        else
+        {
+            LOG_ERROR << "Invalid controller constraint type";
+            exit(1);
+        }
+    }
+    auto binder = std::make_shared<CtrlBinder>();
+    binder->controllerName_ = ctrlName;
+    binder->filterNames_ = filters;
+    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+        auto &object_ = DrClassMap::getSingleInstance(ctrlName);
+        auto controller =
+            std::dynamic_pointer_cast<WebSocketControllerBase>(object_);
+        binder->controller_ = controller;
+    });
+    struct WebSocketControllerRouterItem router;
+    router.path_ = regExp;
+
+    if (validMethods.size() > 0)
+    {
+        for (auto const &method : validMethods)
+        {
+            router.binders_[method] = binder;
+            if (method == Options)
+            {
+                binder->isCORS_ = true;
+            }
+        }
+    }
+    else
+    {
+        // All HTTP methods are valid
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            router.binders_[i] = binder;
+        }
+        binder->isCORS_ = true;
+    }
+    wsCtrlVector_.push_back(std::move(router));
+}
+
 void WebsocketControllersRouter::doPreHandlingAdvices(
     const WebSocketControllerRouterItem &routerItem,
     std::string &wsKey,
@@ -184,15 +244,34 @@ void WebsocketControllersRouter::route(
     std::string wsKey = req->getHeaderBy("sec-websocket-key");
     if (!wsKey.empty())
     {
+        std::smatch result;
         std::string pathLower(req->path().length(), 0);
         std::transform(req->path().begin(),
                        req->path().end(),
                        pathLower.begin(),
                        [](unsigned char c) { return tolower(c); });
+        WebSocketControllerRouterItem *wsCtrlInfoPtr = nullptr;
         auto iter = wsCtrlMap_.find(pathLower);
-        if (iter != wsCtrlMap_.end())
+        if (iter == wsCtrlMap_.end())
         {
-            auto &ctrlInfo = iter->second;
+            for (auto &item : wsCtrlVector_)
+            {
+                auto const &wsCtrlRegex = item.regex_;
+                if (item.binders_[req->method()] &&
+                    std::regex_match(req->path(), result, wsCtrlRegex))
+                {
+                    wsCtrlInfoPtr = &item;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            wsCtrlInfoPtr = &iter->second;
+        }
+        if (wsCtrlInfoPtr != nullptr)
+        {
+            auto &ctrlInfo = *wsCtrlInfoPtr;
             req->setMatchedPathPattern(iter->first);
             auto &binder = ctrlInfo.binders_[req->method()];
             if (!binder)
@@ -323,6 +402,21 @@ WebsocketControllersRouter::getHandlersInfo() const
             }
         }
     }
+    for (auto &item : wsCtrlVector_)
+    {
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            if (item.binders_[i])
+            {
+                auto info = std::tuple<std::string, HttpMethod, std::string>(
+                    item.path_,
+                    (HttpMethod)i,
+                    std::string("WebsocketController: ") +
+                        item.binders_[i]->controllerName_);
+                ret.emplace_back(std::move(info));
+            }
+        }
+    }
     return ret;
 }
 
@@ -368,6 +462,21 @@ void WebsocketControllersRouter::init()
     for (auto &iter : wsCtrlMap_)
     {
         auto &item = iter.second;
+        item.regex_ = std::regex(item.path_, std::regex_constants::icase);
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            auto &binder = item.binders_[i];
+            if (binder)
+            {
+                binder->filters_ =
+                    filters_function::createFilters(binder->filterNames_);
+            }
+        }
+    }
+
+    for (auto &item : wsCtrlVector_)
+    {
+        item.regex_ = std::regex(item.path_, std::regex_constants::icase);
         for (size_t i = 0; i < Invalid; ++i)
         {
             auto &binder = item.binders_[i];
