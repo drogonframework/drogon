@@ -2,16 +2,17 @@
 #include <drogon/plugins/Redirector.h>
 #include <drogon/HttpAppFramework.h>
 #include "drogon/utils/FunctionTraits.h"
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
-#include <regex>
+#include <string_view>
+#include <utility>
 
 using namespace drogon;
 using namespace drogon::plugin;
 using std::string;
-
-#define TRAILING_SLASH_REGEX ".+\\/$"
-#define DUPLICATE_SLASH_REGEX ".*\\/{2,}.*"
+using std::string_view;
 
 enum removeSlashMode : uint8_t
 {
@@ -20,75 +21,156 @@ enum removeSlashMode : uint8_t
     both = trailing | duplicate,
 };
 
-inline constexpr const char* regexes[] = {
-    TRAILING_SLASH_REGEX,
-    DUPLICATE_SLASH_REGEX,
-    TRAILING_SLASH_REGEX "|" DUPLICATE_SLASH_REGEX,
-};
-
-static inline bool removeTrailingSlashes(string& url)
+/// Returns the index before the trailing slashes,
+/// or 0 if only contains slashes
+static inline size_t findTrailingSlashes(string_view url)
 {
-    const auto notSlashIndex = url.find_last_not_of('/');
-    if (notSlashIndex == string::npos)  // Root
-    {
-        url.resize(1);
-        return true;
-    }
-    url.resize(notSlashIndex + 1);
-    return false;
+    auto len = url.size();
+    // Must be at least 2 chars and end with a slash
+    if (len < 2 || url.back() != '/')
+        return string::npos;
+
+    size_t a = len - 1;  // We already know the last char is '/',
+                         // we will use pre-decrement to account for this
+    while (--a > 0 && url[a] == '/')
+        ;  // We know the first char is '/', so don't check for 0
+    return a;
 }
 
-static inline void removeDuplicateSlashes(string& url)
+static inline void removeTrailingSlashes(string& url,
+                                         size_t start,
+                                         string_view originalUrl)
 {
-    size_t a = 1, len = url.size();
+    url = originalUrl.substr(0, start + 1);
+}
+
+/// Returns the index of the 2nd duplicate slash
+static inline size_t findDuplicateSlashes(string_view url)
+{
+    size_t len = url.size();
+    if (len < 2)
+        return string::npos;
+
+    size_t a = 1;
     for (; a < len && (url[a - 1] != '/' || url[a] != '/'); ++a)
         ;
-    for (size_t b = a--; b < len; ++b)
+
+    return a < len ? a : string::npos;
+}
+
+static inline void removeDuplicateSlashes(string& url, size_t start)
+{
+    // +1 because we don't need to look at the same character again,
+    // which was found by `findDuplicateSlashes`, it saves one iteration
+    for (size_t b = (start--) + 1, len = url.size(); b < len; ++b)
     {
         const char c = url[b];
-        if (c != '/' || url[a] != '/')
+        if (c != '/' || url[start] != '/')
         {
-            ++a;
-            url[a] = c;
+            ++start;
+            url[start] = c;
         }
     }
-    url.resize(a + 1);
+    url.resize(start + 1);
 }
 
-static inline void removeExcessiveSlashes(string& url)
+static inline std::pair<size_t, size_t> findExcessiveSlashes(string_view url)
 {
-    if (url.back() == '/' &&  // This check is so we don't search if there is no
-                              // trailing slash to begin with
-        removeTrailingSlashes(
-            url))  // If it is root path, we don't need to check for duplicates
-        return;
+    size_t len = url.size();
+    if (len < 2)  // Must have at least 2 characters to count as either trailing
+                  // or duplicate slash
+        return {string::npos, string::npos};
 
-    removeDuplicateSlashes(url);
+    size_t dupIdx = 1;
+    for (; dupIdx < len && (url[dupIdx - 1] != '/' || url[dupIdx] != '/');
+         ++dupIdx)
+        ;
+
+    if (dupIdx == len)  // No duplicate found
+        return {
+            url.back() == '/' ?  // If ends with '/'
+                len - 2
+                              :  // One before the slash
+                string::npos,    // No trail
+            string::npos,        // No duplicate
+        };
+
+    // Duplicate found, check for trailing slashes
+    if (url.back() != '/')
+        return {
+            string::npos,  // No trail
+            dupIdx,
+        };
+
+    // Trail finder
+    size_t trailIdx = len - 1;  // We already know the last char is '/',
+                                // we will use pre-decrement to account for this
+    while (--trailIdx > 0 && url[trailIdx] == '/')
+        ;  // We know the first char is '/', so don't check for 0
+
+    // If trailIdx comes before dupIdx, then we know
+    // they can both do it, but trailing slash remover
+    // will provide better performance
+    return {
+        trailIdx,
+        trailIdx < dupIdx ? string::npos : dupIdx,
+    };
 }
 
-static inline bool handleReq(const drogon::HttpRequestPtr& req, int removeMode)
+static inline void removeExcessiveSlashes(string& url,
+                                          std::pair<size_t, size_t> start,
+                                          string_view originalUrl)
 {
-    static const std::regex regex(regexes[removeMode - 1]);
-    if (std::regex_match(req->path(), regex))
+    if (start.first != string::npos)
+        removeTrailingSlashes(url, start.first, originalUrl);
+    else
+        url = originalUrl;
+
+    if (start.second != string::npos)
+        removeDuplicateSlashes(url, start.second);
+}
+
+static inline bool handleReq(const drogon::HttpRequestPtr& req,
+                             uint8_t removeMode)
+{
+    switch (removeMode)
     {
-        string newPath = req->path();
-        switch (removeMode)
+        case trailing:
         {
-            case trailing:
-                removeTrailingSlashes(newPath);
-                break;
-            case duplicate:
-                removeDuplicateSlashes(newPath);
-                break;
-            case both:
-            default:
-                removeExcessiveSlashes(newPath);
-                break;
+            auto find = findTrailingSlashes(req->path());
+            if (find == string::npos)
+                return false;
+
+            string newPath;
+            removeTrailingSlashes(newPath, find, req->path());
+            req->setPath(std::move(newPath));
+            break;
         }
-        req->setPath(std::move(newPath));
-        return true;
+        case duplicate:
+        {
+            auto find = findDuplicateSlashes(req->path());
+            if (find == string::npos)
+                return false;
+
+            string newPath = req->path();
+            removeDuplicateSlashes(newPath, find);
+            req->setPath(std::move(newPath));
+            break;
+        }
+        case both:
+        default:
+        {
+            auto find = findExcessiveSlashes(req->path());
+            if (find.first == string::npos && find.second == string::npos)
+                return false;
+
+            string newPath;
+            removeExcessiveSlashes(newPath, find, req->path());
+            req->setPath(std::move(newPath));
+            break;
+        }
     }
-    return false;
+    return true;
 }
 
 void SlashRemover::initAndStart(const Json::Value& config)
