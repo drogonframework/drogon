@@ -53,13 +53,13 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
         [weakPtr](const drogon::HttpRequestPtr &req,
                   std::string &protocol,
                   std::string &host,
-                  bool &pathChanged) -> bool {
+                  bool &) -> bool {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
             {
                 return false;
             }
-            return thisPtr->redirectingAdvice(req, protocol, host, pathChanged);
+            return thisPtr->redirectingAdvice(req, protocol, host);
         });
 }
 
@@ -70,8 +70,7 @@ void SecureSSLRedirector::shutdown()
 
 bool SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
                                             std::string &protocol,
-                                            std::string &host,
-                                            bool &pathChanged) const
+                                            std::string &host) const
 {
     if (req->isOnSecureConnection() || protocol == "https://")
     {
@@ -86,21 +85,19 @@ bool SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
         }
         else
         {
-            return redirectToSSL(req, protocol, host, pathChanged);
+            return redirectToSSL(req, protocol, host);
         }
     }
     else
     {
-        return redirectToSSL(req, protocol, host, pathChanged);
+        return redirectToSSL(req, protocol, host);
     }
 }
 
 bool SecureSSLRedirector::redirectToSSL(const HttpRequestPtr &req,
                                         std::string &protocol,
-                                        std::string &host,
-                                        bool &pathChanged) const
+                                        std::string &host) const
 {
-    (void)pathChanged;
     if (!secureHost_.empty())
     {
         host = secureHost_;

@@ -106,23 +106,16 @@ void SlashRemover::initAndStart(const Json::Value& config)
         LOG_ERROR << "Redirector plugin is not found!";
         return;
     }
+    auto func = [removeMode](const HttpRequestPtr& req) -> bool {
+        return handleReq(req, removeMode);
+    };
     if (redirect_)
     {
-        redirector->registerRedirectHandler(
-            [removeMode](const HttpRequestPtr& req,
-                         std::string& protocol,
-                         std::string& host,
-                         bool& pathChanged) -> bool {
-                pathChanged = handleReq(req, removeMode);
-                return true;
-            });
+        redirector->registerPathRewriteHandler(std::move(func));
     }
     else
     {
-        redirector->registerForwardHandler(
-            [removeMode](const HttpRequestPtr& req) {
-                (void)handleReq(req, removeMode);
-            });
+        redirector->registerForwardHandler(std::move(func));
     }
 }
 

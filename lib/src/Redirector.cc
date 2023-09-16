@@ -37,6 +37,10 @@ void Redirector::initAndStart(const Json::Value &config)
                     return HttpResponse::newNotFoundResponse();
                 }
             }
+            for (auto &handler : thisPtr->pathRewriteHandlers_)
+            {
+                pathChanged |= handler(req);
+            }
             if (!protocol.empty() || !host.empty() || pathChanged)
             {
                 std::string url;
