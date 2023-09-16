@@ -1,11 +1,13 @@
-#include "drogon/plugins/SlashRemover.h"
-#include "drogon/HttpAppFramework.h"
+#include <drogon/plugins/SlashRemover.h>
+#include <drogon/plugins/Redirector.h>
+#include <drogon/HttpAppFramework.h>
 #include "drogon/utils/FunctionTraits.h"
 #include <functional>
 #include <string>
+#include <regex>
 
 using namespace drogon;
-using namespace plugin;
+using namespace drogon::plugin;
 using std::string;
 
 #define TRAILING_SLASH_REGEX ".+\\/$"
@@ -64,6 +66,31 @@ static inline void removeExcessiveSlashes(string& url)
     removeDuplicateSlashes(url);
 }
 
+static inline bool handleReq(const drogon::HttpRequestPtr& req, int removeMode)
+{
+    static const std::regex regex(regexes[removeMode - 1]);
+    if (std::regex_match(req->path(), regex))
+    {
+        string newPath = req->path();
+        switch (removeMode)
+        {
+            case trailing:
+                removeTrailingSlashes(newPath);
+                break;
+            case duplicate:
+                removeDuplicateSlashes(newPath);
+                break;
+            case both:
+            default:
+                removeExcessiveSlashes(newPath);
+                break;
+        }
+        req->setPath(std::move(newPath));
+        return true;
+    }
+    return false;
+}
+
 void SlashRemover::initAndStart(const Json::Value& config)
 {
     trailingSlashes_ = config.get("remove_trailing_slashes", true).asBool();
@@ -73,33 +100,23 @@ void SlashRemover::initAndStart(const Json::Value& config)
         (trailingSlashes_ * trailing) | (duplicateSlashes_ * duplicate);
     if (!removeMode)
         return;
-    app().registerHandlerViaRegex(
-        regexes[removeMode - 1],
-        [removeMode,
-         this](const HttpRequestPtr& req,
-               std::function<void(const HttpResponsePtr&)>&& callback) {
-            string newPath = req->path();
-            switch (removeMode)
-            {
-                case trailing:
-                    removeTrailingSlashes(newPath);
-                    break;
-                case duplicate:
-                    removeDuplicateSlashes(newPath);
-                    break;
-                case both:
-                default:
-                    removeExcessiveSlashes(newPath);
-                    break;
-            }
-            if (redirect_)
-                callback(HttpResponse::newRedirectionResponse(newPath));
-            else
-            {
-                req->setPath(newPath);
-                app().forward(req, std::move(callback));
-            }
-        });
+    auto redirector = app().getPlugin<Redirector>();
+    if (!redirector)
+    {
+        LOG_ERROR << "Redirector plugin is not found!";
+        return;
+    }
+    auto func = [removeMode](const HttpRequestPtr& req) -> bool {
+        return handleReq(req, removeMode);
+    };
+    if (redirect_)
+    {
+        redirector->registerPathRewriteHandler(std::move(func));
+    }
+    else
+    {
+        redirector->registerForwardHandler(std::move(func));
+    }
 }
 
 void SlashRemover::shutdown()

@@ -159,6 +159,11 @@ class HttpRequestImpl : public HttpRequest
         path_ = path;
     }
 
+    void setPath(std::string &&path) override
+    {
+        path_ = std::move(path);
+    }
+
     void setPathEncode(bool pathEncode) override
     {
         pathEncode_ = pathEncode;

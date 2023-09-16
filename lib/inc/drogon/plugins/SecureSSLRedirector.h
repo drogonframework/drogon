@@ -25,7 +25,7 @@ namespace plugin
  * @code
    {
       "name": "drogon::plugin::SecureSSLRedirector",
-      "dependencies": [],
+      "dependencies": ["drogon::plugin::Redirector"],
       "config": {
             "ssl_redirect_exempt": ["^/.*\\.jpg", ...],
             "secure_ssl_host": "localhost:8849"
@@ -64,8 +64,12 @@ class DROGON_EXPORT SecureSSLRedirector
     void shutdown() override;
 
   private:
-    HttpResponsePtr redirectingAdvice(const HttpRequestPtr &) const;
-    HttpResponsePtr redirectToSSL(const HttpRequestPtr &) const;
+    bool redirectingAdvice(const HttpRequestPtr &,
+                           std::string &,
+                           std::string &) const;
+    bool redirectToSSL(const HttpRequestPtr &,
+                       std::string &,
+                       std::string &) const;
 
     std::regex exemptPegex_;
     bool regexFlag_{false};
