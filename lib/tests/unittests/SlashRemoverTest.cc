@@ -45,11 +45,10 @@ DROGON_TEST(SlashRemoverTest)
     CHECK(cleanUrl == rootNoExcess);
 
     // Test precedence when both match the same place
-    const string url2 = "/a///", url2NoTrail = "/a", url2NoDup = "/a/",
-                 url2NoExcess = url2NoTrail;
+    const string url2 = "/a///", url2NoDup = "/a/", url2NoExcess = "/a";
 
     removeTrailingSlashes(cleanUrl, findTrailingSlashes(url2), url2);
-    CHECK(cleanUrl == url2NoTrail);
+    CHECK(cleanUrl == url2NoExcess);
 
     cleanUrl = url2;
     removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url2));
@@ -59,7 +58,7 @@ DROGON_TEST(SlashRemoverTest)
     CHECK(cleanUrl == url2NoExcess);
 
     // Test when trail does not match
-    const string url3 = "///a", url3NoDup = "/a", url3NoExcess = url3NoDup;
+    const string url3 = "///a", url3NoExcess = "/a";
 
     cleanUrl.clear();
     {
@@ -71,31 +70,31 @@ DROGON_TEST(SlashRemoverTest)
 
     cleanUrl = url3;
     removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url3));
-    CHECK(cleanUrl == url3NoDup);
+    CHECK(cleanUrl == url3NoExcess);
 
     removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url3), url3);
     CHECK(cleanUrl == url3NoExcess);
 
     // Test when duplicate does not match
-    const string url4 = "/a/", url4NoTrail = "/a", url4NoExcess = url4NoTrail;
+    const string url4 = "/a/", url4NoExcess = "/a";
 
     removeTrailingSlashes(cleanUrl, findTrailingSlashes(url4), url4);
-    CHECK(cleanUrl == url4NoTrail);
+    CHECK(cleanUrl == url4NoExcess);
 
-    cleanUrl.clear();
+    cleanUrl = url4;
     {
-        auto find = findDuplicateSlashes(url4);
+        auto find = findDuplicateSlashes(cleanUrl);
         if (find != string::npos)
             removeDuplicateSlashes(cleanUrl, find);
     }
-    CHECK(cleanUrl.empty());
+    CHECK(cleanUrl == url4);
 
     cleanUrl = url4;
     removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url4), url4);
     CHECK(cleanUrl == url4NoExcess);
 
     // Test when neither match
-    const string url5 = "/a", url5NoExcess = url5;
+    const string url5 = "/a";
 
     cleanUrl.clear();
     {
@@ -105,13 +104,13 @@ DROGON_TEST(SlashRemoverTest)
     }
     CHECK(cleanUrl.empty());
 
-    cleanUrl.clear();
+    cleanUrl = url5;
     {
-        auto find = findDuplicateSlashes(url5);
+        auto find = findDuplicateSlashes(cleanUrl);
         if (find != string::npos)
             removeDuplicateSlashes(cleanUrl, find);
     }
-    CHECK(cleanUrl.empty());
+    CHECK(cleanUrl == url5);
 
     cleanUrl.clear();
     {
