@@ -14,7 +14,6 @@
 #pragma once
 
 #include <drogon/plugins/Plugin.h>
-#include <trantor/net/InetAddress.h>
 #include <drogon/HttpRequest.h>
 #include <vector>
 
