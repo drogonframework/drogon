@@ -51,23 +51,20 @@ static inline size_t findDuplicateSlashes(string_view url)
     if (len < 2)
         return string::npos;
 
-    size_t a = 1;
-    while (a < len)
+    bool startedPair = true;  // Always starts with a slash
+    for (size_t a = 1; a < len; ++a)
     {
-        if (url[a] != '/')
+        if (url[a] != '/')  // Broken pair
         {
-            a += 2;  // No need to check again on this same char
+            startedPair = false;
             continue;
         }
-        if (url[a - 1] != '/')
-        {
-            ++a;
-            continue;
-        }
-        break;
+        if (startedPair)  // Matching pair
+            return a;
+        startedPair = true;
     }
 
-    return a < len ? a : string::npos;
+    return string::npos;
 }
 
 static inline void removeDuplicateSlashes(string& url, size_t start)
@@ -107,23 +104,21 @@ static inline std::pair<size_t, size_t> findExcessiveSlashes(string_view url)
 
     // Look for a duplicate pair
     size_t dupIdx = 1;
-    while (dupIdx < trailIdx)
+    for (bool startedPair = true; dupIdx < trailIdx;
+         ++dupIdx)  // Always starts with a slash
     {
-        if (url[dupIdx] != '/')
+        if (url[dupIdx] != '/')  // Broken pair
         {
-            dupIdx += 2;  // No need to check again on this same char
+            startedPair = false;
             continue;
         }
-        if (url[dupIdx - 1] != '/')
-        {
-            ++dupIdx;
-            continue;
-        }
-        break;
+        if (startedPair)  // Matching pair
+            break;
+        startedPair = true;
     }
 
     // Found no duplicate
-    if (dupIdx >= trailIdx)
+    if (dupIdx == trailIdx)
         return {
             trailIdx != len - 1
                 ?  // If has gone past last char, then there is a trailing slash
