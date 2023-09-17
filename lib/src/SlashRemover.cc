@@ -81,54 +81,40 @@ static inline std::pair<size_t, size_t> findExcessiveSlashes(string_view url)
                   // or duplicate slash
         return {string::npos, string::npos};
 
+    // Trail finder
+    size_t trailIdx = len;  // The pre-decrement will put it on last char
+    while (--trailIdx > 0 && url[trailIdx] == '/')
+        ;  // We know first char is '/', no need to check it
+
+    // Filled with '/'
+    if (trailIdx == 0)
+        return {
+            0,             // Only keep first slash
+            string::npos,  // No duplicate
+        };
+
     // Look for a duplicate pair
     size_t dupIdx = 1;
-    for (; dupIdx < len && (url[dupIdx - 1] != '/' || url[dupIdx] != '/');
+    for (; dupIdx < trailIdx && (url[dupIdx - 1] != '/' || url[dupIdx] != '/');
          ++dupIdx)
         ;
 
-    if (dupIdx == len)  // No duplicate found
+    // Found no duplicate
+    if (dupIdx == trailIdx)
         return {
-            url.back() == '/' ?  // If ends with '/'
-                len - 2
-                              :  // One before the slash
-                string::npos,    // No trail
+            trailIdx != len - 1
+                ?  // If has gone past last char, then there is a trailing slash
+                trailIdx
+                : string::npos,  // No trail
             string::npos,        // No duplicate
         };
 
-    // Duplicate found, check if it has no trailing slashes
-    if (url.back() != '/')
-        return {
-            string::npos,  // No trail
-            dupIdx,
-        };
-
-    // Trail finder
-    size_t trailIdx = len - 1;  // We already know the last char is '/',
-                                // we will use pre-decrement to account for this
-    while (--trailIdx > dupIdx && url[trailIdx] == '/')
-        ;  // Go down to dupIdx, which points to the 2nd duplicate slash
-
-    // If trailIdx comes before dupIdx, then we know
-    // they both matched trailing slashes,
-    // leave it for trailing slash remover to handle it
-    if (trailIdx <= dupIdx)
-    {
-        if (dupIdx == 1)  // Filled with '/'
-            return {
-                0,  // Only keep 1st slash
-                string::npos,
-            };
-        else  // Any trail
-            return {
-                dupIdx - 2,  // dupIdx is 2nd slash, subtract by 2 and we will
-                             // get the char before trails
-                string::npos,
-            };
-    }
-
+    // Duplicate found
     return {
-        trailIdx,
+        trailIdx != len - 1
+            ?  // If has gone past last char, then there is a trailing slash
+            trailIdx
+            : string::npos,  // No trail
         dupIdx,
     };
 }
