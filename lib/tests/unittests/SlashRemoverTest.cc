@@ -6,117 +6,174 @@ using std::string;
 
 DROGON_TEST(SlashRemoverTest)
 {
-    const string url = "///home//page//", urlNoTrail = "///home//page",
-                 urlNoDup = "/home/page/", urlNoExcess = "/home/page",
-                 root = "///", rootNoExcess = "/";
-
     string cleanUrl;
 
-    // Full
-    removeTrailingSlashes(cleanUrl, findTrailingSlashes(url), url);
-    CHECK(cleanUrl == urlNoTrail);
+    {  // Regular URL
+        const string urlNoTrail = "///home//page", urlNoDup = "/home/page/",
+                     urlNoExcess = "/home/page";
 
-    cleanUrl = url;
-    removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url));
-    CHECK(cleanUrl == urlNoDup);
+        SUBSECTION(Full)
+        {
+            const string url = "///home//page//";
+            removeTrailingSlashes(cleanUrl, findTrailingSlashes(url), url);
+            CHECK(cleanUrl == urlNoTrail);
 
-    removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url), url);
-    CHECK(cleanUrl == urlNoExcess);
+            cleanUrl = url;
+            removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url));
+            CHECK(cleanUrl == urlNoDup);
 
-    // Partial
-    removeExcessiveSlashes(cleanUrl,
-                           findExcessiveSlashes(urlNoTrail),
-                           urlNoTrail);
-    CHECK(cleanUrl == urlNoExcess);
+            removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+        }
 
-    removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(urlNoDup), urlNoDup);
-    CHECK(cleanUrl == urlNoExcess);
+        SUBSECTION(Partial)
+        {
+            removeExcessiveSlashes(cleanUrl,
+                                   findExcessiveSlashes(urlNoTrail),
+                                   urlNoTrail);
+            CHECK(cleanUrl == urlNoExcess);
 
-    // Root
-    cleanUrl = root;
-    removeTrailingSlashes(cleanUrl, findTrailingSlashes(root), root);
-    CHECK(cleanUrl == rootNoExcess);
-
-    cleanUrl = root;
-    removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(root));
-    CHECK(cleanUrl == rootNoExcess);
-
-    removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(root), root);
-    CHECK(cleanUrl == rootNoExcess);
-
-    // Test precedence when both match the same place
-    const string url2 = "/a///", url2NoDup = "/a/", url2NoExcess = "/a";
-
-    removeTrailingSlashes(cleanUrl, findTrailingSlashes(url2), url2);
-    CHECK(cleanUrl == url2NoExcess);
-
-    cleanUrl = url2;
-    removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url2));
-    CHECK(cleanUrl == url2NoDup);
-
-    removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url2), url2);
-    CHECK(cleanUrl == url2NoExcess);
-
-    // Test when trail does not match
-    const string url3 = "///a", url3NoExcess = "/a";
-
-    cleanUrl.clear();
-    {
-        auto find = findTrailingSlashes(url3);
-        if (find != string::npos)
-            removeTrailingSlashes(cleanUrl, find, url3);
+            removeExcessiveSlashes(cleanUrl,
+                                   findExcessiveSlashes(urlNoDup),
+                                   urlNoDup);
+            CHECK(cleanUrl == urlNoExcess);
+        }
     }
-    CHECK(cleanUrl.empty());
 
-    cleanUrl = url3;
-    removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url3));
-    CHECK(cleanUrl == url3NoExcess);
-
-    removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url3), url3);
-    CHECK(cleanUrl == url3NoExcess);
-
-    // Test when duplicate does not match
-    const string url4 = "/a/", url4NoExcess = "/a";
-
-    removeTrailingSlashes(cleanUrl, findTrailingSlashes(url4), url4);
-    CHECK(cleanUrl == url4NoExcess);
-
-    cleanUrl = url4;
+    SUBSECTION(Root)
     {
-        auto find = findDuplicateSlashes(cleanUrl);
-        if (find != string::npos)
-            removeDuplicateSlashes(cleanUrl, find);
+        const string urlNoExcess = "/";
+
+        {  // Overlapping indices
+            const string url = "//";
+
+            cleanUrl = url;
+            removeTrailingSlashes(cleanUrl, findTrailingSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+
+            cleanUrl = url;
+            removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url));
+            CHECK(cleanUrl == urlNoExcess);
+
+            removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+        }
+
+        {  // Intersecting indices
+            const string url = "///";
+
+            cleanUrl = url;
+            removeTrailingSlashes(cleanUrl, findTrailingSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+
+            cleanUrl = url;
+            removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url));
+            CHECK(cleanUrl == urlNoExcess);
+
+            removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+        }
     }
-    CHECK(cleanUrl == url4);
 
-    cleanUrl = url4;
-    removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url4), url4);
-    CHECK(cleanUrl == url4NoExcess);
-
-    // Test when neither match
-    const string url5 = "/a";
-
-    cleanUrl.clear();
+    SUBSECTION(Overlap)
     {
-        auto find = findTrailingSlashes(url5);
-        if (find != string::npos)
-            removeTrailingSlashes(cleanUrl, find, url5);
-    }
-    CHECK(cleanUrl.empty());
+        const string urlNoDup = "/a/", urlNoExcess = "/a";
 
-    cleanUrl = url5;
-    {
-        auto find = findDuplicateSlashes(cleanUrl);
-        if (find != string::npos)
-            removeDuplicateSlashes(cleanUrl, find);
-    }
-    CHECK(cleanUrl == url5);
+        {  // Overlapping indices
+            const string url = "/a//";
 
-    cleanUrl.clear();
-    {
-        auto find = findExcessiveSlashes(url5);
-        if (find.first != string::npos || find.second != string::npos)
-            removeExcessiveSlashes(cleanUrl, find, url5);
+            removeTrailingSlashes(cleanUrl, findTrailingSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+
+            cleanUrl = url;
+            removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url));
+            CHECK(cleanUrl == urlNoDup);
+
+            removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+        }
+
+        {  // Intersecting indices
+            const string url = "/a///";
+
+            removeTrailingSlashes(cleanUrl, findTrailingSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+
+            cleanUrl = url;
+            removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url));
+            CHECK(cleanUrl == urlNoDup);
+
+            removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url), url);
+            CHECK(cleanUrl == urlNoExcess);
+        }
     }
-    CHECK(cleanUrl.empty());
+
+    SUBSECTION(NoTrail)
+    {
+        const string url = "//a", urlNoExcess = "/a";
+
+        cleanUrl.clear();
+        {
+            auto find = findTrailingSlashes(url);
+            if (find != string::npos)
+                removeTrailingSlashes(cleanUrl, find, url);
+        }
+        CHECK(cleanUrl.empty());
+
+        cleanUrl = url;
+        removeDuplicateSlashes(cleanUrl, findDuplicateSlashes(url));
+        CHECK(cleanUrl == urlNoExcess);
+
+        removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url), url);
+        CHECK(cleanUrl == urlNoExcess);
+    }
+
+    SUBSECTION(NoDuplicate)
+    {
+        const string url = "/a/", urlNoExcess = "/a";
+
+        removeTrailingSlashes(cleanUrl, findTrailingSlashes(url), url);
+        CHECK(cleanUrl == urlNoExcess);
+
+        cleanUrl = url;
+        {
+            auto find = findDuplicateSlashes(cleanUrl);
+            if (find != string::npos)
+                removeDuplicateSlashes(cleanUrl, find);
+        }
+        CHECK(cleanUrl == url);
+
+        cleanUrl = url;
+        removeExcessiveSlashes(cleanUrl, findExcessiveSlashes(url), url);
+        CHECK(cleanUrl == urlNoExcess);
+    }
+
+    SUBSECTION(None)
+    {
+        const string url = "/a";
+
+        cleanUrl.clear();
+        {
+            auto find = findTrailingSlashes(url);
+            if (find != string::npos)
+                removeTrailingSlashes(cleanUrl, find, url);
+        }
+        CHECK(cleanUrl.empty());
+
+        cleanUrl = url;
+        {
+            auto find = findDuplicateSlashes(cleanUrl);
+            if (find != string::npos)
+                removeDuplicateSlashes(cleanUrl, find);
+        }
+        CHECK(cleanUrl == url);
+
+        cleanUrl.clear();
+        {
+            auto find = findExcessiveSlashes(url);
+            if (find.first != string::npos || find.second != string::npos)
+                removeExcessiveSlashes(cleanUrl, find, url);
+        }
+        CHECK(cleanUrl.empty());
+    }
 }
