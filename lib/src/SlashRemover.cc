@@ -81,6 +81,7 @@ static inline std::pair<size_t, size_t> findExcessiveSlashes(string_view url)
                   // or duplicate slash
         return {string::npos, string::npos};
 
+    // Look for a duplicate pair
     size_t dupIdx = 1;
     for (; dupIdx < len && (url[dupIdx - 1] != '/' || url[dupIdx] != '/');
          ++dupIdx)
@@ -95,7 +96,7 @@ static inline std::pair<size_t, size_t> findExcessiveSlashes(string_view url)
             string::npos,        // No duplicate
         };
 
-    // Duplicate found, check for trailing slashes
+    // Duplicate found, check if it has no trailing slashes
     if (url.back() != '/')
         return {
             string::npos,  // No trail
@@ -105,15 +106,30 @@ static inline std::pair<size_t, size_t> findExcessiveSlashes(string_view url)
     // Trail finder
     size_t trailIdx = len - 1;  // We already know the last char is '/',
                                 // we will use pre-decrement to account for this
-    while (--trailIdx > 0 && url[trailIdx] == '/')
-        ;  // We know the first char is '/', so don't check for 0
+    while (--trailIdx > dupIdx && url[trailIdx] == '/')
+        ;  // Go down to dupIdx, which points to the 2nd duplicate slash
 
     // If trailIdx comes before dupIdx, then we know
-    // they can both do it, but trailing slash remover
-    // will provide better performance
+    // they both matched trailing slashes,
+    // leave it for trailing slash remover to handle it
+    if (trailIdx <= dupIdx)
+    {
+        if (dupIdx == 1)  // Filled with '/'
+            return {
+                0,  // Only keep 1st slash
+                string::npos,
+            };
+        else  // Any trail
+            return {
+                dupIdx - 2,  // dupIdx is 2nd slash, subtract by 2 and we will
+                             // get the char before trails
+                string::npos,
+            };
+    }
+
     return {
         trailIdx,
-        trailIdx < dupIdx ? string::npos : dupIdx,
+        dupIdx,
     };
 }
 
