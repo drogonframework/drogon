@@ -52,8 +52,20 @@ static inline size_t findDuplicateSlashes(string_view url)
         return string::npos;
 
     size_t a = 1;
-    for (; a < len && (url[a - 1] != '/' || url[a] != '/'); ++a)
-        ;
+    while (a < len)
+    {
+        if (url[a] != '/')
+        {
+            a += 2;  // No need to check again on this same char
+            continue;
+        }
+        if (url[a - 1] != '/')
+        {
+            ++a;
+            continue;
+        }
+        break;
+    }
 
     return a < len ? a : string::npos;
 }
@@ -95,12 +107,23 @@ static inline std::pair<size_t, size_t> findExcessiveSlashes(string_view url)
 
     // Look for a duplicate pair
     size_t dupIdx = 1;
-    for (; dupIdx < trailIdx && (url[dupIdx - 1] != '/' || url[dupIdx] != '/');
-         ++dupIdx)
-        ;
+    while (dupIdx < trailIdx)
+    {
+        if (url[dupIdx] != '/')
+        {
+            dupIdx += 2;  // No need to check again on this same char
+            continue;
+        }
+        if (url[dupIdx - 1] != '/')
+        {
+            ++dupIdx;
+            continue;
+        }
+        break;
+    }
 
     // Found no duplicate
-    if (dupIdx == trailIdx)
+    if (dupIdx >= trailIdx)
         return {
             trailIdx != len - 1
                 ?  // If has gone past last char, then there is a trailing slash
