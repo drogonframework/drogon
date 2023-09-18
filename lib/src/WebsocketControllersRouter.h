@@ -60,9 +60,9 @@ class WebsocketControllersRouter : public trantor::NonCopyable
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods);
     void registerWebSocketControllerRegex(
-        const std::string& regExp,
-        const std::string& ctrlName,
-        const std::vector<internal::HttpConstraint>& filtersAndMethods);
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods);
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
                const WebSocketConnectionImplPtr &wsConnPtr);
