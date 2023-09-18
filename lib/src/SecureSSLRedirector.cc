@@ -6,6 +6,7 @@
 #include <drogon/drogon.h>
 #include <drogon/plugins/SecureSSLRedirector.h>
 #include <drogon/plugins/Redirector.h>
+#include <cstddef>
 #include <string>
 
 using namespace drogon;
@@ -17,22 +18,33 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
     {
         if (config["ssl_redirect_exempt"].isArray())
         {
-            std::string regexString;
-            for (auto &exempt : config["ssl_redirect_exempt"])
+            const auto &exempts = config["ssl_redirect_exempt"];
+            size_t exemptsCount = exempts.size();
+            if (exemptsCount)
             {
-                assert(exempt.isString());
-                regexString.append("(").append(exempt.asString()).append(")|");
-            }
-            if (!regexString.empty())
-            {
-                regexString.resize(regexString.length() - 1);
-                exemptPegex_ = std::regex(regexString);
+                std::string regexString;
+                size_t len = 0;
+                for (const auto &exempt : exempts)
+                {
+                    assert(exempt.isString());
+                    len += exempt.size();
+                }
+                regexString.reserve((exemptsCount * (1 + 2)) - 1 + len);
+
+                const auto last = --exempts.end();
+                for (auto exempt = exempts.begin(); exempt != last; ++exempt)
+                    regexString.append("(")
+                        .append(exempt->asString())
+                        .append(")|");
+                regexString.append("(").append(last->asString()).append(")");
+
+                exemptRegex_ = std::regex(regexString);
                 regexFlag_ = true;
             }
         }
         else if (config["ssl_redirect_exempt"].isString())
         {
-            exemptPegex_ = std::regex(config["ssl_redirect_exempt"].asString());
+            exemptRegex_ = std::regex(config["ssl_redirect_exempt"].asString());
             regexFlag_ = true;
         }
         else
@@ -79,7 +91,7 @@ bool SecureSSLRedirector::redirectingAdvice(const HttpRequestPtr &req,
     else if (regexFlag_)
     {
         std::smatch regexResult;
-        if (std::regex_match(req->path(), regexResult, exemptPegex_))
+        if (std::regex_match(req->path(), regexResult, exemptRegex_))
         {
             return true;
         }

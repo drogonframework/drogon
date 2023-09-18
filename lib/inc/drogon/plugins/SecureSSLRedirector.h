@@ -71,7 +71,7 @@ class DROGON_EXPORT SecureSSLRedirector
                        std::string &,
                        std::string &) const;
 
-    std::regex exemptPegex_;
+    std::regex exemptRegex_;
     bool regexFlag_{false};
     std::string secureHost_;
 };
