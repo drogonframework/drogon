@@ -272,7 +272,7 @@ void WebsocketControllersRouter::route(
         if (wsCtrlInfoPtr != nullptr)
         {
             auto &ctrlInfo = *wsCtrlInfoPtr;
-            req->setMatchedPathPattern(iter->first);
+            req->setMatchedPathPattern(wsCtrlInfoPtr->path_);
             auto &binder = ctrlInfo.binders_[req->method()];
             if (!binder)
             {
