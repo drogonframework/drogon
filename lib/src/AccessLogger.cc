@@ -114,8 +114,8 @@ void AccessLogger::initAndStart(const Json::Value &config)
     createLogFunctions(format);
     auto logPath = config.get("log_path", "").asString();
 #ifdef DROGON_SPDLOG_SUPPORT
-    auto logWithSpdlog =
-        trantor::Logger::hasSpdLogSupport() && config.get("use_spdlog", false).asBool();
+    auto logWithSpdlog = trantor::Logger::hasSpdLogSupport() &&
+                         config.get("use_spdlog", false).asBool();
     if (logWithSpdlog)
     {
         logIndex_ = config.get("log_index", 0).asInt();
