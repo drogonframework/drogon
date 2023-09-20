@@ -30,7 +30,7 @@
 #include <pthread_np.h>
 #endif
 
-#ifdef TRANTOR_SPDLOG_SUPPORT
+#ifdef DROGON_SPDLOG_SUPPORT
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -113,8 +113,9 @@ void AccessLogger::initAndStart(const Json::Value &config)
     }
     createLogFunctions(format);
     auto logPath = config.get("log_path", "").asString();
-#ifdef TRANTOR_SPDLOG_SUPPORT
-    auto logWithSpdlog = config.get("use_spdlog", false).asBool();
+#ifdef DROGON_SPDLOG_SUPPORT
+    auto logWithSpdlog =
+        trantor::Logger::hasSpdLogSupport() && config.get("use_spdlog", false).asBool();
     if (logWithSpdlog)
     {
         logIndex_ = config.get("log_index", 0).asInt();

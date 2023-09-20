@@ -39,11 +39,17 @@ set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    # Force MSVC to use UTF-8 because that's what we use. Otherwise it uses
-    # the default of whatever Windows sets and causes encoding issues.
-    message(STATUS "You are using MSVC. Forceing to use UTF-8")
-    add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+  # Force MSVC to use UTF-8 because that's what we use. Otherwise it uses
+  # the default of whatever Windows sets and causes encoding issues.
+  message(STATUS "You are using MSVC. Forceing to use UTF-8")
+  add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+  add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+  if (MSVC_VERSION GREATER_EQUAL 1914)
+    # Tells Visual Studio 2017 (15.7+) and newer to correctly set the value of the standard __cplusplus macro,
+    # instead of leaving it to 199711L and settings the effective c++ version in _MSVC_LANG
+    # Dropping support for older versions of VS would allow to only rely on __cplusplus
+    add_compile_options("/Zc:__cplusplus")
+  endif()
 endif ()
 
 add_library(${PROJECT_NAME})
@@ -76,7 +82,7 @@ if(USE_SPDLOG)
   if(spdlog_FOUND)
     message(STATUS "spdlog found!")
     target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog_header_only)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC SPDLOG_FMT_EXTERNAL FMT_HEADER_ONLY)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC DROGON_SPDLOG_SUPPORT SPDLOG_FMT_EXTERNAL FMT_HEADER_ONLY)
   endif(spdlog_FOUND)
 endif(USE_SPDLOG)
 

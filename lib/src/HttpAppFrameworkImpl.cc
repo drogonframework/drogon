@@ -64,7 +64,7 @@
 #define W_OK 02
 #endif
 
-#ifdef TRANTOR_SPDLOG_SUPPORT
+#ifdef DROGON_SPDLOG_SUPPORT
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -75,7 +75,7 @@
 #undef min
 #undef max
 #endif
-#endif
+#endif  // DROGON_SPDLOG_SUPPORT
 
 using namespace drogon;
 using namespace std::placeholders;
@@ -469,8 +469,8 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     size_t maxFiles,
     bool useSpdlog)
 {
-#ifdef TRANTOR_SPDLOG_SUPPORT
-    logWithSpdlog_ = useSpdlog;
+#ifdef DROGON_SPDLOG_SUPPORT
+    logWithSpdlog_ = trantor::Logger::hasSpdLogSupport() && useSpdlog;
 #endif
     if (logPath.empty())
         return *this;
@@ -1250,7 +1250,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
 
 HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
 {
-#ifdef TRANTOR_SPDLOG_SUPPORT
+#ifdef DROGON_SPDLOG_SUPPORT
     if (logWithSpdlog_)
     {
         // Do nothing if already initialized...
@@ -1313,7 +1313,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
         }
         return *this;
     }
-#endif  // TRANTOR_SPDLOG_SUPPORT
+#endif  // DROGON_SPDLOG_SUPPORT
     if (!logPath_.empty() && !asyncFileLoggerPtr_)
     {
         // std::filesystem does not provide a method to check access
