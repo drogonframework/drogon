@@ -4,15 +4,53 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [1.9.0.rc1] - 2023-09-23
+## [1.9.0-rc.1] - 2023-09-23
 
 ### API changes list
 
 - Drop cpp14 build support.
 
-- 
+- Add isHead() method to HttpRequest, to preserve information about the original method for use in the controller.
+
+- Allow omitting template paremeter in execCommandSync.
+
+- Add a method to HttpRequest to access the matched routing parameters.
 
 ### Changed
+
+- Update readme files.
+
+- Allow sync advice to be callable on websocket requests.
+
+- Set concurrency to prevent blocking CI queue.
+
+- Validate clang-format version & Customize clang-format path.
+
+- Extract format action into distinct job.
+
+- Split macOS and Ubuntu CIs for readability.
+
+- Set concurrency for CodeQL.
+
+- Add dependabot.yml for GH actions.
+
+- Replace sprintf with snprintf.
+
+- Use ninja to build faster.
+
+- Avoid using well-known ports for demoMain.
+
+- Simplify coroutine implementation.
+
+- Add a plugin for prometheus.
+
+- Optimize plugins with redirection functions.
+
+- Optimize regex generator.
+
+- Add override keyword to setSockOptCallback.
+
+- SlashRemover optimization.
 
 ### Fixed
 
@@ -48,7 +86,7 @@ All notable changes to this project will be documented in this file.
 
 - Add synchronization interface to model's associated query.
 
-- Use syncAdvices.empty() to check. 
+- Use syncAdvices.empty() to check.
 
 - Remove the deprecated Json::Reader.
 
@@ -94,7 +132,7 @@ All notable changes to this project will be documented in this file.
 
 - Make isBase64() and isInteger() take string_view.
 
-- Chore: add package.xml. 
+- Chore: add package.xml.
 
 - Add an example of yaml config file.
 
@@ -149,7 +187,6 @@ All notable changes to this project will be documented in this file.
 - Fix CI in MacOS.
 
 - Fix broken link in CONTRIBUTING.md.
-
 
 ## [1.8.4] - 2023-03-19
 
@@ -415,7 +452,6 @@ All notable changes to this project will be documented in this file.
 
 - Add a pre-compilation macro in the pg pipeline test code.
 
-
 ## [1.7.5] - 2022-02-19
 
 ### API changes list
@@ -424,7 +460,7 @@ All notable changes to this project will be documented in this file.
 
 - Add max-age, samesite options to Cookie.
 
-- Enable setup output of logs to files at any time. 
+- Enable setup output of logs to files at any time.
 
 ### Changed
 
@@ -1230,7 +1266,6 @@ All notable changes to this project will be documented in this file.
 
 - Fix(compilation on alpine): Replace u_short alias.
 
-
 ## [1.0.0-beta9] - 2019-10-28
 
 ### API changes list
@@ -1259,7 +1294,6 @@ All notable changes to this project will be documented in this file.
 
 - Fix a busy loop bug when connections to MySQL server are timeout.
 
-
 ## [1.0.0-beta8] - 2019-10-03
 
 ### API changes list
@@ -1273,7 +1307,6 @@ All notable changes to this project will be documented in this file.
 - Add the setCustomContentTypeString() method to the HttpRequest class.
 
 - Add thread storage.
-
 
 ### Changed
 
@@ -1318,7 +1351,7 @@ All notable changes to this project will be documented in this file.
 - Reduce size of docker image.
 
 - Make the framework API support chained calls.
-  
+
 - Add a synchronous join point for AOP.
 
 - Modify the CMakeLists to modern cmake style.
@@ -1330,7 +1363,6 @@ All notable changes to this project will be documented in this file.
 - Fix a bug in the cmake configuration file when there's '+' in the building path.
 
 - Fix a bug in drogon_ctl (when creating orm models)
-
 
 ## [1.0.0-beta6] - 2019-08-08
 
@@ -1355,8 +1387,8 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Add two methods to control if the Server header or the Date header is sent to clients with HTTP responses.
-  * void HttpAppFramework::enableServerHeader(bool);
-  * void HttpAppFramework::enableDateHeader(bool);
+    * void HttpAppFramework::enableServerHeader(bool);
+    * void HttpAppFramework::enableDateHeader(bool);
 
 ### Changed
 
@@ -1434,7 +1466,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.6...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.0-rc.1...HEAD
+
+[1.9.0-rc.1]: https://github.com/an-tao/drogon/compare/v1.8.6...1.9.0-rc.1
 
 [1.8.6]: https://github.com/an-tao/drogon/compare/v1.8.5...v1.8.6
 

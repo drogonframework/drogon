@@ -26,7 +26,7 @@ set(DROGON_MINOR_VERSION 9)
 set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
-set(DROGON_VERSION_STRING "${DROGON_VERSION}.rc1")
+set(DROGON_VERSION_STRING "${DROGON_VERSION}-rc.1")
 
 include(GNUInstallDirs)
 # Offer the user the choice of overriding the installation directories
