@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.0.rc1] - 2023-09-23
+
+### API changes list
+
+- Drop cpp14 build support.
+
+- 
+
+### Changed
+
+### Fixed
+
+- Fix race condition when setting the secure flag during test.
+
 ## [1.8.6] - 2023-08-23
 
 ### Changed
