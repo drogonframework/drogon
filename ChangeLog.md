@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.7] - 2023-09-24
+
+### Fixed
+
+- Fix compatibility issue with c++14.
+
 ## [1.8.6] - 2023-08-23
 
 ### Changed
@@ -1420,7 +1426,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.6...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.7...cpp14
+
+[1.8.7]: https://github.com/an-tao/drogon/compare/v1.8.6...v1.8.7
 
 [1.8.6]: https://github.com/an-tao/drogon/compare/v1.8.5...v1.8.6
 
