@@ -288,6 +288,7 @@ set(DROGON_SOURCES
     lib/src/Redirector.cc
     lib/src/SessionManager.cc
     lib/src/SlashRemover.cc
+	lib/src/HostRedirector.cc
     lib/src/SlidingWindowRateLimiter.cc
     lib/src/StaticFileRouter.cc
     lib/src/TaskTimeoutFlag.cc
@@ -734,6 +735,7 @@ set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/RealIpResolver.h
     lib/inc/drogon/plugins/Hodor.h
     lib/inc/drogon/plugins/SlashRemover.h
+	lib/inc/drogon/plugins/HostRedirector.h
     lib/inc/drogon/plugins/GlobalFilters.h
     lib/inc/drogon/plugins/PromExporter.h)
 
