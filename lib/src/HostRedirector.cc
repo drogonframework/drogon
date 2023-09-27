@@ -23,7 +23,7 @@ bool HostRedirector::redirectingAdvice(const HttpRequestPtr& req,
         auto& rule = findRule->second;
         auto& paths = rule.paths;
         auto& path = req->path();
-        auto findPath = paths.find(req->path());
+        auto findPath = paths.find(path);
         if (findPath != paths.end())
         {
             auto& redirectToHost = rule.redirectToHost;
