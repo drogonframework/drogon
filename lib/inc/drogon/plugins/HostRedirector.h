@@ -18,6 +18,7 @@
 #include <json/value.h>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace drogon::plugin
 {
@@ -38,9 +39,12 @@ namespace drogon::plugin
                  "ww.example.com"
              ],
              "images.example.com": [
-                 "image.example.com"
+                 "image.example.com",
+                 "www.example.com/images",
+                 "www.example.com/image"
              ],
              "www.example.com/maps": [
+                 "www.example.com/map",
                  "map.example.com",
                  "maps.example.com"
              ]
@@ -56,6 +60,13 @@ class DROGON_EXPORT HostRedirector
     : public drogon::Plugin<HostRedirector>,
       public std::enable_shared_from_this<HostRedirector>
 {
+  private:
+    struct RedirectRule
+    {
+        std::string redirectToHost, redirectToPath;
+        std::unordered_set<std::string> paths;
+    };
+
   public:
     HostRedirector()
     {
@@ -69,6 +80,6 @@ class DROGON_EXPORT HostRedirector
                            std::string &,
                            bool &);
 
-    std::unordered_map<std::string, std::string> rules_;
+    std::unordered_map<std::string, RedirectRule> rules_;
 };
 }  // namespace drogon::plugin

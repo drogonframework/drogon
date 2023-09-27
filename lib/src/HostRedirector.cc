@@ -17,12 +17,27 @@ bool HostRedirector::redirectingAdvice(const HttpRequestPtr& req,
                                        bool& pathChanged)
 {
     const string& reqHost = host.empty() ? req->getHeader("host") : host;
-    auto find = rules_.find(reqHost);
-    if (find != rules_.end())
-        host = find->second;
+    auto findRule = rules_.find(reqHost);
+    if (findRule != rules_.end())
+    {
+        auto& rule = findRule->second;
+        auto& paths = rule.paths;
+        auto& path = req->path();
+        auto findPath = paths.find(req->path());
+        if (findPath != paths.end())
+        {
+            auto& redirectToHost = rule.redirectToHost;
+            if (redirectToHost != reqHost)
+                host = redirectToHost;
 
-    // TODO: some may need to change the path as well
-
+            auto& redirectToPath = rule.redirectToPath;
+            if (redirectToPath != path)
+            {
+                req->setPath(redirectToPath);
+                pathChanged = true;
+            }
+        }
+    }
     return true;
 }
 
@@ -39,12 +54,39 @@ void HostRedirector::initAndStart(const Json::Value& config)
                     continue;
 
                 const string redirectToStr = redirectTo.asString();
+                string redirectToHost, redirectToPath;
+                auto pathIndex = redirectToStr.find_first_of('/');
+                if (pathIndex != string::npos)
+                {
+                    redirectToHost = redirectToStr.substr(0, pathIndex);
+                    redirectToPath = redirectToStr.substr(pathIndex);
+                }
+                else
+                    redirectToPath = "/";
+
                 for (const auto& redirectFrom : rules[redirectToStr])
                 {
                     if (!redirectFrom.isString())
                         continue;
 
-                    rules_[redirectFrom.asString()] = redirectToStr;
+                    const string redirectFromStr = redirectFrom.asString();
+                    string redirectFromHost, redirectFromPath;
+                    pathIndex = redirectFromStr.find_first_of('/');
+                    if (pathIndex != string::npos)
+                    {
+                        redirectFromHost = redirectFromStr.substr(0, pathIndex);
+                        redirectFromPath = redirectFromStr.substr(pathIndex);
+                    }
+                    else
+                        redirectFromPath = "/";
+
+                    auto& rule =
+                        rules_[redirectFromHost.empty() ? redirectFromStr
+                                                        : redirectFromHost];
+                    rule.redirectToHost =
+                        redirectToHost.empty() ? redirectToStr : redirectToHost;
+                    rule.redirectToPath = redirectToPath;
+                    rule.paths.insert(redirectFromPath);
                 }
             }
         }
@@ -56,17 +98,17 @@ void HostRedirector::initAndStart(const Json::Value& config)
         LOG_ERROR << "Redirector plugin is not found!";
         return;
     }
-    redirector->registerRedirectHandler([weakPtr](const HttpRequestPtr& req,
-                                                  string&,
-                                                  string& host,
-                                                  bool& pathChanged) -> bool {
-        auto thisPtr = weakPtr.lock();
-        if (!thisPtr)
-        {
-            return false;
-        }
-        return thisPtr->redirectingAdvice(req, host, pathChanged);
-    });
+    redirector->registerPostRedirectorHandler(
+        [weakPtr](const HttpRequestPtr& req,
+                  string& host,
+                  bool& pathChanged) -> bool {
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+            {
+                return false;
+            }
+            return thisPtr->redirectingAdvice(req, host, pathChanged);
+        });
 }
 
 void HostRedirector::shutdown()

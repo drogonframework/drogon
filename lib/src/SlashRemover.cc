@@ -213,11 +213,11 @@ void SlashRemover::initAndStart(const Json::Value &config)
     };
     if (redirect_)
     {
-        redirector->registerPathRewriteHandler(std::move(func));
+        redirector->registerPathRedirectorHandler(std::move(func));
     }
     else
     {
-        redirector->registerForwardHandler(std::move(func));
+        redirector->registerPathForwarderHandler(std::move(func));
     }
 }
 
