@@ -61,7 +61,7 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
         LOG_ERROR << "Redirector plugin is not found!";
         return;
     }
-    redirector->registerRedirectHandler(
+    redirector->registerPreRedirectorHandler(
         [weakPtr](const drogon::HttpRequestPtr &req,
                   std::string &protocol,
                   std::string &host,

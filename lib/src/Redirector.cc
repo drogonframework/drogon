@@ -30,16 +30,23 @@ void Redirector::initAndStart(const Json::Value &config)
             }
             std::string protocol, host;
             bool pathChanged{false};
-            for (auto &handler : thisPtr->handlers_)
+            for (auto &handler : thisPtr->preRedirectorHandlers_)
             {
                 if (!handler(req, protocol, host, pathChanged))
                 {
                     return HttpResponse::newNotFoundResponse(req);
                 }
             }
-            for (auto &handler : thisPtr->pathRewriteHandlers_)
+            for (auto &handler : thisPtr->pathRedirectorHandlers_)
             {
                 pathChanged |= handler(req);
+            }
+            for (auto &handler : thisPtr->postRedirectorHandlers_)
+            {
+                if (!handler(req, host, pathChanged))
+                {
+                    return HttpResponse::newNotFoundResponse();
+                }
             }
             if (!protocol.empty() || !host.empty() || pathChanged)
             {
@@ -73,7 +80,7 @@ void Redirector::initAndStart(const Json::Value &config)
                 }
                 return HttpResponse::newRedirectionResponse(url);
             }
-            for (auto &handler : thisPtr->forwardHandlers_)
+            for (auto &handler : thisPtr->pathForwarderHandlers_)
             {
                 handler(req);
             }
