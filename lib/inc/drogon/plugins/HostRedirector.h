@@ -16,9 +16,11 @@
 #include "drogon/plugins/Plugin.h"
 #include "drogon/utils/FunctionTraits.h"
 #include <json/value.h>
+#include <cstddef>
 #include <memory>
+#include <string_view>
 #include <unordered_map>
-#include <unordered_set>
+#include <vector>
 
 namespace drogon::plugin
 {
@@ -33,20 +35,23 @@ namespace drogon::plugin
      "config": {
          "rules": {
              "www.example.com": [
-                 "10.10.10.1",
-                 "example.com",
-                 "search.example.com",
-                 "ww.example.com"
+                 "10.10.10.1/*",
+                 "example.com/*",
+                 "search.example.com/*",
+                 "ww.example.com/*"
              ],
              "images.example.com": [
-                 "image.example.com",
+                 "image.example.com/*",
                  "www.example.com/images",
                  "www.example.com/image"
              ],
              "www.example.com/maps": [
-                 "www.example.com/map",
+                 "www.example.com/map/*",
                  "map.example.com",
                  "maps.example.com"
+             ],
+             "/": [
+                 "/home/*"
              ]
          }
      }
@@ -61,10 +66,23 @@ class DROGON_EXPORT HostRedirector
       public std::enable_shared_from_this<HostRedirector>
 {
   private:
-    struct RedirectRule
+    struct RedirectLocation
     {
-        std::string redirectToHost, redirectToPath;
-        std::unordered_set<std::string> paths;
+        std::string host, path;
+    };
+
+    struct RedirectFrom
+    {
+        std::string host, path;
+        bool isWildcard = false;
+        size_t toIdx;
+    };
+
+    struct RedirectGroup
+    {
+        std::unordered_map<std::string_view, RedirectGroup *> groups;
+        size_t maxPathLen = std::string_view::npos;
+        RedirectLocation *to = nullptr, *wildcard = nullptr;
     };
 
   public:
@@ -78,8 +96,12 @@ class DROGON_EXPORT HostRedirector
   private:
     bool redirectingAdvice(const drogon::HttpRequestPtr &,
                            std::string &,
-                           bool &);
+                           bool &) const;
 
-    std::unordered_map<std::string, RedirectRule> rules_;
+    void lookup(std::string &host, std::string &path) const;
+
+    std::unordered_map<std::string_view, RedirectGroup> rulesFrom_;
+    std::vector<RedirectLocation> rulesTo_;
+    std::vector<RedirectFrom> rulesFromData_;
 };
 }  // namespace drogon::plugin
