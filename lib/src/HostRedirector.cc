@@ -157,10 +157,10 @@ void HostRedirector::initAndStart(const Json::Value& config)
 
                 auto toIdx = rulesTo_.size();
                 rulesTo_.push_back({
-                    .host = std::move(redirectToHost.empty() && pathIdx != 0
-                                          ? redirectToStr
-                                          : redirectToHost),
-                    .path = std::move(redirectToPath),
+                    std::move(redirectToHost.empty() && pathIdx != 0
+                                  ? redirectToStr
+                                  : redirectToHost),
+                    std::move(redirectToPath),
                 });
 
                 for (const auto& redirectFrom : rules[redirectToStr])
@@ -189,13 +189,12 @@ void HostRedirector::initAndStart(const Json::Value& config)
                         redirectFromPath = '/';
 
                     rulesFromData_.push_back({
-                        .host =
-                            std::move(redirectFromHost.empty() && pathIdx != 0
-                                          ? redirectFromStr
-                                          : redirectFromHost),
-                        .path = std::move(redirectFromPath),
-                        .isWildcard = isWildcard,
-                        .toIdx = toIdx,
+                        std::move(redirectFromHost.empty() && pathIdx != 0
+                                      ? redirectFromStr
+                                      : redirectFromHost),
+                        std::move(redirectFromPath),
+                        isWildcard,
+                        toIdx,
                     });
                 }
             }
