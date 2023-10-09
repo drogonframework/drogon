@@ -78,10 +78,8 @@ void HostRedirector::lookup(string& host, string& path) const
         bool isWildcard = true;
         const RedirectLocation* to = nullptr;
         size_t lastWildcardPathViewLen = 0;
-        std::unordered_map<string_view, RedirectGroup*>::const_iterator find;
         string_view pathView = path;
-        for (const RedirectGroup* group = &(findHost->second);;
-             group = find->second)
+        for (const RedirectGroup* group = &(findHost->second);;)
         {
             const RedirectLocation* location = group->wildcard;
             bool pathIsExhausted = pathView.empty();
@@ -108,11 +106,12 @@ void HostRedirector::lookup(string& host, string& path) const
                 break;
             }
 
-            find = groups.find(pathView.substr(0, maxPathLen));
+            auto find = groups.find(pathView.substr(0, maxPathLen));
             if (find == groups.end())  // Cannot go deeper
                 break;
 
             pathView = pathView.substr(maxPathLen);
+            group = find->second;
         }
 
         if (to)
@@ -128,7 +127,7 @@ void HostRedirector::lookup(string& host, string& path) const
                 newPath.append(path.substr(
                     start + (newPath.back() == '/' && path[start] == '/')));
             }
-            path = newPath;
+            path = std::move(newPath);
         }
         else
             break;
