@@ -162,40 +162,51 @@ void HostRedirector::initAndStart(const Json::Value& config)
                     std::move(redirectToPath),
                 });
 
-                for (const auto& redirectFrom : rules[redirectToStr])
+                const auto& redirectFromValue = rules[redirectToStr];
+                if (redirectFromValue.isArray())
                 {
-                    if (!redirectFrom.isString())
-                        continue;
-
-                    string redirectFromStr = redirectFrom.asString();
-                    auto len = redirectFromStr.size();
-                    bool isWildcard = false;
-                    if (len > 1 && redirectFromStr[len - 2] == '/' &&
-                        redirectFromStr[len - 1] == '*')
+                    for (const auto& redirectFrom : redirectFromValue)
                     {
-                        redirectFromStr.resize(len - 2);
-                        isWildcard = true;
-                    }
+                        if (!redirectFrom.isString())
+                            continue;
 
-                    string redirectFromHost, redirectFromPath;
-                    pathIdx = redirectFromStr.find('/');
-                    if (pathIdx != string::npos)
-                    {
-                        redirectFromHost = redirectFromStr.substr(0, pathIdx);
-                        redirectFromPath = redirectFromStr.substr(pathIdx);
-                    }
-                    else
-                        redirectFromPath = '/';
+                        string redirectFromStr = redirectFrom.asString();
+                        auto len = redirectFromStr.size();
+                        bool isWildcard = false;
+                        if (len > 1 && redirectFromStr[len - 2] == '/' &&
+                            redirectFromStr[len - 1] == '*')
+                        {
+                            redirectFromStr.resize(len - 2);
+                            isWildcard = true;
+                        }
 
-                    rulesFromData_.push_back({
-                        std::move(redirectFromHost.empty() && pathIdx != 0
-                                      ? redirectFromStr
-                                      : redirectFromHost),
-                        std::move(redirectFromPath),
-                        isWildcard,
-                        toIdx,
-                    });
+                        string redirectFromHost, redirectFromPath;
+                        pathIdx = redirectFromStr.find('/');
+                        if (pathIdx != string::npos)
+                        {
+                            redirectFromHost =
+                                redirectFromStr.substr(0, pathIdx);
+                            redirectFromPath = redirectFromStr.substr(pathIdx);
+                        }
+                        else
+                            redirectFromPath = '/';
+
+                        rulesFromData_.push_back({
+                            std::move(redirectFromHost.empty() && pathIdx != 0
+                                          ? redirectFromStr
+                                          : redirectFromHost),
+                            std::move(redirectFromPath),
+                            isWildcard,
+                            toIdx,
+                        });
+                    }
                 }
+                // This commented block can be used to support {from: to}
+                // syntax, but the JSON library must support multi-key objects
+                /*else if(redirectFromValue.isString())
+                {
+
+                }*/
             }
 
             struct RedirectDepthGroup
