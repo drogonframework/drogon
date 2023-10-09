@@ -142,7 +142,7 @@ void HostRedirector::initAndStart(const Json::Value& config)
         const auto& rules = config["rules"];
         if (rules.isObject())
         {
-			const auto& redirectToList = rules.getMemberNames();
+            const auto& redirectToList = rules.getMemberNames();
             for (const string redirectToStr : redirectToList)
             {
                 string redirectToHost, redirectToPath;
