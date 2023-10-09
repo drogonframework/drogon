@@ -336,7 +336,23 @@ void HostRedirector::initAndStart(const Json::Value& config)
         });
 }
 
+void HostRedirector::recursiveDelete(const RedirectGroup* group)
+{
+    for (const auto& [_, child] : group->groups)
+        recursiveDelete(child);
+    delete group;
+}
+
 void HostRedirector::shutdown()
 {
+    // Free up manually allocated memory of nodes
+    for (const auto& [_, rule] : rulesFrom_)
+    {
+        // The rule value itself doesn't need manual freeing,
+        // so start at a depth level of 2
+        for (const auto& [_, group] : rule.groups)
+            recursiveDelete(group);
+    }
+
     LOG_TRACE << "HostRedirector plugin is shutdown!";
 }

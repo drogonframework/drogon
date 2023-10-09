@@ -100,6 +100,8 @@ class DROGON_EXPORT HostRedirector
 
     void lookup(std::string &host, std::string &path) const;
 
+    void recursiveDelete(const RedirectGroup *group);
+
     std::unordered_map<std::string_view, RedirectGroup> rulesFrom_;
     std::vector<RedirectLocation> rulesTo_;
     std::vector<RedirectFrom> rulesFromData_;
