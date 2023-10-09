@@ -154,6 +154,8 @@ void HostRedirector::initAndStart(const Json::Value& config)
                 else
                     redirectToPath = "/";
 
+                const auto& redirectFromValue = rules[redirectToStr];
+
                 auto toIdx = rulesTo_.size();
                 rulesTo_.push_back({
                     std::move(redirectToHost.empty() && pathIdx != 0
@@ -162,7 +164,6 @@ void HostRedirector::initAndStart(const Json::Value& config)
                     std::move(redirectToPath),
                 });
 
-                const auto& redirectFromValue = rules[redirectToStr];
                 if (redirectFromValue.isArray())
                 {
                     for (const auto& redirectFrom : redirectFromValue)
