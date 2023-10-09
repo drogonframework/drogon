@@ -30,18 +30,18 @@ void Redirector::initAndStart(const Json::Value &config)
             }
             std::string protocol, host;
             bool pathChanged{false};
-            for (auto &handler : thisPtr->preRedirectorHandlers_)
+            for (const auto &handler : thisPtr->preRedirectorHandlers_)
             {
                 if (!handler(req, protocol, host, pathChanged))
                 {
                     return HttpResponse::newNotFoundResponse(req);
                 }
             }
-            for (auto &handler : thisPtr->pathRedirectorHandlers_)
+            for (const auto &handler : thisPtr->pathRedirectorHandlers_)
             {
                 pathChanged |= handler(req);
             }
-            for (auto &handler : thisPtr->postRedirectorHandlers_)
+            for (const auto &handler : thisPtr->postRedirectorHandlers_)
             {
                 if (!handler(req, host, pathChanged))
                 {
@@ -51,36 +51,43 @@ void Redirector::initAndStart(const Json::Value &config)
             if (!protocol.empty() || !host.empty() || pathChanged)
             {
                 std::string url;
+                const std::string &path = req->path();
+                const auto &query = req->query();
+                const bool hasQuery = !query.empty();
                 if (protocol.empty())
                 {
                     if (!host.empty())
                     {
-                        url = req->isOnSecureConnection() ? "https://"
-                                                          : "http://";
-                        url.append(host);
-                    }
-                }
-                else
-                {
-                    url = std::move(protocol);
-                    if (!host.empty())
-                    {
+                        const bool isOnSecureConnection =
+                            req->isOnSecureConnection();
+                        url.reserve(
+                            (isOnSecureConnection ? 8 /*https*/ : 7 /*http*/) +
+                            host.size() + path.size() +
+                            (hasQuery ? (1 + query.size()) : 0));
+                        url = isOnSecureConnection ? "https://" : "http://";
                         url.append(host);
                     }
                     else
-                    {
-                        url.append(req->getHeader("host"));
-                    }
+                        url.reserve(path.size() +
+                                    (hasQuery ? (1 + query.size()) : 0));
                 }
-                url.append(req->path());
-                auto &query = req->query();
-                if (!query.empty())
+                else
+                {
+                    const std::string &newHost =
+                        host.empty() ? req->getHeader("host") : host;
+                    url.reserve(protocol.size() + newHost.size() + path.size() +
+                                (hasQuery ? (1 + query.size()) : 0));
+                    url = std::move(protocol);
+                    url.append(newHost);
+                }
+                url.append(path);
+                if (hasQuery)
                 {
                     url.append("?").append(query);
                 }
                 return HttpResponse::newRedirectionResponse(url);
             }
-            for (auto &handler : thisPtr->pathForwarderHandlers_)
+            for (const auto &handler : thisPtr->pathForwarderHandlers_)
             {
                 handler(req);
             }
