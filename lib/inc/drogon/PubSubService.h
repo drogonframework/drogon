@@ -243,6 +243,31 @@ class PubSubService : public trantor::NonCopyable
         topicMap_.erase(topicName);
     }
 
+    /**
+     * @brief Check if a topic is empty.
+     *
+     * @param topicName The topic name.
+     * @return true means there are no subscribers.
+     * @return false means there are subscribers in the topic.
+     */
+    bool isTopicEmpty(const std::string &topicName) const
+    {
+        std::shared_ptr<Topic<MessageType>> topicPtr;
+        {
+            std::shared_lock<SharedMutex> lock(mutex_);
+            auto iter = topicMap_.find(topicName);
+            if (iter != topicMap_.end())
+            {
+                topicPtr = iter->second;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        return topicPtr->empty();
+    }
+
   private:
     std::unordered_map<std::string, std::shared_ptr<Topic<MessageType>>>
         topicMap_;
