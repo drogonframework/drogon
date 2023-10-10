@@ -2,6 +2,7 @@
 #include <drogon/plugins/Redirector.h>
 #include <drogon/HttpAppFramework.h>
 #include "drogon/utils/FunctionTraits.h"
+#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -21,10 +22,14 @@ bool HostRedirector::redirectingAdvice(const HttpRequestPtr& req,
 {
     const string& reqHost = host.empty() ? req->getHeader("host") : host;
     const string& reqPath = req->path();
-    string newHost = reqHost, path = reqPath;
+    string newHost, path = reqPath;
 
-    // Lookup host-specific rules first
-    lookup(newHost, path);
+    // Lookup host-specific rules first if they exist
+    if (doHostLookup_ && !reqHost.empty())
+    {
+        newHost = reqHost;
+        lookup(newHost, path);
+    }
 
     // Lookup within non-host rules
     {
@@ -34,7 +39,7 @@ bool HostRedirector::redirectingAdvice(const HttpRequestPtr& req,
             newHost = std::move(temp);
     }
 
-    if (newHost != reqHost)
+    if (!newHost.empty() && newHost != reqHost)
         host = std::move(newHost);
 
     if (path != reqPath)
@@ -117,7 +122,8 @@ void HostRedirector::lookup(string& host, string& path) const
         if (to)
         {
             const string& toHost = to->host;
-            if (!toHost.empty())
+            bool hasToHost = !toHost.empty();
+            if (hasToHost)
                 host = toHost;
 
             if (isWildcard)
@@ -135,6 +141,11 @@ void HostRedirector::lookup(string& host, string& path) const
             }
             else
                 path = to->path;
+
+            if (!doHostLookup_ &&
+                hasToHost)  // If our maps don't contain hosts, no need to look
+                            // it up next iteration
+                break;
         }
         else
             break;
@@ -143,12 +154,14 @@ void HostRedirector::lookup(string& host, string& path) const
 
 void HostRedirector::initAndStart(const Json::Value& config)
 {
+    doHostLookup_ = false;
     if (config.isMember("rules"))
     {
         const auto& rules = config["rules"];
         if (rules.isObject())
         {
             const auto& redirectToList = rules.getMemberNames();
+            rulesTo_.reserve(redirectToList.size());
             for (const string redirectToStr : redirectToList)
             {
                 string redirectToHost, redirectToPath;
@@ -175,8 +188,7 @@ void HostRedirector::initAndStart(const Json::Value& config)
                 {
                     for (const auto& redirectFrom : redirectFromValue)
                     {
-                        if (!redirectFrom.isString())
-                            continue;
+                        assert(redirectFrom.isString());
 
                         string redirectFromStr = redirectFrom.asString();
                         auto len = redirectFromStr.size();
@@ -199,10 +211,15 @@ void HostRedirector::initAndStart(const Json::Value& config)
                         else
                             redirectFromPath = '/';
 
+                        const string& fromHost =
+                            redirectFromHost.empty() && pathIdx != 0
+                                ? redirectFromStr
+                                : redirectFromHost;
+                        if (!fromHost.empty())
+                            doHostLookup_ =
+                                true;  // We have hosts in lookup rules
                         rulesFromData_.push_back({
-                            std::move(redirectFromHost.empty() && pathIdx != 0
-                                          ? redirectFromStr
-                                          : redirectFromHost),
+                            std::move(fromHost),
                             std::move(redirectFromPath),
                             isWildcard,
                             toIdx,

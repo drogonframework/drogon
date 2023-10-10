@@ -16,9 +16,9 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
 {
     if (config.isMember("ssl_redirect_exempt"))
     {
-        if (config["ssl_redirect_exempt"].isArray())
+        const auto &exempts = config["ssl_redirect_exempt"];
+        if (exempts.isArray())
         {
-            const auto &exempts = config["ssl_redirect_exempt"];
             size_t exemptsCount = exempts.size();
             if (exemptsCount)
             {
