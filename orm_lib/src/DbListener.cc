@@ -27,8 +27,8 @@ using namespace drogon::orm;
 DbListener::~DbListener() = default;
 
 std::shared_ptr<DbListener> DbListener::newPgListener(
-    const std::string& connInfo,
-    trantor::EventLoop* loop)
+    const std::string &connInfo,
+    trantor::EventLoop *loop)
 {
 #if USE_POSTGRESQL
     std::shared_ptr<PgListener> pgListener =

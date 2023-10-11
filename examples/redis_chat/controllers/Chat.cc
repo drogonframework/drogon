@@ -3,11 +3,11 @@
 #include <memory>
 #include <unordered_set>
 
-static void redisLogin(std::function<void(int)>&& callback,
-                       const std::string& loginKey,
+static void redisLogin(std::function<void(int)> &&callback,
+                       const std::string &loginKey,
                        unsigned int timeout);
-static void redisLogout(std::function<void(int)>&& callback,
-                        const std::string& loginKey);
+static void redisLogout(std::function<void(int)> &&callback,
+                        const std::string &loginKey);
 
 struct ClientContext
 {
@@ -17,7 +17,7 @@ struct ClientContext
     std::shared_ptr<nosql::RedisSubscriber> subscriber_;
 };
 
-static bool checkRoomNumber(const std::string& room)
+static bool checkRoomNumber(const std::string &room)
 {
     if (room.empty() || room.size() > 2 || (room.size() == 2 && room[0] == '0'))
     {
@@ -33,9 +33,9 @@ static bool checkRoomNumber(const std::string& room)
     return true;
 }
 
-void Chat::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
-                            std::string&& message,
-                            const WebSocketMessageType& type)
+void Chat::handleNewMessage(const WebSocketConnectionPtr &wsConnPtr,
+                            std::string &&message,
+                            const WebSocketMessageType &type)
 {
     if (type == WebSocketMessageType::Close ||
         type == WebSocketMessageType::Ping)
@@ -63,10 +63,10 @@ void Chat::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
     if (type == WebSocketMessageType::Pong)
     {
         redisClient->execCommandAsync(
-            [wsConnPtr](const nosql::RedisResult&) {
+            [wsConnPtr](const nosql::RedisResult &) {
                 // Do nothing
             },
-            [wsConnPtr](const nosql::RedisException& ex) {
+            [wsConnPtr](const nosql::RedisException &ex) {
                 LOG_ERROR << "Update user status failed: " << ex.what();
                 wsConnPtr->send("ERROR: Service unavailable.");
                 wsConnPtr->forceClose();
@@ -111,8 +111,8 @@ void Chat::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
             // NOTICE: Dangerous to concat username into redis command!!!
             // Do not use in production.
             redisClient->execCommandAsync(
-                [](const nosql::RedisResult&) {},
-                [wsConnPtr](const nosql::RedisException& ex) {
+                [](const nosql::RedisResult &) {},
+                [wsConnPtr](const nosql::RedisException &ex) {
                     wsConnPtr->send(std::string("ERROR: ") + ex.what());
                 },
                 "publish %s %s",
@@ -133,7 +133,7 @@ void Chat::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
             }
             wsConnPtr->send("INFO: Enter room " + room);
             context->subscriber_->subscribe(
-                room, [wsConnPtr](const std::string&, const std::string& msg) {
+                room, [wsConnPtr](const std::string &, const std::string &msg) {
                     wsConnPtr->send(msg);
                 });
             context->room_ = room;
@@ -160,8 +160,8 @@ void Chat::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
     }
 }
 
-void Chat::handleNewConnection(const HttpRequestPtr& req,
-                               const WebSocketConnectionPtr& wsConnPtr)
+void Chat::handleNewConnection(const HttpRequestPtr &req,
+                               const WebSocketConnectionPtr &wsConnPtr)
 {
     LOG_DEBUG << "WsClient new connection from "
               << wsConnPtr->peerAddr().toIpPort();
@@ -201,7 +201,7 @@ void Chat::handleNewConnection(const HttpRequestPtr& req,
         120);
 }
 
-void Chat::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr)
+void Chat::handleConnectionClosed(const WebSocketConnectionPtr &wsConnPtr)
 {
     LOG_DEBUG << "WsClient close connection from "
               << wsConnPtr->peerAddr().toIpPort();
@@ -217,8 +217,8 @@ void Chat::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr)
     }
 }
 
-static void redisLogin(std::function<void(int)>&& callback,
-                       const std::string& loginKey,
+static void redisLogin(std::function<void(int)> &&callback,
+                       const std::string &loginKey,
                        unsigned int timeout)
 {
     static const char script[] = R"(
@@ -229,10 +229,10 @@ return 1;
 )";
 
     drogon::app().getRedisClient()->execCommandAsync(
-        [callback](const nosql::RedisResult& result) {
+        [callback](const nosql::RedisResult &result) {
             callback((int)result.asInteger());
         },
-        [callback](const nosql::RedisException& ex) {
+        [callback](const nosql::RedisException &ex) {
             LOG_ERROR << "Login error: " << ex.what();
             callback(-1);
         },
@@ -242,14 +242,14 @@ return 1;
         timeout);
 }
 
-static void redisLogout(std::function<void(int)>&& callback,
-                        const std::string& loginKey)
+static void redisLogout(std::function<void(int)> &&callback,
+                        const std::string &loginKey)
 {
     drogon::app().getRedisClient()->execCommandAsync(
-        [callback](const nosql::RedisResult& result) {
+        [callback](const nosql::RedisResult &result) {
             callback((int)result.asInteger());
         },
-        [callback](const nosql::RedisException& ex) {
+        [callback](const nosql::RedisException &ex) {
             LOG_ERROR << "Logout error: " << ex.what();
             callback(-1);
         },

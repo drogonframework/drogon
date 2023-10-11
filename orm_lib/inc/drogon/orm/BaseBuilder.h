@@ -93,9 +93,9 @@ class BaseBuilder
     // map.
     std::vector<std::pair<std::string, bool>> orders_;
 
-    inline void assert_column(const std::string& colName) const
+    inline void assert_column(const std::string &colName) const
     {
-        for (const typename T::MetaData& m : T::metaData_)
+        for (const typename T::MetaData &m : T::metaData_)
         {
             if (m.colName_ == colName)
             {
@@ -158,7 +158,7 @@ class BaseBuilder
         std::vector<std::string> args;
         if (!filters_.empty())
         {
-            for (const Filter& f : filters_)
+            for (const Filter &f : filters_)
             {
                 args.emplace_back(f.value);
             }
@@ -168,7 +168,7 @@ class BaseBuilder
 
   public:
 #ifdef __cpp_if_constexpr
-    static ResultType convert_result(const Result& r)
+    static ResultType convert_result(const Result &r)
     {
         if constexpr (SelectAll)
         {
@@ -179,7 +179,7 @@ class BaseBuilder
             else
             {
                 std::vector<T> ret;
-                for (const Row& row : r)
+                for (const Row &row : r)
                 {
                     ret.emplace_back(T(row));
                 }
@@ -203,7 +203,7 @@ class BaseBuilder
               bool SI = Single,
               std::enable_if_t<SA, std::nullptr_t> = nullptr,
               std::enable_if_t<SI, std::nullptr_t> = nullptr>
-    static inline T convert_result(const Result& r)
+    static inline T convert_result(const Result &r)
     {
         return T(r[0]);
     }
@@ -212,10 +212,10 @@ class BaseBuilder
               bool SI = Single,
               std::enable_if_t<SA, std::nullptr_t> = nullptr,
               std::enable_if_t<!SI, std::nullptr_t> = nullptr>
-    static inline std::vector<T> convert_result(const Result& r)
+    static inline std::vector<T> convert_result(const Result &r)
     {
         std::vector<T> ret;
-        for (const Row& row : r)
+        for (const Row &row : r)
         {
             ret.template emplace_back(T(row));
         }
@@ -226,7 +226,7 @@ class BaseBuilder
               bool SI = Single,
               std::enable_if_t<!SA, std::nullptr_t> = nullptr,
               std::enable_if_t<SI, std::nullptr_t> = nullptr>
-    static inline Row convert_result(const Result& r)
+    static inline Row convert_result(const Result &r)
     {
         return r[0];
     }
@@ -235,35 +235,35 @@ class BaseBuilder
               bool SI = Single,
               std::enable_if_t<!SA, std::nullptr_t> = nullptr,
               std::enable_if_t<!SI, std::nullptr_t> = nullptr>
-    static inline Result convert_result(const Result& r)
+    static inline Result convert_result(const Result &r)
     {
         return r;
     }
 #endif
 
-    inline ResultType execSync(const DbClientPtr& client)
+    inline ResultType execSync(const DbClientPtr &client)
     {
         Result r(nullptr);
         {
             auto binder = *client << gen_sql(client->type());
-            for (const std::string& a : gen_args())
+            for (const std::string &a : gen_args())
             {
                 binder << a;
             }
             binder << Mode::Blocking;
-            binder >> [&r](const Result& result) { r = result; };
+            binder >> [&r](const Result &result) { r = result; };
             binder.exec();  // exec may throw exception
         }
         return convert_result(r);
     }
 
     template <typename TFn, typename EFn>
-    void execAsync(const DbClientPtr& client,
-                   TFn&& rCallback,
-                   EFn&& exceptCallback) noexcept
+    void execAsync(const DbClientPtr &client,
+                   TFn &&rCallback,
+                   EFn &&exceptCallback) noexcept
     {
         auto binder = *client << gen_sql(client->type());
-        for (const std::string& a : gen_args())
+        for (const std::string &a : gen_args())
         {
             binder << a;
         }
@@ -272,19 +272,19 @@ class BaseBuilder
     }
 
     inline std::future<ResultType> execAsyncFuture(
-        const DbClientPtr& client) noexcept
+        const DbClientPtr &client) noexcept
     {
         auto binder = *client << gen_sql(client->type());
-        for (const std::string& a : gen_args())
+        for (const std::string &a : gen_args())
         {
             binder << a;
         }
         std::shared_ptr<std::promise<ResultType>> prom =
             std::make_shared<std::promise<ResultType>>();
         binder >>
-            [prom](const Result& r) { prom->set_value(convert_result(r)); };
+            [prom](const Result &r) { prom->set_value(convert_result(r)); };
         binder >>
-            [prom](const std::exception_ptr& e) { prom->set_exception(e); };
+            [prom](const std::exception_ptr &e) { prom->set_exception(e); };
         binder.exec();
         return prom->get_future();
     }

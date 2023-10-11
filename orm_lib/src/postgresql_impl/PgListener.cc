@@ -21,7 +21,7 @@ using namespace drogon::orm;
 #define MAX_UNLISTEN_RETRY 3
 #define MAX_LISTEN_RETRY 10
 
-PgListener::PgListener(std::string connInfo, trantor::EventLoop* loop)
+PgListener::PgListener(std::string connInfo, trantor::EventLoop *loop)
     : connectionInfo_(std::move(connInfo)), loop_(loop)
 {
     if (!loop)
@@ -56,7 +56,7 @@ void PgListener::init() noexcept
 }
 
 void PgListener::listen(
-    const std::string& channel,
+    const std::string &channel,
     std::function<void(std::string, std::string)> messageCallback) noexcept
 {
     if (loop_->isInLoopThread())
@@ -80,7 +80,7 @@ void PgListener::listen(
     }
 }
 
-void PgListener::unlisten(const std::string& channel) noexcept
+void PgListener::unlisten(const std::string &channel) noexcept
 {
     if (loop_->isInLoopThread())
     {
@@ -102,8 +102,8 @@ void PgListener::unlisten(const std::string& channel) noexcept
     }
 }
 
-void PgListener::onMessage(const std::string& channel,
-                           const std::string& message) const noexcept
+void PgListener::onMessage(const std::string &channel,
+                           const std::string &message) const noexcept
 {
     loop_->assertInLoopThread();
 
@@ -112,7 +112,7 @@ void PgListener::onMessage(const std::string& channel,
     {
         return;
     }
-    for (auto& cb : iter->second)
+    for (auto &cb : iter->second)
     {
         cb(channel, message);
     }
@@ -123,7 +123,7 @@ void PgListener::listenAll() noexcept
     loop_->assertInLoopThread();
 
     listenTasks_.clear();
-    for (auto& item : listenChannels_)
+    for (auto &item : listenChannels_)
     {
         listenTasks_.emplace_back(true, item.first);
     }
@@ -143,7 +143,7 @@ void PgListener::listenNext() noexcept
     listenInLoop(channel, listen);
 }
 
-void PgListener::listenInLoop(const std::string& channel,
+void PgListener::listenInLoop(const std::string &channel,
                               bool listen,
                               std::shared_ptr<unsigned int> retryCnt)
 {
@@ -173,7 +173,7 @@ void PgListener::listenInLoop(const std::string& channel,
             {},
             {},
             {},
-            [listen, channel, sql](const Result& r) {
+            [listen, channel, sql](const Result &r) {
                 if (listen)
                 {
                     LOG_TRACE << "Listen channel " << channel;
@@ -184,12 +184,12 @@ void PgListener::listenInLoop(const std::string& channel,
                 }
             },
             [listen, channel, weakThis, sql, retryCnt, loop = loop_](
-                const std::exception_ptr& exception) {
+                const std::exception_ptr &exception) {
                 try
                 {
                     std::rethrow_exception(exception);
                 }
-                catch (const DrogonDbException& ex)
+                catch (const DrogonDbException &ex)
                 {
                     ++(*retryCnt);
                     if (listen)
@@ -251,7 +251,7 @@ PgConnectionPtr PgListener::newConnection(
     if (!retryCnt)
         retryCnt = std::make_shared<unsigned int>(0);
     connPtr->setCloseCallback(
-        [weakPtr, retryCnt](const DbConnectionPtr& closeConnPtr) {
+        [weakPtr, retryCnt](const DbConnectionPtr &closeConnPtr) {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
@@ -276,7 +276,7 @@ PgConnectionPtr PgListener::newConnection(
             });
         });
     connPtr->setOkCallback(
-        [weakPtr, retryCnt](const DbConnectionPtr& okConnPtr) {
+        [weakPtr, retryCnt](const DbConnectionPtr &okConnPtr) {
             LOG_TRACE << "connected after " << *retryCnt << " tries";
             (*retryCnt) = 0;
             auto thisPtr = weakPtr.lock();
@@ -295,7 +295,7 @@ PgConnectionPtr PgListener::newConnection(
     });
 
     connPtr->setMessageCallback(
-        [weakPtr](const std::string& channel, const std::string& message) {
+        [weakPtr](const std::string &channel, const std::string &message) {
             auto thisPtr = weakPtr.lock();
             if (thisPtr)
             {
@@ -305,12 +305,12 @@ PgConnectionPtr PgListener::newConnection(
     return connPtr;
 }
 
-std::string PgListener::escapeIdentifier(const PgConnectionPtr& conn,
-                                         const char* str,
+std::string PgListener::escapeIdentifier(const PgConnectionPtr &conn,
+                                         const char *str,
                                          size_t length)
 {
-    auto res = std::unique_ptr<char, std::function<void(char*)>>(
-        PQescapeIdentifier(conn->pgConn().get(), str, length), [](char* res) {
+    auto res = std::unique_ptr<char, std::function<void(char *)>>(
+        PQescapeIdentifier(conn->pgConn().get(), str, length), [](char *res) {
             if (res)
             {
                 PQfreemem(res);

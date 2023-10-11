@@ -34,7 +34,7 @@ DROGON_TEST(TestFrameworkSelfTest)
     }
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     std::promise<void> p1;
     std::future<void> f1 = p1.get_future();

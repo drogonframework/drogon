@@ -30,7 +30,7 @@ DROGON_TEST(CacheMapTest)
     cache.erase("30");
     CHECK(cache.find("30") == false);
 
-    cache.modify("bla", [](std::string& s) { s = "asd"; });
+    cache.modify("bla", [](std::string &s) { s = "asd"; });
     CHECK(cache["bla"] == "asd");
 
     std::string content;
