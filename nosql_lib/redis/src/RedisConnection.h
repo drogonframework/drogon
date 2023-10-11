@@ -50,6 +50,16 @@ class RedisConnection : public trantor::NonCopyable,
                     unsigned int db,
                     trantor::EventLoop *loop);
 
+    RedisConnection(const RedisConnectionInfo &connInfo,
+                    trantor::EventLoop *loop)
+        : RedisConnection(connInfo.addr,
+                          connInfo.username,
+                          connInfo.password,
+                          connInfo.db,
+                          loop)
+    {
+    }
+
     void setConnectCallback(
         const std::function<void(std::shared_ptr<RedisConnection> &&)>
             &callback)

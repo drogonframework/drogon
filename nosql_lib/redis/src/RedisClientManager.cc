@@ -28,6 +28,10 @@ void RedisClientManager::createRedisClients(
     assert(redisFastClientsMap_.empty());
     for (auto &redisInfo : redisInfos_)
     {
+        RedisConnectionInfo connInfo{.addr = {redisInfo.addr_, redisInfo.port_},
+                                     .username = redisInfo.username_,
+                                     .password = redisInfo.password_,
+                                     .db = redisInfo.db_};
         if (redisInfo.isFast_)
         {
             redisFastClientsMap_[redisInfo.name_] =
@@ -37,12 +41,7 @@ void RedisClientManager::createRedisClients(
                 assert(idx == ioLoops[idx]->index());
                 LOG_TRACE << "create fast redis client for the thread " << idx;
                 c = std::make_shared<RedisClientLockFree>(
-                    trantor::InetAddress(redisInfo.addr_, redisInfo.port_),
-                    redisInfo.connectionNumber_,
-                    ioLoops[idx],
-                    redisInfo.username_,
-                    redisInfo.password_,
-                    redisInfo.db_);
+                    connInfo, redisInfo.connectionNumber_, ioLoops[idx]);
                 if (redisInfo.timeout_ > 0.0)
                 {
                     c->setTimeout(redisInfo.timeout_);
@@ -51,12 +50,9 @@ void RedisClientManager::createRedisClients(
         }
         else
         {
-            auto clientPtr = std::make_shared<RedisClientImpl>(
-                trantor::InetAddress(redisInfo.addr_, redisInfo.port_),
-                redisInfo.connectionNumber_,
-                redisInfo.username_,
-                redisInfo.password_,
-                redisInfo.db_);
+            auto clientPtr =
+                std::make_shared<RedisClientImpl>(connInfo,
+                                                  redisInfo.connectionNumber_);
             if (redisInfo.timeout_ > 0.0)
             {
                 clientPtr->setTimeout(redisInfo.timeout_);
