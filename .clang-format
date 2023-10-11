@@ -126,7 +126,7 @@ RawStringFormats:
     BasedOnStyle:    google
 ReflowComments:  true
 SeparateDefinitionBlocks: Always
-SortIncludes:    false
+SortIncludes:    Never
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: true
