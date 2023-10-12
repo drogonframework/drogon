@@ -16,12 +16,12 @@ using namespace drogon::plugin;
 using std::string;
 using std::string_view;
 
-bool HostRedirector::redirectingAdvice(const HttpRequestPtr& req,
-                                       string& host,
-                                       bool& pathChanged) const
+bool HostRedirector::redirectingAdvice(const HttpRequestPtr &req,
+                                       string &host,
+                                       bool &pathChanged) const
 {
-    const string& reqHost = host.empty() ? req->getHeader("host") : host;
-    const string& reqPath = req->path();
+    const string &reqHost = host.empty() ? req->getHeader("host") : host;
+    const string &reqPath = req->path();
     string newHost, path = reqPath;
 
     // Lookup host-specific rules first if they exist
@@ -51,7 +51,7 @@ bool HostRedirector::redirectingAdvice(const HttpRequestPtr& req,
     return true;  // This plugin only redirects and is not responsible for 404s
 }
 
-void HostRedirector::lookup(string& host, string& path) const
+void HostRedirector::lookup(string &host, string &path) const
 {
     do
     {
@@ -61,8 +61,8 @@ void HostRedirector::lookup(string& host, string& path) const
 
         if (path == "/")
         {
-            const RedirectGroup& group = findHost->second;
-            const RedirectLocation* location = group.to;
+            const RedirectGroup &group = findHost->second;
+            const RedirectLocation *location = group.to;
             if (location)  // Strict takes priority
             {
                 host = location->host;
@@ -81,12 +81,12 @@ void HostRedirector::lookup(string& host, string& path) const
         }
 
         bool isWildcard = true;
-        const RedirectLocation* to = nullptr;
+        const RedirectLocation *to = nullptr;
         size_t lastWildcardPathViewLen = 0;
         string_view pathView = path;
-        for (const RedirectGroup* group = &(findHost->second);;)
+        for (const RedirectGroup *group = &(findHost->second);;)
         {
-            const RedirectLocation* location = group->wildcard;
+            const RedirectLocation *location = group->wildcard;
             bool pathIsExhausted = pathView.empty();
             if (location && (pathIsExhausted || pathView.front() == '/'))
             {
@@ -94,7 +94,7 @@ void HostRedirector::lookup(string& host, string& path) const
                 lastWildcardPathViewLen = pathView.size();
             }
 
-            const auto& groups = group->groups;
+            const auto &groups = group->groups;
             auto maxPathLen = group->maxPathLen;
             if (!maxPathLen ||
                 pathIsExhausted)  // Final node or path is shorter than tree
@@ -121,14 +121,14 @@ void HostRedirector::lookup(string& host, string& path) const
 
         if (to)
         {
-            const string& toHost = to->host;
+            const string &toHost = to->host;
             bool hasToHost = !toHost.empty();
             if (hasToHost)
                 host = toHost;
 
             if (isWildcard)
             {
-                const string& toPath = to->path;
+                const string &toPath = to->path;
                 string newPath;
                 const auto len = path.size();
                 auto start = len - lastWildcardPathViewLen;
@@ -152,15 +152,15 @@ void HostRedirector::lookup(string& host, string& path) const
     } while (true);
 }
 
-void HostRedirector::initAndStart(const Json::Value& config)
+void HostRedirector::initAndStart(const Json::Value &config)
 {
     doHostLookup_ = false;
     if (config.isMember("rules"))
     {
-        const auto& rules = config["rules"];
+        const auto &rules = config["rules"];
         if (rules.isObject())
         {
-            const auto& redirectToList = rules.getMemberNames();
+            const auto &redirectToList = rules.getMemberNames();
             rulesTo_.reserve(redirectToList.size());
             for (const string redirectToStr : redirectToList)
             {
@@ -174,7 +174,7 @@ void HostRedirector::initAndStart(const Json::Value& config)
                 else
                     redirectToPath = "/";
 
-                const auto& redirectFromValue = rules[redirectToStr];
+                const auto &redirectFromValue = rules[redirectToStr];
 
                 auto toIdx = rulesTo_.size();
                 rulesTo_.push_back({
@@ -186,7 +186,7 @@ void HostRedirector::initAndStart(const Json::Value& config)
 
                 if (redirectFromValue.isArray())
                 {
-                    for (const auto& redirectFrom : redirectFromValue)
+                    for (const auto &redirectFrom : redirectFromValue)
                     {
                         assert(redirectFrom.isString());
 
@@ -211,7 +211,7 @@ void HostRedirector::initAndStart(const Json::Value& config)
                         else
                             redirectFromPath = '/';
 
-                        const string& fromHost =
+                        const string &fromHost =
                             redirectFromHost.empty() && pathIdx != 0
                                 ? redirectFromStr
                                 : redirectFromHost;
@@ -236,18 +236,18 @@ void HostRedirector::initAndStart(const Json::Value& config)
 
             struct RedirectDepthGroup
             {
-                std::vector<const RedirectFrom*> fromData;
+                std::vector<const RedirectFrom *> fromData;
                 size_t maxPathLen;
             };
 
-            std::unordered_map<RedirectGroup*, RedirectDepthGroup> leafs,
+            std::unordered_map<RedirectGroup *, RedirectDepthGroup> leafs,
                 leafsBackbuffer;  // Keep track of most recent leaf nodes
 
             // Find minimum required path length for each host
-            for (const auto& redirectFrom : rulesFromData_)
+            for (const auto &redirectFrom : rulesFromData_)
             {
-                const auto& path = redirectFrom.path;
-                auto& rule = rulesFrom_[redirectFrom.host];
+                const auto &path = redirectFrom.path;
+                auto &rule = rulesFrom_[redirectFrom.host];
                 if (path == "/")  // Root rules are part of the host group
                     continue;
 
@@ -257,10 +257,10 @@ void HostRedirector::initAndStart(const Json::Value& config)
             }
 
             // Create initial leaf nodes
-            for (const auto& redirectFrom : rulesFromData_)
+            for (const auto &redirectFrom : rulesFromData_)
             {
                 string_view path = redirectFrom.path;
-                auto& rule = rulesFrom_[redirectFrom.host];
+                auto &rule = rulesFrom_[redirectFrom.host];
                 if (path == "/")
                 {
                     (redirectFrom.isWildcard ? rule.wildcard : rule.to) =
@@ -271,9 +271,9 @@ void HostRedirector::initAndStart(const Json::Value& config)
                 size_t maxLen = rule.maxPathLen;
                 string_view pathGroup = path.substr(0, maxLen);
 
-                auto& groups = rule.groups;
+                auto &groups = rule.groups;
                 auto find = groups.find(pathGroup);
-                RedirectGroup* group;
+                RedirectGroup *group;
                 if (find != groups.end())
                     group = find->second;
                 else
@@ -291,7 +291,7 @@ void HostRedirector::initAndStart(const Json::Value& config)
                                // end
                 }
 
-                auto& leaf = leafs[group];
+                auto &leaf = leafs[group];
                 leaf.fromData.push_back(&redirectFrom);
                 leaf.maxPathLen = maxLen;
             }
@@ -299,12 +299,12 @@ void HostRedirector::initAndStart(const Json::Value& config)
             // Populate subsequent leaf nodes
             while (!leafs.empty())
             {
-                for (auto& [group, depthGroup] : leafs)
+                for (auto &[group, depthGroup] : leafs)
                 {
                     size_t minIdx = depthGroup.maxPathLen,
                            maxIdx = string::npos;
-                    const auto& fromData = depthGroup.fromData;
-                    for (const auto& redirectFrom : fromData)
+                    const auto &fromData = depthGroup.fromData;
+                    for (const auto &redirectFrom : fromData)
                     {
                         auto len = redirectFrom->path.size();
                         if (len >= minIdx && len < maxIdx)
@@ -313,14 +313,14 @@ void HostRedirector::initAndStart(const Json::Value& config)
 
                     size_t maxLen = maxIdx - minIdx;
                     group->maxPathLen = maxLen;
-                    for (const auto& redirectFrom : fromData)
+                    for (const auto &redirectFrom : fromData)
                     {
                         string_view path = redirectFrom->path;
                         string_view pathGroup = path.substr(minIdx, maxLen);
 
-                        auto& groups = group->groups;
+                        auto &groups = group->groups;
                         auto find = groups.find(pathGroup);
-                        RedirectGroup* childGroup;
+                        RedirectGroup *childGroup;
                         if (find != groups.end())
                             childGroup = find->second;
                         else
@@ -339,7 +339,7 @@ void HostRedirector::initAndStart(const Json::Value& config)
                                        // reached the end
                         }
 
-                        auto& leaf = leafsBackbuffer[childGroup];
+                        auto &leaf = leafsBackbuffer[childGroup];
                         leaf.fromData.push_back(redirectFrom);
                         leaf.maxPathLen = maxIdx;
                     }
@@ -358,9 +358,9 @@ void HostRedirector::initAndStart(const Json::Value& config)
         return;
     }
     redirector->registerPostRedirectorHandler(
-        [weakPtr](const HttpRequestPtr& req,
-                  string& host,
-                  bool& pathChanged) -> bool {
+        [weakPtr](const HttpRequestPtr &req,
+                  string &host,
+                  bool &pathChanged) -> bool {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
             {
@@ -370,9 +370,9 @@ void HostRedirector::initAndStart(const Json::Value& config)
         });
 }
 
-void HostRedirector::recursiveDelete(const RedirectGroup* group)
+void HostRedirector::recursiveDelete(const RedirectGroup *group)
 {
-    for (const auto& [_, child] : group->groups)
+    for (const auto &[_, child] : group->groups)
         recursiveDelete(child);
     delete group;
 }
@@ -380,11 +380,11 @@ void HostRedirector::recursiveDelete(const RedirectGroup* group)
 void HostRedirector::shutdown()
 {
     // Free up manually allocated memory of nodes
-    for (const auto& [_, rule] : rulesFrom_)
+    for (const auto &[_, rule] : rulesFrom_)
     {
         // The rule value itself doesn't need manual freeing,
         // so start at a depth level of 2
-        for (const auto& [_, group] : rule.groups)
+        for (const auto &[_, group] : rule.groups)
             recursiveDelete(group);
     }
 
