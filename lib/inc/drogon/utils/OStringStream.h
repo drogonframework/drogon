@@ -53,8 +53,8 @@ class OStringStream
     }
 
     template <typename T>
-    std::enable_if_t<!internal::CanConvertToString<T>::value, OStringStream&>
-    operator<<(T&& value)
+    std::enable_if_t<!internal::CanConvertToString<T>::value, OStringStream &>
+    operator<<(T &&value)
     {
         std::stringstream ss;
         ss << std::forward<T>(value);
@@ -63,45 +63,45 @@ class OStringStream
     }
 
     template <typename T>
-    std::enable_if_t<internal::CanConvertToString<T>::value, OStringStream&>
-    operator<<(T&& value)
+    std::enable_if_t<internal::CanConvertToString<T>::value, OStringStream &>
+    operator<<(T &&value)
     {
         buffer_.append(std::to_string(std::forward<T>(value)));
         return *this;
     }
 
     template <int N>
-    OStringStream& operator<<(const char (&buf)[N])
+    OStringStream &operator<<(const char (&buf)[N])
     {
         buffer_.append(buf, N - 1);
         return *this;
     }
 
-    OStringStream& operator<<(const std::string_view& str)
+    OStringStream &operator<<(const std::string_view &str)
     {
         buffer_.append(str.data(), str.length());
         return *this;
     }
 
-    OStringStream& operator<<(std::string_view&& str)
+    OStringStream &operator<<(std::string_view &&str)
     {
         buffer_.append(str.data(), str.length());
         return *this;
     }
 
-    OStringStream& operator<<(const std::string& str)
+    OStringStream &operator<<(const std::string &str)
     {
         buffer_.append(str);
         return *this;
     }
 
-    OStringStream& operator<<(std::string&& str)
+    OStringStream &operator<<(std::string &&str)
     {
         buffer_.append(std::move(str));
         return *this;
     }
 
-    OStringStream& operator<<(const double& d)
+    OStringStream &operator<<(const double &d)
     {
         std::stringstream ss;
         ss << d;
@@ -109,7 +109,7 @@ class OStringStream
         return *this;
     }
 
-    OStringStream& operator<<(const float& f)
+    OStringStream &operator<<(const float &f)
     {
         std::stringstream ss;
         ss << f;
@@ -117,7 +117,7 @@ class OStringStream
         return *this;
     }
 
-    OStringStream& operator<<(double&& d)
+    OStringStream &operator<<(double &&d)
     {
         std::stringstream ss;
         ss << d;
@@ -125,7 +125,7 @@ class OStringStream
         return *this;
     }
 
-    OStringStream& operator<<(float&& f)
+    OStringStream &operator<<(float &&f)
     {
         std::stringstream ss;
         ss << f;
@@ -133,12 +133,12 @@ class OStringStream
         return *this;
     }
 
-    std::string& str()
+    std::string &str()
     {
         return buffer_;
     }
 
-    const std::string& str() const
+    const std::string &str() const
     {
         return buffer_;
     }

@@ -37,7 +37,7 @@ static inline size_t findTrailingSlashes(string_view url)
     return a;
 }
 
-static inline void removeTrailingSlashes(string& url,
+static inline void removeTrailingSlashes(string &url,
                                          size_t start,
                                          string_view originalUrl)
 {
@@ -67,7 +67,7 @@ static inline size_t findDuplicateSlashes(string_view url)
     return string::npos;
 }
 
-static inline void removeDuplicateSlashes(string& url, size_t start)
+static inline void removeDuplicateSlashes(string &url, size_t start)
 {
     // +1 because we don't need to look at the same character again,
     // which was found by `findDuplicateSlashes`, it saves one iteration
@@ -137,7 +137,7 @@ static inline std::pair<size_t, size_t> findExcessiveSlashes(string_view url)
     };
 }
 
-static inline void removeExcessiveSlashes(string& url,
+static inline void removeExcessiveSlashes(string &url,
                                           std::pair<size_t, size_t> start,
                                           string_view originalUrl)
 {
@@ -150,7 +150,7 @@ static inline void removeExcessiveSlashes(string& url,
         removeDuplicateSlashes(url, start.second);
 }
 
-static inline bool handleReq(const drogon::HttpRequestPtr& req,
+static inline bool handleReq(const drogon::HttpRequestPtr &req,
                              uint8_t removeMode)
 {
     switch (removeMode)
@@ -193,7 +193,7 @@ static inline bool handleReq(const drogon::HttpRequestPtr& req,
     return true;
 }
 
-void SlashRemover::initAndStart(const Json::Value& config)
+void SlashRemover::initAndStart(const Json::Value &config)
 {
     trailingSlashes_ = config.get("remove_trailing_slashes", true).asBool();
     duplicateSlashes_ = config.get("remove_duplicate_slashes", true).asBool();
@@ -208,7 +208,7 @@ void SlashRemover::initAndStart(const Json::Value& config)
         LOG_ERROR << "Redirector plugin is not found!";
         return;
     }
-    auto func = [removeMode](const HttpRequestPtr& req) -> bool {
+    auto func = [removeMode](const HttpRequestPtr &req) -> bool {
         return handleReq(req, removeMode);
     };
     if (redirect_)

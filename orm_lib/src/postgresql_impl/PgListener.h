@@ -30,23 +30,23 @@ class PgListener : public DbListener,
                    public std::enable_shared_from_this<PgListener>
 {
   public:
-    PgListener(std::string connInfo, trantor::EventLoop* loop);
+    PgListener(std::string connInfo, trantor::EventLoop *loop);
     ~PgListener() override;
     void init() noexcept;
 
-    trantor::EventLoop* loop() const
+    trantor::EventLoop *loop() const
     {
         return loop_;
     }
 
-    void listen(const std::string& channel,
+    void listen(const std::string &channel,
                 MessageCallback messageCallback) noexcept override;
-    void unlisten(const std::string& channel) noexcept override;
+    void unlisten(const std::string &channel) noexcept override;
 
     // methods below should be called in loop
 
-    void onMessage(const std::string& channel,
-                   const std::string& message) const noexcept;
+    void onMessage(const std::string &channel,
+                   const std::string &message) const noexcept;
     void listenAll() noexcept;
     void listenNext() noexcept;
 
@@ -67,11 +67,11 @@ class PgListener : public DbListener,
      * byte is also added. The return string will also be surrounded by double
      * quotes.
      */
-    static std::string escapeIdentifier(const PgConnectionPtr& conn,
-                                        const char* str,
+    static std::string escapeIdentifier(const PgConnectionPtr &conn,
+                                        const char *str,
                                         size_t length);
 
-    void listenInLoop(const std::string& channel,
+    void listenInLoop(const std::string &channel,
                       bool listen,
                       std::shared_ptr<unsigned int> = nullptr);
 
@@ -79,7 +79,7 @@ class PgListener : public DbListener,
 
     std::string connectionInfo_;
     std::unique_ptr<trantor::EventLoopThread> threadPtr_;
-    trantor::EventLoop* loop_;
+    trantor::EventLoop *loop_;
     DbConnectionPtr connHolder_;
     DbConnectionPtr conn_;
     std::deque<std::pair<bool, std::string>> listenTasks_;

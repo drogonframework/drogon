@@ -7,7 +7,7 @@ DROGON_TEST(BasicTest)
     // Add your tests here
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     using namespace drogon;
 

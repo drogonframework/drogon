@@ -42,7 +42,7 @@ class TransformBuilder : public BaseBuilder<T, SelectAll, Single>
      * @note This function is enabled only when `Single` is true.
      */
     template <bool SI = Single, std::enable_if_t<SI, std::nullptr_t> = nullptr>
-    TransformBuilder(const TransformBuilder<T, SelectAll, false>& tb)
+    TransformBuilder(const TransformBuilder<T, SelectAll, false> &tb)
     {
         this->from_ = tb.from_;
         this->columns_ = tb.columns_;
@@ -59,7 +59,7 @@ class TransformBuilder : public BaseBuilder<T, SelectAll, Single>
      *
      * @return TransformBuilder& The TransformBuilder itself.
      */
-    inline TransformBuilder& limit(std::uint64_t count)
+    inline TransformBuilder &limit(std::uint64_t count)
     {
         this->limit_ = count;
         return *this;
@@ -72,7 +72,7 @@ class TransformBuilder : public BaseBuilder<T, SelectAll, Single>
      *
      * @return TransformBuilder& The TransformBuilder itself.
      */
-    inline TransformBuilder& offset(std::uint64_t count)
+    inline TransformBuilder &offset(std::uint64_t count)
     {
         this->offset_ = count;
         return *this;
@@ -86,7 +86,7 @@ class TransformBuilder : public BaseBuilder<T, SelectAll, Single>
      *
      * @return TransformBuilder& The TransformBuilder itself.
      */
-    inline TransformBuilder& range(std::uint64_t from, std::uint64_t to)
+    inline TransformBuilder &range(std::uint64_t from, std::uint64_t to)
     {
         this->offset_ = from;
         this->limit_ = to - from + 1;  // inclusive
@@ -101,7 +101,7 @@ class TransformBuilder : public BaseBuilder<T, SelectAll, Single>
      *
      * @return TransformBuilder& The TransformBuilder itself.
      */
-    inline TransformBuilder& order(const std::string& column, bool asc = true)
+    inline TransformBuilder &order(const std::string &column, bool asc = true)
     {
         this->assert_column(column);
         this->orders_.emplace_back(column, asc);

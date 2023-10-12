@@ -40,7 +40,7 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
      *
      * @return FilterBuilder The FilterBuilder itself.
      */
-    FilterBuilder(const std::string& from, const std::string& columns)
+    FilterBuilder(const std::string &from, const std::string &columns)
     {
         this->from_ = from;
         this->columns_ = columns;
@@ -54,8 +54,8 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
      *
      * @return FilterBuilder& The FilterBuilder itself.
      */
-    inline FilterBuilder& eq(const std::string& column,
-                             const std::string& value)
+    inline FilterBuilder &eq(const std::string &column,
+                             const std::string &value)
     {
         this->assert_column(column);
         this->filters_.push_back({column, CompareOperator::EQ, value});
@@ -70,8 +70,8 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
      *
      * @return FilterBuilder& The FilterBuilder itself.
      */
-    inline FilterBuilder& neq(const std::string& column,
-                              const std::string& value)
+    inline FilterBuilder &neq(const std::string &column,
+                              const std::string &value)
     {
         this->assert_column(column);
         this->filters_.push_back({column, CompareOperator::NE, value});
@@ -86,8 +86,8 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
      *
      * @return FilterBuilder& The FilterBuilder itself.
      */
-    inline FilterBuilder& gt(const std::string& column,
-                             const std::string& value)
+    inline FilterBuilder &gt(const std::string &column,
+                             const std::string &value)
     {
         this->assert_column(column);
         this->filters_.push_back({column, CompareOperator::GT, value});
@@ -102,8 +102,8 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
      *
      * @return FilterBuilder& The FilterBuilder itself.
      */
-    inline FilterBuilder& gte(const std::string& column,
-                              const std::string& value)
+    inline FilterBuilder &gte(const std::string &column,
+                              const std::string &value)
     {
         this->assert_column(column);
         this->filters_.push_back({column, CompareOperator::GE, value});
@@ -118,8 +118,8 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
      *
      * @return FilterBuilder& The FilterBuilder itself.
      */
-    inline FilterBuilder& lt(const std::string& column,
-                             const std::string& value)
+    inline FilterBuilder &lt(const std::string &column,
+                             const std::string &value)
     {
         this->assert_column(column);
         this->filters_.push_back({column, CompareOperator::LT, value});
@@ -134,8 +134,8 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
      *
      * @return FilterBuilder& The FilterBuilder itself.
      */
-    inline FilterBuilder& lte(const std::string& column,
-                              const std::string& value)
+    inline FilterBuilder &lte(const std::string &column,
+                              const std::string &value)
     {
         this->assert_column(column);
         this->filters_.push_back({column, CompareOperator::LE, value});
@@ -150,8 +150,8 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
      *
      * @return FilterBuilder& The FilterBuilder itself.
      */
-    inline FilterBuilder& like(const std::string& column,
-                               const std::string& pattern)
+    inline FilterBuilder &like(const std::string &column,
+                               const std::string &pattern)
     {
         this->assert_column(column);
         this->filters_.push_back({column, CompareOperator::Like, pattern});
