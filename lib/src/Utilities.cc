@@ -1229,10 +1229,10 @@ std::string secureRandomString(size_t size)
         "+-";
     assert(chars.size() == 64);
 
-    static thread_local trantor::utils::Hash256 hash;
     // batch up to 32 bytes of random data for efficiency. Calling
     // secureRandomBytes can be expensive.
     auto randByte = []() {
+        static thread_local trantor::utils::Hash256 hash;
         static thread_local size_t i = 0;
         if (i == 0)
         {
