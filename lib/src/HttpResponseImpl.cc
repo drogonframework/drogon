@@ -162,7 +162,11 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(const HttpRequestPtr &req)
     }
     else
     {
-        if (loop && loop->index() < app().getThreadNum())
+        if (HttpAppFrameworkImpl::instance().isUsingCustomErrorHandler())
+        {
+            return app().getCustomErrorHandler()(k404NotFound, req);
+        }
+        else if (loop && loop->index() < app().getThreadNum())
         {
             // If the current thread is an IO thread
             static std::once_flag threadOnce;
@@ -170,21 +174,12 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(const HttpRequestPtr &req)
             std::call_once(threadOnce, [req = req] {
                 thread404Pages.init([req = req](drogon::HttpResponsePtr &resp,
                                                 size_t /*index*/) {
-                    if (HttpAppFrameworkImpl::instance()
-                            .isUsingCustomErrorHandler())
-                    {
-                        resp = app().getCustomErrorHandler()(k404NotFound, req);
-                        resp->setExpiredTime(-1);
-                    }
-                    else
-                    {
-                        HttpViewData data;
-                        data.insert("version", drogon::getVersion());
-                        resp = HttpResponse::newHttpViewResponse(
-                            "drogon::NotFound", data);
-                        resp->setStatusCode(k404NotFound);
-                        resp->setExpiredTime(0);
-                    }
+                    HttpViewData data;
+                    data.insert("version", drogon::getVersion());
+                    resp = HttpResponse::newHttpViewResponse("drogon::NotFound",
+                                                             data);
+                    resp->setStatusCode(k404NotFound);
+                    resp->setExpiredTime(0);
                 });
             });
             LOG_TRACE << "Use cached 404 response";
@@ -192,10 +187,6 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(const HttpRequestPtr &req)
         }
         else
         {
-            if (HttpAppFrameworkImpl::instance().isUsingCustomErrorHandler())
-            {
-                return app().getCustomErrorHandler()(k404NotFound, req);
-            }
             HttpViewData data;
             data.insert("version", drogon::getVersion());
             auto notFoundResp =
