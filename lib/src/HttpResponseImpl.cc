@@ -174,7 +174,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(const HttpRequestPtr &req)
                             .isUsingCustomErrorHandler())
                     {
                         resp = app().getCustomErrorHandler()(k404NotFound, req);
-                        resp->setExpiredTime(0);
+                        resp->setExpiredTime(-1);
                     }
                     else
                     {
