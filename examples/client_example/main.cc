@@ -71,8 +71,9 @@ int main()
                     }
                     std::cout << "count=" << nth_resp << std::endl;
                 });
+            LOG_INFO << "send request";
         }
-    }
 
-    app().run();
+        app().run();
+    }
 }

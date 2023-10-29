@@ -244,6 +244,7 @@ set(DROGON_SOURCES
     lib/src/Hodor.cc
     lib/src/HttpAppFrameworkImpl.cc
     lib/src/HttpBinder.cc
+    lib/src/Http2Transport.cc
     lib/src/HttpClientImpl.cc
     lib/src/HttpControllersRouter.cc
     lib/src/HttpFileImpl.cc

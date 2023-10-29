@@ -24,37 +24,11 @@
 #include <queue>
 #include <vector>
 #include "impl_forwards.h"
+#include "Http2Transport.h"
+#include "HttpTransport.h"
 
 namespace drogon
 {
-
-class HttpTransport
-{
-  public:
-    HttpTransport() = default;
-    virtual ~HttpTransport() = default;
-    virtual void sendRequestInLoop(const HttpRequestPtr &req,
-                                   HttpReqCallback &&callback,
-                                   double timeout) = 0;
-    virtual void onRecvMessage(const trantor::TcpConnectionPtr &,
-                               trantor::MsgBuffer *) = 0;
-    virtual bool handleConnectionClose() = 0;
-    virtual void onError(ReqResult result) = 0;
-
-    virtual size_t requestsInFlight() const = 0;
-
-    using RespCallback =
-        std::function<void(const HttpResponseImplPtr &,
-                           std::pair<HttpRequestPtr, HttpReqCallback> &&,
-                           const trantor::TcpConnectionPtr)>;
-
-    void setRespCallback(RespCallback cb)
-    {
-        respCallback = std::move(cb);
-    }
-
-    RespCallback respCallback;
-};
 
 class Http1xTransport : public HttpTransport
 {
@@ -64,14 +38,15 @@ class Http1xTransport : public HttpTransport
     size_t *bytesSent_;
     size_t *bytesReceived_;
 
+    void sendReq(const HttpRequestPtr &req);
+
   public:
     Http1xTransport(trantor::TcpConnectionPtr connPtr,
                     size_t *bytesSent,
                     size_t *bytesReceived);
     virtual ~Http1xTransport();
     void sendRequestInLoop(const HttpRequestPtr &req,
-                           HttpReqCallback &&callback,
-                           double timeout) override;
+                           HttpReqCallback &&callback) override;
     void onRecvMessage(const trantor::TcpConnectionPtr &,
                        trantor::MsgBuffer *) override;
 
@@ -91,8 +66,6 @@ class Http1xTransport : public HttpTransport
             pipeliningCallbacks_.pop();
         }
     }
-
-    void sendReq(const HttpRequestPtr &req);
 };
 
 class HttpClientImpl final : public HttpClient,

@@ -89,11 +89,14 @@ enum HttpStatusCode
     k511NetworkAuthenticationRequired = 511
 };
 
+// TODO: Add an option to use default HTTP version
+// as the server may not support HTTP/2.
 enum class Version
 {
     kUnknown = 0,
     kHttp10,
-    kHttp11
+    kHttp11,
+    kHttp2,
 };
 
 enum ContentType

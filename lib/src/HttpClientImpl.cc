@@ -40,12 +40,10 @@ Http1xTransport::Http1xTransport(trantor::TcpConnectionPtr connPtr,
 }
 
 void Http1xTransport::sendRequestInLoop(const HttpRequestPtr &req,
-                                        HttpReqCallback &&callback,
-                                        double timeout)
+                                        HttpReqCallback &&callback)
 {
     sendReq(req);
     pipeliningCallbacks_.emplace(std::move(req), std::move(callback));
-    (void)timeout;
 }
 
 void Http1xTransport::onRecvMessage(const trantor::TcpConnectionPtr &conn,
@@ -135,7 +133,7 @@ void HttpClientImpl::createTcpClient()
             .setConfCmds(sslConfCmds_)
             .setCertPath(clientCertPath_)
             .setKeyPath(clientKeyPath_)
-            .setAlpnProtocols({"http/1.1"});
+            .setAlpnProtocols({"h2", "http/1.1"});
         tcpClientPtr_->enableSSL(std::move(policy));
     }
 
@@ -159,16 +157,30 @@ void HttpClientImpl::createTcpClient()
             // send request;
             LOG_TRACE << "Connection established!";
 
-            // TODO: support http/2
             auto protocol = connPtr->applicationProtocol();
             if (protocol.empty() || protocol == "http/1.1")
+            {
+                LOG_TRACE << "Select http/1.1 protocol";
                 thisPtr->transport_ =
                     std::make_unique<Http1xTransport>(connPtr,
                                                       &thisPtr->bytesSent_,
                                                       &thisPtr->bytesReceived_);
+            }
+            else if (protocol == "h2")
+            {
+                LOG_TRACE << "Select http/2 protocol";
+                thisPtr->transport_ =
+                    std::make_unique<Http2Transport>(connPtr,
+                                                     &thisPtr->bytesSent_,
+                                                     &thisPtr->bytesReceived_);
+            }
             else
-                throw std::runtime_error("Unsupported protocol: " +
-                                         connPtr->applicationProtocol());
+            {
+                LOG_ERROR << "Unknown protocol " << protocol
+                          << " selected by server for HTTP";
+                thisPtr->onError(ReqResult::BadResponse);
+                return;
+            }
             thisPtr->transport_->setRespCallback(
                 [weakPtr](const HttpResponseImplPtr &resp,
                           std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
@@ -183,8 +195,9 @@ void HttpClientImpl::createTcpClient()
             while (!thisPtr->requestsBuffer_.empty())
             {
                 auto &reqAndCb = thisPtr->requestsBuffer_.front();
-                thisPtr->transport_->sendRequestInLoop(
-                    reqAndCb.first, std::move(reqAndCb.second), 0);
+                thisPtr->transport_->sendRequestInLoop(reqAndCb.first,
+                                                       std::move(
+                                                           reqAndCb.second));
                 thisPtr->requestsBuffer_.pop_front();
             }
         }
@@ -612,7 +625,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     if (transport_->requestsInFlight() <= pipeliningDepth_ &&
         requestsBuffer_.empty())
     {
-        transport_->sendRequestInLoop(req, std::move(callback), 0);
+        transport_->sendRequestInLoop(req, std::move(callback));
     }
     else
     {
@@ -673,8 +686,7 @@ void HttpClientImpl::handleResponse(
         {
             auto &reqAndCallback = requestsBuffer_.front();
             transport_->sendRequestInLoop(reqAndCallback.first,
-                                          std::move(reqAndCallback.second),
-                                          0);
+                                          std::move(reqAndCallback.second));
             requestsBuffer_.pop_front();
         }
         else
