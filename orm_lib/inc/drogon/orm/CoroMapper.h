@@ -489,6 +489,41 @@ class CoroMapper : public Mapper<T>
                               std::forward<Arguments>(args)...);
     }
 
+    template <typename... Arguments>
+    inline internal::MapperAwaiter<size_t> increment(
+        const std::vector<std::string> &colNames,
+        const Criteria &criteria,
+        Arguments... args)
+    {
+        static_assert(sizeof...(args) > 0);
+        assert(colNames.size() == sizeof...(args));
+        std::string sql = "update ";
+        sql += T::tableName;
+        sql += " set ";
+
+        std::vector<const char *> temps;
+        (void)std::initializer_list<int>{(
+            [&args, &temps] {
+                args = (args < 0) ? (temps.push_back(" - $?,"), -args)
+                                  : (temps.push_back(" + $?,"), args);
+            }(),
+            0)...};
+
+        for (int i = 0; i < sizeof...(args); ++i)
+        {
+            const auto &colName = colNames[i];
+            sql += colName;
+            sql += " = ";
+            sql += colName;
+            sql += temps[i];
+        }
+        sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+        return updateByHelper(std::move(sql),
+                              criteria,
+                              std::forward<Arguments>(args)...);
+    }
+
   private:
     template <typename... Arguments>
     internal::MapperAwaiter<size_t> updateByHelper(std::string &&sql,
