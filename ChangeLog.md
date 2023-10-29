@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.0] - 2023-10-29
+
+### API changes list
+
+- Added isTopicEmpty function;
+
+### Changed
+
+- Update the ubuntu Dockerfile;
+
+- Add optional Criteria && || operator support;
+
+- Bump actions/checkout from 3 to 4;
+
+- Make & and * directly adjacent to variable names;
+
+- Use wss://echo.websocket.events/.ws in WebSocket client example;
+
+- Change logs in the AccessLogger plugin to TRACE level;
+
+### Fixed
+
+- Fix an error in the secureRandomString function;
+
+- FIX int mapping to int64_t instead of uint64_t;
+
+
 ## [1.9.0-rc.1] - 2023-09-23
 
 ### API changes list
@@ -1466,9 +1493,11 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.0-rc.1...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.0...HEAD
 
-[1.9.0-rc.1]: https://github.com/an-tao/drogon/compare/v1.8.6...1.9.0-rc.1
+[1.9.0]: https://github.com/an-tao/drogon/compare/v1.9.0-rc.1...v1.9.0
+
+[1.9.0-rc.1]: https://github.com/an-tao/drogon/compare/v1.8.6...v1.9.0-rc.1
 
 [1.8.6]: https://github.com/an-tao/drogon/compare/v1.8.5...v1.8.6
 
