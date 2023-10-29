@@ -172,8 +172,6 @@ class HttpClientImpl final : public HttpClient,
                         std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
                         const trantor::TcpConnectionPtr &connPtr);
     void createTcpClient();
-    // std::queue<std::pair<HttpRequestPtr, HttpReqCallback>>
-    // pipeliningCallbacks_;
     std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
