@@ -31,6 +31,91 @@ namespace trantor
 const static size_t kDefaultDNSTimeout{600};
 }
 
+Http1xTransport::Http1xTransport(trantor::TcpConnectionPtr connPtr)
+    : connPtr(connPtr)
+{
+    connPtr->setContext(std::make_shared<HttpResponseParser>(connPtr));
+}
+
+void Http1xTransport::sendRequestInLoop(const HttpRequestPtr &req,
+                                        HttpReqCallback &&callback,
+                                        double timeout)
+{
+    sendReq(req);
+    pipeliningCallbacks_.emplace(std::move(req), std::move(callback));
+    (void)timeout;
+}
+
+void Http1xTransport::onRecvMessage(const trantor::TcpConnectionPtr &conn,
+                                    trantor::MsgBuffer *msg)
+{
+    auto responseParser = connPtr->getContext<HttpResponseParser>();
+    assert(responseParser != nullptr);
+    assert(connPtr.get() == conn.get());
+
+    // LOG_TRACE << "###:" << msg->readableBytes();
+    auto msgSize = msg->readableBytes();
+    while (msg->readableBytes() > 0)
+    {
+        if (pipeliningCallbacks_.empty())
+        {
+            LOG_ERROR << "More responses than expected!";
+            connPtr->shutdown();
+            return;
+        }
+        auto &firstReq = pipeliningCallbacks_.front();
+        if (firstReq.first->method() == Head)
+        {
+            responseParser->setForHeadMethod();
+        }
+        if (!responseParser->parseResponse(msg))
+        {
+            // TODO: Make upper layer flush all requests in the buffer
+            onError(ReqResult::BadResponse);
+            // bytesReceived_ += (msgSize - msg->readableBytes());
+            return;
+        }
+        if (responseParser->gotAll())
+        {
+            auto resp = responseParser->responseImpl();
+            resp->setPeerCertificate(connPtr->peerCertificate());
+            responseParser->reset();
+            // bytesReceived_ += (msgSize - msg->readableBytes());
+            msgSize = msg->readableBytes();
+            respCallback(resp, std::move(firstReq), conn);
+
+            pipeliningCallbacks_.pop();
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+Http1xTransport::~Http1xTransport()
+{
+}
+
+bool Http1xTransport::handleConnectionClose()
+{
+    auto responseParser = connPtr->getContext<HttpResponseParser>();
+    if (responseParser && responseParser->parseResponseOnClose() &&
+        responseParser->gotAll())
+    {
+        auto &firstReq = pipeliningCallbacks_.front();
+        if (firstReq.first->method() == Head)
+        {
+            responseParser->setForHeadMethod();
+        }
+        auto resp = responseParser->responseImpl();
+        responseParser->reset();
+        respCallback(resp, std::move(firstReq), connPtr);
+        return false;
+    }
+    return true;
+}
+
 void HttpClientImpl::createTcpClient()
 {
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
@@ -47,7 +132,8 @@ void HttpClientImpl::createTcpClient()
             .setHostname(domain_)
             .setConfCmds(sslConfCmds_)
             .setCertPath(clientCertPath_)
-            .setKeyPath(clientKeyPath_);
+            .setKeyPath(clientKeyPath_)
+            .setAlpnProtocols({"http/1.1"});
         tcpClientPtr_->enableSSL(std::move(policy));
     }
 
@@ -60,55 +146,68 @@ void HttpClientImpl::createTcpClient()
         if (thisPtr->sockOptCallback_)
             thisPtr->sockOptCallback_(fd);
     });
-    tcpClientPtr_->setConnectionCallback(
-        [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
-            auto thisPtr = weakPtr.lock();
-            if (!thisPtr)
-                return;
-            if (connPtr->connected())
-            {
-                connPtr->setContext(
-                    std::make_shared<HttpResponseParser>(connPtr));
-                // send request;
-                LOG_TRACE << "Connection established!";
-                while (thisPtr->pipeliningCallbacks_.size() <=
-                           thisPtr->pipeliningDepth_ &&
-                       !thisPtr->requestsBuffer_.empty())
-                {
-                    thisPtr->sendReq(connPtr,
-                                     thisPtr->requestsBuffer_.front().first);
-                    thisPtr->pipeliningCallbacks_.push(
-                        std::move(thisPtr->requestsBuffer_.front()));
-                    thisPtr->requestsBuffer_.pop_front();
-                }
-            }
+    tcpClientPtr_->setConnectionCallback([weakPtr](
+                                             const trantor::TcpConnectionPtr
+                                                 &connPtr) {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        if (connPtr->connected())
+        {
+            // send request;
+            LOG_TRACE << "Connection established!";
+
+            // TODO: support http/2
+            auto protocol = connPtr->applicationProtocol();
+            if (protocol.empty() || protocol == "http/1.1")
+                thisPtr->transport_ =
+                    std::make_unique<Http1xTransport>(connPtr);
             else
+                throw std::runtime_error("Unsupported protocol: " +
+                                         connPtr->applicationProtocol());
+            thisPtr->transport_->setRespCallback(
+                [weakPtr](const HttpResponseImplPtr &resp,
+                          std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
+                          const trantor::TcpConnectionPtr &connPtr) {
+                    auto thisPtr = weakPtr.lock();
+                    if (!thisPtr)
+                        return;
+                    thisPtr->handleResponse(resp, std::move(reqAndCb), connPtr);
+                });
+
+            // TODO: respect timeout and pipeliningDepth_
+            while (!thisPtr->requestsBuffer_.empty())
             {
-                LOG_TRACE << "connection disconnect";
-                auto responseParser = connPtr->getContext<HttpResponseParser>();
-                if (responseParser && responseParser->parseResponseOnClose() &&
-                    responseParser->gotAll())
-                {
-                    auto &firstReq = thisPtr->pipeliningCallbacks_.front();
-                    if (firstReq.first->method() == Head)
-                    {
-                        responseParser->setForHeadMethod();
-                    }
-                    auto resp = responseParser->responseImpl();
-                    responseParser->reset();
-                    // temporary fix of dead tcpClientPtr_
-                    // TODO: fix HttpResponseParser when content-length absence
-                    thisPtr->tcpClientPtr_.reset();
-                    thisPtr->handleResponse(resp, std::move(firstReq), connPtr);
-                    if (!thisPtr->requestsBuffer_.empty())
-                    {
-                        thisPtr->createTcpClient();
-                    }
-                    return;
-                }
-                thisPtr->onError(ReqResult::NetworkFailure);
+                auto &reqAndCb = thisPtr->requestsBuffer_.front();
+                thisPtr->transport_->sendRequestInLoop(
+                    reqAndCb.first, std::move(reqAndCb.second), 0);
+                thisPtr->requestsBuffer_.pop_front();
             }
-        });
+        }
+        else
+        {
+            LOG_TRACE << "connection disconnect";
+            // TODO: Make sure the sequence of handling is correct
+            bool isUnexpected = false;
+            if (thisPtr->transport_)
+            {
+                isUnexpected = thisPtr->transport_->handleConnectionClose();
+            }
+            if (isUnexpected)
+            {
+                thisPtr->onError(ReqResult::NetworkFailure);
+                return;
+            }
+
+            // temporary fix of dead tcpClientPtr_
+            // TODO: fix HttpResponseParser when content-length absence
+            thisPtr->tcpClientPtr_.reset();
+            if (!thisPtr->requestsBuffer_.empty())
+            {
+                thisPtr->createTcpClient();
+            }
+        }
+    });
     tcpClientPtr_->setConnectionErrorCallback([weakPtr]() {
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
@@ -417,15 +516,6 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
     if (!tcpClientPtr_)
     {
-        auto callbackPtr =
-            std::make_shared<drogon::HttpReqCallback>(std::move(callback));
-        requestsBuffer_.push_back(
-            {req,
-             [thisPtr = shared_from_this(),
-              callbackPtr](ReqResult result, const HttpResponsePtr &response) {
-                 (*callbackPtr)(result, response);
-             }});
-
         if (domain_.empty() || !isDomainName_)
         {
             // Valid ip address, no domain, connect directly
@@ -436,12 +526,20 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             // No ip address and no domain, respond with BadServerAddress
             else
             {
-                requestsBuffer_.pop_front();
-                (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
+                callback(ReqResult::BadServerAddress, nullptr);
                 assert(requestsBuffer_.empty());
             }
             return;
         }
+
+        auto callbackPtr =
+            std::make_shared<drogon::HttpReqCallback>(std::move(callback));
+        requestsBuffer_.push_back(
+            {req,
+             [thisPtr = shared_from_this(),
+              callbackPtr](ReqResult result, const HttpResponsePtr &response) {
+                 (*callbackPtr)(result, response);
+             }});
 
         // A dns query is on going.
         if (dns_)
@@ -504,19 +602,13 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
              }});
         return;
     }
+    assert(transport_ != nullptr);
 
     // Connected, send request now
-    if (pipeliningCallbacks_.size() <= pipeliningDepth_ &&
+    if (transport_->requestsInFlight() <= pipeliningDepth_ &&
         requestsBuffer_.empty())
     {
-        sendReq(connPtr, req);
-        pipeliningCallbacks_.push(
-            {req,
-             [thisPtr,
-              callback = std::move(callback)](ReqResult result,
-                                              const HttpResponsePtr &response) {
-                 callback(result, response);
-             }});
+        transport_->sendRequestInLoop(req, std::move(callback), 0);
     }
     else
     {
@@ -543,12 +635,23 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
     connPtr->send(std::move(buffer));
 }
 
+void Http1xTransport::sendReq(const HttpRequestPtr &req)
+{
+    trantor::MsgBuffer buffer;
+    assert(req);
+    auto implPtr = static_cast<HttpRequestImpl *>(req.get());
+    implPtr->appendToBuffer(&buffer);
+    LOG_TRACE << "Send request:"
+              << std::string(buffer.peek(), buffer.readableBytes());
+    // bytesSent_ += buffer.readableBytes();
+    connPtr->send(std::move(buffer));
+}
+
 void HttpClientImpl::handleResponse(
     const HttpResponseImplPtr &resp,
     std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
     const trantor::TcpConnectionPtr &connPtr)
 {
-    assert(!pipeliningCallbacks_.empty());
     auto &type = resp->getHeaderBy("content-type");
     auto &coding = resp->getHeaderBy("content-encoding");
     if (coding == "gzip")
@@ -566,7 +669,6 @@ void HttpClientImpl::handleResponse(
         resp->parseJson();
     }
     auto cb = std::move(reqAndCb);
-    pipeliningCallbacks_.pop();
     handleCookies(resp);
     cb.second(ReqResult::Ok, resp);
 
@@ -579,13 +681,15 @@ void HttpClientImpl::handleResponse(
         if (!requestsBuffer_.empty())
         {
             auto &reqAndCallback = requestsBuffer_.front();
-            sendReq(connPtr, reqAndCallback.first);
-            pipeliningCallbacks_.push(std::move(reqAndCallback));
+            transport_->sendRequestInLoop(reqAndCallback.first,
+                                          std::move(reqAndCallback.second),
+                                          0);
             requestsBuffer_.pop_front();
         }
         else
         {
-            if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
+            if (resp->ifCloseConnection() &&
+                transport_->requestsInFlight() == 0)
             {
                 tcpClientPtr_.reset();
             }
@@ -593,55 +697,15 @@ void HttpClientImpl::handleResponse(
     }
     else
     {
-        while (!pipeliningCallbacks_.empty())
-        {
-            auto cb = std::move(pipeliningCallbacks_.front());
-            pipeliningCallbacks_.pop();
-            cb.second(ReqResult::NetworkFailure, nullptr);
-        }
+        transport_->onError(ReqResult::NetworkFailure);
     }
 }
 
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
                                    trantor::MsgBuffer *msg)
 {
-    auto responseParser = connPtr->getContext<HttpResponseParser>();
-
-    // LOG_TRACE << "###:" << msg->readableBytes();
-    auto msgSize = msg->readableBytes();
-    while (msg->readableBytes() > 0)
-    {
-        if (pipeliningCallbacks_.empty())
-        {
-            LOG_ERROR << "More responses than expected!";
-            connPtr->shutdown();
-            return;
-        }
-        auto &firstReq = pipeliningCallbacks_.front();
-        if (firstReq.first->method() == Head)
-        {
-            responseParser->setForHeadMethod();
-        }
-        if (!responseParser->parseResponse(msg))
-        {
-            onError(ReqResult::BadResponse);
-            bytesReceived_ += (msgSize - msg->readableBytes());
-            return;
-        }
-        if (responseParser->gotAll())
-        {
-            auto resp = responseParser->responseImpl();
-            resp->setPeerCertificate(connPtr->peerCertificate());
-            responseParser->reset();
-            bytesReceived_ += (msgSize - msg->readableBytes());
-            msgSize = msg->readableBytes();
-            handleResponse(resp, std::move(firstReq), connPtr);
-        }
-        else
-        {
-            break;
-        }
-    }
+    assert(transport_ != nullptr);
+    transport_->onRecvMessage(connPtr, msg);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
@@ -674,12 +738,8 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
 
 void HttpClientImpl::onError(ReqResult result)
 {
-    while (!pipeliningCallbacks_.empty())
-    {
-        auto cb = std::move(pipeliningCallbacks_.front());
-        pipeliningCallbacks_.pop();
-        cb.second(result, nullptr);
-    }
+    if (transport_)
+        transport_->onError(result);
     while (!requestsBuffer_.empty())
     {
         auto cb = std::move(requestsBuffer_.front().second);

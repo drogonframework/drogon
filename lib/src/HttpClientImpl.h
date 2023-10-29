@@ -27,6 +27,82 @@
 
 namespace drogon
 {
+
+class HttpTransport
+{
+  public:
+    HttpTransport() = default;
+    virtual ~HttpTransport() = default;
+    virtual void sendRequestInLoop(const HttpRequestPtr &req,
+                                   HttpReqCallback &&callback,
+                                   double timeout) = 0;
+    virtual void onRecvMessage(const trantor::TcpConnectionPtr &,
+                               trantor::MsgBuffer *) = 0;
+    virtual bool handleConnectionClose() = 0;
+    virtual void onError(ReqResult result) = 0;
+
+    virtual size_t bytesSent() const = 0;
+    virtual size_t bytesReceived() const = 0;
+    virtual size_t requestsInFlight() const = 0;
+
+    using RespCallback =
+        std::function<void(const HttpResponseImplPtr &,
+                           std::pair<HttpRequestPtr, HttpReqCallback> &&,
+                           const trantor::TcpConnectionPtr)>;
+
+    void setRespCallback(RespCallback cb)
+    {
+        respCallback = std::move(cb);
+    }
+
+    RespCallback respCallback;
+};
+
+class Http1xTransport : public HttpTransport
+{
+  private:
+    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
+    trantor::TcpConnectionPtr connPtr;
+
+  public:
+    Http1xTransport(trantor::TcpConnectionPtr connPtr);
+    virtual ~Http1xTransport();
+    void sendRequestInLoop(const HttpRequestPtr &req,
+                           HttpReqCallback &&callback,
+                           double timeout) override;
+    void onRecvMessage(const trantor::TcpConnectionPtr &,
+                       trantor::MsgBuffer *) override;
+
+    virtual size_t bytesSent() const
+    {
+        throw std::runtime_error("Not implemented");
+    }
+
+    virtual size_t bytesReceived() const
+    {
+        throw std::runtime_error("Not implemented");
+    }
+
+    size_t requestsInFlight() const override
+    {
+        return pipeliningCallbacks_.size();
+    }
+
+    bool handleConnectionClose();
+
+    void onError(ReqResult result) override
+    {
+        while (!pipeliningCallbacks_.empty())
+        {
+            auto &cb = pipeliningCallbacks_.front().second;
+            cb(result, nullptr);
+            pipeliningCallbacks_.pop();
+        }
+    }
+
+    void sendReq(const HttpRequestPtr &req);
+};
+
 class HttpClientImpl final : public HttpClient,
                              public std::enable_shared_from_this<HttpClientImpl>
 {
@@ -133,7 +209,8 @@ class HttpClientImpl final : public HttpClient,
                         std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
                         const trantor::TcpConnectionPtr &connPtr);
     void createTcpClient();
-    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
+    // std::queue<std::pair<HttpRequestPtr, HttpReqCallback>>
+    // pipeliningCallbacks_;
     std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
@@ -152,6 +229,7 @@ class HttpClientImpl final : public HttpClient,
     std::string clientCertPath_;
     std::string clientKeyPath_;
     std::function<void(int)> sockOptCallback_;
+    std::unique_ptr<HttpTransport> transport_;
 };
 
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
