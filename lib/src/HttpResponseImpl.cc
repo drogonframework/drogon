@@ -53,7 +53,8 @@ static inline void doResponseCreateAdvices(
 }
 
 static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
-                                              const HttpViewData &data)
+                                              const HttpViewData &data,
+                                              const HttpRequestPtr &req)
 {
     auto templ = DrTemplateBase::newTemplate(viewName);
     if (templ)
@@ -62,7 +63,7 @@ static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
         res->setBody(templ->genText(data));
         return res;
     }
-    return drogon::HttpResponse::newNotFoundResponse();
+    return drogon::HttpResponse::newNotFoundResponse(req);
 }
 }  // namespace drogon
 
@@ -143,7 +144,7 @@ void HttpResponseImpl::generateBodyFromJson() const
         writeString(builder, *jsonPtr_));
 }
 
-HttpResponsePtr HttpResponse::newNotFoundResponse()
+HttpResponsePtr HttpResponse::newNotFoundResponse(const HttpRequestPtr &req)
 {
     auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
     auto &resp = HttpAppFrameworkImpl::instance().getCustom404Page();
@@ -166,25 +167,25 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
             // If the current thread is an IO thread
             static std::once_flag threadOnce;
             static IOThreadStorage<HttpResponsePtr> thread404Pages;
-            std::call_once(threadOnce, [] {
-                thread404Pages.init(
-                    [](drogon::HttpResponsePtr &resp, size_t /*index*/) {
-                        if (HttpAppFrameworkImpl::instance()
-                                .isUsingCustomErrorHandler())
-                        {
-                            resp = app().getCustomErrorHandler()(k404NotFound);
-                            resp->setExpiredTime(0);
-                        }
-                        else
-                        {
-                            HttpViewData data;
-                            data.insert("version", drogon::getVersion());
-                            resp = HttpResponse::newHttpViewResponse(
-                                "drogon::NotFound", data);
-                            resp->setStatusCode(k404NotFound);
-                            resp->setExpiredTime(0);
-                        }
-                    });
+            std::call_once(threadOnce, [req = req] {
+                thread404Pages.init([req = req](drogon::HttpResponsePtr &resp,
+                                                size_t /*index*/) {
+                    if (HttpAppFrameworkImpl::instance()
+                            .isUsingCustomErrorHandler())
+                    {
+                        resp = app().getCustomErrorHandler()(k404NotFound, req);
+                        resp->setExpiredTime(0);
+                    }
+                    else
+                    {
+                        HttpViewData data;
+                        data.insert("version", drogon::getVersion());
+                        resp = HttpResponse::newHttpViewResponse(
+                            "drogon::NotFound", data);
+                        resp->setStatusCode(k404NotFound);
+                        resp->setExpiredTime(0);
+                    }
+                });
             });
             LOG_TRACE << "Use cached 404 response";
             return thread404Pages.getThreadData();
@@ -193,7 +194,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
         {
             if (HttpAppFrameworkImpl::instance().isUsingCustomErrorHandler())
             {
-                return app().getCustomErrorHandler()(k404NotFound);
+                return app().getCustomErrorHandler()(k404NotFound, req);
             }
             HttpViewData data;
             data.insert("version", drogon::getVersion());
@@ -217,9 +218,10 @@ HttpResponsePtr HttpResponse::newRedirectionResponse(
 }
 
 HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
-                                                  const HttpViewData &data)
+                                                  const HttpViewData &data,
+                                                  const HttpRequestPtr &req)
 {
-    return genHttpResponse(viewName, data);
+    return genHttpResponse(viewName, data, req);
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(
@@ -282,10 +284,11 @@ HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &fullPath,
     const std::string &attachmentFileName,
     ContentType type,
-    const std::string &typeString)
+    const std::string &typeString,
+    const HttpRequestPtr &req)
 {
     return newFileResponse(
-        fullPath, 0, 0, false, attachmentFileName, type, typeString);
+        fullPath, 0, 0, false, attachmentFileName, type, typeString, req);
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(
@@ -295,14 +298,15 @@ HttpResponsePtr HttpResponse::newFileResponse(
     bool setContentRange,
     const std::string &attachmentFileName,
     ContentType type,
-    const std::string &typeString)
+    const std::string &typeString,
+    const HttpRequestPtr &req)
 {
     std::ifstream infile(utils::toNativePath(fullPath), std::ifstream::binary);
     LOG_TRACE << "send http file:" << fullPath << " offset " << offset
               << " length " << length;
     if (!infile)
     {
-        auto resp = HttpResponse::newNotFoundResponse();
+        auto resp = HttpResponse::newNotFoundResponse(req);
         return resp;
     }
     auto resp = std::make_shared<HttpResponseImpl>();
@@ -420,7 +424,8 @@ HttpResponsePtr HttpResponse::newStreamResponse(
     const std::function<std::size_t(char *, std::size_t)> &callback,
     const std::string &attachmentFileName,
     ContentType type,
-    const std::string &typeString)
+    const std::string &typeString,
+    const HttpRequestPtr &req)
 {
     LOG_TRACE << "send stream as "s
               << (attachmentFileName.empty() ? "raw data"s

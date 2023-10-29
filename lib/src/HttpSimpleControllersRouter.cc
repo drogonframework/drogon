@@ -110,11 +110,12 @@ void HttpSimpleControllersRouter::route(
             // Invalid Http Method
             if (req->method() != Options)
             {
-                callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
+                callback(
+                    app().getCustomErrorHandler()(k405MethodNotAllowed, req));
             }
             else
             {
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(app().getCustomErrorHandler()(k403Forbidden, req));
             }
             return;
         }
@@ -275,7 +276,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
     {
         const std::string &ctrlName = ctrlBinderPtr->controllerName_;
         LOG_ERROR << "can't find controller " << ctrlName;
-        auto res = drogon::HttpResponse::newNotFoundResponse();
+        auto res = drogon::HttpResponse::newNotFoundResponse(req);
         invokeCallback(callback, req, res);
     }
 }

@@ -171,7 +171,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * be sent to the client to provide a custom layout.
      */
     virtual HttpAppFramework &setCustomErrorHandler(
-        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator) = 0;
+        std::function<HttpResponsePtr(HttpStatusCode,
+                                      const HttpRequestPtr &req)>
+            &&resp_generator) = 0;
 
     /// Get custom error handler
     /**
@@ -179,8 +181,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * setCustomErrorHandler. If none was provided, the default error handler is
      * returned.
      */
-    virtual const std::function<HttpResponsePtr(HttpStatusCode)>
-        &getCustomErrorHandler() const = 0;
+    virtual const std::function<HttpResponsePtr(HttpStatusCode,
+                                                const HttpRequestPtr &req)> &
+    getCustomErrorHandler() const = 0;
 
     /// Get the plugin object registered in the framework
     /**
@@ -1391,8 +1394,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      *
      * @return std::pair<size_t, std::string>
      */
-    virtual const std::pair<unsigned int, std::string>
-        &getFloatPrecisionInJson() const noexcept = 0;
+    virtual const std::pair<unsigned int, std::string> &
+    getFloatPrecisionInJson() const noexcept = 0;
     /// Create a database client
     /**
      * @param dbType The database type is one of

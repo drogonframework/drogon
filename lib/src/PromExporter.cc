@@ -22,7 +22,7 @@ void PromExporter::initAndStart(const Json::Value &config)
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
             {
-                auto resp = HttpResponse::newNotFoundResponse();
+                auto resp = HttpResponse::newNotFoundResponse(req);
                 callback(resp);
                 return;
             }

@@ -117,7 +117,7 @@ std::string getGitCommit()
     return DROGON_VERSION_SHA1;
 }
 
-HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code, const HttpRequestPtr &)
 {
     return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
 }
@@ -133,7 +133,7 @@ void defaultExceptionHandler(
     LOG_ERROR << "Unhandled exception in " << pathWithQuery
               << ", what(): " << e.what();
     const auto &handler = app().getCustomErrorHandler();
-    callback(handler(k500InternalServerError));
+    callback(handler(k500InternalServerError, req));
 }
 
 static void godaemon()
@@ -1034,8 +1034,8 @@ void HttpAppFrameworkImpl::forward(
         req->setPassThrough(true);
         clientPtr->sendRequest(
             req,
-            [callback = std::move(callback)](ReqResult result,
-                                             const HttpResponsePtr &resp) {
+            [callback = std::move(callback),
+             req = req](ReqResult result, const HttpResponsePtr &resp) {
                 if (result == ReqResult::Ok)
                 {
                     resp->setPassThrough(true);
@@ -1043,7 +1043,7 @@ void HttpAppFrameworkImpl::forward(
                 }
                 else
                 {
-                    callback(HttpResponse::newNotFoundResponse());
+                    callback(HttpResponse::newNotFoundResponse(req));
                 }
             },
             timeout);
@@ -1206,15 +1206,17 @@ bool HttpAppFrameworkImpl::areAllDbClientsAvailable() const noexcept
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
-    std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+    std::function<HttpResponsePtr(HttpStatusCode, const HttpRequestPtr &req)>
+        &&resp_generator)
 {
     customErrorHandler_ = std::move(resp_generator);
     usingCustomErrorHandler_ = true;
     return *this;
 }
 
-const std::function<HttpResponsePtr(HttpStatusCode)>
-    &HttpAppFrameworkImpl::getCustomErrorHandler() const
+const std::function<HttpResponsePtr(HttpStatusCode,
+                                    const HttpRequestPtr &req)> &
+HttpAppFrameworkImpl::getCustomErrorHandler() const
 {
     return customErrorHandler_;
 }

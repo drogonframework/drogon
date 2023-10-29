@@ -26,8 +26,8 @@
 #include <sys/file.h>
 #elif !defined(__MINGW32__)
 #define stat _wstati64
-#define S_ISREG(m) (((m)&0170000) == (0100000))
-#define S_ISDIR(m) (((m)&0170000) == (0040000))
+#define S_ISREG(m) (((m) & 0170000) == (0100000))
+#define S_ISDIR(m) (((m) & 0170000) == (0040000))
 #endif
 #include <sys/stat.h>
 #include <filesystem>
@@ -84,7 +84,7 @@ void StaticFileRouter::route(
             if (traversalDepth < 0)
             {
                 // Downloading files from the parent folder is forbidden.
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(app().getCustomErrorHandler()(k403Forbidden, req));
                 return;
             }
         }
@@ -145,7 +145,7 @@ void StaticFileRouter::route(
             if (pos != 0 && pos != std::string_view::npos &&
                 !location.isRecursive_)
             {
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(app().getCustomErrorHandler()(k403Forbidden, req));
                 return;
             }
             std::string filePath =
@@ -167,7 +167,7 @@ void StaticFileRouter::route(
                 }
                 else
                 {
-                    callback(app().getCustomErrorHandler()(k403Forbidden));
+                    callback(app().getCustomErrorHandler()(k403Forbidden, req));
                     return;
                 }
             }
@@ -178,7 +178,8 @@ void StaticFileRouter::route(
                     pos = restOfThePath.rfind('.');
                     if (pos == std::string_view::npos)
                     {
-                        callback(app().getCustomErrorHandler()(k403Forbidden));
+                        callback(
+                            app().getCustomErrorHandler()(k403Forbidden, req));
                         return;
                     }
                     std::string extension{restOfThePath.data() + pos + 1,
@@ -189,7 +190,8 @@ void StaticFileRouter::route(
                                    [](unsigned char c) { return tolower(c); });
                     if (fileTypeSet_.find(extension) == fileTypeSet_.end())
                     {
-                        callback(app().getCustomErrorHandler()(k403Forbidden));
+                        callback(
+                            app().getCustomErrorHandler()(k403Forbidden, req));
                         return;
                     }
                 }
@@ -245,7 +247,7 @@ void StaticFileRouter::route(
             }
             else
             {
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(app().getCustomErrorHandler()(k403Forbidden, req));
                 return;
             }
         }
@@ -255,7 +257,7 @@ void StaticFileRouter::route(
             auto pos = path.rfind('.');
             if (pos == std::string::npos)
             {
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(app().getCustomErrorHandler()(k403Forbidden, req));
                 return;
             }
             std::string filetype = lPath.substr(pos + 1);
@@ -321,7 +323,7 @@ void StaticFileRouter::sendStaticFileResponse(
 {
     if (req->method() != Get)
     {
-        callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
+        callback(app().getCustomErrorHandler()(k405MethodNotAllowed, req));
         return;
     }
 
@@ -372,7 +374,8 @@ void StaticFileRouter::sendStaticFileResponse(
                                                       true,
                                                       "",
                                                       ct.first,
-                                                      std::string(ct.second));
+                                                      std::string(ct.second),
+                                                      req);
                     if (!fileStat.modifiedTimeStr_.empty())
                     {
                         resp->addHeader("Last-Modified",
@@ -502,10 +505,8 @@ void StaticFileRouter::sendStaticFileResponse(
             std::filesystem::is_regular_file(fsBrFile, err))
         {
             auto ct = fileNameToContentTypeAndMime(filePath);
-            resp = HttpResponse::newFileResponse(brFileName,
-                                                 "",
-                                                 ct.first,
-                                                 std::string(ct.second));
+            resp = HttpResponse::newFileResponse(
+                brFileName, "", ct.first, std::string(ct.second), req);
             resp->addHeader("Content-Encoding", "br");
         }
     }
@@ -520,20 +521,16 @@ void StaticFileRouter::sendStaticFileResponse(
             std::filesystem::is_regular_file(fsGzipFile, err))
         {
             auto ct = fileNameToContentTypeAndMime(filePath);
-            resp = HttpResponse::newFileResponse(gzipFileName,
-                                                 "",
-                                                 ct.first,
-                                                 std::string(ct.second));
+            resp = HttpResponse::newFileResponse(
+                gzipFileName, "", ct.first, std::string(ct.second), req);
             resp->addHeader("Content-Encoding", "gzip");
         }
     }
     if (!resp)
     {
         auto ct = fileNameToContentTypeAndMime(filePath);
-        resp = HttpResponse::newFileResponse(filePath,
-                                             "",
-                                             ct.first,
-                                             std::string(ct.second));
+        resp = HttpResponse::newFileResponse(
+            filePath, "", ct.first, std::string(ct.second), req);
     }
     if (resp->statusCode() != k404NotFound)
     {
@@ -591,8 +588,8 @@ void StaticFileRouter::setFileTypes(const std::vector<std::string> &types)
 }
 
 void StaticFileRouter::defaultHandler(
-    const HttpRequestPtr & /*req*/,
+    const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    callback(HttpResponse::newNotFoundResponse());
+    callback(HttpResponse::newNotFoundResponse(req));
 }

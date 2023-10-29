@@ -34,7 +34,7 @@ void Redirector::initAndStart(const Json::Value &config)
             {
                 if (!handler(req, protocol, host, pathChanged))
                 {
-                    return HttpResponse::newNotFoundResponse();
+                    return HttpResponse::newNotFoundResponse(req);
                 }
             }
             for (auto &handler : thisPtr->pathRewriteHandlers_)
