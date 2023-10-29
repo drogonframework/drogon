@@ -41,8 +41,6 @@ class HttpTransport
     virtual bool handleConnectionClose() = 0;
     virtual void onError(ReqResult result) = 0;
 
-    virtual size_t bytesSent() const = 0;
-    virtual size_t bytesReceived() const = 0;
     virtual size_t requestsInFlight() const = 0;
 
     using RespCallback =
@@ -63,25 +61,19 @@ class Http1xTransport : public HttpTransport
   private:
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
     trantor::TcpConnectionPtr connPtr;
+    size_t *bytesSent_;
+    size_t *bytesReceived_;
 
   public:
-    Http1xTransport(trantor::TcpConnectionPtr connPtr);
+    Http1xTransport(trantor::TcpConnectionPtr connPtr,
+                    size_t *bytesSent,
+                    size_t *bytesReceived);
     virtual ~Http1xTransport();
     void sendRequestInLoop(const HttpRequestPtr &req,
                            HttpReqCallback &&callback,
                            double timeout) override;
     void onRecvMessage(const trantor::TcpConnectionPtr &,
                        trantor::MsgBuffer *) override;
-
-    virtual size_t bytesSent() const
-    {
-        throw std::runtime_error("Not implemented");
-    }
-
-    virtual size_t bytesReceived() const
-    {
-        throw std::runtime_error("Not implemented");
-    }
 
     size_t requestsInFlight() const override
     {
@@ -197,8 +189,6 @@ class HttpClientImpl final : public HttpClient,
     trantor::InetAddress serverAddr_;
     bool useSSL_;
     bool validateCert_;
-    void sendReq(const trantor::TcpConnectionPtr &connPtr,
-                 const HttpRequestPtr &req);
     void sendRequestInLoop(const HttpRequestPtr &req,
                            HttpReqCallback &&callback);
     void sendRequestInLoop(const HttpRequestPtr &req,

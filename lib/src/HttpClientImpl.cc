@@ -31,8 +31,10 @@ namespace trantor
 const static size_t kDefaultDNSTimeout{600};
 }
 
-Http1xTransport::Http1xTransport(trantor::TcpConnectionPtr connPtr)
-    : connPtr(connPtr)
+Http1xTransport::Http1xTransport(trantor::TcpConnectionPtr connPtr,
+                                 size_t *bytesSent,
+                                 size_t *bytesReceived)
+    : connPtr(connPtr), bytesSent_(bytesSent), bytesReceived_(bytesReceived)
 {
     connPtr->setContext(std::make_shared<HttpResponseParser>(connPtr));
 }
@@ -72,7 +74,7 @@ void Http1xTransport::onRecvMessage(const trantor::TcpConnectionPtr &conn,
         {
             // TODO: Make upper layer flush all requests in the buffer
             onError(ReqResult::BadResponse);
-            // bytesReceived_ += (msgSize - msg->readableBytes());
+            *bytesReceived_ += (msgSize - msg->readableBytes());
             return;
         }
         if (responseParser->gotAll())
@@ -80,7 +82,7 @@ void Http1xTransport::onRecvMessage(const trantor::TcpConnectionPtr &conn,
             auto resp = responseParser->responseImpl();
             resp->setPeerCertificate(connPtr->peerCertificate());
             responseParser->reset();
-            // bytesReceived_ += (msgSize - msg->readableBytes());
+            *bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
             respCallback(resp, std::move(firstReq), conn);
 
@@ -161,7 +163,9 @@ void HttpClientImpl::createTcpClient()
             auto protocol = connPtr->applicationProtocol();
             if (protocol.empty() || protocol == "http/1.1")
                 thisPtr->transport_ =
-                    std::make_unique<Http1xTransport>(connPtr);
+                    std::make_unique<Http1xTransport>(connPtr,
+                                                      &thisPtr->bytesSent_,
+                                                      &thisPtr->bytesReceived_);
             else
                 throw std::runtime_error("Unsupported protocol: " +
                                          connPtr->applicationProtocol());
@@ -622,19 +626,6 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     }
 }
 
-void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
-                             const HttpRequestPtr &req)
-{
-    trantor::MsgBuffer buffer;
-    assert(req);
-    auto implPtr = static_cast<HttpRequestImpl *>(req.get());
-    implPtr->appendToBuffer(&buffer);
-    LOG_TRACE << "Send request:"
-              << std::string(buffer.peek(), buffer.readableBytes());
-    bytesSent_ += buffer.readableBytes();
-    connPtr->send(std::move(buffer));
-}
-
 void Http1xTransport::sendReq(const HttpRequestPtr &req)
 {
     trantor::MsgBuffer buffer;
@@ -643,7 +634,7 @@ void Http1xTransport::sendReq(const HttpRequestPtr &req)
     implPtr->appendToBuffer(&buffer);
     LOG_TRACE << "Send request:"
               << std::string(buffer.peek(), buffer.readableBytes());
-    // bytesSent_ += buffer.readableBytes();
+    *bytesSent_ += buffer.readableBytes();
     connPtr->send(std::move(buffer));
 }
 
