@@ -148,8 +148,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
-    const std::vector<std::function<void(const HttpResponsePtr &)>> &
-    getResponseCreationAdvices() const
+    const std::vector<std::function<void(const HttpResponsePtr &)>>
+        &getResponseCreationAdvices() const
     {
         return responseCreationAdvices_;
     }
@@ -622,8 +622,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     bool areAllDbClientsAvailable() const noexcept override;
     const std::function<HttpResponsePtr(HttpStatusCode,
-                                        const HttpRequestPtr &req)> &
-    getCustomErrorHandler() const override;
+                                        const HttpRequestPtr &req)>
+        &getCustomErrorHandler() const override;
 
     bool isUsingCustomErrorHandler() const
     {
