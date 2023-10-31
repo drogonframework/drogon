@@ -175,6 +175,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                                       const HttpRequestPtr &req)>
             &&resp_generator) = 0;
 
+    virtual HttpAppFramework &setCustomErrorHandler(
+        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+    {
+        return setCustomErrorHandler(
+            [cb = std::move(resp_generator)](HttpStatusCode code,
+                                             const HttpRequestPtr &) {
+                return cb(code);
+            });
+    }
+
     /// Get custom error handler
     /**
      * @return A const-reference to the error handler set using
