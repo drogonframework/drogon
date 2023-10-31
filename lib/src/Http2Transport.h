@@ -11,6 +11,12 @@ class Http2Transport : public HttpTransport
     size_t *bytesSent_;
     size_t *bytesReceived_;
 
+    // HTTP/2 client-wide settings
+    size_t maxConcurrentStreams = 100;
+    size_t initialWindowSize = 65535;
+    size_t maxFrameSize = 16384;
+    size_t avaliableWindowSize = 0;
+
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
                    size_t *bytesSent,

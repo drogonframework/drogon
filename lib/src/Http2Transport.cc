@@ -1,8 +1,73 @@
 #include "Http2Transport.h"
 
+#include <variant>
+
 using namespace drogon;
 
 static const std::string_view h2_preamble = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+
+// Quick and dirty ByteStream implementation and extensions so we can use it
+// to read from the buffer, safely. At least it checks for buffer overflows
+// in debug mode.
+struct ByteStream
+{
+    ByteStream(uint8_t *ptr, size_t length) : ptr(ptr), length(length)
+    {
+    }
+
+    ByteStream(const trantor::MsgBuffer &buffer, size_t length)
+        : ptr((uint8_t *)buffer.peek()), length(length)
+    {
+        assert(length <= buffer.readableBytes());
+    }
+
+    uint32_t readU24BE()
+    {
+        assert(offset <= length - 3);
+        uint32_t res =
+            ptr[offset] << 16 | ptr[offset + 1] << 8 | ptr[offset + 2];
+        offset += 3;
+        return res;
+    }
+
+    uint32_t readU32BE()
+    {
+        assert(offset <= length - 4);
+        uint32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
+                       ptr[offset + 2] << 8 | ptr[offset + 3];
+        offset += 4;
+        return res;
+    }
+
+    uint16_t readU16BE()
+    {
+        assert(offset <= length - 2);
+        uint16_t res = ptr[offset] << 8 | ptr[offset + 1];
+        offset += 2;
+        return res;
+    }
+
+    uint8_t readU8()
+    {
+        assert(offset <= length - 1);
+        return ptr[offset++];
+    }
+
+    size_t size() const
+    {
+        return length;
+    }
+
+    size_t remaining() const
+    {
+        return length - offset;
+    }
+
+  protected:
+    uint8_t *ptr;
+    size_t length;
+    size_t offset = 0;
+};
 
 enum class H2FrameType
 {
@@ -19,6 +84,8 @@ enum class H2FrameType
     AltSvc = 0xa,
     // UNUSED = 0xb, // 0xb is removed from the spec
     Origin = 0xc,
+
+    NumEntries
 };
 
 enum class H2SettingsKey
@@ -33,6 +100,25 @@ enum class H2SettingsKey
     NumEntries
 };
 
+// TODO: Either convert this to TMP or remove it
+// For now it's only for development purposes and make sure
+// I'm not stupid in designing APIs
+#ifdef __cpp_concepts
+template <typename T>
+concept IsH2Frame = requires(T t) {
+    {
+        t.prettyToString()
+    } -> std::convertible_to<std::string>;
+    {
+        t.serialize()
+    } -> std::convertible_to<trantor::MsgBuffer>;
+    {
+        T::fromBuffer(ByteStream(nullptr, 0))
+        // if returns std::nullopt, it's an error
+    } -> std::convertible_to<std::optional<T>>;
+};
+#endif
+
 struct SettingsFrame
 {
     std::vector<std::pair<uint16_t, uint32_t>> settings;
@@ -42,6 +128,8 @@ struct WindowUpdateFrame
 {
     uint32_t windowSizeIncrement;
 };
+
+using H2Frame = std::variant<SettingsFrame, WindowUpdateFrame>;
 
 // Print the HEX and ASCII representation of the buffer side by side
 // 16 bytes per line. Same function as the xdd command in linux.
@@ -81,10 +169,9 @@ static void dump_hex_beautiful(const void *ptr, size_t size)
     }
 }
 
-static std::optional<SettingsFrame> parseSettingsFrame(const uint8_t *ptr,
-                                                       size_t length)
+static std::optional<SettingsFrame> parseSettingsFrame(ByteStream &payload)
 {
-    if (length % 6 != 0)
+    if (payload.size() % 6 != 0)
     {
         LOG_ERROR << "Invalid settings frame length";
         return std::nullopt;
@@ -92,11 +179,10 @@ static std::optional<SettingsFrame> parseSettingsFrame(const uint8_t *ptr,
 
     SettingsFrame frame;
     LOG_TRACE << "Settings frame:";
-    for (size_t i = 0; i < length; i += 6)
+    for (size_t i = 0; i < payload.size(); i += 6)
     {
-        uint16_t key = ptr[i] << 8 | ptr[i + 1];
-        uint32_t value =
-            ptr[i + 2] << 24 | ptr[i + 3] << 16 | ptr[i + 4] << 8 | ptr[i + 5];
+        uint16_t key = payload.readU16BE();
+        uint32_t value = payload.readU32BE();
         frame.settings.emplace_back(key, value);
 
         LOG_TRACE << "  key=" << key << " value=" << value;
@@ -105,10 +191,9 @@ static std::optional<SettingsFrame> parseSettingsFrame(const uint8_t *ptr,
 }
 
 static std::optional<WindowUpdateFrame> parseWindowUpdateFrame(
-    const uint8_t *ptr,
-    size_t length)
+    ByteStream &payload)
 {
-    if (length != 4)
+    if (payload.size() != 4)
     {
         LOG_ERROR << "Invalid window update frame length";
         return std::nullopt;
@@ -116,64 +201,77 @@ static std::optional<WindowUpdateFrame> parseWindowUpdateFrame(
 
     WindowUpdateFrame frame;
     // MSB is reserved for future use
-    frame.windowSizeIncrement =
-        (ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | ptr[3]) & 0x7fffffff;
+    frame.windowSizeIncrement = payload.readU32BE() & 0x7fffffff;
     LOG_TRACE << "Window update frame: windowSizeIncrement="
               << frame.windowSizeIncrement;
     return frame;
 }
 
-static size_t parseH2Frame(trantor::MsgBuffer *msg)
+// return streamId, frame, error and should continue parsing
+// Note that error can orrcur on a stream level or the entire connection
+// We need to handle both cases. Also it could happen that the TCP stream
+// just cuts off in the middle of a frame (or header). We need to handle that
+// too.
+// std::tuple<std::optional<H2Frame>, size_t, bool>
+static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
+    trantor::MsgBuffer *msg)
 {
     if (msg->readableBytes() < 9)
     {
         LOG_TRACE << "Not enough bytes to parse H2 frame header";
-        return 0;
+        return {std::nullopt, 0, false};
     }
 
     uint8_t *ptr = (uint8_t *)msg->peek();
+    ByteStream header(ptr, 9);
 
     // 24 bits length
-    uint32_t length = ptr[0] << 16 | ptr[1] << 8 | ptr[2];
-    uint8_t type = ptr[3];
-    uint8_t flags = ptr[4];
-    uint32_t streamId = ptr[5] << 24 | ptr[6] << 16 | ptr[7] << 8 | ptr[8];
-    streamId &= 0x7fffffff;  // MSB is reserved for future use
-
-    LOG_TRACE << "H2 frame: length=" << length << " type=" << (int)type
-              << " flags=" << (int)flags << " streamId=" << streamId;
+    const uint32_t length = header.readU24BE();
     if (msg->readableBytes() < length + 9)
     {
         LOG_TRACE << "Not enough bytes to parse H2 frame";
-        return 0;
+        return {std::nullopt, 0, false};
     }
 
-    uint8_t *payload = ptr + 9;
+    const uint8_t type = header.readU8();
+    const uint8_t flags = header.readU8();
+    // MSB is reserved for future use
+    const uint32_t streamId = header.readU32BE() & ((1U << 31) - 1);
+
+    if (type >= (uint8_t)H2FrameType::NumEntries)
+    {
+        // TODO: Handle fatal protocol error
+        LOG_ERROR << "Invalid H2 frame type: " << (int)type;
+        return {std::nullopt, streamId, true};
+    }
+
+    LOG_TRACE << "H2 frame: length=" << length << " type=" << (int)type
+              << " flags=" << (int)flags << " streamId=" << streamId;
+
+    ByteStream payload(ptr + 9, length);
+    std::optional<H2Frame> frame;
     if (type == (uint8_t)H2FrameType::Settings)
-    {
-        auto settings = parseSettingsFrame(payload, length);
-        if (!settings)
-        {
-            LOG_ERROR << "Failed to parse settings frame";
-            return 0;
-        }
-    }
+        frame = parseSettingsFrame(payload);
     else if (type == (uint8_t)H2FrameType::WindowUpdate)
-    {
-        auto windowUpdate = parseWindowUpdateFrame(payload, length);
-        if (!windowUpdate)
-        {
-            LOG_ERROR << "Failed to parse window update frame";
-            return 0;
-        }
-    }
+        frame = parseWindowUpdateFrame(payload);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
+        msg->retrieve(length + 9);
+        return {std::nullopt, streamId, false};
     }
 
+    if (payload.remaining() != 0)
+        LOG_WARN << "Invalid H2 frame payload length or bug in parsing!!";
+
     msg->retrieve(length + 9);
-    return length;
+    if (!frame)
+    {
+        LOG_ERROR << "Failed to parse H2 frame";
+        return {std::nullopt, streamId, true};
+    }
+
+    return {frame, streamId, false};
 }
 
 void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
@@ -183,9 +281,53 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
-        size_t length = parseH2Frame(msg);
-        if (length == 0)
+        auto [frameOpt, streamId, error] = parseH2Frame(msg);
+
+        if (error && streamId == 0)
+        {
+            abort();
+        }
+        else if (frameOpt.has_value() == false && !error)
             break;
+        else if (!frameOpt.has_value())
+        {
+            LOG_ERROR << "Failed to parse H2 frame??? Shouldn't happen though";
+            abort();
+        }
+        auto &frame = *frameOpt;
+
+        // TODO: Figure out how to dispatch the frame to the right stream
+        if (std::holds_alternative<WindowUpdateFrame>(frame))
+        {
+            auto &f = std::get<WindowUpdateFrame>(frame);
+            if (streamId == 0)
+            {
+                avaliableWindowSize += f.windowSizeIncrement;
+            }
+        }
+        else if (std::holds_alternative<SettingsFrame>(frame))
+        {
+            auto &f = std::get<SettingsFrame>(frame);
+            for (auto &[key, value] : f.settings)
+            {
+                if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
+                {
+                    if (streamId == 0)
+                        maxConcurrentStreams = value;
+                    else
+                        LOG_TRACE << "Ignoring max concurrent streams due to "
+                                     "streamId != 0";
+                }
+                else if (key == (uint16_t)H2SettingsKey::MaxFrameSize)
+                {
+                    maxFrameSize = value;
+                }
+                else
+                {
+                    LOG_TRACE << "Unsupported settings key: " << key;
+                }
+            }
+        }
     }
 
     throw std::runtime_error("HTTP/2 onRecvMessage not implemented");
