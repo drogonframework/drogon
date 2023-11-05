@@ -7,8 +7,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
@@ -28,39 +28,54 @@
 
 #include "HPackTable.h"
 
-namespace hpack {
+namespace hpack
+{
 
 class HPacker
 {
-public:
-    enum class IndexingType {
-        NONE, // not index
-        NAME, // index name only
-        ALL   // index name and value
+  public:
+    enum class IndexingType
+    {
+        NONE,  // not index
+        NAME,  // index name only
+        ALL    // index name and value
     };
-    
+
     using KeyValuePair = HPackTable::KeyValuePair;
     using KeyValueVector = std::vector<KeyValuePair>;
-    using IndexingTypeCallback = std::function<IndexingType (const std::string&, const std::string&)>;
-    
-public:
+    using IndexingTypeCallback =
+        std::function<IndexingType(const std::string &, const std::string &)>;
+
+  public:
     int encode(const KeyValueVector &headers, uint8_t *buf, size_t len);
     int decode(const uint8_t *buf, size_t len, KeyValueVector &headers);
-    void setMaxTableSize(size_t maxSize) { table_.setMaxSize(maxSize); }
-    void setIndexingTypeCallback(IndexingTypeCallback cb) { query_cb_ = std::move(cb); }
-    
-private:
-    int encodeHeader(const std::string &name, const std::string &value, uint8_t *buf, size_t len);
+
+    void setMaxTableSize(size_t maxSize)
+    {
+        table_.setMaxSize(maxSize);
+    }
+
+    void setIndexingTypeCallback(IndexingTypeCallback cb)
+    {
+        query_cb_ = std::move(cb);
+    }
+
+  private:
+    int encodeHeader(const std::string &name,
+                     const std::string &value,
+                     uint8_t *buf,
+                     size_t len);
     int encodeSizeUpdate(int sz, uint8_t *buf, size_t len);
 
-    IndexingType getIndexingType(const std::string &name, const std::string &value);
-    
-private:
+    IndexingType getIndexingType(const std::string &name,
+                                 const std::string &value);
+
+  private:
     HPackTable table_;
     IndexingTypeCallback query_cb_;
     bool updateTableSize_ = true;
 };
 
-} // namespace hpack
+}  // namespace hpack
 
 #endif /* __HPacker_H__ */
