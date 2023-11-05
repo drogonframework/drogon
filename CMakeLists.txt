@@ -281,7 +281,9 @@ set(DROGON_SOURCES
     lib/src/WebSocketConnectionImpl.cc
     lib/src/WebsocketControllersRouter.cc
     lib/src/YamlConfigAdapter.cc
-    lib/src/drogon_test.cc)
+    lib/src/drogon_test.cc
+    lib/src/hpack/HPacker.cpp
+    lib/src/hpack/HPackTable.cpp)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -316,7 +318,11 @@ set(private_headers
     lib/src/ConfigAdapterManager.h
     lib/src/JsonConfigAdapter.h
     lib/src/YamlConfigAdapter.h
-    lib/src/ConfigAdapter.h)
+    lib/src/ConfigAdapter.h
+    lib/src/hpack/HPacker.h
+    lib/src/hpack/hpack_huffman_table.h
+    lib/src/hpack/HPackTable.h
+    lib/src/hpack/StaticTable.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES

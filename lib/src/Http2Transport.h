@@ -1,6 +1,8 @@
 #pragma once
 
 #include "HttpTransport.h"
+// TOOD: Write our own HPACK implementation
+#include "hpack/HPacker.h"
 
 namespace drogon
 {
@@ -18,17 +20,6 @@ struct H2Stream
     size_t avaliableWindowSize = 0;
 };
 
-struct StreamManager
-{
-    void createStream(std::map<std::string, std::string> &headers)
-    {
-        // TODO:
-    }
-
-    std::vector<H2Stream> client_streams;
-    std::vector<H2Stream> server_streams;
-};
-
 }  // namespace internal
 
 class Http2Transport : public HttpTransport
@@ -44,17 +35,17 @@ class Http2Transport : public HttpTransport
     size_t maxFrameSize = 16384;
     size_t avaliableWindowSize = 0;
 
+    // Set after server settings are received
+    bool serverSettingsReceived = false;
+    std::vector<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
+
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
                    size_t *bytesSent,
                    size_t *bytesReceived);
 
     void sendRequestInLoop(const HttpRequestPtr &req,
-                           HttpReqCallback &&callback) override
-    {
-        // throw std::runtime_error("HTTP/2 sendRequestInLoop not implemented");
-    }
-
+                           HttpReqCallback &&callback) override;
     void onRecvMessage(const trantor::TcpConnectionPtr &,
                        trantor::MsgBuffer *) override;
 
@@ -73,5 +64,8 @@ class Http2Transport : public HttpTransport
     {
         throw std::runtime_error("HTTP/2 onError not implemented");
     }
+
+  protected:
+    void onServerSettingsReceived(){};
 };
 }  // namespace drogon

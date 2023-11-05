@@ -110,7 +110,24 @@ struct WindowUpdateFrame
     uint32_t windowSizeIncrement;
 };
 
-using H2Frame = std::variant<SettingsFrame, WindowUpdateFrame>;
+struct HeadersFrame
+{
+    uint8_t padLength;
+    bool exclusive;
+    uint32_t streamDependency;
+    uint8_t weight;
+    std::vector<uint8_t> headerBlockFragment;
+};
+
+struct GoAwayFrame
+{
+    uint32_t lastStreamId;
+    uint32_t errorCode;
+    std::vector<uint8_t> additionalDebugData;
+};
+
+using H2Frame =
+    std::variant<SettingsFrame, WindowUpdateFrame, HeadersFrame, GoAwayFrame>;
 
 // Print the HEX and ASCII representation of the buffer side by side
 // 16 bytes per line. Same function as the xdd command in linux.
@@ -188,6 +205,107 @@ static std::optional<WindowUpdateFrame> parseWindowUpdateFrame(
     return frame;
 }
 
+static std::optional<GoAwayFrame> parseGoAwayFrame(ByteStream &payload)
+{
+    if (payload.size() < 8)
+    {
+        LOG_ERROR << "Invalid go away frame length";
+        return std::nullopt;
+    }
+
+    GoAwayFrame frame;
+    frame.lastStreamId = payload.readU32BE();
+    frame.errorCode = payload.readU32BE();
+    frame.additionalDebugData.resize(payload.remaining());
+    for (size_t i = 0; i < frame.additionalDebugData.size(); ++i)
+        frame.additionalDebugData[i] = payload.readU8();
+
+    LOG_TRACE << "Go away frame: lastStreamId=" << frame.lastStreamId
+              << " errorCode=" << frame.errorCode
+              << " additionalDebugData=" << frame.additionalDebugData.size();
+    return frame;
+}
+
+static std::vector<uint8_t> serializeHeadsFrame(const HeadersFrame &frame)
+{
+    std::vector<uint8_t> buffer;
+    buffer.reserve(9 + frame.headerBlockFragment.size() + frame.padLength);
+    buffer.push_back(frame.padLength);
+    uint32_t streamDependency = frame.streamDependency;
+    if (frame.exclusive)
+        streamDependency |= 1U << 31;
+    buffer.push_back(streamDependency >> 24);
+    buffer.push_back(streamDependency >> 16);
+    buffer.push_back(streamDependency >> 8);
+    buffer.push_back(streamDependency);
+    buffer.push_back(frame.weight);
+    buffer.insert(buffer.end(),
+                  frame.headerBlockFragment.begin(),
+                  frame.headerBlockFragment.end());
+    for (size_t i = 0; i < frame.padLength; ++i)
+        buffer.push_back(0x0);
+    return buffer;
+}
+
+static std::vector<uint8_t> serializeSettingsFrame(const SettingsFrame &frame)
+{
+    if (frame.settings.size() == 0)
+        return std::vector<uint8_t>();
+    std::vector<uint8_t> buffer;
+    buffer.reserve(6 * frame.settings.size());
+    for (auto &[key, value] : frame.settings)
+    {
+        buffer.push_back(key >> 8);
+        buffer.push_back(key);
+        buffer.push_back(value >> 24);
+        buffer.push_back(value >> 16);
+        buffer.push_back(value >> 8);
+        buffer.push_back(value);
+    }
+    return buffer;
+}
+
+static std::vector<uint8_t> serializeFrame(const H2Frame &frame,
+                                           size_t streamId,
+                                           uint8_t flags = 0)
+{
+    std::vector<uint8_t> buffer;
+    uint8_t type;
+    if (std::holds_alternative<HeadersFrame>(frame))
+    {
+        const auto &f = std::get<HeadersFrame>(frame);
+        buffer = serializeHeadsFrame(f);
+        type = (uint8_t)H2FrameType::Headers;
+    }
+    else if (std::holds_alternative<SettingsFrame>(frame))
+    {
+        const auto &f = std::get<SettingsFrame>(frame);
+        buffer = serializeSettingsFrame(f);
+        type = (uint8_t)H2FrameType::Settings;
+    }
+    else
+    {
+        LOG_ERROR << "Unsupported frame type";
+        abort();
+    }
+
+    std::vector<uint8_t> full_frame;
+    full_frame.reserve(9 + buffer.size());
+    size_t length = buffer.size();
+    assert(length <= 0xffffff);
+    full_frame.push_back(length >> 16);
+    full_frame.push_back(length >> 8);
+    full_frame.push_back(length);
+    full_frame.push_back(type);
+    full_frame.push_back(flags);
+    full_frame.push_back(streamId >> 24);
+    full_frame.push_back(streamId >> 16);
+    full_frame.push_back(streamId >> 8);
+    full_frame.push_back(streamId);
+    full_frame.insert(full_frame.end(), buffer.begin(), buffer.end());
+    return full_frame;
+}
+
 // return streamId, frame, error and should continue parsing
 // Note that error can orrcur on a stream level or the entire connection
 // We need to handle both cases. Also it could happen that the TCP stream
@@ -234,6 +352,8 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
         frame = parseSettingsFrame(payload);
     else if (type == (uint8_t)H2FrameType::WindowUpdate)
         frame = parseWindowUpdateFrame(payload);
+    else if (type == (uint8_t)H2FrameType::GoAway)
+        frame = parseGoAwayFrame(payload);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
@@ -254,6 +374,72 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
     return {frame, streamId, false};
 }
 
+void drogon::Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
+                                               HttpReqCallback &&callback)
+{
+    if (!serverSettingsReceived)
+    {
+        bufferedRequests.emplace_back(req, std::move(callback));
+        return;
+    }
+
+    // HACK: Acknowledge the settings frame, move this somewhere appropriate
+    LOG_TRACE << "Acknowledge settings frame";
+    SettingsFrame settings;
+    auto sb = serializeFrame(settings, 0, 0);
+    dump_hex_beautiful(sb.data(), sb.size());
+    connPtr->send(sb.data(), sb.size());
+    sb = serializeFrame(settings, 0, 0x1);
+    dump_hex_beautiful(sb.data(), sb.size());
+    connPtr->send(sb.data(), sb.size());
+
+    static hpack::HPacker hpack;
+    auto headers = req->headers();
+    HeadersFrame frame;
+    frame.padLength = 0;
+    frame.exclusive = false;
+    frame.streamDependency = 0;
+    frame.weight = 0;
+    frame.headerBlockFragment.resize(1024);
+
+    LOG_TRACE << "Sending HTTP/2 headers: size=" << headers.size();
+    hpack::HPacker::KeyValueVector headersToEncode;
+    const std::array<std::string_view, 2> headersToSkip = {
+        {"host", "connection"}};
+    for (auto &[key, value] : headers)
+    {
+        if (std::find(headersToSkip.begin(), headersToSkip.end(), key) !=
+            headersToSkip.end())
+            continue;
+
+        headersToEncode.emplace_back(key, value);
+    }
+    headersToEncode.emplace_back(":method", req->methodString());
+    headersToEncode.emplace_back(":path", req->path());
+    headersToEncode.emplace_back(":scheme",
+                                 connPtr->isSSLConnection() ? "https" : "http");
+    headersToEncode.emplace_back(":authority", req->getHeader("host"));
+
+    LOG_TRACE << "Final headers size: " << headersToEncode.size();
+    for (auto &[key, value] : headersToEncode)
+        LOG_TRACE << "  " << key << ": " << value;
+    int n = hpack.encode(headersToEncode,
+                         frame.headerBlockFragment.data(),
+                         frame.headerBlockFragment.size());
+    if (n < 0)
+    {
+        LOG_ERROR << "Failed to encode headers";
+        abort();
+        return;
+    }
+    frame.headerBlockFragment.resize(n);
+    trantor::MsgBuffer buffer;
+    auto f = serializeFrame(frame, 2);
+    dump_hex_beautiful(f.data(), f.size());
+    buffer.append((char *)f.data(), f.size());
+    connPtr->send(buffer);
+}
+
 void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                    trantor::MsgBuffer *msg)
 {
@@ -267,7 +453,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
 
         if (error && streamId == 0)
         {
-            abort();
+            LOG_ERROR << "Fatal protocol error happened on stream 0 (global)";
+            errorCallback(ReqResult::BadResponse);
         }
         else if (frameOpt.has_value() == false && !error)
             break;
@@ -309,6 +496,22 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     LOG_TRACE << "Unsupported settings key: " << key;
                 }
             }
+
+            if (streamId == 0 && !serverSettingsReceived)
+            {
+                serverSettingsReceived = true;
+                for (auto &[req, cb] : bufferedRequests)
+                    sendRequestInLoop(req, std::move(cb));
+                bufferedRequests.clear();
+            }
+        }
+        else if (std::holds_alternative<GoAwayFrame>(frame))
+        {
+            LOG_ERROR << "Go away frame received. Die!";
+            auto &f = std::get<GoAwayFrame>(frame);
+            // TODO: Depening on the streamId, we need to kill the entire
+            // connection or just the stream
+            errorCallback(ReqResult::BadResponse);
         }
         else
         {
@@ -317,8 +520,6 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             LOG_ERROR << "Boom! The client does not understand this frame";
         }
     }
-
-    throw std::runtime_error("HTTP/2 onRecvMessage not implemented");
 }
 
 Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
