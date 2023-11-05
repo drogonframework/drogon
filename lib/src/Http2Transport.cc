@@ -193,7 +193,6 @@ static std::optional<WindowUpdateFrame> parseWindowUpdateFrame(
 // We need to handle both cases. Also it could happen that the TCP stream
 // just cuts off in the middle of a frame (or header). We need to handle that
 // too.
-// std::tuple<std::optional<H2Frame>, size_t, bool>
 static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
     trantor::MsgBuffer *msg)
 {
@@ -275,7 +274,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         else if (!frameOpt.has_value())
         {
             LOG_ERROR << "Failed to parse H2 frame??? Shouldn't happen though";
-            abort();
+            errorCallback(ReqResult::BadResponse);
         }
         auto &frame = *frameOpt;
 

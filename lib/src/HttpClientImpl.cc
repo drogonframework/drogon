@@ -70,9 +70,8 @@ void Http1xTransport::onRecvMessage(const trantor::TcpConnectionPtr &conn,
         }
         if (!responseParser->parseResponse(msg))
         {
-            // TODO: Make upper layer flush all requests in the buffer
-            onError(ReqResult::BadResponse);
             *bytesReceived_ += (msgSize - msg->readableBytes());
+            errorCallback(ReqResult::BadResponse);
             return;
         }
         if (responseParser->gotAll())
@@ -190,6 +189,12 @@ void HttpClientImpl::createTcpClient()
                         return;
                     thisPtr->handleResponse(resp, std::move(reqAndCb), connPtr);
                 });
+            thisPtr->transport_->setErrorCallback([weakPtr](ReqResult result) {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
+                thisPtr->onError(result);
+            });
 
             // TODO: respect timeout and pipeliningDepth_
             while (!thisPtr->requestsBuffer_.empty())

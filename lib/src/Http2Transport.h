@@ -12,6 +12,21 @@ namespace internal
 // Defaults to stream 0 global properties
 struct H2Stream
 {
+    size_t maxConcurrentStreams = 100;
+    size_t initialWindowSize = 65535;
+    size_t maxFrameSize = 16384;
+    size_t avaliableWindowSize = 0;
+};
+
+struct StreamManager
+{
+    void createStream(std::map<std::string, std::string> &headers)
+    {
+        // TODO:
+    }
+
+    std::vector<H2Stream> client_streams;
+    std::vector<H2Stream> server_streams;
 };
 
 }  // namespace internal
