@@ -105,17 +105,18 @@ enum class H2SettingsKey
 // I'm not stupid in designing APIs
 #ifdef __cpp_concepts
 template <typename T>
-concept IsH2Frame = requires(T t) {
+concept IsH2Frame = requires(T t)
+{
     {
         t.prettyToString()
-    } -> std::convertible_to<std::string>;
+        } -> std::convertible_to<std::string>;
     {
         t.serialize()
-    } -> std::convertible_to<trantor::MsgBuffer>;
+        } -> std::convertible_to<trantor::MsgBuffer>;
     {
         T::fromBuffer(ByteStream(nullptr, 0))
         // if returns std::nullopt, it's an error
-    } -> std::convertible_to<std::optional<T>>;
+        } -> std::convertible_to<std::optional<T>>;
 };
 #endif
 
@@ -278,6 +279,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                    trantor::MsgBuffer *msg)
 {
     LOG_TRACE << "HTTP/2 message received:";
+    assert(bytesReceived_ != nullptr);
+    *bytesReceived_ += msg->readableBytes();
     dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
@@ -327,6 +330,11 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     LOG_TRACE << "Unsupported settings key: " << key;
                 }
             }
+        }
+        else {
+            // TODO: Remove this once we support all frame types
+            // in that case it'll be a parsing error or bad server
+            LOG_ERROR << "Boom! The client does not understand this frame";
         }
     }
 

@@ -4,6 +4,18 @@
 
 namespace drogon
 {
+
+namespace internal
+{
+
+// Virtual stream that holds properties for the HTTP/2 stream
+// Defaults to stream 0 global properties
+struct H2Stream
+{
+
+};
+
+} // namespace internal
 class Http2Transport : public HttpTransport
 {
   private:

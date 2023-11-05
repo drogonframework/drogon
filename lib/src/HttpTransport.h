@@ -7,7 +7,6 @@
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/NonCopyable.h>
 
-
 namespace drogon
 {
 
@@ -38,4 +37,4 @@ class HttpTransport : public trantor::NonCopyable
     RespCallback respCallback;
 };
 
-}
+}  // namespace drogon
