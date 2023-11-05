@@ -100,25 +100,6 @@ enum class H2SettingsKey
     NumEntries
 };
 
-// TODO: Either convert this to TMP or remove it
-// For now it's only for development purposes and make sure
-// I'm not stupid in designing APIs
-#ifdef __cpp_concepts
-template <typename T>
-concept IsH2Frame = requires(T t) {
-    {
-        t.prettyToString()
-    } -> std::convertible_to<std::string>;
-    {
-        t.serialize()
-    } -> std::convertible_to<trantor::MsgBuffer>;
-    {
-        T::fromBuffer(ByteStream(nullptr, 0))
-        // if returns std::nullopt, it's an error
-    } -> std::convertible_to<std::optional<T>>;
-};
-#endif
-
 struct SettingsFrame
 {
     std::vector<std::pair<uint16_t, uint32_t>> settings;

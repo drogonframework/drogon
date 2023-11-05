@@ -12,10 +12,10 @@ namespace internal
 // Defaults to stream 0 global properties
 struct H2Stream
 {
-
 };
 
-} // namespace internal
+}  // namespace internal
+
 class Http2Transport : public HttpTransport
 {
   private:
