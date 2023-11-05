@@ -533,6 +533,16 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
     if (!tcpClientPtr_)
     {
+        auto callbackPtr =
+            std::make_shared<drogon::HttpReqCallback>(std::move(callback));
+        requestsBuffer_.push_back(
+            {req,
+             [thisPtr = shared_from_this(),
+              callbackPtr =
+                  std::move(callbackPtr)](ReqResult result,
+                                          const HttpResponsePtr &response) {
+                 (*callbackPtr)(result, response);
+             }});
         if (domain_.empty() || !isDomainName_)
         {
             // Valid ip address, no domain, connect directly
@@ -548,15 +558,6 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             }
             return;
         }
-
-        auto callbackPtr =
-            std::make_shared<drogon::HttpReqCallback>(std::move(callback));
-        requestsBuffer_.push_back(
-            {req,
-             [thisPtr = shared_from_this(),
-              callbackPtr](ReqResult result, const HttpResponsePtr &response) {
-                 (*callbackPtr)(result, response);
-             }});
 
         // A dns query is on going.
         if (dns_)
