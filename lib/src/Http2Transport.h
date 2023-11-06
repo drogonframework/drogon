@@ -17,6 +17,7 @@ struct H2Stream
 {
     HttpReqCallback callback;
     HttpResponseImplPtr response;
+    trantor::MsgBuffer body;
 };
 
 }  // namespace internal
@@ -53,12 +54,9 @@ class Http2Transport : public HttpTransport
             streamIdTop += 2;
             return id;
         }
-        else
-        {
-            int32_t id = usibleStreamIds.top();
-            usibleStreamIds.pop();
-            return id;
-        }
+        int32_t id = usibleStreamIds.top();
+        usibleStreamIds.pop();
+        return id;
     }
 
     void retireStreamId(int32_t id)

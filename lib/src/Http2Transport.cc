@@ -734,6 +734,25 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 // TODO: Send GoAway frame
                 return;
             }
+            it->second.response = std::make_shared<HttpResponseImpl>();
+            for (const auto &[key, value] : headers)
+            {
+                // TODO: Filter more pseudo headers
+                if (key == ":status")
+                    continue;
+                // TODO: Validate content-length is either not present or
+                // the same as the body size sent by DATA frames
+                if (key == "content-length")
+                    continue;
+                if (key == ":status")
+                {
+                    // TODO: Validate status code
+                    it->second.response->setStatusCode(
+                        (drogon::HttpStatusCode)std::stoi(value));
+                    continue;
+                }
+                it->second.response->addHeader(key, value);
+            }
         }
         else if (std::holds_alternative<DataFrame>(frame))
         {
@@ -747,11 +766,15 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                           << streamId;
                 return;
             }
+
+            it->second.body.append((char *)f.data.data(), f.data.size());
             if (flags & (uint8_t)H2DataFlags::EndStream != 0)
             {
-                // TODO: Handle end of stream and call the callback with correct
-                // data
+                // TODO: Optmize setting body
                 auto resp = HttpResponse::newHttpResponse();
+                std::string body(it->second.body.peek(),
+                                 it->second.body.readableBytes());
+                resp->setBody(std::move(body));
                 it->second.callback(ReqResult::Ok, resp);
             }
         }
