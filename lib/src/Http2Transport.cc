@@ -434,6 +434,24 @@ static std::vector<uint8_t> serializeWindowUpdateFrame(
     return buffer;
 }
 
+static std::vector<uint8_t> serializeGoAwayFrame(const GoAwayFrame &frame)
+{
+    std::vector<uint8_t> buffer;
+    buffer.reserve(8 + frame.additionalDebugData.size());
+    buffer.push_back(frame.lastStreamId >> 24);
+    buffer.push_back(frame.lastStreamId >> 16);
+    buffer.push_back(frame.lastStreamId >> 8);
+    buffer.push_back(frame.lastStreamId);
+    buffer.push_back(frame.errorCode >> 24);
+    buffer.push_back(frame.errorCode >> 16);
+    buffer.push_back(frame.errorCode >> 8);
+    buffer.push_back(frame.errorCode);
+    buffer.insert(buffer.end(),
+                  frame.additionalDebugData.begin(),
+                  frame.additionalDebugData.end());
+    return buffer;
+}
+
 static std::vector<uint8_t> serializeFrame(const H2Frame &frame,
                                            size_t streamId,
                                            uint8_t flags = 0)
@@ -457,6 +475,12 @@ static std::vector<uint8_t> serializeFrame(const H2Frame &frame,
         const auto &f = std::get<WindowUpdateFrame>(frame);
         buffer = serializeWindowUpdateFrame(f);
         type = (uint8_t)H2FrameType::WindowUpdate;
+    }
+    else if (std::holds_alternative<GoAwayFrame>(frame))
+    {
+        const auto &f = std::get<GoAwayFrame>(frame);
+        buffer = serializeGoAwayFrame(f);
+        type = (uint8_t)H2FrameType::GoAway;
     }
     else
     {
