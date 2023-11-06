@@ -561,6 +561,15 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         bufferedRequests.emplace_back(req, std::move(callback));
         return;
     }
+
+    const int32_t streamId = nextStreamId();
+    if(streams.find(streamId) != streams.end())
+    {
+        LOG_FATAL << "Stream id already in use! This should not happen";
+        abort();
+        return;
+    }
+
     auto headers = req->headers();
     HeadersFrame frame;
     frame.padLength = 0;
@@ -601,9 +610,11 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     }
     frame.headerBlockFragment.resize(n);
     LOG_TRACE << "Sending headers frame";
-    auto f = serializeFrame(frame, 1, 0x5);
+    auto f = serializeFrame(frame, streamId, 0x5);
     dump_hex_beautiful(f.data(), f.size());
     connPtr->send(f.data(), f.size());
+
+    streams[streamId] = internal::H2Stream{std::move(callback)};
 }
 
 void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
@@ -714,13 +725,31 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             }
             for (auto &[key, value] : headers)
                 LOG_TRACE << "  " << key << ": " << value;
+            
+            auto it = streams.find(streamId);
+            if(it == streams.end())
+            {
+                LOG_ERROR << "Headers frame received for unknown stream id: " << streamId;
+                // TODO: Send GoAway frame
+                return;
+            }
         }
         else if (std::holds_alternative<DataFrame>(frame))
         {
             auto &f = std::get<DataFrame>(frame);
             LOG_TRACE << "Data frame received: size=" << f.data.size();
-            LOG_TRACE << "Data frame received: data=";
-            // dump_hex_beautiful(f.data.data(), f.data.size());
+
+            auto it = streams.find(streamId);
+            if(it == streams.end())
+            {
+                LOG_ERROR << "Data frame received for unknown stream id: " << streamId;
+                return;
+            }
+            if(flags & (uint8_t)H2DataFlags::EndStream != 0) {
+                // TODO: Handle end of stream and call the callback with correct data
+                auto resp = HttpResponse::newHttpResponse();
+                it->second.callback(ReqResult::Ok, resp);
+            }
         }
         else if (std::holds_alternative<GoAwayFrame>(frame))
         {

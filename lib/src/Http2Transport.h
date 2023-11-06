@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HttpTransport.h"
+#include "HttpResponseImpl.h"
 // TOOD: Write our own HPACK implementation
 #include "hpack/HPacker.h"
 
@@ -14,10 +15,8 @@ namespace internal
 // Defaults to stream 0 global properties
 struct H2Stream
 {
-    size_t maxConcurrentStreams = 100;
-    size_t initialWindowSize = 65535;
-    size_t maxFrameSize = 16384;
-    size_t avaliableWindowSize = 0;
+    HttpReqCallback callback;
+    HttpResponseImplPtr response;
 };
 
 }  // namespace internal
@@ -31,6 +30,11 @@ class Http2Transport : public HttpTransport
     hpack::HPacker hpackTx;
     hpack::HPacker hpackRx;
 
+    std::priority_queue<int32_t> usibleStreamIds;
+    int32_t streamIdTop = 1;
+    std::unordered_map<int32_t, internal::H2Stream> streams;
+    // TODO: Handle server-initiated stream creation
+
     // HTTP/2 client-wide settings
     size_t maxConcurrentStreams = 100;
     size_t initialWindowSize = 65535;
@@ -40,6 +44,38 @@ class Http2Transport : public HttpTransport
     // Set after server settings are received
     bool serverSettingsReceived = false;
     std::vector<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
+
+    int32_t nextStreamId()
+    {
+        if (usibleStreamIds.empty())
+        {
+            return streamIdTop += 2;
+        }
+        else
+        {
+            int32_t id = usibleStreamIds.top();
+            usibleStreamIds.pop();
+            return id;
+        }
+    }
+
+    void retireStreamId(int32_t id)
+    {
+        if(id == streamIdTop - 2)
+        {
+            streamIdTop -= 2;
+            while (!usibleStreamIds.empty() && usibleStreamIds.top() == streamIdTop - 2)
+            {
+                usibleStreamIds.pop();
+                streamIdTop -= 2;
+                assert(streamIdTop >= 1);
+            }            
+        }
+        else
+        {
+            usibleStreamIds.push(id);
+        }
+    }
 
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
