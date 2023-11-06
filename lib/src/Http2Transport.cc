@@ -53,6 +53,12 @@ struct ByteStream
         return ptr[offset++];
     }
 
+    void skip(size_t n)
+    {
+        assert(offset <= length - n);
+        offset += n;
+    }
+
     size_t size() const
     {
         return length;
@@ -112,10 +118,10 @@ struct WindowUpdateFrame
 
 struct HeadersFrame
 {
-    uint8_t padLength;
-    bool exclusive;
-    uint32_t streamDependency;
-    uint8_t weight;
+    uint8_t padLength = 0;
+    bool exclusive = false;
+    uint32_t streamDependency = 0;
+    uint8_t weight = 0;
     std::vector<uint8_t> headerBlockFragment;
 };
 
@@ -226,22 +232,38 @@ static std::optional<GoAwayFrame> parseGoAwayFrame(ByteStream &payload)
     return frame;
 }
 
+static std::optional<HeadersFrame> parseHeadersFrame(ByteStream &payload)
+{
+    HeadersFrame frame;
+    frame.padLength = payload.readU8();
+    uint32_t streamDependency = payload.readU32BE();
+    frame.exclusive = streamDependency & (1U << 31);
+    frame.streamDependency = streamDependency & ((1U << 31) - 1);
+    frame.weight = payload.readU8();
+    frame.headerBlockFragment.resize(payload.remaining());
+    for (size_t i = 0; i < frame.headerBlockFragment.size(); ++i)
+        frame.headerBlockFragment[i] = payload.readU8();
+
+    // TODO: Handle padding
+    payload.skip(frame.padLength);
+    return frame;
+}
+
 static std::vector<uint8_t> serializeHeadsFrame(const HeadersFrame &frame)
 {
     std::vector<uint8_t> buffer;
-    buffer.reserve(9 + frame.headerBlockFragment.size() + frame.padLength);
-    buffer.push_back(frame.padLength);
-    uint32_t streamDependency = frame.streamDependency;
-    if (frame.exclusive)
-        streamDependency |= 1U << 31;
-    buffer.push_back(streamDependency >> 24);
-    buffer.push_back(streamDependency >> 16);
-    buffer.push_back(streamDependency >> 8);
-    buffer.push_back(streamDependency);
-    buffer.push_back(frame.weight);
-    buffer.insert(buffer.end(),
-                  frame.headerBlockFragment.begin(),
-                  frame.headerBlockFragment.end());
+    buffer.reserve(6 + frame.headerBlockFragment.size() + frame.padLength);
+    // buffer.push_back(frame.padLength);
+    // uint32_t streamDependency = frame.streamDependency;
+    // if (frame.exclusive)
+    //     streamDependency |= 1U << 31;
+    // buffer.push_back(streamDependency >> 24);
+    // buffer.push_back(streamDependency >> 16);
+    // buffer.push_back(streamDependency >> 8);
+    // buffer.push_back(streamDependency);
+    // buffer.push_back(frame.weight);
+    for (size_t i = 0; i < frame.headerBlockFragment.size(); ++i)
+        buffer.push_back(frame.headerBlockFragment[i]);
     for (size_t i = 0; i < frame.padLength; ++i)
         buffer.push_back(0x0);
     return buffer;
@@ -265,6 +287,18 @@ static std::vector<uint8_t> serializeSettingsFrame(const SettingsFrame &frame)
     return buffer;
 }
 
+static std::vector<uint8_t> serializeWindowUpdateFrame(
+    const WindowUpdateFrame &frame)
+{
+    std::vector<uint8_t> buffer;
+    buffer.reserve(4);
+    buffer.push_back(frame.windowSizeIncrement >> 24);
+    buffer.push_back(frame.windowSizeIncrement >> 16);
+    buffer.push_back(frame.windowSizeIncrement >> 8);
+    buffer.push_back(frame.windowSizeIncrement);
+    return buffer;
+}
+
 static std::vector<uint8_t> serializeFrame(const H2Frame &frame,
                                            size_t streamId,
                                            uint8_t flags = 0)
@@ -282,6 +316,12 @@ static std::vector<uint8_t> serializeFrame(const H2Frame &frame,
         const auto &f = std::get<SettingsFrame>(frame);
         buffer = serializeSettingsFrame(f);
         type = (uint8_t)H2FrameType::Settings;
+    }
+    else if (std::holds_alternative<WindowUpdateFrame>(frame))
+    {
+        const auto &f = std::get<WindowUpdateFrame>(frame);
+        buffer = serializeWindowUpdateFrame(f);
+        type = (uint8_t)H2FrameType::WindowUpdate;
     }
     else
     {
@@ -354,6 +394,8 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
         frame = parseWindowUpdateFrame(payload);
     else if (type == (uint8_t)H2FrameType::GoAway)
         frame = parseGoAwayFrame(payload);
+    else if (type == (uint8_t)H2FrameType::Headers)
+        frame = parseHeadersFrame(payload);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
@@ -393,6 +435,12 @@ void drogon::Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     dump_hex_beautiful(sb.data(), sb.size());
     connPtr->send(sb.data(), sb.size());
 
+    WindowUpdateFrame windowUpdate;
+    windowUpdate.windowSizeIncrement = 200 * 1024 * 1024;  // 200MB
+    auto wu = serializeFrame(windowUpdate, 0);
+    dump_hex_beautiful(wu.data(), wu.size());
+    connPtr->send(wu.data(), wu.size());
+
     static hpack::HPacker hpack;
     auto headers = req->headers();
     HeadersFrame frame;
@@ -406,6 +454,11 @@ void drogon::Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     hpack::HPacker::KeyValueVector headersToEncode;
     const std::array<std::string_view, 2> headersToSkip = {
         {"host", "connection"}};
+    headersToEncode.emplace_back(":method", req->methodString());
+    headersToEncode.emplace_back(":path", req->path());
+    headersToEncode.emplace_back(":scheme",
+                                 connPtr->isSSLConnection() ? "https" : "http");
+    headersToEncode.emplace_back(":authority", req->getHeader("host"));
     for (auto &[key, value] : headers)
     {
         if (std::find(headersToSkip.begin(), headersToSkip.end(), key) !=
@@ -414,11 +467,6 @@ void drogon::Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 
         headersToEncode.emplace_back(key, value);
     }
-    headersToEncode.emplace_back(":method", req->methodString());
-    headersToEncode.emplace_back(":path", req->path());
-    headersToEncode.emplace_back(":scheme",
-                                 connPtr->isSSLConnection() ? "https" : "http");
-    headersToEncode.emplace_back(":authority", req->getHeader("host"));
 
     LOG_TRACE << "Final headers size: " << headersToEncode.size();
     for (auto &[key, value] : headersToEncode)
@@ -432,12 +480,15 @@ void drogon::Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         abort();
         return;
     }
+    LOG_TRACE << "Encoded headers size: " << n;
     frame.headerBlockFragment.resize(n);
-    trantor::MsgBuffer buffer;
-    auto f = serializeFrame(frame, 2);
+    LOG_TRACE << "Encoded headers:";
+    dump_hex_beautiful(frame.headerBlockFragment.data(),
+                       frame.headerBlockFragment.size());
+    LOG_TRACE << "Sending headers frame";
+    auto f = serializeFrame(frame, 1, 0x5);
     dump_hex_beautiful(f.data(), f.size());
-    buffer.append((char *)f.data(), f.size());
-    connPtr->send(buffer);
+    connPtr->send(f.data(), f.size());
 }
 
 void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
