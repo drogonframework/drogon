@@ -614,7 +614,8 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     dump_hex_beautiful(f.data(), f.size());
     connPtr->send(f.data(), f.size());
 
-    streams[streamId] = internal::H2Stream{std::move(callback)};
+    streams[streamId] = internal::H2Stream();
+    streams[streamId].callback = std::move(callback);
 }
 
 void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
