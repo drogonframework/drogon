@@ -181,6 +181,12 @@ enum class H2HeadersFlags
     Priority = 0x20
 };
 
+enum class H2DataFlags
+{
+    EndStream = 0x1,
+    Padded = 0x8
+};
+
 struct SettingsFrame
 {
     std::vector<std::pair<uint16_t, uint32_t>> settings;
@@ -210,12 +216,14 @@ struct GoAwayFrame
 struct DataFrame
 {
     uint8_t padLength = 0;
-    bool endStream = false;
     std::vector<uint8_t> data;
 };
 
-using H2Frame =
-    std::variant<SettingsFrame, WindowUpdateFrame, HeadersFrame, GoAwayFrame>;
+using H2Frame = std::variant<SettingsFrame,
+                             WindowUpdateFrame,
+                             HeadersFrame,
+                             GoAwayFrame,
+                             DataFrame>;
 
 // Print the HEX and ASCII representation of the buffer side by side
 // 16 bytes per line. Same function as the xdd command in linux.
@@ -353,6 +361,28 @@ static std::optional<HeadersFrame> parseHeadersFrame(ByteStream &payload,
     return frame;
 }
 
+static std::optional<DataFrame> parseDataFrame(ByteStream &payload,
+                                               uint8_t flags)
+{
+    bool endStream = flags & (uint8_t)H2DataFlags::EndStream;
+    bool padded = flags & (uint8_t)H2DataFlags::Padded;
+
+    DataFrame frame;
+    if (padded)
+    {
+        frame.padLength = payload.readU8();
+        LOG_TRACE << "Data frame: padLength=" << frame.padLength;
+    }
+    if (endStream)
+    {
+        LOG_TRACE << "Data frame: endStream";
+    }
+
+    frame.data.resize(payload.remaining());
+    payload.read(frame.data.data(), frame.data.size());
+    return frame;
+}
+
 static std::vector<uint8_t> serializeHeadsFrame(const HeadersFrame &frame)
 {
     std::vector<uint8_t> buffer;
@@ -456,13 +486,13 @@ static std::vector<uint8_t> serializeFrame(const H2Frame &frame,
 // We need to handle both cases. Also it could happen that the TCP stream
 // just cuts off in the middle of a frame (or header). We need to handle that
 // too.
-static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
+static std::tuple<std::optional<H2Frame>, size_t, uint8_t, bool> parseH2Frame(
     trantor::MsgBuffer *msg)
 {
     if (msg->readableBytes() < 9)
     {
         LOG_TRACE << "Not enough bytes to parse H2 frame header";
-        return {std::nullopt, 0, false};
+        return {std::nullopt, 0, 0, false};
     }
 
     uint8_t *ptr = (uint8_t *)msg->peek();
@@ -473,7 +503,7 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
     if (msg->readableBytes() < length + 9)
     {
         LOG_TRACE << "Not enough bytes to parse H2 frame";
-        return {std::nullopt, 0, false};
+        return {std::nullopt, 0, 0, false};
     }
 
     const uint8_t type = header.readU8();
@@ -485,7 +515,7 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
     {
         // TODO: Handle fatal protocol error
         LOG_ERROR << "Invalid H2 frame type: " << (int)type;
-        return {std::nullopt, streamId, true};
+        return {std::nullopt, streamId, 0, true};
     }
 
     LOG_TRACE << "H2 frame: length=" << length << " type=" << (int)type
@@ -501,11 +531,13 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
         frame = parseGoAwayFrame(payload);
     else if (type == (uint8_t)H2FrameType::Headers)
         frame = parseHeadersFrame(payload, flags);
+    else if (type == (uint8_t)H2FrameType::Data)
+        frame = parseDataFrame(payload, flags);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
         msg->retrieve(length + 9);
-        return {std::nullopt, streamId, false};
+        return {std::nullopt, streamId, 0, false};
     }
 
     if (payload.remaining() != 0)
@@ -515,10 +547,10 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
     if (!frame)
     {
         LOG_ERROR << "Failed to parse H2 frame";
-        return {std::nullopt, streamId, true};
+        return {std::nullopt, streamId, 0, true};
     }
 
-    return {frame, streamId, false};
+    return {frame, streamId, flags, false};
 }
 
 void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
@@ -586,7 +618,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         // FIXME: The code cannot distinguish between a out-of-data and
         // unsupported frame type. We need to fix this as it should be handled
         // differently.
-        auto [frameOpt, streamId, error] = parseH2Frame(msg);
+        auto [frameOpt, streamId, flags, error] = parseH2Frame(msg);
 
         if (error && streamId == 0)
         {
@@ -634,11 +666,6 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 }
             }
 
-            LOG_TRACE << "Acknowledge settings frame";
-            SettingsFrame ackFrame;
-            auto b = serializeFrame(ackFrame, 0, 0x1);
-            connPtr->send((const char *)b.data(), b.size());
-
             if (streamId == 0 && !serverSettingsReceived)
             {
                 LOG_TRACE << "Server settings received. Sending our own "
@@ -660,6 +687,15 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     sendRequestInLoop(req, std::move(cb));
                 bufferedRequests.clear();
             }
+
+            // Somehow nghttp2 wants us to send ACK after sending our
+            // preferences??
+            if (flags == 1)
+                continue;
+            LOG_TRACE << "Acknowledge settings frame";
+            SettingsFrame ackFrame;
+            auto b = serializeFrame(ackFrame, 0, 0x1);
+            connPtr->send((const char *)b.data(), b.size());
         }
         else if (std::holds_alternative<HeadersFrame>(frame))
         {
@@ -678,6 +714,13 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             }
             for (auto &[key, value] : headers)
                 LOG_TRACE << "  " << key << ": " << value;
+        }
+        else if (std::holds_alternative<DataFrame>(frame))
+        {
+            auto &f = std::get<DataFrame>(frame);
+            LOG_TRACE << "Data frame received: size=" << f.data.size();
+            LOG_TRACE << "Data frame received: data=";
+            // dump_hex_beautiful(f.data.data(), f.data.size());
         }
         else if (std::holds_alternative<GoAwayFrame>(frame))
         {
