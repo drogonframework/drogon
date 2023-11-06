@@ -768,14 +768,18 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             }
 
             it->second.body.append((char *)f.data.data(), f.data.size());
-            if (flags & (uint8_t)H2DataFlags::EndStream != 0)
+            if ((flags & (uint8_t)H2DataFlags::EndStream) != 0)
             {
                 // TODO: Optmize setting body
-                auto resp = HttpResponse::newHttpResponse();
                 std::string body(it->second.body.peek(),
                                  it->second.body.readableBytes());
-                resp->setBody(std::move(body));
-                it->second.callback(ReqResult::Ok, resp);
+                auto headers = it->second.response->headers();
+                it->second.response->setBody(std::move(body));
+                // FIXME: Store the actuall request object
+                auto req = HttpRequest::newHttpRequest();
+                respCallback(it->second.response,
+                             {req, it->second.callback},
+                             connPtr);
             }
         }
         else if (std::holds_alternative<GoAwayFrame>(frame))
