@@ -39,6 +39,18 @@ struct ByteStream
         return res;
     }
 
+    std::pair<bool, int32_t> readBI32BE()
+    {
+        assert(offset <= length - 4);
+        int32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
+                      ptr[offset + 2] << 8 | ptr[offset + 3];
+        offset += 4;
+        constexpr int32_t mask = 0x7fffffff;
+        bool flag = res & (~mask);
+        res &= mask;
+        return {flag, res};
+    }
+
     uint16_t readU16BE()
     {
         assert(offset <= length - 2);
@@ -53,9 +65,29 @@ struct ByteStream
         return ptr[offset++];
     }
 
+    void read(uint8_t *buffer, size_t size)
+    {
+        assert(offset <= length - size || size == 0);
+        memcpy(buffer, ptr + offset, size);
+        offset += size;
+    }
+
+    void read(std::vector<uint8_t> &buffer, size_t size)
+    {
+        buffer.resize(buffer.size() + size);
+        read(buffer.data(), size);
+    }
+
+    std::vector<uint8_t> read(size_t size)
+    {
+        std::vector<uint8_t> buffer;
+        read(buffer, size);
+        return buffer;
+    }
+
     void skip(size_t n)
     {
-        assert(offset <= length - n);
+        assert(offset <= length - n || n == 0);
         offset += n;
     }
 
@@ -73,6 +105,41 @@ struct ByteStream
     uint8_t *ptr;
     size_t length;
     size_t offset = 0;
+};
+
+// DITTO but for serialization
+struct OByteStream
+{
+    void writeU24BE(uint32_t value)
+    {
+        assert(value <= 0xffffff);
+        value = htonl(value);
+        buffer.append((char *)&value + 1, 3);
+    }
+
+    void writeU32BE(uint32_t value)
+    {
+        value = htonl(value);
+        buffer.append((char *)&value, 4);
+    }
+
+    void writeU16BE(uint16_t value)
+    {
+        value = htons(value);
+        buffer.append((char *)&value, 2);
+    }
+
+    void writeU8(uint8_t value)
+    {
+        buffer.append((char *)&value, 1);
+    }
+
+    void write(const uint8_t *ptr, size_t size)
+    {
+        buffer.append((char *)ptr, size);
+    }
+
+    trantor::MsgBuffer buffer;
 };
 
 enum class H2FrameType
@@ -106,6 +173,14 @@ enum class H2SettingsKey
     NumEntries
 };
 
+enum class H2HeadersFlags
+{
+    EndStream = 0x1,
+    EndHeaders = 0x4,
+    Padded = 0x8,
+    Priority = 0x20
+};
+
 struct SettingsFrame
 {
     std::vector<std::pair<uint16_t, uint32_t>> settings;
@@ -130,6 +205,13 @@ struct GoAwayFrame
     uint32_t lastStreamId;
     uint32_t errorCode;
     std::vector<uint8_t> additionalDebugData;
+};
+
+struct DataFrame
+{
+    uint8_t padLength = 0;
+    bool endStream = false;
+    std::vector<uint8_t> data;
 };
 
 using H2Frame =
@@ -232,20 +314,42 @@ static std::optional<GoAwayFrame> parseGoAwayFrame(ByteStream &payload)
     return frame;
 }
 
-static std::optional<HeadersFrame> parseHeadersFrame(ByteStream &payload)
+static std::optional<HeadersFrame> parseHeadersFrame(ByteStream &payload,
+                                                     uint8_t flags)
 {
-    HeadersFrame frame;
-    frame.padLength = payload.readU8();
-    uint32_t streamDependency = payload.readU32BE();
-    frame.exclusive = streamDependency & (1U << 31);
-    frame.streamDependency = streamDependency & ((1U << 31) - 1);
-    frame.weight = payload.readU8();
-    frame.headerBlockFragment.resize(payload.remaining());
-    for (size_t i = 0; i < frame.headerBlockFragment.size(); ++i)
-        frame.headerBlockFragment[i] = payload.readU8();
+    bool endStream = flags & (uint8_t)H2HeadersFlags::EndStream;
+    bool endHeaders = flags & (uint8_t)H2HeadersFlags::EndHeaders;
+    bool padded = flags & (uint8_t)H2HeadersFlags::Padded;
+    bool priority = flags & (uint8_t)H2HeadersFlags::Priority;
 
-    // TODO: Handle padding
-    payload.skip(frame.padLength);
+    HeadersFrame frame;
+    if (padded)
+    {
+        frame.padLength = payload.readU8();
+        LOG_TRACE << "Headers frame: padLength=" << frame.padLength;
+    }
+    if (priority)
+    {
+        auto [exclusive, streamDependency] = payload.readBI32BE();
+        frame.exclusive = exclusive;
+        frame.streamDependency = streamDependency;
+        frame.weight = payload.readU8();
+        LOG_TRACE << "Headers frame: exclusive=" << exclusive
+                  << " streamDependency=" << streamDependency
+                  << " weight=" << frame.weight;
+    }
+    if (endHeaders)
+    {
+        LOG_TRACE << "Headers frame: endHeaders";
+    }
+    if (endStream)
+    {
+        LOG_TRACE << "Headers frame: endStream";
+    }
+
+    frame.headerBlockFragment.resize(payload.remaining());
+    payload.read(frame.headerBlockFragment.data(),
+                 frame.headerBlockFragment.size());
     return frame;
 }
 
@@ -262,8 +366,9 @@ static std::vector<uint8_t> serializeHeadsFrame(const HeadersFrame &frame)
     // buffer.push_back(streamDependency >> 8);
     // buffer.push_back(streamDependency);
     // buffer.push_back(frame.weight);
-    for (size_t i = 0; i < frame.headerBlockFragment.size(); ++i)
-        buffer.push_back(frame.headerBlockFragment[i]);
+    std::copy(frame.headerBlockFragment.begin(),
+              frame.headerBlockFragment.end(),
+              std::back_inserter(buffer));
     for (size_t i = 0; i < frame.padLength; ++i)
         buffer.push_back(0x0);
     return buffer;
@@ -395,7 +500,7 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
     else if (type == (uint8_t)H2FrameType::GoAway)
         frame = parseGoAwayFrame(payload);
     else if (type == (uint8_t)H2FrameType::Headers)
-        frame = parseHeadersFrame(payload);
+        frame = parseHeadersFrame(payload, flags);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
@@ -416,32 +521,14 @@ static std::tuple<std::optional<H2Frame>, size_t, bool> parseH2Frame(
     return {frame, streamId, false};
 }
 
-void drogon::Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
-                                               HttpReqCallback &&callback)
+void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
+                                       HttpReqCallback &&callback)
 {
     if (!serverSettingsReceived)
     {
         bufferedRequests.emplace_back(req, std::move(callback));
         return;
     }
-
-    // HACK: Acknowledge the settings frame, move this somewhere appropriate
-    LOG_TRACE << "Acknowledge settings frame";
-    SettingsFrame settings;
-    auto sb = serializeFrame(settings, 0, 0);
-    dump_hex_beautiful(sb.data(), sb.size());
-    connPtr->send(sb.data(), sb.size());
-    sb = serializeFrame(settings, 0, 0x1);
-    dump_hex_beautiful(sb.data(), sb.size());
-    connPtr->send(sb.data(), sb.size());
-
-    WindowUpdateFrame windowUpdate;
-    windowUpdate.windowSizeIncrement = 200 * 1024 * 1024;  // 200MB
-    auto wu = serializeFrame(windowUpdate, 0);
-    dump_hex_beautiful(wu.data(), wu.size());
-    connPtr->send(wu.data(), wu.size());
-
-    static hpack::HPacker hpack;
     auto headers = req->headers();
     HeadersFrame frame;
     frame.padLength = 0;
@@ -471,20 +558,16 @@ void drogon::Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     LOG_TRACE << "Final headers size: " << headersToEncode.size();
     for (auto &[key, value] : headersToEncode)
         LOG_TRACE << "  " << key << ": " << value;
-    int n = hpack.encode(headersToEncode,
-                         frame.headerBlockFragment.data(),
-                         frame.headerBlockFragment.size());
+    int n = hpackTx.encode(headersToEncode,
+                           frame.headerBlockFragment.data(),
+                           frame.headerBlockFragment.size());
     if (n < 0)
     {
         LOG_ERROR << "Failed to encode headers";
         abort();
         return;
     }
-    LOG_TRACE << "Encoded headers size: " << n;
     frame.headerBlockFragment.resize(n);
-    LOG_TRACE << "Encoded headers:";
-    dump_hex_beautiful(frame.headerBlockFragment.data(),
-                       frame.headerBlockFragment.size());
     LOG_TRACE << "Sending headers frame";
     auto f = serializeFrame(frame, 1, 0x5);
     dump_hex_beautiful(f.data(), f.size());
@@ -500,6 +583,9 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
+        // FIXME: The code cannot distinguish between a out-of-data and
+        // unsupported frame type. We need to fix this as it should be handled
+        // differently.
         auto [frameOpt, streamId, error] = parseH2Frame(msg);
 
         if (error && streamId == 0)
@@ -548,13 +634,50 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 }
             }
 
+            LOG_TRACE << "Acknowledge settings frame";
+            SettingsFrame ackFrame;
+            auto b = serializeFrame(ackFrame, 0, 0x1);
+            connPtr->send((const char *)b.data(), b.size());
+
             if (streamId == 0 && !serverSettingsReceived)
             {
+                LOG_TRACE << "Server settings received. Sending our own "
+                             "settings and WindowUpdate";
+                SettingsFrame settingsFrame;
+                settingsFrame.settings.emplace_back(
+                    (uint16_t)H2SettingsKey::EnablePush, 0);  // Disable push
+                auto b = serializeFrame(settingsFrame, 0);
+                connPtr->send((const char *)b.data(), b.size());
+
+                WindowUpdateFrame windowUpdateFrame;
+                // TODO: Keep track and update the window size
+                windowUpdateFrame.windowSizeIncrement = 200 * 1024 * 1024;
+                auto b2 = serializeFrame(windowUpdateFrame, 0);
+                connPtr->send((const char *)b2.data(), b2.size());
+
                 serverSettingsReceived = true;
                 for (auto &[req, cb] : bufferedRequests)
                     sendRequestInLoop(req, std::move(cb));
                 bufferedRequests.clear();
             }
+        }
+        else if (std::holds_alternative<HeadersFrame>(frame))
+        {
+            auto &f = std::get<HeadersFrame>(frame);
+            LOG_TRACE << "Headers frame received: size="
+                      << f.headerBlockFragment.size();
+            hpack::HPacker::KeyValueVector headers;
+            int n = hpackRx.decode(f.headerBlockFragment.data(),
+                                   f.headerBlockFragment.size(),
+                                   headers);
+            if (n < 0)
+            {
+                LOG_ERROR << "Failed to decode headers";
+                abort();
+                return;
+            }
+            for (auto &[key, value] : headers)
+                LOG_TRACE << "  " << key << ": " << value;
         }
         else if (std::holds_alternative<GoAwayFrame>(frame))
         {

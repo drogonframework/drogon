@@ -28,6 +28,8 @@ class Http2Transport : public HttpTransport
     trantor::TcpConnectionPtr connPtr;
     size_t *bytesSent_;
     size_t *bytesReceived_;
+    hpack::HPacker hpackTx;
+    hpack::HPacker hpackRx;
 
     // HTTP/2 client-wide settings
     size_t maxConcurrentStreams = 100;
