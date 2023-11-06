@@ -563,7 +563,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     }
 
     const int32_t streamId = nextStreamId();
-    if(streams.find(streamId) != streams.end())
+    if (streams.find(streamId) != streams.end())
     {
         LOG_FATAL << "Stream id already in use! This should not happen";
         abort();
@@ -725,11 +725,12 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             }
             for (auto &[key, value] : headers)
                 LOG_TRACE << "  " << key << ": " << value;
-            
+
             auto it = streams.find(streamId);
-            if(it == streams.end())
+            if (it == streams.end())
             {
-                LOG_ERROR << "Headers frame received for unknown stream id: " << streamId;
+                LOG_ERROR << "Headers frame received for unknown stream id: "
+                          << streamId;
                 // TODO: Send GoAway frame
                 return;
             }
@@ -740,13 +741,16 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             LOG_TRACE << "Data frame received: size=" << f.data.size();
 
             auto it = streams.find(streamId);
-            if(it == streams.end())
+            if (it == streams.end())
             {
-                LOG_ERROR << "Data frame received for unknown stream id: " << streamId;
+                LOG_ERROR << "Data frame received for unknown stream id: "
+                          << streamId;
                 return;
             }
-            if(flags & (uint8_t)H2DataFlags::EndStream != 0) {
-                // TODO: Handle end of stream and call the callback with correct data
+            if (flags & (uint8_t)H2DataFlags::EndStream != 0)
+            {
+                // TODO: Handle end of stream and call the callback with correct
+                // data
                 auto resp = HttpResponse::newHttpResponse();
                 it->second.callback(ReqResult::Ok, resp);
             }

@@ -49,7 +49,9 @@ class Http2Transport : public HttpTransport
     {
         if (usibleStreamIds.empty())
         {
-            return streamIdTop += 2;
+            int32_t id = streamIdTop;
+            streamIdTop += 2;
+            return id;
         }
         else
         {
@@ -61,15 +63,16 @@ class Http2Transport : public HttpTransport
 
     void retireStreamId(int32_t id)
     {
-        if(id == streamIdTop - 2)
+        if (id == streamIdTop - 2)
         {
             streamIdTop -= 2;
-            while (!usibleStreamIds.empty() && usibleStreamIds.top() == streamIdTop - 2)
+            while (!usibleStreamIds.empty() &&
+                   usibleStreamIds.top() == streamIdTop - 2)
             {
                 usibleStreamIds.pop();
                 streamIdTop -= 2;
                 assert(streamIdTop >= 1);
-            }            
+            }
         }
         else
         {
