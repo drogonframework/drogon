@@ -682,7 +682,9 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     connPtr->send(f);
 
     streams[streamId] = internal::H2Stream();
-    streams[streamId].callback = std::move(callback);
+    auto &stream = streams[streamId];
+    stream.callback = std::move(callback);
+    stream.request = req;
 }
 
 void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
@@ -752,14 +754,12 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 SettingsFrame settingsFrame;
                 settingsFrame.settings.emplace_back(
                     (uint16_t)H2SettingsKey::EnablePush, 0);  // Disable push
-                auto b = serializeFrame(settingsFrame, 0);
-                connPtr->send(b);
+                connPtr->send(serializeFrame(settingsFrame, 0));
 
                 WindowUpdateFrame windowUpdateFrame;
                 // TODO: Keep track and update the window size
                 windowUpdateFrame.windowSizeIncrement = 200 * 1024 * 1024;
-                auto b2 = serializeFrame(windowUpdateFrame, 0);
-                connPtr->send(b2);
+                connPtr->send(serializeFrame(windowUpdateFrame, 0));
 
                 serverSettingsReceived = true;
                 for (auto &[req, cb] : bufferedRequests)
@@ -774,8 +774,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             LOG_TRACE << "Acknowledge settings frame";
             SettingsFrame ackFrame;
             ackFrame.ack = true;
-            auto b = serializeFrame(ackFrame, 0);
-            connPtr->send(b);
+            connPtr->send(serializeFrame(ackFrame, 0));
         }
         else if (std::holds_alternative<HeadersFrame>(frame))
         {
@@ -844,20 +843,24 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                  it->second.body.readableBytes());
                 auto headers = it->second.response->headers();
                 it->second.response->setBody(std::move(body));
-                // FIXME: Store the actuall request object
-                auto req = HttpRequest::newHttpRequest();
+                assert(it->second.request != nullptr);
+                assert(it->second.callback);
                 respCallback(it->second.response,
-                             {req, it->second.callback},
+                             {it->second.request, it->second.callback},
                              connPtr);
             }
         }
         else if (std::holds_alternative<GoAwayFrame>(frame))
         {
-            LOG_ERROR << "Go away frame received. Die!";
             auto &f = std::get<GoAwayFrame>(frame);
             // TODO: Depening on the streamId, we need to kill the entire
             // connection or just the stream
-            errorCallback(ReqResult::BadResponse);
+            if (streamId == 0 && f.errorCode != 0)
+            {
+                LOG_ERROR << "Go away frame on stream 0 received. Die!";
+                errorCallback(ReqResult::BadResponse);
+                connPtr->shutdown();
+            }
         }
         else
         {

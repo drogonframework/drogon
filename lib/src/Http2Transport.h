@@ -17,6 +17,7 @@ struct H2Stream
 {
     HttpReqCallback callback;
     HttpResponseImplPtr response;
+    HttpRequestPtr request;
     trantor::MsgBuffer body;
 };
 
