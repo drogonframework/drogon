@@ -841,9 +841,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         {
             LOG_ERROR << "Failed to decode headers";
             // TODO: Send GoAway
-            stream.callback(ReqResult::BadResponse, nullptr);
-            streams.erase(it);
-            retireStreamId(streamId);
+            errorCallback(ReqResult::BadResponse);
             return;
         }
         for (auto &[key, value] : headers)
