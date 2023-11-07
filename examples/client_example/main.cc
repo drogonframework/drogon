@@ -48,7 +48,7 @@ int main()
         req->setParameter("wd", "wx");
         req->setParameter("oq", "wx");
 
-        for (int i = 0; i < 1; ++i)
+        for (int i = 0; i < 2; ++i)
         {
             client->sendRequest(
                 req, [](ReqResult result, const HttpResponsePtr &response) {
@@ -76,7 +76,6 @@ int main()
                 });
             LOG_INFO << "send request";
         }
-
-        app().run();
     }
+    app().run();
 }

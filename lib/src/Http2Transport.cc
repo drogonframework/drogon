@@ -3,8 +3,82 @@
 #include <variant>
 
 using namespace drogon;
+using namespace drogon::internal;
 
 static const std::string_view h2_preamble = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+
+static std::vector<uint8_t> s2vec(const std::string &str)
+{
+    std::vector<uint8_t> vec(str.size());
+    memcpy(vec.data(), str.data(), str.size());
+    return vec;
+}
+
+enum class H2FrameType
+{
+    Data = 0x0,
+    Headers = 0x1,
+    Priority = 0x2,
+    RstStream = 0x3,
+    Settings = 0x4,
+    PushPromise = 0x5,
+    Ping = 0x6,
+    GoAway = 0x7,
+    WindowUpdate = 0x8,
+    Continuation = 0x9,
+    AltSvc = 0xa,
+    // UNUSED = 0xb, // 0xb is removed from the spec
+    Origin = 0xc,
+
+    NumEntries
+};
+
+enum class H2SettingsKey
+{
+    HeaderTableSize = 0x1,
+    EnablePush = 0x2,
+    MaxConcurrentStreams = 0x3,
+    InitialWindowSize = 0x4,
+    MaxFrameSize = 0x5,
+    MaxHeaderListSize = 0x6,
+
+    NumEntries
+};
+
+enum class H2HeadersFlags
+{
+    EndStream = 0x1,
+    EndHeaders = 0x4,
+    Padded = 0x8,
+    Priority = 0x20
+};
+
+enum class H2DataFlags
+{
+    EndStream = 0x1,
+    Padded = 0x8
+};
+
+enum class StreamCloseErrorCode
+{
+    NoError = 0x0,
+    ProtocolError = 0x1,
+    InternalError = 0x2,
+    FlowControlError = 0x3,
+    SettingsTimeout = 0x4,
+    StreamClosed = 0x5,
+    FrameSizeError = 0x6,
+    RefusedStream = 0x7,
+    Cancel = 0x8,
+    CompressionError = 0x9,
+    ConnectError = 0xa,
+    EnhanceYourCalm = 0xb,
+    InadequateSecurity = 0xc,
+    Http11Required = 0xd,
+};
+
+namespace drogon::internal
+{
 
 // Quick and dirty ByteStream implementation and extensions so we can use it
 // to read from the buffer, safely. At least it checks for buffer overflows
@@ -164,294 +238,210 @@ struct OByteStream
     trantor::MsgBuffer buffer;
 };
 
-enum class H2FrameType
-{
-    Data = 0x0,
-    Headers = 0x1,
-    Priority = 0x2,
-    RstStream = 0x3,
-    Settings = 0x4,
-    PushPromise = 0x5,
-    Ping = 0x6,
-    GoAway = 0x7,
-    WindowUpdate = 0x8,
-    Continuation = 0x9,
-    AltSvc = 0xa,
-    // UNUSED = 0xb, // 0xb is removed from the spec
-    Origin = 0xc,
-
-    NumEntries
-};
-
-enum class H2SettingsKey
-{
-    HeaderTableSize = 0x1,
-    EnablePush = 0x2,
-    MaxConcurrentStreams = 0x3,
-    InitialWindowSize = 0x4,
-    MaxFrameSize = 0x5,
-    MaxHeaderListSize = 0x6,
-
-    NumEntries
-};
-
-enum class H2HeadersFlags
-{
-    EndStream = 0x1,
-    EndHeaders = 0x4,
-    Padded = 0x8,
-    Priority = 0x20
-};
-
-enum class H2DataFlags
-{
-    EndStream = 0x1,
-    Padded = 0x8
-};
-
-struct SettingsFrame
-{
-    bool ack = false;
-    std::vector<std::pair<uint16_t, uint32_t>> settings;
-
-    static std::optional<SettingsFrame> parse(ByteStream &payload,
-                                              uint8_t flags)
-    {
-        if (payload.size() % 6 != 0)
-        {
-            LOG_ERROR << "Invalid settings frame length";
-            return std::nullopt;
-        }
-
-        SettingsFrame frame;
-        if ((flags & 0x1) != 0)
-        {
-            frame.ack = true;
-            if (payload.size() != 0)
-            {
-                LOG_ERROR << "Settings frame with ACK flag set should have "
-                             "empty payload";
-                return std::nullopt;
-            }
-            return frame;
-        }
-
-        for (size_t i = 0; i < payload.size(); i += 6)
-        {
-            uint16_t key = payload.readU16BE();
-            uint32_t value = payload.readU32BE();
-            frame.settings.emplace_back(key, value);
-        }
-        return frame;
-    }
-
-    bool serialize(OByteStream &stream, uint8_t &flags) const
-    {
-        flags = (ack ? 0x1 : 0x0);
-        for (auto &[key, value] : settings)
-        {
-            stream.writeU16BE(key);
-            stream.writeU32BE(value);
-        }
-        return true;
-    }
-};
-
-struct WindowUpdateFrame
-{
-    uint32_t windowSizeIncrement = 0;
-
-    static std::optional<WindowUpdateFrame> parse(ByteStream &payload,
+std::optional<SettingsFrame> SettingsFrame::parse(ByteStream &payload,
                                                   uint8_t flags)
-    {
-        if (payload.size() != 4)
-        {
-            LOG_ERROR << "Invalid window update frame length";
-            return std::nullopt;
-        }
-        WindowUpdateFrame frame;
-        // MSB is reserved for future use
-        auto [_, windowSizeIncrement] = payload.readBI32BE();
-        frame.windowSizeIncrement = windowSizeIncrement;
-        return frame;
-    }
-
-    bool serialize(OByteStream &stream, uint8_t &flags) const
-    {
-        flags = 0x0;
-        if (windowSizeIncrement & (1U << 31))
-        {
-            LOG_ERROR << "MSB of windowSizeIncrement should be 0";
-            return false;
-        }
-        stream.writeU32BE(windowSizeIncrement);
-        return true;
-    }
-};
-
-struct HeadersFrame
 {
-    uint8_t padLength = 0;
-    bool exclusive = false;
-    uint32_t streamDependency = 0;
-    uint8_t weight = 0;
-    std::vector<uint8_t> headerBlockFragment;
-    bool endHeaders = false;
-    bool endStream = false;
-
-    static std::optional<HeadersFrame> parse(ByteStream &payload, uint8_t flags)
+    if (payload.size() % 6 != 0)
     {
-        bool endStream = flags & (uint8_t)H2HeadersFlags::EndStream;
-        bool endHeaders = flags & (uint8_t)H2HeadersFlags::EndHeaders;
-        bool padded = flags & (uint8_t)H2HeadersFlags::Padded;
-        bool priority = flags & (uint8_t)H2HeadersFlags::Priority;
+        LOG_ERROR << "Invalid settings frame length";
+        return std::nullopt;
+    }
 
-        HeadersFrame frame;
-        if (padded)
+    SettingsFrame frame;
+    if ((flags & 0x1) != 0)
+    {
+        frame.ack = true;
+        if (payload.size() != 0)
         {
-            frame.padLength = payload.readU8();
-        }
-        if (priority)
-        {
-            auto [exclusive, streamDependency] = payload.readBI32BE();
-            frame.exclusive = exclusive;
-            frame.streamDependency = streamDependency;
-            frame.weight = payload.readU8();
-        }
-        if (endHeaders)
-        {
-            frame.endHeaders = true;
-        }
-        if (endStream)
-        {
-            frame.endStream = true;
-        }
-
-        int64_t payloadSize = payload.remaining() - frame.padLength;
-        if (payloadSize < 0)
-        {
-            LOG_ERROR << "headers padding is larger than the payload size";
+            LOG_ERROR << "Settings frame with ACK flag set should have "
+                         "empty payload";
             return std::nullopt;
         }
-        frame.headerBlockFragment.resize(payloadSize);
-        payload.read(frame.headerBlockFragment.data(),
-                     frame.headerBlockFragment.size());
-        payload.skip(frame.padLength);
         return frame;
     }
 
-    bool serialize(OByteStream &stream, uint8_t &flags) const
+    for (size_t i = 0; i < payload.size(); i += 6)
     {
-        flags = 0x0;
-        if (padLength > 0)
-        {
-            flags |= (uint8_t)H2HeadersFlags::Padded;
-            stream.writeU8(padLength);
-        }
+        uint16_t key = payload.readU16BE();
+        uint32_t value = payload.readU32BE();
+        frame.settings.emplace_back(key, value);
+    }
+    return frame;
+}
+
+bool SettingsFrame::serialize(OByteStream &stream, uint8_t &flags) const
+{
+    flags = (ack ? 0x1 : 0x0);
+    for (auto &[key, value] : settings)
+    {
+        stream.writeU16BE(key);
+        stream.writeU32BE(value);
+    }
+    return true;
+}
+
+std::optional<WindowUpdateFrame> WindowUpdateFrame::parse(ByteStream &payload,
+                                                          uint8_t flags)
+{
+    if (payload.size() != 4)
+    {
+        LOG_ERROR << "Invalid window update frame length";
+        return std::nullopt;
+    }
+    WindowUpdateFrame frame;
+    // MSB is reserved for future use
+    auto [_, windowSizeIncrement] = payload.readBI32BE();
+    frame.windowSizeIncrement = windowSizeIncrement;
+    return frame;
+}
+
+bool WindowUpdateFrame::serialize(OByteStream &stream, uint8_t &flags) const
+{
+    flags = 0x0;
+    if (windowSizeIncrement & (1U << 31))
+    {
+        LOG_ERROR << "MSB of windowSizeIncrement should be 0";
+        return false;
+    }
+    stream.writeU32BE(windowSizeIncrement);
+    return true;
+}
+
+std::optional<HeadersFrame> HeadersFrame::parse(ByteStream &payload,
+                                                uint8_t flags)
+{
+    bool endStream = flags & (uint8_t)H2HeadersFlags::EndStream;
+    bool endHeaders = flags & (uint8_t)H2HeadersFlags::EndHeaders;
+    bool padded = flags & (uint8_t)H2HeadersFlags::Padded;
+    bool priority = flags & (uint8_t)H2HeadersFlags::Priority;
+
+    HeadersFrame frame;
+    if (padded)
+    {
+        frame.padLength = payload.readU8();
+    }
+    if (priority)
+    {
+        auto [exclusive, streamDependency] = payload.readBI32BE();
+        frame.exclusive = exclusive;
+        frame.streamDependency = streamDependency;
+        frame.weight = payload.readU8();
+    }
+    if (endHeaders)
+    {
+        frame.endHeaders = true;
+    }
+    if (endStream)
+    {
+        frame.endStream = true;
+    }
+
+    int64_t payloadSize = payload.remaining() - frame.padLength;
+    if (payloadSize < 0)
+    {
+        LOG_ERROR << "headers padding is larger than the payload size";
+        return std::nullopt;
+    }
+    frame.headerBlockFragment.resize(payloadSize);
+    payload.read(frame.headerBlockFragment.data(),
+                 frame.headerBlockFragment.size());
+    payload.skip(frame.padLength);
+    return frame;
+}
+
+bool HeadersFrame::serialize(OByteStream &stream, uint8_t &flags) const
+{
+    flags = 0x0;
+    if (padLength > 0)
+    {
+        flags |= (uint8_t)H2HeadersFlags::Padded;
+        stream.writeU8(padLength);
+    }
+    if (exclusive)
+    {
+        flags |= (uint8_t)H2HeadersFlags::Priority;
+        uint32_t streamDependency = this->streamDependency;
         if (exclusive)
-        {
-            flags |= (uint8_t)H2HeadersFlags::Priority;
-            uint32_t streamDependency = this->streamDependency;
-            if (exclusive)
-                streamDependency |= 1U << 31;
-            stream.writeU32BE(streamDependency);
-            stream.writeU8(weight);
-        }
-
-        if (endHeaders)
-            flags |= (uint8_t)H2HeadersFlags::EndHeaders;
-        if (endStream)
-            flags |= (uint8_t)H2HeadersFlags::EndStream;
-        stream.write(headerBlockFragment.data(), headerBlockFragment.size());
-        return true;
+            streamDependency |= 1U << 31;
+        stream.writeU32BE(streamDependency);
+        stream.writeU8(weight);
     }
-};
 
-struct GoAwayFrame
+    if (endHeaders)
+        flags |= (uint8_t)H2HeadersFlags::EndHeaders;
+    if (endStream)
+        flags |= (uint8_t)H2HeadersFlags::EndStream;
+    stream.write(headerBlockFragment.data(), headerBlockFragment.size());
+    return true;
+}
+
+std::optional<GoAwayFrame> GoAwayFrame::parse(ByteStream &payload,
+                                              uint8_t flags)
 {
-    uint32_t lastStreamId = 0;
-    uint32_t errorCode = 0;
-    std::vector<uint8_t> additionalDebugData;
-
-    static std::optional<GoAwayFrame> parse(ByteStream &payload, uint8_t flags)
+    if (payload.size() < 8)
     {
-        if (payload.size() < 8)
-        {
-            LOG_ERROR << "Invalid go away frame length";
-            return std::nullopt;
-        }
-        GoAwayFrame frame;
-        frame.lastStreamId = payload.readU32BE();
-        frame.errorCode = payload.readU32BE();
-        frame.additionalDebugData.resize(payload.remaining());
-        for (size_t i = 0; i < frame.additionalDebugData.size(); ++i)
-            frame.additionalDebugData[i] = payload.readU8();
-        return frame;
+        LOG_ERROR << "Invalid go away frame length";
+        return std::nullopt;
     }
+    GoAwayFrame frame;
+    frame.lastStreamId = payload.readU32BE();
+    frame.errorCode = payload.readU32BE();
+    frame.additionalDebugData.resize(payload.remaining());
+    for (size_t i = 0; i < frame.additionalDebugData.size(); ++i)
+        frame.additionalDebugData[i] = payload.readU8();
+    return frame;
+}
 
-    bool serialize(OByteStream &stream, uint8_t &flags) const
-    {
-        flags = 0x0;
-        stream.writeU32BE(lastStreamId);
-        stream.writeU32BE(errorCode);
-        stream.write(additionalDebugData.data(), additionalDebugData.size());
-        return true;
-    }
-};
-
-struct DataFrame
+bool GoAwayFrame::serialize(OByteStream &stream, uint8_t &flags) const
 {
-    uint8_t padLength = 0;
-    std::vector<uint8_t> data;
-    bool endStream = false;
+    flags = 0x0;
+    stream.writeU32BE(lastStreamId);
+    stream.writeU32BE(errorCode);
+    stream.write(additionalDebugData.data(), additionalDebugData.size());
+    return true;
+}
 
-    static std::optional<DataFrame> parse(ByteStream &payload, uint8_t flags)
+std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
+{
+    bool endStream = flags & (uint8_t)H2DataFlags::EndStream;
+    bool padded = flags & (uint8_t)H2DataFlags::Padded;
+
+    DataFrame frame;
+    if (padded)
     {
-        bool endStream = flags & (uint8_t)H2DataFlags::EndStream;
-        bool padded = flags & (uint8_t)H2DataFlags::Padded;
-
-        DataFrame frame;
-        if (padded)
-        {
-            frame.padLength = payload.readU8();
-        }
-        if (endStream)
-        {
-            frame.endStream = true;
-        }
-
-        int32_t payloadSize = payload.remaining() - frame.padLength;
-        if (payloadSize < 0)
-        {
-            LOG_ERROR << "data padding is larger than the payload size";
-            return std::nullopt;
-        }
-
-        frame.data.resize(payloadSize);
-        payload.read(frame.data.data(), frame.data.size());
-        payload.skip(frame.padLength);
-        return frame;
+        frame.padLength = payload.readU8();
+    }
+    if (endStream)
+    {
+        frame.endStream = true;
     }
 
-    bool serialize(OByteStream &stream, uint8_t &flags) const
+    int32_t payloadSize = payload.remaining() - frame.padLength;
+    if (payloadSize < 0)
     {
-        flags = 0x0;
-        stream.write(data.data(), data.size());
-        if (padLength > 0)
-        {
-            flags |= (uint8_t)H2DataFlags::Padded;
-            for (size_t i = 0; i < padLength; ++i)
-                stream.writeU8(0x0);
-        }
-        return true;
+        LOG_ERROR << "data padding is larger than the payload size";
+        return std::nullopt;
     }
-};
 
-using H2Frame = std::variant<SettingsFrame,
-                             WindowUpdateFrame,
-                             HeadersFrame,
-                             GoAwayFrame,
-                             DataFrame>;
+    frame.data.resize(payloadSize);
+    payload.read(frame.data.data(), frame.data.size());
+    payload.skip(frame.padLength);
+    return frame;
+}
+
+bool DataFrame::serialize(OByteStream &stream, uint8_t &flags) const
+{
+    flags = 0x0;
+    stream.write(data.data(), data.size());
+    if (padLength > 0)
+    {
+        flags |= (uint8_t)H2DataFlags::Padded;
+        for (size_t i = 0; i < padLength; ++i)
+            stream.writeU8(0x0);
+    }
+    return true;
+}
+}  // namespace drogon::internal
 
 // Print the HEX and ASCII representation of the buffer side by side
 // 16 bytes per line. Same function as the xdd command in linux.
@@ -715,14 +705,17 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         }
         auto &frame = *frameOpt;
 
-        // TODO: Figure out how to dispatch the frame to the right stream
+        if (streamId != 0)
+        {
+            handleFrameForStream(frame, streamId, flags);
+            continue;
+        }
+
+        // This point foware, we are handling frames for stream 0
         if (std::holds_alternative<WindowUpdateFrame>(frame))
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
-            if (streamId == 0)
-            {
-                avaliableWindowSize += f.windowSizeIncrement;
-            }
+            avaliableWindowSize += f.windowSizeIncrement;
         }
         else if (std::holds_alternative<SettingsFrame>(frame))
         {
@@ -774,88 +767,25 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             LOG_TRACE << "Acknowledge settings frame";
             SettingsFrame ackFrame;
             ackFrame.ack = true;
-            connPtr->send(serializeFrame(ackFrame, 0));
+            connPtr->send(serializeFrame(ackFrame, streamId));
         }
         else if (std::holds_alternative<HeadersFrame>(frame))
         {
-            auto &f = std::get<HeadersFrame>(frame);
-            LOG_TRACE << "Headers frame received: size="
-                      << f.headerBlockFragment.size();
-            hpack::HPacker::KeyValueVector headers;
-            int n = hpackRx.decode(f.headerBlockFragment.data(),
-                                   f.headerBlockFragment.size(),
-                                   headers);
-            if (n < 0)
-            {
-                LOG_ERROR << "Failed to decode headers";
-                abort();
-                return;
-            }
-            for (auto &[key, value] : headers)
-                LOG_TRACE << "  " << key << ": " << value;
-
-            auto it = streams.find(streamId);
-            if (it == streams.end())
-            {
-                LOG_ERROR << "Headers frame received for unknown stream id: "
-                          << streamId;
-                // TODO: Send GoAway frame
-                return;
-            }
-            it->second.response = std::make_shared<HttpResponseImpl>();
-            for (const auto &[key, value] : headers)
-            {
-                // TODO: Filter more pseudo headers
-                if (key == ":status")
-                    continue;
-                // TODO: Validate content-length is either not present or
-                // the same as the body size sent by DATA frames
-                if (key == "content-length")
-                    continue;
-                if (key == ":status")
-                {
-                    // TODO: Validate status code
-                    it->second.response->setStatusCode(
-                        (drogon::HttpStatusCode)std::stoi(value));
-                    continue;
-                }
-                it->second.response->addHeader(key, value);
-            }
+            // Should never show up on stream 0
+            LOG_FATAL << "Protocol error: HEADERS frame on stream 0";
+            errorCallback(ReqResult::BadResponse);
         }
         else if (std::holds_alternative<DataFrame>(frame))
         {
-            auto &f = std::get<DataFrame>(frame);
-            LOG_TRACE << "Data frame received: size=" << f.data.size();
-
-            auto it = streams.find(streamId);
-            if (it == streams.end())
-            {
-                LOG_ERROR << "Data frame received for unknown stream id: "
-                          << streamId;
-                return;
-            }
-
-            it->second.body.append((char *)f.data.data(), f.data.size());
-            if ((flags & (uint8_t)H2DataFlags::EndStream) != 0)
-            {
-                // TODO: Optmize setting body
-                std::string body(it->second.body.peek(),
-                                 it->second.body.readableBytes());
-                auto headers = it->second.response->headers();
-                it->second.response->setBody(std::move(body));
-                assert(it->second.request != nullptr);
-                assert(it->second.callback);
-                respCallback(it->second.response,
-                             {it->second.request, it->second.callback},
-                             connPtr);
-            }
+            LOG_FATAL << "Protocol error: DATA frame on stream 0";
+            errorCallback(ReqResult::BadResponse);
         }
         else if (std::holds_alternative<GoAwayFrame>(frame))
         {
             auto &f = std::get<GoAwayFrame>(frame);
             // TODO: Depening on the streamId, we need to kill the entire
             // connection or just the stream
-            if (streamId == 0 && f.errorCode != 0)
+            if (f.errorCode != 0)
             {
                 LOG_ERROR << "Go away frame on stream 0 received. Die!";
                 errorCallback(ReqResult::BadResponse);
@@ -877,4 +807,98 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     : connPtr(connPtr), bytesSent_(bytesSent), bytesReceived_(bytesReceived)
 {
     connPtr->send(h2_preamble.data(), h2_preamble.length());
+}
+
+void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
+                                          int32_t streamId,
+                                          uint8_t flags)
+{
+    auto it = streams.find(streamId);
+    if (it == streams.end())
+    {
+        LOG_ERROR << "Non-existent stream id: " << streamId;
+
+        GoAwayFrame goAwayFrame;
+        goAwayFrame.lastStreamId = streamId;
+        goAwayFrame.errorCode = (uint32_t)StreamCloseErrorCode::ProtocolError;
+        goAwayFrame.additionalDebugData =
+            s2vec("Non-existent stream id " + std::to_string(streamId));
+        connPtr->send(serializeFrame(goAwayFrame, 0));
+        return;
+    }
+    auto &stream = it->second;
+
+    if (std::holds_alternative<HeadersFrame>(frame))
+    {
+        auto &f = std::get<HeadersFrame>(frame);
+        LOG_TRACE << "Headers frame received: size="
+                  << f.headerBlockFragment.size();
+        hpack::HPacker::KeyValueVector headers;
+        int n = hpackRx.decode(f.headerBlockFragment.data(),
+                               f.headerBlockFragment.size(),
+                               headers);
+        if (n < 0)
+        {
+            LOG_ERROR << "Failed to decode headers";
+            // TODO: Send GoAway
+            stream.callback(ReqResult::BadResponse, nullptr);
+            return;
+        }
+        for (auto &[key, value] : headers)
+            LOG_TRACE << "  " << key << ": " << value;
+        it->second.response = std::make_shared<HttpResponseImpl>();
+        for (const auto &[key, value] : headers)
+        {
+            // TODO: Filter more pseudo headers
+            if (key == ":status")
+                continue;
+            // TODO: Validate content-length is either not present or
+            // the same as the body size sent by DATA frames
+            if (key == "content-length")
+                continue;
+            if (key == ":status")
+            {
+                // TODO: Validate status code
+                it->second.response->setStatusCode(
+                    (drogon::HttpStatusCode)std::stoi(value));
+                continue;
+            }
+            it->second.response->addHeader(key, value);
+        }
+    }
+    else if (std::holds_alternative<DataFrame>(frame))
+    {
+        auto &f = std::get<DataFrame>(frame);
+        LOG_TRACE << "Data frame received: size=" << f.data.size();
+
+        auto it = streams.find(streamId);
+        if (it == streams.end())
+        {
+            LOG_ERROR << "Data frame received for unknown stream id: "
+                      << streamId;
+            return;
+        }
+
+        it->second.body.append((char *)f.data.data(), f.data.size());
+        if ((flags & (uint8_t)H2DataFlags::EndStream) != 0)
+        {
+            // TODO: Optmize setting body
+            std::string body(it->second.body.peek(),
+                             it->second.body.readableBytes());
+            auto headers = it->second.response->headers();
+            it->second.response->setBody(std::move(body));
+            assert(it->second.request != nullptr);
+            assert(it->second.callback);
+            respCallback(it->second.response,
+                         {it->second.request, it->second.callback},
+                         connPtr);
+            // release the stream
+            streams.erase(it);
+            retireStreamId(streamId);
+        }
+    }
+    else
+    {
+        LOG_ERROR << "Unsupported frame type for stream: " << streamId;
+    }
 }
