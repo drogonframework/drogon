@@ -93,7 +93,7 @@ class Http2Transport : public HttpTransport
         return 0;
     }
 
-    bool handleConnectionClose()
+    bool handleConnectionClose() override
     {
         throw std::runtime_error(
             "HTTP/2 handleConnectionClose not implemented");

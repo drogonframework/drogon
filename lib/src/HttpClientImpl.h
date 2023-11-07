@@ -55,7 +55,7 @@ class Http1xTransport : public HttpTransport
         return pipeliningCallbacks_.size();
     }
 
-    bool handleConnectionClose();
+    bool handleConnectionClose() override;
 
     void onError(ReqResult result) override
     {
