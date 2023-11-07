@@ -139,6 +139,23 @@ struct OByteStream
         buffer.append((char *)ptr, size);
     }
 
+    void overwriteU24BE(size_t offset, uint32_t value)
+    {
+        assert(value <= 0xffffff);
+        assert(offset <= buffer.readableBytes() - 3);
+        auto ptr = (uint8_t *)buffer.peek() + offset;
+        ptr[0] = value >> 16;
+        ptr[1] = value >> 8;
+        ptr[2] = value;
+    }
+
+    void overwriteU8(size_t offset, uint8_t value)
+    {
+        assert(offset <= buffer.readableBytes() - 1);
+        auto ptr = (uint8_t *)buffer.peek() + offset;
+        ptr[0] = value;
+    }
+
     uint8_t *peek()
     {
         return (uint8_t *)buffer.peek();
@@ -474,10 +491,14 @@ static void dump_hex_beautiful(const void *ptr, size_t size)
     }
 }
 
-static std::vector<uint8_t> serializeFrame(const H2Frame &frame,
-                                           size_t streamId)
+static trantor::MsgBuffer serializeFrame(const H2Frame &frame, size_t streamId)
 {
     OByteStream buffer;
+    buffer.writeU24BE(0);  // Placeholder for length
+    buffer.writeU8(0);     // Placeholder for type
+    buffer.writeU8(0);     // Placeholder for flags
+    buffer.writeU32BE(streamId);
+
     uint8_t type;
     uint8_t flags;
     bool ok = false;
@@ -517,23 +538,11 @@ static std::vector<uint8_t> serializeFrame(const H2Frame &frame,
         abort();
     }
 
-    std::vector<uint8_t> full_frame;
-    full_frame.reserve(9 + buffer.buffer.readableBytes());
-    size_t length = buffer.buffer.readableBytes();
-    assert(length <= 0xffffff);
-    full_frame.push_back(length >> 16);
-    full_frame.push_back(length >> 8);
-    full_frame.push_back(length);
-    full_frame.push_back(type);
-    full_frame.push_back(flags);
-    full_frame.push_back(streamId >> 24);
-    full_frame.push_back(streamId >> 16);
-    full_frame.push_back(streamId >> 8);
-    full_frame.push_back(streamId);
-    full_frame.insert(full_frame.end(),
-                      buffer.buffer.peek(),
-                      buffer.buffer.peek() + length);
-    return full_frame;
+    auto length = buffer.buffer.readableBytes() - 9;
+    buffer.overwriteU24BE(0, length);
+    buffer.overwriteU8(3, type);
+    buffer.overwriteU8(4, flags);
+    return buffer.buffer;
 }
 
 // return streamId, frame, error and should continue parsing
@@ -669,8 +678,8 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     frame.endStream = true;
     LOG_TRACE << "Sending headers frame";
     auto f = serializeFrame(frame, streamId);
-    dump_hex_beautiful(f.data(), f.size());
-    connPtr->send(f.data(), f.size());
+    dump_hex_beautiful(f.peek(), f.readableBytes());
+    connPtr->send(f);
 
     streams[streamId] = internal::H2Stream();
     streams[streamId].callback = std::move(callback);
@@ -744,13 +753,13 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 settingsFrame.settings.emplace_back(
                     (uint16_t)H2SettingsKey::EnablePush, 0);  // Disable push
                 auto b = serializeFrame(settingsFrame, 0);
-                connPtr->send((const char *)b.data(), b.size());
+                connPtr->send(b);
 
                 WindowUpdateFrame windowUpdateFrame;
                 // TODO: Keep track and update the window size
                 windowUpdateFrame.windowSizeIncrement = 200 * 1024 * 1024;
                 auto b2 = serializeFrame(windowUpdateFrame, 0);
-                connPtr->send((const char *)b2.data(), b2.size());
+                connPtr->send(b2);
 
                 serverSettingsReceived = true;
                 for (auto &[req, cb] : bufferedRequests)
@@ -766,7 +775,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             SettingsFrame ackFrame;
             ackFrame.ack = true;
             auto b = serializeFrame(ackFrame, 0);
-            connPtr->send((const char *)b.data(), b.size());
+            connPtr->send(b);
         }
         else if (std::holds_alternative<HeadersFrame>(frame))
         {
