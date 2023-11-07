@@ -71,24 +71,6 @@ enum class H2DataFlags
     Padded = 0x8
 };
 
-enum class StreamCloseErrorCode
-{
-    NoError = 0x0,
-    ProtocolError = 0x1,
-    InternalError = 0x2,
-    FlowControlError = 0x3,
-    SettingsTimeout = 0x4,
-    StreamClosed = 0x5,
-    FrameSizeError = 0x6,
-    RefusedStream = 0x7,
-    Cancel = 0x8,
-    CompressionError = 0x9,
-    ConnectError = 0xa,
-    EnhanceYourCalm = 0xb,
-    InadequateSecurity = 0xc,
-    Http11Required = 0xd,
-};
-
 static GoAwayFrame goAway(int32_t sid,
                           const std::string &msg,
                           StreamCloseErrorCode ec)
@@ -633,6 +615,7 @@ static std::tuple<std::optional<H2Frame>, size_t, uint8_t, bool> parseH2Frame(
 void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                                        HttpReqCallback &&callback)
 {
+    connPtr->getLoop()->assertInLoopThread();
     if (!serverSettingsReceived)
     {
         bufferedRequests.emplace_back(req, std::move(callback));
@@ -640,11 +623,17 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     }
 
     const int32_t streamId = nextStreamId();
+    assert(streamId % 2 == 1);
     LOG_TRACE << "Sending HTTP/2 request: streamId=" << streamId;
     if (streams.find(streamId) != streams.end())
     {
         LOG_FATAL << "Stream id already in use! This should not happen";
-        abort();
+        connPtr->send(
+            serializeFrame(goAway(streamId,
+                                  "replicated internal stream id",
+                                  StreamCloseErrorCode::InternalError),
+                           0));
+        errorCallback(ReqResult::BadResponse);
         return;
     }
 
@@ -686,6 +675,13 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         abort();
         return;
     }
+    // TODO: Send CONTINUATION frames if the header block fragment is too large
+    if (n > 0x7fff)
+    {
+        LOG_ERROR << "Header block fragment too large";
+        abort();
+        return;
+    }
     frame.headerBlockFragment.resize(n);
     frame.endHeaders = true;
     frame.endStream = true;
@@ -694,8 +690,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     dump_hex_beautiful(f.peek(), f.readableBytes());
     connPtr->send(f);
 
-    streams[streamId] = internal::H2Stream();
-    auto &stream = streams[streamId];
+    auto &stream = createStream(streamId);
     stream.callback = std::move(callback);
     stream.request = req;
 }
@@ -734,7 +729,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             continue;
         }
 
-        // This point foware, we are handling frames for stream 0
+        // This point forawrd, we are handling frames for stream 0
         if (std::holds_alternative<WindowUpdateFrame>(frame))
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
@@ -747,11 +742,15 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             {
                 if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
                 {
-                    if (streamId == 0)
-                        maxConcurrentStreams = value;
-                    else
-                        LOG_TRACE << "Ignoring max concurrent streams due to "
-                                     "streamId != 0";
+                    if (value == 0)
+                    {
+                        connPtr->send(serializeFrame(
+                            goAway(streamId,
+                                   "MaxConcurrentStreams cannot be 0",
+                                   StreamCloseErrorCode::ProtocolError),
+                            0));
+                    }
+                    maxConcurrentStreams = value;
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxFrameSize)
                 {
@@ -763,7 +762,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 }
             }
 
-            if (streamId == 0 && !serverSettingsReceived)
+            if (!serverSettingsReceived)
             {
                 LOG_TRACE << "Server settings received. Sending our own "
                              "settings and WindowUpdate";
@@ -806,14 +805,20 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         else if (std::holds_alternative<GoAwayFrame>(frame))
         {
             auto &f = std::get<GoAwayFrame>(frame);
-            // TODO: Depening on the streamId, we need to kill the entire
-            // connection or just the stream
             if (f.errorCode != 0)
             {
                 LOG_ERROR << "Go away frame on stream 0 received. Die!";
                 errorCallback(ReqResult::BadResponse);
-                connPtr->shutdown();
             }
+            else
+            {
+                // We shouldn't have any requests in flight if the server is
+                // sending us a go away frame to gracefully shutdown
+                // But in case we do, we should treat them as network failures
+                assert(streams.empty());
+                errorCallback(ReqResult::NetworkFailure);
+            }
+            connPtr->shutdown();
         }
         else
         {
@@ -861,8 +866,10 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         if (n < 0)
         {
             LOG_ERROR << "Failed to decode headers";
-            // TODO: Send GoAway
-            errorCallback(ReqResult::BadResponse);
+            streamFinished(streamId,
+                           ReqResult::BadResponse,
+                           StreamCloseErrorCode::CompressionError,
+                           "Failed to decode headers");
             return;
         }
         for (auto &[key, value] : headers)
@@ -871,17 +878,15 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         for (const auto &[key, value] : headers)
         {
             // TODO: Filter more pseudo headers
-            if (key == ":status")
-                continue;
             if (key == "content-length")
             {
                 auto sz = stosz(value);
                 if (!sz)
                 {
-                    LOG_ERROR << "Invalid content-length header: " << value;
-                    it->second.callback(ReqResult::BadResponse, nullptr);
-                    retireStreamId(streamId);
-                    streams.erase(it);
+                    streamFinished(streamId,
+                                   ReqResult::BadResponse,
+                                   StreamCloseErrorCode::ProtocolError,
+                                   "Invalid content-length header");
                     return;
                 }
                 it->second.contentLength = std::move(sz);
@@ -903,45 +908,67 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         auto &f = std::get<DataFrame>(frame);
         LOG_TRACE << "Data frame received: size=" << f.data.size();
 
-        auto it = streams.find(streamId);
-        if (it == streams.end())
-        {
-            LOG_ERROR << "Data frame received for unknown stream id: "
-                      << streamId;
-            return;
-        }
-
-        it->second.body.append((char *)f.data.data(), f.data.size());
+        stream.body.append((char *)f.data.data(), f.data.size());
         if ((flags & (uint8_t)H2DataFlags::EndStream) != 0)
         {
-            if (stream.contentLength)
+            if (stream.contentLength &&
+                stream.body.readableBytes() != *stream.contentLength)
             {
-                if (stream.body.readableBytes() != *stream.contentLength)
-                {
-                    LOG_ERROR << "Content-length mismatch";
-                    it->second.callback(ReqResult::BadResponse, nullptr);
-                    retireStreamId(streamId);
-                    streams.erase(it);
-                    return;
-                }
+                LOG_ERROR << "Content-length mismatch";
+                streamFinished(streamId,
+                               ReqResult::BadResponse,
+                               StreamCloseErrorCode::ProtocolError,
+                               "Content-length mismatch");
+                return;
             }
             // TODO: Optmize setting body
-            std::string body(it->second.body.peek(),
-                             it->second.body.readableBytes());
-            auto headers = it->second.response->headers();
-            it->second.response->setBody(std::move(body));
-            assert(it->second.request != nullptr);
-            assert(it->second.callback);
-            respCallback(it->second.response,
-                         {it->second.request, it->second.callback},
-                         connPtr);
-            // release the stream
-            streams.erase(it);
-            retireStreamId(streamId);
+            std::string body(stream.body.peek(), stream.body.readableBytes());
+            stream.response->setBody(std::move(body));
+            streamFinished(stream);
+            return;
         }
     }
     else
     {
         LOG_ERROR << "Unsupported frame type for stream: " << streamId;
     }
+}
+
+internal::H2Stream &Http2Transport::createStream(int32_t streamId)
+{
+    auto it = streams.find(streamId);
+    if (it != streams.end())
+    {
+        LOG_FATAL << "Stream id already in use! This should not happen";
+        abort();
+    }
+    auto &stream = streams[streamId];
+    stream.streamId = streamId;
+    return stream;
+}
+
+void Http2Transport::streamFinished(internal::H2Stream &stream)
+{
+    assert(stream.request != nullptr);
+    assert(stream.callback);
+    auto it = streams.find(stream.streamId);
+    assert(it != streams.end());
+    respCallback(stream.response, {stream.request, stream.callback}, connPtr);
+    streams.erase(it);
+    retireStreamId(stream.streamId);
+}
+
+void Http2Transport::streamFinished(int32_t streamId,
+                                    ReqResult result,
+                                    StreamCloseErrorCode errorCode,
+                                    std::string errorMsg)
+{
+    auto it = streams.find(streamId);
+    assert(it != streams.end());
+
+    connPtr->send(serializeFrame(goAway(streamId, errorMsg, errorCode), 0));
+
+    it->second.callback(result, nullptr);
+    streams.erase(it);
+    retireStreamId(streamId);
 }

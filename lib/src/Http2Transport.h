@@ -84,8 +84,27 @@ struct H2Stream
     HttpRequestPtr request;
     trantor::MsgBuffer body;
     std::optional<size_t> contentLength;
+    int32_t streamId = 0;
 };
 }  // namespace internal
+
+enum class StreamCloseErrorCode
+{
+    NoError = 0x0,
+    ProtocolError = 0x1,
+    InternalError = 0x2,
+    FlowControlError = 0x3,
+    SettingsTimeout = 0x4,
+    StreamClosed = 0x5,
+    FrameSizeError = 0x6,
+    RefusedStream = 0x7,
+    Cancel = 0x8,
+    CompressionError = 0x9,
+    ConnectError = 0xa,
+    EnhanceYourCalm = 0xb,
+    InadequateSecurity = 0xc,
+    Http11Required = 0xd,
+};
 
 class Http2Transport : public HttpTransport
 {
@@ -110,6 +129,13 @@ class Http2Transport : public HttpTransport
     // Set after server settings are received
     bool serverSettingsReceived = false;
     std::vector<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
+
+    internal::H2Stream &createStream(int32_t streamId);
+    void streamFinished(internal::H2Stream &stream);
+    void streamFinished(int32_t streamId,
+                        ReqResult result,
+                        StreamCloseErrorCode errorCode,
+                        std::string errorMsg = "");
 
     int32_t nextStreamId()
     {
