@@ -14,6 +14,18 @@ static std::vector<uint8_t> s2vec(const std::string &str)
     return vec;
 }
 
+static std::optional<size_t> stosz(const std::string &str)
+{
+    try
+    {
+        return std::stoull(str);
+    }
+    catch (const std::exception &e)
+    {
+        return std::nullopt;
+    }
+}
+
 enum class H2FrameType
 {
     Data = 0x0,
@@ -76,6 +88,17 @@ enum class StreamCloseErrorCode
     InadequateSecurity = 0xc,
     Http11Required = 0xd,
 };
+
+static GoAwayFrame goAway(int32_t sid,
+                          const std::string &msg,
+                          StreamCloseErrorCode ec)
+{
+    GoAwayFrame frame;
+    frame.additionalDebugData = s2vec(msg);
+    frame.errorCode = (uint32_t)ec;
+    frame.lastStreamId = sid;
+    return frame;
+}
 
 namespace drogon::internal
 {
@@ -817,13 +840,11 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     if (it == streams.end())
     {
         LOG_ERROR << "Non-existent stream id: " << streamId;
-
-        GoAwayFrame goAwayFrame;
-        goAwayFrame.lastStreamId = streamId;
-        goAwayFrame.errorCode = (uint32_t)StreamCloseErrorCode::ProtocolError;
-        goAwayFrame.additionalDebugData =
-            s2vec("Non-existent stream id " + std::to_string(streamId));
-        connPtr->send(serializeFrame(goAwayFrame, 0));
+        connPtr->send(serializeFrame(
+            goAway(streamId,
+                   "Non-existent stream id " + std::to_string(streamId),
+                   StreamCloseErrorCode::ProtocolError),
+            0));
         return;
     }
     auto &stream = it->second;
@@ -852,10 +873,19 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             // TODO: Filter more pseudo headers
             if (key == ":status")
                 continue;
-            // TODO: Validate content-length is either not present or
-            // the same as the body size sent by DATA frames
             if (key == "content-length")
-                continue;
+            {
+                auto sz = stosz(value);
+                if (!sz)
+                {
+                    LOG_ERROR << "Invalid content-length header: " << value;
+                    it->second.callback(ReqResult::BadResponse, nullptr);
+                    retireStreamId(streamId);
+                    streams.erase(it);
+                    return;
+                }
+                it->second.contentLength = std::move(sz);
+            }
             if (key == ":status")
             {
                 // TODO: Validate status code
@@ -863,6 +893,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                     (drogon::HttpStatusCode)std::stoi(value));
                 continue;
             }
+
+            // TODO: Anti request smuggling via adding \r\n to the header
             it->second.response->addHeader(key, value);
         }
     }
@@ -882,6 +914,17 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         it->second.body.append((char *)f.data.data(), f.data.size());
         if ((flags & (uint8_t)H2DataFlags::EndStream) != 0)
         {
+            if (stream.contentLength)
+            {
+                if (stream.body.readableBytes() != *stream.contentLength)
+                {
+                    LOG_ERROR << "Content-length mismatch";
+                    it->second.callback(ReqResult::BadResponse, nullptr);
+                    retireStreamId(streamId);
+                    streams.erase(it);
+                    return;
+                }
+            }
             // TODO: Optmize setting body
             std::string body(it->second.body.peek(),
                              it->second.body.readableBytes());

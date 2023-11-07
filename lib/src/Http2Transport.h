@@ -83,6 +83,7 @@ struct H2Stream
     HttpResponseImplPtr response;
     HttpRequestPtr request;
     trantor::MsgBuffer body;
+    std::optional<size_t> contentLength;
 };
 }  // namespace internal
 
