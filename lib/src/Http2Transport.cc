@@ -618,7 +618,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     connPtr->getLoop()->assertInLoopThread();
     if (!serverSettingsReceived)
     {
-        bufferedRequests.emplace_back(req, std::move(callback));
+        bufferedRequests.push({req, std::move(callback)});
         return;
     }
 
@@ -777,9 +777,12 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 connPtr->send(serializeFrame(windowUpdateFrame, 0));
 
                 serverSettingsReceived = true;
-                for (auto &[req, cb] : bufferedRequests)
+                while (!bufferedRequests.empty())
+                {
+                    auto &[req, cb] = bufferedRequests.front();
                     sendRequestInLoop(req, std::move(cb));
-                bufferedRequests.clear();
+                    bufferedRequests.pop();
+                }
             }
 
             // Somehow nghttp2 wants us to send ACK after sending our
@@ -971,4 +974,19 @@ void Http2Transport::streamFinished(int32_t streamId,
     it->second.callback(result, nullptr);
     streams.erase(it);
     retireStreamId(streamId);
+}
+
+void Http2Transport::onError(ReqResult result)
+{
+    connPtr->getLoop()->assertInLoopThread();
+    for (auto &[streamId, stream] : streams)
+        stream.callback(result, nullptr);
+    streams.clear();
+
+    while (!bufferedRequests.empty())
+    {
+        auto &[req, cb] = bufferedRequests.front();
+        cb(result, nullptr);
+        bufferedRequests.pop();
+    }
 }

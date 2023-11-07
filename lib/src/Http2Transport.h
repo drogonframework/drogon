@@ -128,7 +128,7 @@ class Http2Transport : public HttpTransport
 
     // Set after server settings are received
     bool serverSettingsReceived = false;
-    std::vector<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
+    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
 
     internal::H2Stream &createStream(int32_t streamId);
     void streamFinished(internal::H2Stream &stream);
@@ -194,10 +194,7 @@ class Http2Transport : public HttpTransport
             "HTTP/2 handleConnectionClose not implemented");
     }
 
-    void onError(ReqResult result) override
-    {
-        throw std::runtime_error("HTTP/2 onError not implemented");
-    }
+    void onError(ReqResult result) override;
 
   protected:
     void onServerSettingsReceived(){};
