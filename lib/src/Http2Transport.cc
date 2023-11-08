@@ -861,12 +861,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
 
             if (!serverSettingsReceived)
             {
-                LOG_TRACE << "Server settings received. Sending our own "
-                             "settings and WindowUpdate";
-                SettingsFrame settingsFrame;
-                settingsFrame.settings.emplace_back(
-                    (uint16_t)H2SettingsKey::EnablePush, 0);  // Disable push
-                connPtr->send(serializeFrame(settingsFrame, 0));
+                LOG_TRACE
+                    << "Server settings received. Sending our own WindowUpdate";
 
                 WindowUpdateFrame windowUpdateFrame;
                 windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
@@ -934,7 +930,18 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
                                size_t *bytesReceived)
     : connPtr(connPtr), bytesSent_(bytesSent), bytesReceived_(bytesReceived)
 {
+    // TODO: Handle connection dies before constructing the object
+    if (!connPtr->connected())
+        return;
+    // Send HTTP/2 magic string
     connPtr->send(h2_preamble.data(), h2_preamble.length());
+
+    // RFC 9113 3.4
+    // > This sequence MUST be followed by a SETTINGS frame.
+    SettingsFrame settingsFrame;
+    settingsFrame.settings.emplace_back((uint16_t)H2SettingsKey::EnablePush,
+                                        0);  // Disable push
+    connPtr->send(serializeFrame(settingsFrame, 0));
 }
 
 void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
