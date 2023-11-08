@@ -109,6 +109,9 @@ const char *HttpResponseImpl::versionString() const
         case Version::kHttp11:
             result = "HTTP/1.1";
             break;
+        case Version::kHttp2:
+            result = "HTTP/2";
+            break;
 
         default:
             break;

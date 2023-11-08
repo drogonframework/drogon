@@ -13,7 +13,7 @@ Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, OpenBSD
 
 * Use a non-blocking I/O network lib based on epoll (kqueue under macOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [TFB Tests Results](https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=composite) for more details;
 * Provide a completely asynchronous programming mode;
-* Support Http1.0/1.1 (server side and client side);
+* Support HTTP/2 (and 1.0/1.1) client and HTTP 1.1/1.0 server
 * Based on template, a simple reflection mechanism is implemented to completely decouple the main program framework, controllers and views.
 * Support cookies and built-in sessions;
 * Support back-end rendering, the controller generates the data to the view to generate the Html page. Views are described by CSP template files, C++ codes are embedded into Html pages through CSP tags. And the drogon command-line tool automatically generates the C++ code files for compilation;
