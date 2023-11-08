@@ -786,7 +786,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     LOG_TRACE << dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
-        if (avaliableWindowSize < windowIncreaseThreshold)
+        if (avaliableTxWindow < windowIncreaseThreshold)
         {
             WindowUpdateFrame windowUpdateFrame;
             windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
@@ -840,22 +840,22 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         if (std::holds_alternative<WindowUpdateFrame>(frame))
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
-            avaliableWindowSize += f.windowSizeIncrement;
+            avaliableTxWindow += f.windowSizeIncrement;
         }
         else if (std::holds_alternative<SettingsFrame>(frame))
         {
             auto &f = std::get<SettingsFrame>(frame);
             for (auto &[key, value] : f.settings)
             {
+                if (key == (uint16_t)H2SettingsKey::HeaderTableSize)
+                {
+                    hpackRx.setMaxTableSize(value);
+                }
                 if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
                 {
-                    if (value == 0)
-                    {
-                        killConnection(streamId,
-                                       StreamCloseErrorCode::ProtocolError,
-                                       "MaxConcurrentStreams cannot be 0");
-                        return;
-                    }
+                    // Note: MAX_CONCURRENT_STREAMS can be 0, which means
+                    // the client is not allowed to send any request. I doubt
+                    // much client obey this rule though.
                     maxConcurrentStreams = value;
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxFrameSize)
@@ -869,6 +869,21 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                         return;
                     }
                     maxFrameSize = value;
+                }
+                else if (key == (uint16_t)H2SettingsKey::InitialWindowSize)
+                {
+                    if (value > 0x7fffffff)
+                    {
+                        killConnection(streamId,
+                                       StreamCloseErrorCode::FlowControlError,
+                                       "InitialWindowSize too large");
+                        return;
+                    }
+                    initialWindowSize = value;
+                }
+                else if (key == (uint16_t)H2SettingsKey::MaxHeaderListSize)
+                {
+                    // no-op. we don't care
                 }
                 else
                 {
@@ -1061,16 +1076,25 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     {
         auto &f = std::get<DataFrame>(frame);
         // TODO: Make sure this logic fits RFC
-        if (f.data.size() > avaliableWindow)
+        if (avaliableRxWindow < f.data.size())
         {
-            LOG_TRACE << "Data frame received: size=" << f.data.size()
-                      << " but avaliableWindow=" << avaliableWindow;
             streamFinished(streamId,
                            ReqResult::BadResponse,
                            StreamCloseErrorCode::FlowControlError,
-                           "Too much data");
+                           "Too much for connection-level flow control");
+            return;
         }
-        avaliableWindowSize -= f.data.size();
+        else if (stream.avaliableRxWindow < f.data.size())
+        {
+            streamFinished(streamId,
+                           ReqResult::BadResponse,
+                           StreamCloseErrorCode::FlowControlError,
+                           "Too much for stream-level flow control");
+            return;
+        }
+
+        avaliableRxWindow -= f.data.size();
+        stream.avaliableRxWindow -= f.data.size();
 
         if (stream.state != StreamState::ExpectingData)
         {
@@ -1152,6 +1176,7 @@ void Http2Transport::streamFinished(int32_t streamId,
                                     StreamCloseErrorCode errorCode,
                                     std::string errorMsg)
 {
+    LOG_TRACE << "Stopping stream: " << streamId << " with error: " << errorMsg;
     auto it = streams.find(streamId);
     assert(it != streams.end());
 
@@ -1188,6 +1213,7 @@ void Http2Transport::killConnection(int32_t lastStreamId,
                                     StreamCloseErrorCode errorCode,
                                     std::string errorMsg)
 {
+    LOG_TRACE << "Killing connection with error: " << errorMsg;
     connPtr->getLoop()->assertInLoopThread();
     connPtr->send(serializeFrame(goAway(lastStreamId, errorMsg, errorCode), 0));
 
