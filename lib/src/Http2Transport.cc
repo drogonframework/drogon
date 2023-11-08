@@ -647,6 +647,13 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         return;
     }
 
+    if (streams.size() >= maxConcurrentStreams)
+    {
+        LOG_TRACE << "Too many streams in flight. Buffering request";
+        bufferedRequests.push({req, std::move(callback)});
+        return;
+    }
+
     const int32_t streamId = nextStreamId();
     assert(streamId % 2 == 1);
     LOG_TRACE << "Sending HTTP/2 request: streamId=" << streamId;
@@ -820,7 +827,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 connPtr->send(serializeFrame(windowUpdateFrame, 0));
 
                 serverSettingsReceived = true;
-                while (!bufferedRequests.empty())
+                while (!bufferedRequests.empty() &&
+                       streams.size() < maxConcurrentStreams)
                 {
                     auto &[req, cb] = bufferedRequests.front();
                     sendRequestInLoop(req, std::move(cb));
@@ -1048,6 +1056,12 @@ void Http2Transport::streamFinished(int32_t streamId,
     it->second.callback(result, nullptr);
     streams.erase(it);
     retireStreamId(streamId);
+
+    if (bufferedRequests.empty())
+        return;
+    auto &[req, cb] = bufferedRequests.front();
+    sendRequestInLoop(req, std::move(cb));
+    bufferedRequests.pop();
 }
 
 void Http2Transport::onError(ReqResult result)
@@ -1063,4 +1077,10 @@ void Http2Transport::onError(ReqResult result)
         cb(result, nullptr);
         bufferedRequests.pop();
     }
+
+    if (bufferedRequests.empty())
+        return;
+    auto &[req, cb] = bufferedRequests.front();
+    sendRequestInLoop(req, std::move(cb));
+    bufferedRequests.pop();
 }
