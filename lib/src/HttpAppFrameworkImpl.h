@@ -230,11 +230,13 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     HttpAppFramework &enableSession(
         const size_t timeout,
-        Cookie::SameSite sameSite = Cookie::SameSite::kNull) override
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull,
+        const std::string &cookieKey = "JSESSIONID") override
     {
         useSession_ = true;
         sessionTimeout_ = timeout;
         sessionSameSite_ = sameSite;
+        sessionCookieKey_ = cookieKey;
         return *this;
     }
 
@@ -695,6 +697,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     // cookies;
     size_t sessionTimeout_{0};
     Cookie::SameSite sessionSameSite_{Cookie::SameSite::kNull};
+    std::string sessionCookieKey_{"JSESSIONID"};
     size_t idleConnectionTimeout_{60};
     bool useSession_{false};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +

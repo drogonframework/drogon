@@ -106,6 +106,8 @@
         //string value of SameSite attribute of the Set-Cookie HTTP respone header
         //valid value is either 'Null' (default), 'Lax', 'Strict' or 'None'
         "session_same_site" : "Null",
+        //session_cookie_key: The cookie key of the session, "JSESSIONID" by default
+        "session_cookie_key": "JSESSIONID",
         //document_root: Root path of HTTP document, defaut path is ./
         "document_root": "./",
         //home_page: Set the HTML file of the home page, the default value is "index.html"
