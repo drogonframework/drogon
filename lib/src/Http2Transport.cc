@@ -911,6 +911,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 WindowUpdateFrame windowUpdateFrame;
                 windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
                 connPtr->send(serializeFrame(windowUpdateFrame, 0));
+                avaliableRxWindow += initialWindowSize;
 
                 serverSettingsReceived = true;
                 while (!bufferedRequests.empty() &&
