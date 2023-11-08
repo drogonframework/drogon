@@ -268,13 +268,15 @@ static void loadApp(const Json::Value &app)
     drogon::app().setThreadNum(threadsNum);
     // session
     auto enableSession = app.get("enable_session", false).asBool();
-    auto timeout = app.get("session_timeout", 0).asUInt64();
-    auto sameSite = app.get("session_same_site", "Null").asString();
-    auto cookieKey = app.get("session_cookie_key", "JSESSIONID").asString();
     if (enableSession)
+    {
+        auto timeout = app.get("session_timeout", 0).asUInt64();
+        auto sameSite = app.get("session_same_site", "Null").asString();
+        auto cookieKey = app.get("session_cookie_key", "JSESSIONID").asString();
         drogon::app().enableSession(timeout,
                                     Cookie::convertString2SameSite(sameSite),
                                     cookieKey);
+    }
     else
         drogon::app().disableSession();
     // document root
