@@ -233,6 +233,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const size_t timeout,
         Cookie::SameSite sameSite = Cookie::SameSite::kNull,
         const std::string &cookieKey = "JSESSIONID",
+        int maxAge = -1,
         SessionManager::IdGeneratorCallback idGeneratorCallback =
             nullptr) override
     {
@@ -240,6 +241,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         sessionTimeout_ = timeout;
         sessionSameSite_ = sameSite;
         sessionCookieKey_ = cookieKey;
+        sessionMaxAge_ = maxAge;
         return setSessionIdGenerator(idGeneratorCallback);
     }
 
@@ -708,6 +710,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t sessionTimeout_{0};
     Cookie::SameSite sessionSameSite_{Cookie::SameSite::kNull};
     std::string sessionCookieKey_{"JSESSIONID"};
+    int sessionMaxAge_{-1};
     size_t idleConnectionTimeout_{60};
     bool useSession_{false};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +

@@ -862,6 +862,8 @@ void HttpAppFrameworkImpl::callCallback(
                     Cookie(sessionCookieKey_, sessionPtr->sessionId());
                 sessionid.setPath("/");
                 sessionid.setSameSite(sessionSameSite_);
+                if (sessionMaxAge_ >= 0)
+                    sessionid.setMaxAge(sessionMaxAge_);
                 newResp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
                 callback(newResp);
@@ -873,6 +875,8 @@ void HttpAppFrameworkImpl::callCallback(
                     Cookie(sessionCookieKey_, sessionPtr->sessionId());
                 sessionid.setPath("/");
                 sessionid.setSameSite(sessionSameSite_);
+                if (sessionMaxAge_ >= 0)
+                    sessionid.setMaxAge(sessionMaxAge_);
                 resp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
                 callback(resp);
