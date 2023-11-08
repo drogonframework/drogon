@@ -433,7 +433,7 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
         return std::nullopt;
     }
 
-    if(payloadSize > 0x7fffffff)
+    if (payloadSize > 0x7fffffff)
     {
         LOG_ERROR << "data frame payload size too large";
         return std::nullopt;
@@ -581,7 +581,7 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, int32_t streamId)
     }
 
     auto length = buffer.buffer.readableBytes() - 9;
-    if(length > 0x7fffff)
+    if (length > 0x7fffff)
     {
         LOG_FATAL << "HTTP/2 frame too large during serialization";
         abort();
