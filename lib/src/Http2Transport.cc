@@ -716,15 +716,37 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     }
     frame.headerBlockFragment.resize(n);
     frame.endHeaders = true;
-    frame.endStream = true;
+
+    auto &stream = createStream(streamId);
+    if (req->body().length() == 0)
+        frame.endStream = true;
     LOG_TRACE << "Sending headers frame";
     auto f = serializeFrame(frame, streamId);
     dump_hex_beautiful(f.peek(), f.readableBytes());
     connPtr->send(f);
 
-    auto &stream = createStream(streamId);
     stream.callback = std::move(callback);
     stream.request = req;
+
+    // TODO: Don't dump the entire body into TCP at once
+    if (req->body().length() == 0)
+    {
+        LOG_TRACE << "No body to send";
+        return;
+    }
+    DataFrame dataFrame;
+    for (size_t i = 0; i < req->body().length(); i += maxFrameSize)
+    {
+        size_t readSize = std::min(maxFrameSize, req->body().length() - i);
+        std::vector<uint8_t> buffer;
+        buffer.resize(readSize);
+        memcpy(buffer.data(), req->body().data() + i, readSize);
+        dataFrame.data = std::move(buffer);
+        dataFrame.endStream = (i + maxFrameSize >= req->body().length());
+        LOG_TRACE << "Sending data frame: size=" << dataFrame.data.size()
+                  << " endStream=" << dataFrame.endStream;
+        connPtr->send(serializeFrame(dataFrame, streamId));
+    }
 }
 
 void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
