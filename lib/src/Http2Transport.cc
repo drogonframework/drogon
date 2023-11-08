@@ -758,6 +758,13 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
+        if (avaliableWindowSize < windowIncreaseThreshold)
+        {
+            WindowUpdateFrame windowUpdateFrame;
+            windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
+            connPtr->send(serializeFrame(windowUpdateFrame, 0));
+        }
+
         // FIXME: The code cannot distinguish between a out-of-data and
         // unsupported frame type. We need to fix this as it should be handled
         // differently.
@@ -844,8 +851,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 connPtr->send(serializeFrame(settingsFrame, 0));
 
                 WindowUpdateFrame windowUpdateFrame;
-                // TODO: Keep track and update the window size
-                windowUpdateFrame.windowSizeIncrement = 200 * 1024 * 1024;
+                windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
                 connPtr->send(serializeFrame(windowUpdateFrame, 0));
 
                 serverSettingsReceived = true;
@@ -1015,6 +1021,19 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     }
     else if (std::holds_alternative<DataFrame>(frame))
     {
+        auto &f = std::get<DataFrame>(frame);
+        // TODO: Make sure this logic fits RFC
+        if (f.data.size() > avaliableWindow)
+        {
+            LOG_TRACE << "Data frame received: size=" << f.data.size()
+                      << " but avaliableWindow=" << avaliableWindow;
+            streamFinished(streamId,
+                           ReqResult::BadResponse,
+                           StreamCloseErrorCode::FlowControlError,
+                           "Too much data");
+        }
+        avaliableWindowSize -= f.data.size();
+
         if (stream.state != StreamState::ExpectingData)
         {
             streamFinished(streamId,
@@ -1023,7 +1042,6 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                            "Unexpected data frame");
             return;
         }
-        auto &f = std::get<DataFrame>(frame);
         LOG_TRACE << "Data frame received: size=" << f.data.size();
 
         stream.body.append((char *)f.data.data(), f.data.size());

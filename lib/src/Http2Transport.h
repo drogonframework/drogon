@@ -145,9 +145,14 @@ class Http2Transport : public HttpTransport
     size_t maxFrameSize = 16384;
     size_t avaliableWindowSize = 0;
 
+    // Configuration settings
+    const size_t windowIncreaseThreshold = 32768;
+    const size_t windowIncreaseSize = 10 * 1024 * 1024;  // 10 MiB
+
     // Set after server settings are received
     bool serverSettingsReceived = false;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
+    size_t avaliableWindow = 10 * 1024 * 1024;  // 10 MiB
 
     internal::H2Stream &createStream(int32_t streamId);
     void streamFinished(internal::H2Stream &stream);
