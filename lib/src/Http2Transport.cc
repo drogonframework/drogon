@@ -71,6 +71,11 @@ enum class H2DataFlags
     Padded = 0x8
 };
 
+enum class H2PingFlags
+{
+    Ack = 0x1
+};
+
 static GoAwayFrame goAway(int32_t sid,
                           const std::string &msg,
                           StreamCloseErrorCode ec)
@@ -446,6 +451,26 @@ bool DataFrame::serialize(OByteStream &stream, uint8_t &flags) const
     }
     return true;
 }
+
+std::optional<PingFrame> PingFrame::parse(ByteStream &payload, uint8_t flags)
+{
+    if (payload.size() != 8)
+    {
+        LOG_ERROR << "Invalid ping frame length";
+        return std::nullopt;
+    }
+    PingFrame frame;
+    payload.read(frame.opaqueData.data(), frame.opaqueData.size());
+    return frame;
+}
+
+bool PingFrame::serialize(OByteStream &stream, uint8_t &flags) const
+{
+    flags = ack ? (uint8_t)H2PingFlags::Ack : 0x0;
+    stream.write(opaqueData.data(), opaqueData.size());
+    return true;
+}
+
 }  // namespace drogon::internal
 
 // Print the HEX and ASCII representation of the buffer side by side
@@ -722,6 +747,24 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             errorCallback(ReqResult::BadResponse);
         }
         auto &frame = *frameOpt;
+
+        // special case for PING frame. It is the only frame that is not
+        // associated with a stream
+        if (std::holds_alternative<PingFrame>(frame))
+        {
+            auto &f = std::get<PingFrame>(frame);
+            if (f.ack)
+            {
+                LOG_TRACE << "Ping frame received with ACK flag set";
+                continue;
+            }
+            LOG_TRACE << "Ping frame received. Sending ACK";
+            PingFrame ackFrame;
+            ackFrame.ack = true;
+            ackFrame.opaqueData = f.opaqueData;
+            connPtr->send(serializeFrame(ackFrame, 0));
+            continue;
+        }
 
         if (streamId != 0)
         {

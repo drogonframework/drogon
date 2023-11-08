@@ -69,11 +69,21 @@ struct DataFrame
     bool serialize(OByteStream &stream, uint8_t &flags) const;
 };
 
+struct PingFrame
+{
+    std::array<uint8_t, 8> opaqueData;
+    bool ack = false;
+
+    static std::optional<PingFrame> parse(ByteStream &payload, uint8_t flags);
+    bool serialize(OByteStream &stream, uint8_t &flags) const;
+};
+
 using H2Frame = std::variant<SettingsFrame,
                              WindowUpdateFrame,
                              HeadersFrame,
                              GoAwayFrame,
-                             DataFrame>;
+                             DataFrame,
+                             PingFrame>;
 
 enum class StreamState
 {
