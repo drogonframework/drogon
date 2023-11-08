@@ -148,6 +148,7 @@ class Http2Transport : public HttpTransport
     // Configuration settings
     const uint32_t windowIncreaseThreshold = 32768;
     const uint32_t windowIncreaseSize = 10 * 1024 * 1024;  // 10 MiB
+    const uint32_t maxCompressiedHeaderSize = 2048;
 
     // Set after server settings are received
     bool serverSettingsReceived = false;

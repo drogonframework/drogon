@@ -704,7 +704,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     frame.exclusive = false;
     frame.streamDependency = 0;
     frame.weight = 0;
-    frame.headerBlockFragment.resize(1024);
+    frame.headerBlockFragment.resize(maxCompressiedHeaderSize);
 
     LOG_TRACE << "Sending HTTP/2 headers: size=" << headers.size();
     hpack::HPacker::KeyValueVector headersToEncode;
@@ -732,12 +732,13 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                            frame.headerBlockFragment.size());
     if (n < 0)
     {
-        LOG_TRACE << "Failed to encode headers";
-        abort();
+        LOG_TRACE << "Failed to encode headers. Internal error or header "
+                     "block too large";
+        callback(ReqResult::BadResponse, nullptr);
         return;
     }
     // TODO: Send CONTINUATION frames if the header block fragment is too large
-    if (n > 0x7fff)
+    if (n > maxFrameSize)
     {
         LOG_TRACE << "Header block fragment too large";
         abort();
@@ -857,11 +858,22 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                    "MaxConcurrentStreams cannot be 0",
                                    StreamCloseErrorCode::ProtocolError),
                             0));
+                        return;
                     }
                     maxConcurrentStreams = value;
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxFrameSize)
                 {
+                    if (value < 16384 || value > 16777215)
+                    {
+                        connPtr->send(serializeFrame(
+                            goAway(streamId,
+                                   "MaxFrameSize must be between 16384 and "
+                                   "16777215",
+                                   StreamCloseErrorCode::ProtocolError),
+                            0));
+                        return;
+                    }
                     maxFrameSize = value;
                 }
                 else
