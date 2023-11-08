@@ -253,7 +253,7 @@ std::optional<SettingsFrame> SettingsFrame::parse(ByteStream &payload,
 {
     if (payload.size() % 6 != 0)
     {
-        LOG_ERROR << "Invalid settings frame length";
+        LOG_TRACE << "Invalid settings frame length";
         return std::nullopt;
     }
 
@@ -263,7 +263,7 @@ std::optional<SettingsFrame> SettingsFrame::parse(ByteStream &payload,
         frame.ack = true;
         if (payload.size() != 0)
         {
-            LOG_ERROR << "Settings frame with ACK flag set should have "
+            LOG_TRACE << "Settings frame with ACK flag set should have "
                          "empty payload";
             return std::nullopt;
         }
@@ -295,7 +295,7 @@ std::optional<WindowUpdateFrame> WindowUpdateFrame::parse(ByteStream &payload,
 {
     if (payload.size() != 4)
     {
-        LOG_ERROR << "Invalid window update frame length";
+        LOG_TRACE << "Invalid window update frame length";
         return std::nullopt;
     }
     WindowUpdateFrame frame;
@@ -310,7 +310,7 @@ bool WindowUpdateFrame::serialize(OByteStream &stream, uint8_t &flags) const
     flags = 0x0;
     if (windowSizeIncrement & (1U << 31))
     {
-        LOG_ERROR << "MSB of windowSizeIncrement should be 0";
+        LOG_TRACE << "MSB of windowSizeIncrement should be 0";
         return false;
     }
     stream.writeU32BE(windowSizeIncrement);
@@ -349,7 +349,7 @@ std::optional<HeadersFrame> HeadersFrame::parse(ByteStream &payload,
     int64_t payloadSize = payload.remaining() - frame.padLength;
     if (payloadSize < 0)
     {
-        LOG_ERROR << "headers padding is larger than the payload size";
+        LOG_TRACE << "headers padding is larger than the payload size";
         return std::nullopt;
     }
     frame.headerBlockFragment.resize(payloadSize);
@@ -390,7 +390,7 @@ std::optional<GoAwayFrame> GoAwayFrame::parse(ByteStream &payload,
 {
     if (payload.size() < 8)
     {
-        LOG_ERROR << "Invalid go away frame length";
+        LOG_TRACE << "Invalid go away frame length";
         return std::nullopt;
     }
     GoAwayFrame frame;
@@ -429,7 +429,7 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
     int32_t payloadSize = payload.remaining() - frame.padLength;
     if (payloadSize < 0)
     {
-        LOG_ERROR << "data padding is larger than the payload size";
+        LOG_TRACE << "data padding is larger than the payload size";
         return std::nullopt;
     }
 
@@ -456,7 +456,7 @@ std::optional<PingFrame> PingFrame::parse(ByteStream &payload, uint8_t flags)
 {
     if (payload.size() != 8)
     {
-        LOG_ERROR << "Invalid ping frame length";
+        LOG_TRACE << "Invalid ping frame length";
         return std::nullopt;
     }
     PingFrame frame;
@@ -614,7 +614,7 @@ static std::tuple<std::optional<H2Frame>, size_t, uint8_t, bool> parseH2Frame(
     if (type >= (uint8_t)H2FrameType::NumEntries)
     {
         // TODO: Handle fatal protocol error
-        LOG_ERROR << "Invalid H2 frame type: " << (int)type;
+        LOG_TRACE << "Unsupported H2 frame type: " << (int)type;
         return {std::nullopt, streamId, 0, true};
     }
 
@@ -648,7 +648,7 @@ static std::tuple<std::optional<H2Frame>, size_t, uint8_t, bool> parseH2Frame(
     msg->retrieve(length + 9);
     if (!frame)
     {
-        LOG_ERROR << "Failed to parse H2 frame of type: " << (int)type;
+        LOG_TRACE << "Failed to parse H2 frame of type: " << (int)type;
         return {std::nullopt, streamId, 0, true};
     }
 
@@ -721,14 +721,14 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                            frame.headerBlockFragment.size());
     if (n < 0)
     {
-        LOG_ERROR << "Failed to encode headers";
+        LOG_TRACE << "Failed to encode headers";
         abort();
         return;
     }
     // TODO: Send CONTINUATION frames if the header block fragment is too large
     if (n > 0x7fff)
     {
-        LOG_ERROR << "Header block fragment too large";
+        LOG_TRACE << "Header block fragment too large";
         abort();
         return;
     }
@@ -790,14 +790,14 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
 
         if (error && streamId == 0)
         {
-            LOG_ERROR << "Fatal protocol error happened on stream 0 (global)";
+            LOG_TRACE << "Fatal protocol error happened on stream 0 (global)";
             errorCallback(ReqResult::BadResponse);
         }
         else if (frameOpt.has_value() == false && !error)
             break;
         else if (!frameOpt.has_value())
         {
-            LOG_ERROR << "Failed to parse H2 frame??? Shouldn't happen though";
+            LOG_TRACE << "Failed to parse H2 frame??? Shouldn't happen though";
             errorCallback(ReqResult::BadResponse);
         }
         auto &frame = *frameOpt;
@@ -903,7 +903,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             auto &f = std::get<GoAwayFrame>(frame);
             if (f.errorCode != 0)
             {
-                LOG_ERROR << "Go away frame on stream 0 received. Die!";
+                LOG_TRACE << "Go away frame on stream 0 received. Die!";
                 errorCallback(ReqResult::BadResponse);
             }
             else
@@ -918,9 +918,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         }
         else
         {
-            // TODO: Remove this once we support all frame types
-            // in that case it'll be a parsing error or bad server
-            LOG_ERROR << "Boom! The client does not understand this frame";
+            // Do nothing. RFC says to ignore unknown frames
         }
     }
 }
@@ -951,7 +949,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     auto it = streams.find(streamId);
     if (it == streams.end())
     {
-        LOG_ERROR << "Non-existent stream id: " << streamId;
+        LOG_TRACE << "Non-existent stream id: " << streamId;
         connPtr->send(serializeFrame(
             goAway(streamId,
                    "Non-existent stream id " + std::to_string(streamId),
@@ -980,7 +978,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                                headers);
         if (n < 0)
         {
-            LOG_ERROR << "Failed to decode headers";
+            LOG_TRACE << "Failed to decode headers";
             streamFinished(streamId,
                            ReqResult::BadResponse,
                            StreamCloseErrorCode::CompressionError,
@@ -1031,7 +1029,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         if ((flags & (uint8_t)H2HeadersFlags::EndHeaders) == 0)
         {
-            LOG_ERROR << "We don't support CONTINUATION frames yet!";
+            LOG_TRACE << "We don't support CONTINUATION frames yet!";
             stream.state = StreamState::ExpectingContinuation;
             abort();
         }
@@ -1075,7 +1073,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             if (stream.contentLength &&
                 stream.body.readableBytes() != *stream.contentLength)
             {
-                LOG_ERROR << "Content-length mismatch";
+                LOG_TRACE << "Content-length mismatch";
                 streamFinished(streamId,
                                ReqResult::BadResponse,
                                StreamCloseErrorCode::ProtocolError,
@@ -1100,7 +1098,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     }
     else
     {
-        LOG_ERROR << "Unsupported frame type for stream: " << streamId;
+        LOG_TRACE << "Unsupported frame type for stream: " << streamId;
     }
 }
 
