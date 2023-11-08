@@ -1034,8 +1034,8 @@ void HttpAppFrameworkImpl::forward(
         req->setPassThrough(true);
         clientPtr->sendRequest(
             req,
-            [callback = std::move(callback),
-             req = req](ReqResult result, const HttpResponsePtr &resp) {
+            [callback = std::move(callback), req](ReqResult result,
+                                                  const HttpResponsePtr &resp) {
                 if (result == ReqResult::Ok)
                 {
                     resp->setPassThrough(true);
@@ -1214,8 +1214,9 @@ HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
     return *this;
 }
 
-const std::function<HttpResponsePtr(HttpStatusCode, const HttpRequestPtr &req)>
-    &HttpAppFrameworkImpl::getCustomErrorHandler() const
+const std::function<HttpResponsePtr(HttpStatusCode,
+                                    const HttpRequestPtr &req)> &
+HttpAppFrameworkImpl::getCustomErrorHandler() const
 {
     return customErrorHandler_;
 }
