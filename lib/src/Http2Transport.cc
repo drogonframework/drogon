@@ -762,6 +762,15 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         LOG_TRACE << "No body to send";
         return;
     }
+
+    if (req->body().length() > stream.avaliableTxWindow)
+    {
+        LOG_ERROR << "HTTP/2 body too large to fit in INITIAL_WINDOW_SIZE. Not "
+                     "supported yet.";
+        abort();
+        return;
+    }
+
     DataFrame dataFrame;
     for (size_t i = 0; i < req->body().length(); i += maxFrameSize)
     {
@@ -1142,6 +1151,11 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                   << std::string(f.additionalDebugData.begin(),
                                  f.additionalDebugData.end());
         stream.callback(ReqResult::BadResponse, nullptr);
+    }
+    else if (std::holds_alternative<WindowUpdateFrame>(frame))
+    {
+        auto &f = std::get<WindowUpdateFrame>(frame);
+        stream.avaliableTxWindow += f.windowSizeIncrement;
     }
     else
     {
