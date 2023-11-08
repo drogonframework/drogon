@@ -20,7 +20,7 @@ static std::optional<size_t> stosz(const std::string &str)
     {
         return std::stoull(str);
     }
-    catch (const std::exception &e)
+    catch (const std::exception &)
     {
         return std::nullopt;
     }
@@ -426,10 +426,16 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
         frame.endStream = true;
     }
 
-    int32_t payloadSize = payload.remaining() - frame.padLength;
+    size_t payloadSize = payload.remaining() - frame.padLength;
     if (payloadSize < 0)
     {
         LOG_ERROR << "data padding is larger than the payload size";
+        return std::nullopt;
+    }
+
+    if(payloadSize > 0x7fffffff)
+    {
+        LOG_ERROR << "data frame payload size too large";
         return std::nullopt;
     }
 
@@ -515,7 +521,7 @@ static std::string dump_hex_beautiful(const void *ptr, size_t size)
     return ss.str();
 }
 
-static trantor::MsgBuffer serializeFrame(const H2Frame &frame, size_t streamId)
+static trantor::MsgBuffer serializeFrame(const H2Frame &frame, int32_t streamId)
 {
     OByteStream buffer;
     buffer.writeU24BE(0);  // Placeholder for length
@@ -575,7 +581,12 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, size_t streamId)
     }
 
     auto length = buffer.buffer.readableBytes() - 9;
-    buffer.overwriteU24BE(0, length);
+    if(length > 0x7fffff)
+    {
+        LOG_FATAL << "HTTP/2 frame too large during serialization";
+        abort();
+    }
+    buffer.overwriteU24BE(0, (int)length);
     buffer.overwriteU8(3, type);
     buffer.overwriteU8(4, flags);
     return buffer.buffer;
@@ -586,7 +597,7 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, size_t streamId)
 // We need to handle both cases. Also it could happen that the TCP stream
 // just cuts off in the middle of a frame (or header). We need to handle that
 // too.
-static std::tuple<std::optional<H2Frame>, size_t, uint8_t, bool> parseH2Frame(
+static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
     trantor::MsgBuffer *msg)
 {
     if (msg->readableBytes() < 9)
