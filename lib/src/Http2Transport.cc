@@ -961,7 +961,18 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 continue;
             }
 
-            // TODO: Anti request smuggling via adding \r\n to the header
+            // Anti request smuggling. We look for \r or \n in the header
+            // name or value. If we find one, we abort the stream.
+            if (key.find_first_of("\r\n") != std::string::npos ||
+                value.find_first_of("\r\n") != std::string::npos)
+            {
+                streamFinished(streamId,
+                               ReqResult::BadResponse,
+                               StreamCloseErrorCode::ProtocolError,
+                               "CR or LF found in header name or value");
+                return;
+            }
+
             it->second.response->addHeader(key, value);
         }
 
