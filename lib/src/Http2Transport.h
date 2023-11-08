@@ -87,6 +87,7 @@ using H2Frame = std::variant<SettingsFrame,
 
 enum class StreamState
 {
+    SendingBody,
     ExpectingHeaders,
     ExpectingContinuation,
     ExpectingData,

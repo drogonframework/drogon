@@ -783,6 +783,9 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         LOG_TRACE << "Sending data frame: size=" << dataFrame.data.size()
                   << " endStream=" << dataFrame.endStream;
         connPtr->send(serializeFrame(dataFrame, streamId));
+
+        stream.avaliableTxWindow -= dataFrame.data.size();
+        avaliableRxWindow -= dataFrame.data.size();
     }
 }
 
@@ -1182,6 +1185,12 @@ void Http2Transport::streamFinished(internal::H2Stream &stream)
     assert(stream.callback);
     auto it = streams.find(stream.streamId);
     assert(it != streams.end());
+    auto streamId = stream.streamId;
+    connPtr->send(
+        serializeFrame(goAway(streamId, "", StreamCloseErrorCode::NoError),
+                       streamId));
+    // XXX: This callback seems to be able to cause the destruction of this
+    // object
     respCallback(stream.response, {stream.request, stream.callback}, connPtr);
     streams.erase(it);
     retireStreamId(stream.streamId);
