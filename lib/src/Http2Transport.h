@@ -197,6 +197,9 @@ class Http2Transport : public HttpTransport
     void handleFrameForStream(const internal::H2Frame &frame,
                               int32_t streamId,
                               uint8_t flags);
+    void killConnection(int32_t lastStreamId,
+                        StreamCloseErrorCode errorCode,
+                        std::string errorMsg = "");
 
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,

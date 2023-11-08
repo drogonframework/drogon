@@ -76,14 +76,14 @@ enum class H2PingFlags
     Ack = 0x1
 };
 
-static GoAwayFrame goAway(int32_t sid,
+static GoAwayFrame goAway(int32_t lastStreamId,
                           const std::string &msg,
                           StreamCloseErrorCode ec)
 {
     GoAwayFrame frame;
     frame.additionalDebugData = s2vec(msg);
     frame.errorCode = (uint32_t)ec;
-    frame.lastStreamId = sid;
+    frame.lastStreamId = lastStreamId;
     return frame;
 }
 
@@ -689,12 +689,10 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     if (streams.find(streamId) != streams.end())
     {
         LOG_FATAL << "Stream id already in use! This should not happen";
-        connPtr->send(
-            serializeFrame(goAway(streamId,
-                                  "replicated internal stream id",
-                                  StreamCloseErrorCode::InternalError),
-                           0));
         errorCallback(ReqResult::BadResponse);
+        killConnection(streamId,
+                       StreamCloseErrorCode::InternalError,
+                       "Internal stream id conflict");
         return;
     }
 
@@ -853,11 +851,9 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 {
                     if (value == 0)
                     {
-                        connPtr->send(serializeFrame(
-                            goAway(streamId,
-                                   "MaxConcurrentStreams cannot be 0",
-                                   StreamCloseErrorCode::ProtocolError),
-                            0));
+                        killConnection(streamId,
+                                       StreamCloseErrorCode::ProtocolError,
+                                       "MaxConcurrentStreams cannot be 0");
                         return;
                     }
                     maxConcurrentStreams = value;
@@ -866,12 +862,10 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 {
                     if (value < 16384 || value > 16777215)
                     {
-                        connPtr->send(serializeFrame(
-                            goAway(streamId,
-                                   "MaxFrameSize must be between 16384 and "
-                                   "16777215",
-                                   StreamCloseErrorCode::ProtocolError),
-                            0));
+                        killConnection(streamId,
+                                       StreamCloseErrorCode::ProtocolError,
+                                       "MaxFrameSize must be between 16384 and "
+                                       "16777215");
                         return;
                     }
                     maxFrameSize = value;
@@ -973,11 +967,9 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     if (it == streams.end())
     {
         LOG_TRACE << "Non-existent stream id: " << streamId;
-        connPtr->send(serializeFrame(
-            goAway(streamId,
-                   "Non-existent stream id " + std::to_string(streamId),
-                   StreamCloseErrorCode::ProtocolError),
-            0));
+        killConnection(streamId,
+                       StreamCloseErrorCode::ProtocolError,
+                       "Non-existent stream id" + std::to_string(streamId));
         return;
     }
     auto &stream = it->second;
@@ -1147,6 +1139,12 @@ void Http2Transport::streamFinished(internal::H2Stream &stream)
     respCallback(stream.response, {stream.request, stream.callback}, connPtr);
     streams.erase(it);
     retireStreamId(stream.streamId);
+
+    if (bufferedRequests.empty())
+        return;
+    auto &[req, cb] = bufferedRequests.front();
+    sendRequestInLoop(req, std::move(cb));
+    bufferedRequests.pop();
 }
 
 void Http2Transport::streamFinished(int32_t streamId,
@@ -1157,7 +1155,8 @@ void Http2Transport::streamFinished(int32_t streamId,
     auto it = streams.find(streamId);
     assert(it != streams.end());
 
-    connPtr->send(serializeFrame(goAway(streamId, errorMsg, errorCode), 0));
+    connPtr->send(
+        serializeFrame(goAway(streamId, errorMsg, errorCode), streamId));
 
     it->second.callback(result, nullptr);
     streams.erase(it);
@@ -1183,10 +1182,16 @@ void Http2Transport::onError(ReqResult result)
         cb(result, nullptr);
         bufferedRequests.pop();
     }
+}
 
-    if (bufferedRequests.empty())
-        return;
-    auto &[req, cb] = bufferedRequests.front();
-    sendRequestInLoop(req, std::move(cb));
-    bufferedRequests.pop();
+void Http2Transport::killConnection(int32_t lastStreamId,
+                                    StreamCloseErrorCode errorCode,
+                                    std::string errorMsg)
+{
+    connPtr->getLoop()->assertInLoopThread();
+    connPtr->send(serializeFrame(goAway(lastStreamId, errorMsg, errorCode), 0));
+
+    for (auto &[streamId, stream] : streams)
+        stream.callback(ReqResult::BadResponse, nullptr);
+    errorCallback(ReqResult::BadResponse);
 }
