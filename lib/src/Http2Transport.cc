@@ -905,6 +905,13 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             // TODO: Anti request smuggling via adding \r\n to the header
             it->second.response->addHeader(key, value);
         }
+
+        // There is no body in the response.
+        if ((flags & (uint8_t)H2HeadersFlags::EndStream))
+        {
+            streamFinished(stream);
+            return;
+        }
     }
     else if (std::holds_alternative<DataFrame>(frame))
     {
