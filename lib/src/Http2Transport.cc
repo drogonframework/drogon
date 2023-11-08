@@ -546,6 +546,18 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, size_t streamId)
         ok = f.serialize(buffer, flags);
         type = (uint8_t)H2FrameType::GoAway;
     }
+    else if (std::holds_alternative<DataFrame>(frame))
+    {
+        const auto &f = std::get<DataFrame>(frame);
+        ok = f.serialize(buffer, flags);
+        type = (uint8_t)H2FrameType::Data;
+    }
+    else if (std::holds_alternative<PingFrame>(frame))
+    {
+        const auto &f = std::get<PingFrame>(frame);
+        ok = f.serialize(buffer, flags);
+        type = (uint8_t)H2FrameType::Ping;
+    }
     else
     {
         LOG_ERROR << "Unsupported frame type";
@@ -617,6 +629,8 @@ static std::tuple<std::optional<H2Frame>, size_t, uint8_t, bool> parseH2Frame(
         frame = HeadersFrame::parse(payload, flags);
     else if (type == (uint8_t)H2FrameType::Data)
         frame = DataFrame::parse(payload, flags);
+    else if (type == (uint8_t)H2FrameType::Ping)
+        frame = PingFrame::parse(payload, flags);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
@@ -737,7 +751,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     DataFrame dataFrame;
     for (size_t i = 0; i < req->body().length(); i += maxFrameSize)
     {
-        size_t readSize = std::min(maxFrameSize, req->body().length() - i);
+        size_t readSize = (std::min)(maxFrameSize, req->body().length() - i);
         std::vector<uint8_t> buffer;
         buffer.resize(readSize);
         memcpy(buffer.data(), req->body().data() + i, readSize);
