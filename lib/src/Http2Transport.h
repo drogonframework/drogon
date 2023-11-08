@@ -75,6 +75,14 @@ using H2Frame = std::variant<SettingsFrame,
                              GoAwayFrame,
                              DataFrame>;
 
+enum class StreamState
+{
+    ExpectingHeaders,
+    ExpectingContinuation,
+    ExpectingData,
+    Finished,
+};
+
 // Virtual stream that holds properties for the HTTP/2 stream
 // Defaults to stream 0 global properties
 struct H2Stream
@@ -85,6 +93,7 @@ struct H2Stream
     trantor::MsgBuffer body;
     std::optional<size_t> contentLength;
     int32_t streamId = 0;
+    StreamState state = StreamState::ExpectingHeaders;
 };
 }  // namespace internal
 

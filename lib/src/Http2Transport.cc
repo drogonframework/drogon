@@ -859,6 +859,14 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
     if (std::holds_alternative<HeadersFrame>(frame))
     {
+        if (stream.state != StreamState::ExpectingHeaders)
+        {
+            streamFinished(streamId,
+                           ReqResult::BadResponse,
+                           StreamCloseErrorCode::ProtocolError,
+                           "Unexpected headers frame");
+            return;
+        }
         auto &f = std::get<HeadersFrame>(frame);
         LOG_TRACE << "Headers frame received: size="
                   << f.headerBlockFragment.size();
@@ -906,15 +914,31 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             it->second.response->addHeader(key, value);
         }
 
+        if ((flags & (uint8_t)H2HeadersFlags::EndHeaders) == 0)
+        {
+            LOG_ERROR << "We don't support CONTINUATION frames yet!";
+            stream.state = StreamState::ExpectingContinuation;
+            abort();
+        }
         // There is no body in the response.
         if ((flags & (uint8_t)H2HeadersFlags::EndStream))
         {
+            stream.state = StreamState::Finished;
             streamFinished(stream);
             return;
         }
+        stream.state = StreamState::ExpectingData;
     }
     else if (std::holds_alternative<DataFrame>(frame))
     {
+        if (stream.state != StreamState::ExpectingData)
+        {
+            streamFinished(streamId,
+                           ReqResult::BadResponse,
+                           StreamCloseErrorCode::ProtocolError,
+                           "Unexpected data frame");
+            return;
+        }
         auto &f = std::get<DataFrame>(frame);
         LOG_TRACE << "Data frame received: size=" << f.data.size();
 
