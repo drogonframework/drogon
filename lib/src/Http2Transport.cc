@@ -475,23 +475,26 @@ bool PingFrame::serialize(OByteStream &stream, uint8_t &flags) const
 
 // Print the HEX and ASCII representation of the buffer side by side
 // 16 bytes per line. Same function as the xdd command in linux.
-static void dump_hex_beautiful(const void *ptr, size_t size)
+static std::string dump_hex_beautiful(const void *ptr, size_t size)
 {
+    std::stringstream ss;
+    ss << "\n";
     for (size_t i = 0; i < size; i += 16)
     {
-        printf("%08zx: ", i);
+        ss << std::setw(8) << std::setfill('0') << std::hex << i << ": ";
         for (size_t j = 0; j < 16; ++j)
         {
             if (i + j < size)
             {
-                printf("%02x ", ((unsigned char *)ptr)[i + j]);
+                ss << std::setw(2) << std::setfill('0') << std::hex
+                   << (int)((unsigned char *)ptr)[i + j] << " ";
             }
             else
             {
-                printf("   ");
+                ss << "   ";
             }
         }
-        printf(" ");
+        ss << " ";
         for (size_t j = 0; j < 16; ++j)
         {
             if (i + j < size)
@@ -499,16 +502,17 @@ static void dump_hex_beautiful(const void *ptr, size_t size)
                 if (((unsigned char *)ptr)[i + j] >= 32 &&
                     ((unsigned char *)ptr)[i + j] < 127)
                 {
-                    printf("%c", ((unsigned char *)ptr)[i + j]);
+                    ss << (char)((unsigned char *)ptr)[i + j];
                 }
                 else
                 {
-                    printf(".");
+                    ss << ".";
                 }
             }
         }
-        printf("\n");
+        ss << "\n";
     }
+    return ss.str();
 }
 
 static trantor::MsgBuffer serializeFrame(const H2Frame &frame, size_t streamId)
@@ -736,7 +740,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         frame.endStream = true;
     LOG_TRACE << "Sending headers frame";
     auto f = serializeFrame(frame, streamId);
-    dump_hex_beautiful(f.peek(), f.readableBytes());
+    LOG_TRACE << dump_hex_beautiful(f.peek(), f.readableBytes());
     connPtr->send(f);
 
     stream.callback = std::move(callback);
@@ -769,7 +773,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     LOG_TRACE << "HTTP/2 message received:";
     assert(bytesReceived_ != nullptr);
     *bytesReceived_ += msg->readableBytes();
-    dump_hex_beautiful(msg->peek(), msg->readableBytes());
+    LOG_TRACE << dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
         if (avaliableWindowSize < windowIncreaseThreshold)
@@ -1077,6 +1081,15 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             streamFinished(stream);
             return;
         }
+    }
+    else if (std::holds_alternative<GoAwayFrame>(frame))
+    {
+        auto &f = std::get<GoAwayFrame>(frame);
+        LOG_TRACE << "Go away frame received: lastStreamId=" << f.lastStreamId
+                  << " errorCode=" << f.errorCode << " additionalDebugData="
+                  << std::string(f.additionalDebugData.begin(),
+                                 f.additionalDebugData.end());
+        stream.callback(ReqResult::BadResponse, nullptr);
     }
     else
     {
