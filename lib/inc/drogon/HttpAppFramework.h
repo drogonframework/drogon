@@ -825,7 +825,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &enableSession(
         const size_t timeout = 0,
         Cookie::SameSite sameSite = Cookie::SameSite::kNull,
-        const std::string &cookieKey = "JSESSIONID") = 0;
+        const std::string &cookieKey = "JSESSIONID",
+        std::function<std::string()> idGeneratorCallback = nullptr) = 0;
 
     /// A wrapper of the above method.
     /**
@@ -838,9 +839,13 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     inline HttpAppFramework &enableSession(
         const std::chrono::duration<double> &timeout,
         Cookie::SameSite sameSite = Cookie::SameSite::kNull,
-        const std::string &cookieKey = "JSESSIONID")
+        const std::string &cookieKey = "JSESSIONID",
+        std::function<std::string()> idGeneratorCallback = nullptr)
     {
-        return enableSession((size_t)timeout.count(), sameSite, cookieKey);
+        return enableSession((size_t)timeout.count(),
+                             sameSite,
+                             cookieKey,
+                             idGeneratorCallback);
     }
 
     /// Register an advice called when starting a new session.

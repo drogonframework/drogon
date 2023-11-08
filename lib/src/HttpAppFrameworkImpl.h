@@ -24,6 +24,7 @@
 #include <regex>
 #include <string>
 #include <vector>
+#include "SessionManager.h"
 #include "impl_forwards.h"
 
 namespace trantor
@@ -231,12 +232,21 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &enableSession(
         const size_t timeout,
         Cookie::SameSite sameSite = Cookie::SameSite::kNull,
-        const std::string &cookieKey = "JSESSIONID") override
+        const std::string &cookieKey = "JSESSIONID",
+        SessionManager::IdGeneratorCallback idGeneratorCallback =
+            nullptr) override
     {
         useSession_ = true;
         sessionTimeout_ = timeout;
         sessionSameSite_ = sameSite;
         sessionCookieKey_ = cookieKey;
+        return setSessionIdGenerator(idGeneratorCallback);
+    }
+
+    HttpAppFramework &setSessionIdGenerator(
+        SessionManager::IdGeneratorCallback idGeneratorCallback = nullptr)
+    {
+        sessionIdGeneratorCallback_ = idGeneratorCallback;
         return *this;
     }
 
@@ -763,6 +773,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     std::vector<AdviceStartSessionCallback> sessionStartAdvices_;
     std::vector<AdviceDestroySessionCallback> sessionDestroyAdvices_;
+    SessionManager::IdGeneratorCallback sessionIdGeneratorCallback_;
     std::shared_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
     Json::Value jsonRuntimeConfig_;
