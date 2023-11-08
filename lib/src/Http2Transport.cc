@@ -786,7 +786,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     LOG_TRACE << dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
-        if (avaliableTxWindow < windowIncreaseThreshold)
+        if (avaliableRxWindow < windowIncreaseThreshold)
         {
             WindowUpdateFrame windowUpdateFrame;
             windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
@@ -1124,6 +1124,14 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             stream.response->setBody(std::move(body));
             streamFinished(stream);
             return;
+        }
+
+        if (stream.avaliableRxWindow < windowIncreaseThreshold)
+        {
+            WindowUpdateFrame windowUpdateFrame;
+            windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
+            connPtr->send(serializeFrame(windowUpdateFrame, streamId));
+            stream.avaliableRxWindow += windowIncreaseSize;
         }
     }
     else if (std::holds_alternative<GoAwayFrame>(frame))
