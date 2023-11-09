@@ -325,11 +325,25 @@ std::optional<HeadersFrame> HeadersFrame::parse(ByteStream &payload,
     bool padded = flags & (uint8_t)H2HeadersFlags::Padded;
     bool priority = flags & (uint8_t)H2HeadersFlags::Priority;
 
+    if (payload.size() == 0)
+    {
+        LOG_TRACE << "Header size cannot be 0";
+        return std::nullopt;
+    }
+
     HeadersFrame frame;
     if (padded)
     {
         frame.padLength = payload.readU8();
     }
+
+    size_t minSize = frame.padLength + (priority ? 5 : 0);
+    if (payload.size() < minSize)
+    {
+        LOG_TRACE << "Invalid headers frame length";
+        return std::nullopt;
+    }
+
     if (priority)
     {
         auto [exclusive, streamDependency] = payload.readBI32BE();
@@ -346,6 +360,7 @@ std::optional<HeadersFrame> HeadersFrame::parse(ByteStream &payload,
         frame.endStream = true;
     }
 
+    assert(payload.remaining() >= frame.padLength);
     int64_t payloadSize = payload.remaining() - frame.padLength;
     if (payloadSize < 0)
     {
@@ -421,11 +436,20 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
     {
         frame.padLength = payload.readU8();
     }
+
+    size_t minSize = frame.padLength;
+    if (payload.size() < minSize)
+    {
+        LOG_TRACE << "Invalid data frame length";
+        return std::nullopt;
+    }
+
     if (endStream)
     {
         frame.endStream = true;
     }
 
+    assert(payload.remaining() >= frame.padLength);
     size_t payloadSize = payload.remaining() - frame.padLength;
     if (payloadSize < 0)
     {
@@ -514,8 +538,16 @@ std::optional<PushPromiseFrame> PushPromiseFrame::parse(ByteStream &payload,
     if (endHeaders)
         frame.endHeaders = true;
 
+    size_t minSize = frame.padLength + 4;
+    if (payload.size() < minSize)
+    {
+        LOG_TRACE << "Invalid push promise frame length";
+        return std::nullopt;
+    }
+
     auto [_, promisedStreamId] = payload.readBI32BE();
     frame.promisedStreamId = promisedStreamId;
+    assert(payload.remaining() >= frame.padLength);
     frame.headerBlockFragment.resize(payload.remaining() - frame.padLength);
     payload.read(frame.headerBlockFragment.data(),
                  frame.headerBlockFragment.size());
