@@ -139,7 +139,7 @@ class Http2Transport : public HttpTransport
     hpack::HPacker hpackRx;
 
     std::priority_queue<int32_t> usibleStreamIds;
-    int32_t streamIdTop = 1;
+    int32_t currentStreamId = 1;
     std::unordered_map<int32_t, internal::H2Stream> streams;
     bool serverSettingsReceived = false;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
@@ -152,7 +152,7 @@ class Http2Transport : public HttpTransport
 
     // Configuration settings
     const uint32_t windowIncreaseThreshold = 16384;
-    const uint32_t windowIncreaseSize = 32 * 1024 * 1024;  // 10 MiB
+    const uint32_t windowIncreaseSize = 10 * 1024 * 1024;  // 10 MiB
     const uint32_t maxCompressiedHeaderSize = 2048;
 
     // HTTP/2 connection-wide state
@@ -168,34 +168,9 @@ class Http2Transport : public HttpTransport
 
     int32_t nextStreamId()
     {
-        if (usibleStreamIds.empty())
-        {
-            int32_t id = streamIdTop;
-            streamIdTop += 2;
-            return id;
-        }
-        int32_t id = usibleStreamIds.top();
-        usibleStreamIds.pop();
-        return id;
-    }
-
-    void retireStreamId(int32_t id)
-    {
-        if (id == streamIdTop - 2)
-        {
-            streamIdTop -= 2;
-            while (!usibleStreamIds.empty() &&
-                   usibleStreamIds.top() == streamIdTop - 2)
-            {
-                usibleStreamIds.pop();
-                streamIdTop -= 2;
-                assert(streamIdTop >= 1);
-            }
-        }
-        else
-        {
-            usibleStreamIds.push(id);
-        }
+        int32_t streamId = currentStreamId;
+        currentStreamId += 2;
+        return streamId;
     }
 
     void handleFrameForStream(const internal::H2Frame &frame,

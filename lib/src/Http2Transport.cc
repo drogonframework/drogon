@@ -1188,14 +1188,10 @@ void Http2Transport::streamFinished(internal::H2Stream &stream)
     auto it = streams.find(stream.streamId);
     assert(it != streams.end());
     auto streamId = stream.streamId;
-    connPtr->send(
-        serializeFrame(goAway(streamId, "", StreamCloseErrorCode::NoError),
-                       streamId));
     // XXX: This callback seems to be able to cause the destruction of this
     // object
     respCallback(stream.response, {stream.request, stream.callback}, connPtr);
     streams.erase(it);
-    retireStreamId(stream.streamId);
 
     if (bufferedRequests.empty())
         return;
@@ -1212,13 +1208,8 @@ void Http2Transport::streamFinished(int32_t streamId,
     LOG_TRACE << "Stopping stream: " << streamId << " with error: " << errorMsg;
     auto it = streams.find(streamId);
     assert(it != streams.end());
-
-    connPtr->send(
-        serializeFrame(goAway(streamId, errorMsg, errorCode), streamId));
-
     it->second.callback(result, nullptr);
     streams.erase(it);
-    retireStreamId(streamId);
 
     if (bufferedRequests.empty())
         return;
