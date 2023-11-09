@@ -102,23 +102,22 @@ class DrObject : public virtual DrObjectBase
         }
 
         template <typename D>
-        typename std::enable_if<std::is_default_constructible<D>::value,
-                                void>::type
-        registerClass()
+        void registerClass()
         {
-            DrClassMap::registerClass(
-                className(),
-                []() -> DrObjectBase * { return new T; },
-                []() -> std::shared_ptr<DrObjectBase> {
-                    return std::make_shared<T>();
-                });
-        }
-
-        template <typename D>
-        typename std::enable_if<!std::is_default_constructible<D>::value,
-                                void>::type
-        registerClass()
-        {
+            if constexpr (std::is_default_constructible<D>::value)
+            {
+                DrClassMap::registerClass(
+                    className(),
+                    []() -> DrObjectBase * { return new T; },
+                    []() -> std::shared_ptr<DrObjectBase> {
+                        return std::make_shared<T>();
+                    });
+            }
+            else
+            {
+                LOG_ERROR << "Class " << className()
+                          << " is not default constructible!";
+            }
         }
     };
 

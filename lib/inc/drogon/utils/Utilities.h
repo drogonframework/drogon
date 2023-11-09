@@ -396,24 +396,22 @@ DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
 DROGON_EXPORT std::string secureRandomString(size_t size);
 
 template <typename T>
-typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
-fromString(const std::string &p) noexcept(false)
+T fromString(const std::string &p) noexcept(false)
 {
-    T value{};
-    if (!p.empty())
+    if constexpr (internal::CanConvertFromStringStream<T>::value)
     {
-        std::stringstream ss(p);
-        ss >> value;
+        T value{};
+        if (!p.empty())
+        {
+            std::stringstream ss(p);
+            ss >> value;
+        }
+        return value;
     }
-    return value;
-}
-
-template <typename T>
-typename std::enable_if<!(internal::CanConvertFromStringStream<T>::value),
-                        T>::type
-fromString(const std::string &) noexcept(false)
-{
-    throw std::runtime_error("Bad type conversion");
+    else
+    {
+        throw std::runtime_error("Bad type conversion");
+    }
 }
 
 template <>

@@ -203,83 +203,78 @@ class CallbackHolder : public CallbackHolderBase
     static const size_t argumentCount = traits::arity;
 
     template <bool isStep = traits::isStepResultCallback>
-    typename std::enable_if<isStep, void>::type run(const Result &result)
+    void run(const Result &result)
     {
-        if (result.empty())
+        if constexpr (isStep)
         {
+            if (result.empty())
+            {
+                run(nullptr, true);
+                return;
+            }
+            for (auto const &row : result)
+            {
+                run(&row, false);
+            }
             run(nullptr, true);
-            return;
         }
-        for (auto const &row : result)
+        else
         {
-            run(&row, false);
+            static_assert(argumentCount == 0,
+                          "Your sql callback function type is wrong!");
+            function_(result);
         }
-        run(nullptr, true);
-    }
-
-    template <bool isStep = traits::isStepResultCallback>
-    typename std::enable_if<!isStep, void>::type run(const Result &result)
-    {
-        static_assert(argumentCount == 0,
-                      "Your sql callback function type is wrong!");
-        function_(result);
     }
 
     template <typename... Values, std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
-        const Row *const row,
-        bool isNull,
-        Values &&...values)
+    void run(const Row *const row, bool isNull, Values &&...values)
     {
-        // call this function recursively until parameter's count equals to the
-        // count of target function parameters
-        static_assert(
-            CallbackArgTypeTraits<NthArgumentType<sizeof...(Values)>>::isValid,
-            "your sql callback function argument type must be value "
-            "type or "
-            "const "
-            "left-reference type");
-        using ValueType =
-            typename std::remove_cv<typename std::remove_reference<
-                NthArgumentType<sizeof...(Values)>>::type>::type;
-        ValueType value = ValueType();
-        if (row && row->size() > sizeof...(Values))
+        if constexpr (sizeof...(Values) < Boundary)
         {
-            // if(!VectorTypeTraits<ValueType>::isVector)
-            //     value = (*row)[sizeof...(Values)].as<ValueType>();
-            // else
-            //     ; // value =
-            //     (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
-            value =
-                makeValue<ValueType>((*row)[(Row::SizeType)sizeof...(Values)]);
+            // call this function recursively until parameter's count equals to
+            // the count of target function parameters
+            static_assert(
+                CallbackArgTypeTraits<
+                    NthArgumentType<sizeof...(Values)>>::isValid,
+                "your sql callback function argument type must be value "
+                "type or "
+                "const "
+                "left-reference type");
+            using ValueType =
+                typename std::remove_cv<typename std::remove_reference<
+                    NthArgumentType<sizeof...(Values)>>::type>::type;
+            ValueType value = ValueType();
+            if (row && row->size() > sizeof...(Values))
+            {
+                // if(!VectorTypeTraits<ValueType>::isVector)
+                //     value = (*row)[sizeof...(Values)].as<ValueType>();
+                // else
+                //     ; // value =
+                //     (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
+                value = makeValue<ValueType>(
+                    (*row)[(Row::SizeType)sizeof...(Values)]);
+            }
+
+            run(row, isNull, std::forward<Values>(values)..., std::move(value));
         }
-
-        run(row, isNull, std::forward<Values>(values)..., std::move(value));
-    }
-
-    template <typename... Values, std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
-        const Row *const,
-        bool isNull,
-        Values &&...values)
-    {
-        function_(isNull, std::move(values)...);
+        else if constexpr (sizeof...(Values) == Boundary)
+        {
+            function_(isNull, std::move(values)...);
+        }
     }
 
     template <typename ValueType>
-    typename std::enable_if<VectorTypeTraits<ValueType>::isVector,
-                            ValueType>::type
-    makeValue(const Field &field)
+    ValueType makeValue(const Field &field)
     {
-        return field.asArray<typename VectorTypeTraits<ValueType>::ItemsType>();
-    }
-
-    template <typename ValueType>
-    typename std::enable_if<!VectorTypeTraits<ValueType>::isVector,
-                            ValueType>::type
-    makeValue(const Field &field)
-    {
-        return field.as<ValueType>();
+        if constexpr (VectorTypeTraits<ValueType>::isVector)
+        {
+            return field
+                .asArray<typename VectorTypeTraits<ValueType>::ItemsType>();
+        }
+        else
+        {
+            return field.as<ValueType>();
+        }
     }
 };
 
@@ -346,47 +341,35 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     template <typename CallbackType,
               typename traits =
                   FunctionTraits<typename std::decay<CallbackType>::type>>
-    typename std::enable_if<traits::isExceptCallback && traits::isPtr,
-                            self>::type &
-    operator>>(CallbackType &&callback)
+    typename self &operator>>(CallbackType &&callback)
     {
-        // LOG_DEBUG << "ptr callback";
-        isExceptionPtr_ = true;
-        exceptionPtrCallback_ = std::forward<CallbackType>(callback);
-        return *this;
-    }
-
-    template <typename CallbackType,
-              typename traits =
-                  FunctionTraits<typename std::decay<CallbackType>::type>>
-    typename std::enable_if<traits::isExceptCallback && !traits::isPtr,
-                            self>::type &
-    operator>>(CallbackType &&callback)
-    {
-        isExceptionPtr_ = false;
-        exceptionCallback_ = std::forward<CallbackType>(callback);
-        return *this;
-    }
-
-    template <typename CallbackType,
-              typename traits =
-                  FunctionTraits<typename std::decay<CallbackType>::type>>
-    typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(
-        CallbackType &&callback)
-    {
-        callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
-            new CallbackHolder<typename std::decay<CallbackType>::type>(
-                std::forward<CallbackType>(callback)));
-        return *this;
+        if constexpr (traits::isExceptCallback)
+        {
+            if constexpr (traits::isPtr)
+            {
+                // LOG_DEBUG << "ptr callback";
+                isExceptionPtr_ = true;
+                exceptionPtrCallback_ = std::forward<CallbackType>(callback);
+                return *this;
+            }
+            else
+            {
+                isExceptionPtr_ = false;
+                exceptionCallback_ = std::forward<CallbackType>(callback);
+                return *this;
+            }
+        }
+        else if constexpr (traits::isSqlCallback)
+        {
+            callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
+                new CallbackHolder<typename std::decay<CallbackType>::type>(
+                    std::forward<CallbackType>(callback)));
+            return *this;
+        }
     }
 
     template <typename T>
-    typename std::enable_if<
-        !std::is_same<typename std::remove_cv<
-                          typename std::remove_reference<T>::type>::type,
-                      trantor::Date>::value,
-        self &>::type
-    operator<<(T &&parameter)
+    self &operator<<(T &&parameter)
     {
         ++parametersNumber_;
         using ParaType = typename std::remove_cv<
@@ -490,6 +473,11 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     self &operator<<(const trantor::Date &date)
     {
         return operator<<(date.toDbStringLocal());
+    }
+
+    self &operator<<(trantor::Date &date)
+    {
+        return operator<<((const trantor::Date &)date);
     }
 
     self &operator<<(const std::vector<char> &v);

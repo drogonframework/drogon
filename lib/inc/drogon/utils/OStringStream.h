@@ -53,21 +53,20 @@ class OStringStream
     }
 
     template <typename T>
-    std::enable_if_t<!internal::CanConvertToString<T>::value, OStringStream &>
-    operator<<(T &&value)
+    OStringStream &operator<<(T &&value)
     {
-        std::stringstream ss;
-        ss << std::forward<T>(value);
-        buffer_.append(ss.str());
-        return *this;
-    }
-
-    template <typename T>
-    std::enable_if_t<internal::CanConvertToString<T>::value, OStringStream &>
-    operator<<(T &&value)
-    {
-        buffer_.append(std::to_string(std::forward<T>(value)));
-        return *this;
+        if constexpr (internal::CanConvertToString<T>::value)
+        {
+            buffer_.append(std::to_string(std::forward<T>(value)));
+            return *this;
+        }
+        else
+        {
+            std::stringstream ss;
+            ss << std::forward<T>(value);
+            buffer_.append(ss.str());
+            return *this;
+        }
     }
 
     template <int N>

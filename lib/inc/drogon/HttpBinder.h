@@ -153,27 +153,22 @@ class HttpBinder : public HttpBinderBase
 
     template <bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass>
-    typename std::enable_if<isDrObjectClass && isClassFunction, void>::type
-    createHandlerInstance()
+    void createHandlerInstance()
     {
-        auto objPtr =
-            DrClassMap::getSingleInstance<typename traits::class_type>();
-        LOG_TRACE << "create handler class object: " << objPtr.get();
-    }
-
-    template <bool isClassFunction = traits::isClassFunction,
-              bool isDrObjectClass = traits::isDrObjectClass>
-    typename std::enable_if<!isDrObjectClass && isClassFunction, void>::type
-    createHandlerInstance()
-    {
-        auto &obj = getControllerObj<typename traits::class_type>();
-        LOG_TRACE << "create handler class object: " << &obj;
-    }
-
-    template <bool isClassFunction = traits::isClassFunction>
-    typename std::enable_if<!isClassFunction, void>::type
-    createHandlerInstance()
-    {
+        if constexpr (isClassFunction)
+        {
+            if constexpr (isDrObjectClass)
+            {
+                auto objPtr = DrClassMap::getSingleInstance<
+                    typename traits::class_type>();
+                LOG_TRACE << "create handler class object: " << objPtr.get();
+            }
+            else
+            {
+                auto &obj = getControllerObj<typename traits::class_type>();
+                LOG_TRACE << "create handler class object: " << &obj;
+            }
+        }
     }
 
   private:
@@ -185,22 +180,16 @@ class HttpBinder : public HttpBinderBase
     std::string handlerName_;
 
     template <typename T>
-    typename std::enable_if<internal::CanConvertFromStringStream<T>::value,
-                            void>::type
-    getHandlerArgumentValue(T &value, std::string &&p)
+    void getHandlerArgumentValue(T &value, std::string &&p)
     {
-        if (!p.empty())
+        if constexpr (internal::CanConvertFromStringStream<T>::value)
         {
-            std::stringstream ss(std::move(p));
-            ss >> value;
+            if (!p.empty())
+            {
+                std::stringstream ss(std::move(p));
+                ss >> value;
+            }
         }
-    }
-
-    template <typename T>
-    typename std::enable_if<!(internal::CanConvertFromStringStream<T>::value),
-                            void>::type
-    getHandlerArgumentValue(T &value, std::string &&p)
-    {
     }
 
     void getHandlerArgumentValue(std::string &value, std::string &&p)
@@ -248,149 +237,134 @@ class HttpBinder : public HttpBinderBase
         value = std::stold(p);
     }
 
-    template <typename... Values, std::size_t Boundary = argument_count>
-    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
-        std::deque<std::string> &pathArguments,
-        const HttpRequestPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        Values &&...values)
-    {
-        // Call this function recursively until parameter's count equals to the
-        // count of target function parameters
-        static_assert(
-            BinderArgTypeTraits<nth_argument_type<sizeof...(Values)>>::isValid,
-            "your handler argument type must be value type or const left "
-            "reference type or right reference type");
-        using ValueType =
-            typename std::remove_cv<typename std::remove_reference<
-                nth_argument_type<sizeof...(Values)>>::type>::type;
-        ValueType value = ValueType();
-        if (!pathArguments.empty())
-        {
-            std::string v = std::move(pathArguments.front());
-            pathArguments.pop_front();
-            try
-            {
-                if (v.empty() == false)
-                    getHandlerArgumentValue(value, std::move(v));
-            }
-            catch (const std::exception &e)
-            {
-                handleException(e, req, std::move(callback));
-                return;
-            }
-        }
-        else
-        {
-            try
-            {
-                value = req->as<ValueType>();
-            }
-            catch (const std::exception &e)
-            {
-                handleException(e, req, std::move(callback));
-                return;
-            }
-            catch (...)
-            {
-                LOG_ERROR << "Exception not derived from std::exception";
-                return;
-            }
-        }
-
-        run(pathArguments,
-            req,
-            std::move(callback),
-            std::forward<Values>(values)...,
-            std::move(value));
-    }
-
     template <typename... Values,
               std::size_t Boundary = argument_count,
               bool isCoroutine = traits::isCoroutine>
-    typename std::enable_if<(sizeof...(Values) == Boundary) && !isCoroutine,
-                            void>::type
-    run(std::deque<std::string> &,
-        const HttpRequestPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        Values &&...values)
+    void run(std::deque<std::string> &pathArguments,
+             const HttpRequestPtr &req,
+             std::function<void(const HttpResponsePtr &)> &&callback,
+             Values &&...values)
     {
-        try
-        {
-            // Explcit copy because `callFunction` moves it
-            auto cb = callback;
-            callFunction(req, cb, std::move(values)...);
-        }
-        catch (const std::exception &except)
-        {
-            handleException(except, req, std::move(callback));
-        }
-        catch (...)
-        {
-            LOG_ERROR << "Exception not derived from std::exception";
-            return;
-        }
-    }
-#ifdef __cpp_impl_coroutine
-    template <typename... Values,
-              std::size_t Boundary = argument_count,
-              bool isCoroutine = traits::isCoroutine>
-    typename std::enable_if<(sizeof...(Values) == Boundary) && isCoroutine,
-                            void>::type
-    run(std::deque<std::string> &,
-        const HttpRequestPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        Values &&...values)
-    {
-        [this](HttpRequestPtr req,
-               std::function<void(const HttpResponsePtr &)> callback,
-               Values &&...values) -> AsyncTask {
-            try
+        if constexpr (sizeof...(Values) < Boundary)
+        {  // Call this function recursively until parameter's count equals to
+           // the count of target function parameters
+            static_assert(
+                BinderArgTypeTraits<
+                    nth_argument_type<sizeof...(Values)>>::isValid,
+                "your handler argument type must be value type or const left "
+                "reference type or right reference type");
+            using ValueType =
+                typename std::remove_cv<typename std::remove_reference<
+                    nth_argument_type<sizeof...(Values)>>::type>::type;
+            ValueType value = ValueType();
+            if (!pathArguments.empty())
             {
-                if constexpr (std::is_same_v<AsyncTask,
-                                             typename traits::return_type>)
+                std::string v = std::move(pathArguments.front());
+                pathArguments.pop_front();
+                try
+                {
+                    if (v.empty() == false)
+                        getHandlerArgumentValue(value, std::move(v));
+                }
+                catch (const std::exception &e)
+                {
+                    handleException(e, req, std::move(callback));
+                    return;
+                }
+            }
+            else
+            {
+                try
+                {
+                    value = req->as<ValueType>();
+                }
+                catch (const std::exception &e)
+                {
+                    handleException(e, req, std::move(callback));
+                    return;
+                }
+                catch (...)
+                {
+                    LOG_ERROR << "Exception not derived from std::exception";
+                    return;
+                }
+            }
+
+            run(pathArguments,
+                req,
+                std::move(callback),
+                std::forward<Values>(values)...,
+                std::move(value));
+        }
+        else if constexpr (sizeof...(Values) == Boundary)
+        {
+            if constexpr (!isCoroutine)
+            {
+                try
                 {
                     // Explcit copy because `callFunction` moves it
                     auto cb = callback;
                     callFunction(req, cb, std::move(values)...);
                 }
-                else if constexpr (std::is_same_v<Task<>,
-                                                  typename traits::return_type>)
+                catch (const std::exception &except)
                 {
-                    // Explcit copy because `callFunction` moves it
-                    auto cb = callback;
-                    co_await callFunction(req, cb, std::move(values)...);
+                    handleException(except, req, std::move(callback));
                 }
-                else if constexpr (std::is_same_v<Task<HttpResponsePtr>,
-                                                  typename traits::return_type>)
+                catch (...)
                 {
-                    auto resp =
-                        co_await callFunction(req, std::move(values)...);
-                    callback(std::move(resp));
+                    LOG_ERROR << "Exception not derived from std::exception";
+                    return;
                 }
             }
-            catch (const std::exception &except)
+#ifdef __cpp_impl_coroutine
+            else
             {
-                handleException(except, req, std::move(callback));
+                [this](HttpRequestPtr req,
+                       std::function<void(const HttpResponsePtr &)> callback,
+                       Values &&...values) -> AsyncTask {
+                    try
+                    {
+                        if constexpr (std::is_same_v<
+                                          AsyncTask,
+                                          typename traits::return_type>)
+                        {
+                            // Explcit copy because `callFunction` moves it
+                            auto cb = callback;
+                            callFunction(req, cb, std::move(values)...);
+                        }
+                        else if constexpr (std::is_same_v<
+                                               Task<>,
+                                               typename traits::return_type>)
+                        {
+                            // Explcit copy because `callFunction` moves it
+                            auto cb = callback;
+                            co_await callFunction(req,
+                                                  cb,
+                                                  std::move(values)...);
+                        }
+                        else if constexpr (std::is_same_v<
+                                               Task<HttpResponsePtr>,
+                                               typename traits::return_type>)
+                        {
+                            auto resp =
+                                co_await callFunction(req,
+                                                      std::move(values)...);
+                            callback(std::move(resp));
+                        }
+                    }
+                    catch (const std::exception &except)
+                    {
+                        handleException(except, req, std::move(callback));
+                    }
+                    catch (...)
+                    {
+                        LOG_ERROR
+                            << "Exception not derived from std::exception";
+                    }
+                }(req, std::move(callback), std::move(values)...);
             }
-            catch (...)
-            {
-                LOG_ERROR << "Exception not derived from std::exception";
-            }
-        }(req, std::move(callback), std::move(values)...);
-    }
 #endif
-    template <typename... Values,
-              bool isClassFunction = traits::isClassFunction,
-              bool isDrObjectClass = traits::isDrObjectClass,
-              bool isNormal = std::is_same<typename traits::first_param_type,
-                                           HttpRequestPtr>::value>
-    typename std::enable_if<isClassFunction && !isDrObjectClass && isNormal,
-                            typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req, Values &&...values)
-    {
-        static auto &obj = getControllerObj<typename traits::class_type>();
-        return (obj.*func_)(req, std::move(values)...);
+        }
     }
 
     template <typename... Values,
@@ -398,62 +372,53 @@ class HttpBinder : public HttpBinderBase
               bool isDrObjectClass = traits::isDrObjectClass,
               bool isNormal = std::is_same<typename traits::first_param_type,
                                            HttpRequestPtr>::value>
-    typename std::enable_if<isClassFunction && isDrObjectClass && isNormal,
-                            typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req, Values &&...values)
+    typename traits::return_type callFunction(const HttpRequestPtr &req,
+                                              Values &&...values)
     {
-        static auto objPtr =
-            DrClassMap::getSingleInstance<typename traits::class_type>();
-        return (*objPtr.*func_)(req, std::move(values)...);
-    }
-
-    template <typename... Values,
-              bool isClassFunction = traits::isClassFunction,
-              bool isNormal = std::is_same<typename traits::first_param_type,
-                                           HttpRequestPtr>::value>
-    typename std::enable_if<!isClassFunction && isNormal,
-                            typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req, Values &&...values)
-    {
-        return func_(req, std::move(values)...);
-    }
-
-    template <typename... Values,
-              bool isClassFunction = traits::isClassFunction,
-              bool isDrObjectClass = traits::isDrObjectClass,
-              bool isNormal = std::is_same<typename traits::first_param_type,
-                                           HttpRequestPtr>::value>
-    typename std::enable_if<isClassFunction && !isDrObjectClass && !isNormal,
-                            typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req, Values &&...values)
-    {
-        static auto &obj = getControllerObj<typename traits::class_type>();
-        return (obj.*func_)((*req), std::move(values)...);
-    }
-
-    template <typename... Values,
-              bool isClassFunction = traits::isClassFunction,
-              bool isDrObjectClass = traits::isDrObjectClass,
-              bool isNormal = std::is_same<typename traits::first_param_type,
-                                           HttpRequestPtr>::value>
-    typename std::enable_if<isClassFunction && isDrObjectClass && !isNormal,
-                            typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req, Values &&...values)
-    {
-        static auto objPtr =
-            DrClassMap::getSingleInstance<typename traits::class_type>();
-        return (*objPtr.*func_)((*req), std::move(values)...);
-    }
-
-    template <typename... Values,
-              bool isClassFunction = traits::isClassFunction,
-              bool isNormal = std::is_same<typename traits::first_param_type,
-                                           HttpRequestPtr>::value>
-    typename std::enable_if<!isClassFunction && !isNormal,
-                            typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req, Values &&...values)
-    {
-        return func_((*req), std::move(values)...);
+        if constexpr (isNormal)
+        {
+            if constexpr (isClassFunction)
+            {
+                if constexpr (!isDrObjectClass)
+                {
+                    static auto &obj =
+                        getControllerObj<typename traits::class_type>();
+                    return (obj.*func_)(req, std::move(values)...);
+                }
+                else
+                {
+                    static auto objPtr = DrClassMap::getSingleInstance<
+                        typename traits::class_type>();
+                    return (*objPtr.*func_)(req, std::move(values)...);
+                }
+            }
+            else
+            {
+                return func_(req, std::move(values)...);
+            }
+        }
+        else
+        {
+            if constexpr (isClassFunction)
+            {
+                if constexpr (!isDrObjectClass)
+                {
+                    static auto &obj =
+                        getControllerObj<typename traits::class_type>();
+                    return (obj.*func_)((*req), std::move(values)...);
+                }
+                else
+                {
+                    static auto objPtr = DrClassMap::getSingleInstance<
+                        typename traits::class_type>();
+                    return (*objPtr.*func_)((*req), std::move(values)...);
+                }
+            }
+            else
+            {
+                return func_((*req), std::move(values)...);
+            }
+        }
     }
 };
 
