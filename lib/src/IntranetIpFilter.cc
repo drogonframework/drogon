@@ -25,6 +25,6 @@ void IntranetIpFilter::doFilter(const HttpRequestPtr &req,
         fccb();
         return;
     }
-    auto res = drogon::HttpResponse::newNotFoundResponse();
+    auto res = drogon::HttpResponse::newNotFoundResponse(req);
     fcb(res);
 }

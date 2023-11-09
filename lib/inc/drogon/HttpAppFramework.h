@@ -171,7 +171,19 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * be sent to the client to provide a custom layout.
      */
     virtual HttpAppFramework &setCustomErrorHandler(
-        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator) = 0;
+        std::function<HttpResponsePtr(HttpStatusCode,
+                                      const HttpRequestPtr &req)>
+            &&resp_generator) = 0;
+
+    HttpAppFramework &setCustomErrorHandler(
+        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+    {
+        return setCustomErrorHandler(
+            [cb = std::move(resp_generator)](HttpStatusCode code,
+                                             const HttpRequestPtr &) {
+                return cb(code);
+            });
+    }
 
     /// Get custom error handler
     /**
@@ -179,7 +191,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * setCustomErrorHandler. If none was provided, the default error handler is
      * returned.
      */
-    virtual const std::function<HttpResponsePtr(HttpStatusCode)>
+    virtual const std::function<HttpResponsePtr(HttpStatusCode,
+                                                const HttpRequestPtr &req)>
         &getCustomErrorHandler() const = 0;
 
     /// Get the plugin object registered in the framework

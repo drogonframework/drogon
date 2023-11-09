@@ -33,7 +33,8 @@ class EventLoopThreadPool;
 
 namespace drogon
 {
-HttpResponsePtr defaultErrorHandler(HttpStatusCode code);
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code,
+                                    const HttpRequestPtr &req);
 void defaultExceptionHandler(const std::exception &,
                              const HttpRequestPtr &,
                              std::function<void(const HttpResponsePtr &)> &&);
@@ -108,8 +109,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     HttpAppFramework &setCustomErrorHandler(
-        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
-        override;
+        std::function<HttpResponsePtr(HttpStatusCode,
+                                      const HttpRequestPtr &req)>
+            &&resp_generator) override;
 
     const HttpResponsePtr &getCustom404Page();
 
@@ -619,7 +621,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     bool areAllDbClientsAvailable() const noexcept override;
-    const std::function<HttpResponsePtr(HttpStatusCode)>
+    const std::function<HttpResponsePtr(HttpStatusCode,
+                                        const HttpRequestPtr &req)>
         &getCustomErrorHandler() const override;
 
     bool isUsingCustomErrorHandler() const
@@ -764,8 +767,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     Json::Value jsonConfig_;
     Json::Value jsonRuntimeConfig_;
     HttpResponsePtr custom404_;
-    std::function<HttpResponsePtr(HttpStatusCode)> customErrorHandler_ =
-        &defaultErrorHandler;
+    std::function<HttpResponsePtr(HttpStatusCode, const HttpRequestPtr &req)>
+        customErrorHandler_ = &defaultErrorHandler;
     static InitBeforeMainFunction initFirst_;
     bool enableServerHeader_{true};
     bool enableDateHeader_{true};

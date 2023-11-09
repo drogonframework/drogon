@@ -38,20 +38,20 @@ using namespace drogon;
 using namespace trantor;
 
 static void defaultHttpAsyncCallback(
-    const HttpRequestPtr &,
+    const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &resp)> &&callback)
 {
-    auto resp = HttpResponse::newNotFoundResponse();
+    auto resp = HttpResponse::newNotFoundResponse(req);
     resp->setCloseConnection(true);
     callback(resp);
 }
 
 static void defaultWebSockAsyncCallback(
-    const HttpRequestPtr &,
+    const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &resp)> &&callback,
     const WebSocketConnectionImplPtr &)
 {
-    auto resp = HttpResponse::newNotFoundResponse();
+    auto resp = HttpResponse::newNotFoundResponse(req);
     resp->setCloseConnection(true);
     callback(resp);
 }
