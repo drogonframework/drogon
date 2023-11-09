@@ -192,6 +192,10 @@ class Http2Transport : public HttpTransport
                         StreamCloseErrorCode errorCode,
                         std::string errorMsg = "");
 
+    bool parseAndApplyHeaders(internal::H2Stream &stream,
+                              const void *data,
+                              size_t len);
+
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
                    size_t *bytesSent,

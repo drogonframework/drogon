@@ -1006,18 +1006,83 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         {
             // Should never show up on stream 0
             LOG_FATAL << "Protocol error: HEADERS frame on stream 0";
-            errorCallback(ReqResult::BadResponse);
+            killConnection(streamId,
+                           StreamCloseErrorCode::ProtocolError,
+                           "HEADERS frame on stream 0");
         }
         else if (std::holds_alternative<DataFrame>(frame))
         {
             LOG_FATAL << "Protocol error: DATA frame on stream 0";
-            errorCallback(ReqResult::BadResponse);
+            killConnection(streamId,
+                           StreamCloseErrorCode::ProtocolError,
+                           "DATA frame on stream 0");
+        }
+        else if (std::holds_alternative<ContinuationFrame>(frame))
+        {
+            LOG_FATAL << "Protocol error: CONTINUATION frame on stream 0";
+            killConnection(streamId,
+                           StreamCloseErrorCode::ProtocolError,
+                           "CONTINUATION frame on stream 0");
         }
         else
         {
             // Do nothing. RFC says to ignore unknown frames
         }
     }
+}
+
+bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
+                                          const void *data,
+                                          size_t size)
+{
+    hpack::HPacker::KeyValueVector headers;
+    int n = hpackRx.decode((const uint8_t *)data, size, headers);
+    auto streamId = stream.streamId;
+    if (n < 0)
+    {
+        LOG_TRACE << "Failed to decode headers";
+        killConnection(streamId,
+                       StreamCloseErrorCode::CompressionError,
+                       "Failed to decode headers");
+        return false;
+    }
+    for (auto &[key, value] : headers)
+        LOG_TRACE << "  " << key << ": " << value;
+    assert(stream.response == nullptr);
+    stream.response = std::make_shared<HttpResponseImpl>();
+    for (const auto &[key, value] : headers)
+    {
+        // TODO: Filter more pseudo headers
+        if (key == "content-length")
+        {
+            auto sz = stosz(value);
+            if (!sz)
+            {
+                responseErrored(streamId, ReqResult::BadResponse);
+                return false;
+            }
+            stream.contentLength = std::move(sz);
+        }
+        if (key == ":status")
+        {
+            // TODO: Validate status code
+            stream.response->setStatusCode(
+                (drogon::HttpStatusCode)std::stoi(value));
+            continue;
+        }
+
+        // Anti request smuggling. We look for \r or \n in the header
+        // name or value. If we find one, we abort the stream.
+        if (key.find_first_of("\r\n") != std::string::npos ||
+            value.find_first_of("\r\n") != std::string::npos)
+        {
+            responseErrored(streamId, ReqResult::BadResponse);
+            return false;
+        }
+
+        stream.response->addHeader(key, value);
+    }
+    return true;
 }
 
 Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
@@ -1074,55 +1139,11 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             return;
         }
         auto &f = std::get<HeadersFrame>(frame);
-        LOG_TRACE << "Headers frame received: size="
-                  << f.headerBlockFragment.size();
-        hpack::HPacker::KeyValueVector headers;
-        int n = hpackRx.decode(f.headerBlockFragment.data(),
-                               f.headerBlockFragment.size(),
-                               headers);
-        if (n < 0)
-        {
-            LOG_TRACE << "Failed to decode headers";
-            killConnection(streamId,
-                           StreamCloseErrorCode::CompressionError,
-                           "Failed to decode headers");
+        // This function handles error itself
+        if (!parseAndApplyHeaders(stream,
+                                  f.headerBlockFragment.data(),
+                                  f.headerBlockFragment.size()))
             return;
-        }
-        for (auto &[key, value] : headers)
-            LOG_TRACE << "  " << key << ": " << value;
-        it->second.response = std::make_shared<HttpResponseImpl>();
-        for (const auto &[key, value] : headers)
-        {
-            // TODO: Filter more pseudo headers
-            if (key == "content-length")
-            {
-                auto sz = stosz(value);
-                if (!sz)
-                {
-                    responseErrored(streamId, ReqResult::BadResponse);
-                    return;
-                }
-                it->second.contentLength = std::move(sz);
-            }
-            if (key == ":status")
-            {
-                // TODO: Validate status code
-                it->second.response->setStatusCode(
-                    (drogon::HttpStatusCode)std::stoi(value));
-                continue;
-            }
-
-            // Anti request smuggling. We look for \r or \n in the header
-            // name or value. If we find one, we abort the stream.
-            if (key.find_first_of("\r\n") != std::string::npos ||
-                value.find_first_of("\r\n") != std::string::npos)
-            {
-                responseErrored(streamId, ReqResult::BadResponse);
-                return;
-            }
-
-            it->second.response->addHeader(key, value);
-        }
 
         // There is no body in the response.
         if ((flags & (uint8_t)H2HeadersFlags::EndStream))
@@ -1151,7 +1172,13 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         {
             stream.state = StreamState::ExpectingData;
             expectngContinuationStreamId = 0;
-            // TODO: Parse headers
+            bool ok = parseAndApplyHeaders(stream,
+                                           headerBufferRx.peek(),
+                                           headerBufferRx.readableBytes());
+            headerBufferRx.retrieveAll();
+            if (!ok)
+                LOG_TRACE << "Failed to parse headers in continuation frame";
+            return;
         }
     }
     else if (std::holds_alternative<DataFrame>(frame))
