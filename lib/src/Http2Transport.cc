@@ -447,7 +447,7 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
 
 bool DataFrame::serialize(OByteStream &stream, uint8_t &flags) const
 {
-    flags = 0x0;
+    flags = (endStream ? (uint8_t)H2DataFlags::EndStream : 0x0);
     stream.write(data.data(), data.size());
     if (padLength > 0)
     {
