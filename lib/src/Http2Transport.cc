@@ -477,6 +477,30 @@ bool PingFrame::serialize(OByteStream &stream, uint8_t &flags) const
     return true;
 }
 
+std::optional<ContinuationFrame> ContinuationFrame::parse(ByteStream &payload,
+                                                          uint8_t flags)
+{
+    bool endHeaders = flags & (uint8_t)H2HeadersFlags::EndHeaders;
+    ContinuationFrame frame;
+    if (endHeaders)
+    {
+        frame.endHeaders = true;
+    }
+
+    frame.headerBlockFragment.resize(payload.remaining());
+    payload.read(frame.headerBlockFragment.data(),
+                 frame.headerBlockFragment.size());
+    return frame;
+}
+
+bool ContinuationFrame::serialize(OByteStream &stream, uint8_t &flags) const
+{
+    flags = 0x0;
+    if (endHeaders)
+        flags |= (uint8_t)H2HeadersFlags::EndHeaders;
+    stream.write(headerBlockFragment.data(), headerBlockFragment.size());
+    return true;
+}
 }  // namespace drogon::internal
 
 // Print the HEX and ASCII representation of the buffer side by side
@@ -568,6 +592,12 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, int32_t streamId)
         ok = f.serialize(buffer, flags);
         type = (uint8_t)H2FrameType::Ping;
     }
+    else if (std::holds_alternative<ContinuationFrame>(frame))
+    {
+        const auto &f = std::get<ContinuationFrame>(frame);
+        ok = f.serialize(buffer, flags);
+        type = (uint8_t)H2FrameType::Continuation;
+    }
     else
     {
         LOG_ERROR << "Unsupported frame type";
@@ -646,6 +676,8 @@ static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
         frame = DataFrame::parse(payload, flags);
     else if (type == (uint8_t)H2FrameType::Ping)
         frame = PingFrame::parse(payload, flags);
+    else if (type == (uint8_t)H2FrameType::Continuation)
+        frame = ContinuationFrame::parse(payload, flags);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
@@ -826,6 +858,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         }
         auto &frame = *frameOpt;
 
+        // special case for PING and GOAWAY. These are all global frames
         if (std::holds_alternative<GoAwayFrame>(frame))
         {
             auto &f = std::get<GoAwayFrame>(frame);
@@ -847,9 +880,6 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             // TODO: Should be half-closed but transport doesn't support it yet
             connPtr->shutdown();
         }
-
-        // special case for PING frame. It is the only frame that is not
-        // associated with a stream
         if (std::holds_alternative<PingFrame>(frame))
         {
             auto &f = std::get<PingFrame>(frame);
@@ -864,6 +894,22 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             ackFrame.opaqueData = f.opaqueData;
             connPtr->send(serializeFrame(ackFrame, 0));
             continue;
+        }
+
+        // If we are expecting a CONTINUATION frame, we should not receive
+        // HEADERS or CONTINUATION from other streams
+        if (expectngContinuationStreamId != 0 &&
+            (std::holds_alternative<HeadersFrame>(frame) ||
+             (std::holds_alternative<ContinuationFrame>(frame) &&
+              streamId != expectngContinuationStreamId)))
+        {
+            LOG_TRACE << "Protocol error: unexpected HEADERS or "
+                         "CONTINUATION frame";
+            killConnection(streamId,
+                           StreamCloseErrorCode::ProtocolError,
+                           "Expecting CONTINUATION frame for stream " +
+                               std::to_string(expectngContinuationStreamId));
+            return;
         }
 
         if (streamId != 0)
@@ -1010,6 +1056,16 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
     if (std::holds_alternative<HeadersFrame>(frame))
     {
+        if ((flags & (uint8_t)H2HeadersFlags::EndHeaders) == 0)
+        {
+            auto &f = std::get<HeadersFrame>(frame);
+            headerBufferRx.append((char *)f.headerBlockFragment.data(),
+                                  f.headerBlockFragment.size());
+            expectngContinuationStreamId = streamId;
+            stream.state = StreamState::ExpectingContinuation;
+            return;
+        }
+
         if (stream.state != StreamState::ExpectingHeaders)
         {
             killConnection(streamId,
@@ -1043,9 +1099,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 auto sz = stosz(value);
                 if (!sz)
                 {
-                    killConnection(streamId,
-                                   StreamCloseErrorCode::ProtocolError,
-                                   "Invalid content-length");
+                    responseErrored(streamId, ReqResult::BadResponse);
                     return;
                 }
                 it->second.contentLength = std::move(sz);
@@ -1070,12 +1124,6 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             it->second.response->addHeader(key, value);
         }
 
-        if ((flags & (uint8_t)H2HeadersFlags::EndHeaders) == 0)
-        {
-            LOG_TRACE << "We don't support CONTINUATION frames yet!";
-            stream.state = StreamState::ExpectingContinuation;
-            abort();
-        }
         // There is no body in the response.
         if ((flags & (uint8_t)H2HeadersFlags::EndStream))
         {
@@ -1084,6 +1132,27 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             return;
         }
         stream.state = StreamState::ExpectingData;
+    }
+    else if (std::holds_alternative<ContinuationFrame>(frame))
+    {
+        auto &f = std::get<ContinuationFrame>(frame);
+        if (stream.state != StreamState::ExpectingContinuation)
+        {
+            killConnection(streamId,
+                           StreamCloseErrorCode::ProtocolError,
+                           "Unexpected continuation frame");
+            return;
+        }
+
+        headerBufferRx.append((char *)f.headerBlockFragment.data(),
+                              f.headerBlockFragment.size());
+        bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders) != 0;
+        if (endHeaders)
+        {
+            stream.state = StreamState::ExpectingData;
+            expectngContinuationStreamId = 0;
+            // TODO: Parse headers
+        }
     }
     else if (std::holds_alternative<DataFrame>(frame))
     {

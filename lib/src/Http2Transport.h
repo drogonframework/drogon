@@ -78,12 +78,23 @@ struct PingFrame
     bool serialize(OByteStream &stream, uint8_t &flags) const;
 };
 
+struct ContinuationFrame
+{
+    std::vector<uint8_t> headerBlockFragment;
+    bool endHeaders = false;
+
+    static std::optional<ContinuationFrame> parse(ByteStream &payload,
+                                                  uint8_t flags);
+    bool serialize(OByteStream &stream, uint8_t &flags) const;
+};
+
 using H2Frame = std::variant<SettingsFrame,
                              WindowUpdateFrame,
                              HeadersFrame,
                              GoAwayFrame,
                              DataFrame,
-                             PingFrame>;
+                             PingFrame,
+                             ContinuationFrame>;
 
 enum class StreamState
 {
@@ -143,6 +154,8 @@ class Http2Transport : public HttpTransport
     std::unordered_map<int32_t, internal::H2Stream> streams;
     bool serverSettingsReceived = false;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
+    trantor::MsgBuffer headerBufferRx;
+    int32_t expectngContinuationStreamId = 0;
     // TODO: Handle server-initiated stream creation
 
     // HTTP/2 client-wide settings (can be changed by server)
