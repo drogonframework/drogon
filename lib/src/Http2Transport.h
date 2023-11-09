@@ -168,6 +168,8 @@ class Http2Transport : public HttpTransport
 
     int32_t nextStreamId()
     {
+        // TODO: Handling stream ID requires to reconnect
+        // the entire connection. Handle this somehow
         int32_t streamId = currentStreamId;
         currentStreamId += 2;
         return streamId;
@@ -195,11 +197,7 @@ class Http2Transport : public HttpTransport
         return 0;
     }
 
-    bool handleConnectionClose() override
-    {
-        throw std::runtime_error(
-            "HTTP/2 handleConnectionClose not implemented");
-    }
+    bool handleConnectionClose() override;
 
     void onError(ReqResult result) override;
 

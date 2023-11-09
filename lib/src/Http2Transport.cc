@@ -825,6 +825,31 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         }
         auto &frame = *frameOpt;
 
+        if (std::holds_alternative<GoAwayFrame>(frame))
+        {
+            auto &f = std::get<GoAwayFrame>(frame);
+            if (f.lastStreamId == currentStreamId - 2 && streams.size() == 0 &&
+                f.errorCode == 0)
+            {
+                LOG_TRACE << "Go away frame received. Gracefully shutdown";
+                connPtr->shutdown();
+                return;
+            }
+
+            for (auto &[streamId, stream] : streams)
+            {
+                if (streamId > f.lastStreamId)
+                {
+                    streamFinished(streamId,
+                                   ReqResult::BadResponse,
+                                   StreamCloseErrorCode::RefusedStream,
+                                   "Stream refused by server");
+                }
+            }
+            // TODO: Should be half-closed but transport doesn't support it yet
+            connPtr->shutdown();
+        }
+
         // special case for PING frame. It is the only frame that is not
         // associated with a stream
         if (std::holds_alternative<PingFrame>(frame))
@@ -943,24 +968,6 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         {
             LOG_FATAL << "Protocol error: DATA frame on stream 0";
             errorCallback(ReqResult::BadResponse);
-        }
-        else if (std::holds_alternative<GoAwayFrame>(frame))
-        {
-            auto &f = std::get<GoAwayFrame>(frame);
-            if (f.errorCode != 0)
-            {
-                LOG_TRACE << "Go away frame on stream 0 received. Die!";
-                errorCallback(ReqResult::BadResponse);
-            }
-            else
-            {
-                // We shouldn't have any requests in flight if the server is
-                // sending us a go away frame to gracefully shutdown
-                // But in case we do, we should treat them as network failures
-                assert(streams.empty());
-                errorCallback(ReqResult::NetworkFailure);
-            }
-            connPtr->shutdown();
         }
         else
         {
@@ -1148,15 +1155,6 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             stream.avaliableRxWindow += windowIncreaseSize;
         }
     }
-    else if (std::holds_alternative<GoAwayFrame>(frame))
-    {
-        auto &f = std::get<GoAwayFrame>(frame);
-        LOG_TRACE << "Go away frame received: lastStreamId=" << f.lastStreamId
-                  << " errorCode=" << f.errorCode << " additionalDebugData="
-                  << std::string(f.additionalDebugData.begin(),
-                                 f.additionalDebugData.end());
-        stream.callback(ReqResult::BadResponse, nullptr);
-    }
     else if (std::holds_alternative<WindowUpdateFrame>(frame))
     {
         auto &f = std::get<WindowUpdateFrame>(frame);
@@ -1244,4 +1242,13 @@ void Http2Transport::killConnection(int32_t lastStreamId,
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);
     errorCallback(ReqResult::BadResponse);
+}
+
+bool Http2Transport::handleConnectionClose()
+{
+    if (streams.size() == 0)
+        return false;
+    for (auto &[streamId, stream] : streams)
+        stream.callback(ReqResult::BadResponse, nullptr);
+    return true;
 }
