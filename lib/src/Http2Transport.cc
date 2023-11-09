@@ -840,9 +840,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             {
                 if (streamId > f.lastStreamId)
                 {
-                    streamFinished(streamId,
-                                   ReqResult::BadResponse,
-                                   StreamCloseErrorCode::RefusedStream);
+                    responseErrored(streamId, ReqResult::BadResponse);
                 }
             }
             // TODO: Should be half-closed but transport doesn't support it yet
@@ -1064,9 +1062,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             if (key.find_first_of("\r\n") != std::string::npos ||
                 value.find_first_of("\r\n") != std::string::npos)
             {
-                streamFinished(streamId,
-                               ReqResult::BadResponse,
-                               StreamCloseErrorCode::ProtocolError);
+                responseErrored(streamId, ReqResult::BadResponse);
                 return;
             }
 
@@ -1083,7 +1079,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         if ((flags & (uint8_t)H2HeadersFlags::EndStream))
         {
             stream.state = StreamState::Finished;
-            streamFinished(stream);
+            responseSuccess(stream);
             return;
         }
         stream.state = StreamState::ExpectingData;
@@ -1126,15 +1122,13 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 stream.body.readableBytes() != *stream.contentLength)
             {
                 LOG_TRACE << "Content-length mismatch";
-                streamFinished(streamId,
-                               ReqResult::BadResponse,
-                               StreamCloseErrorCode::ProtocolError);
+                responseErrored(streamId, ReqResult::BadResponse);
                 return;
             }
             // TODO: Optmize setting body
             std::string body(stream.body.peek(), stream.body.readableBytes());
             stream.response->setBody(std::move(body));
-            streamFinished(stream);
+            responseSuccess(stream);
             return;
         }
 
@@ -1170,7 +1164,7 @@ internal::H2Stream &Http2Transport::createStream(int32_t streamId)
     return stream;
 }
 
-void Http2Transport::streamFinished(internal::H2Stream &stream)
+void Http2Transport::responseSuccess(internal::H2Stream &stream)
 {
     assert(stream.request != nullptr);
     assert(stream.callback);
@@ -1189,9 +1183,7 @@ void Http2Transport::streamFinished(internal::H2Stream &stream)
     bufferedRequests.pop();
 }
 
-void Http2Transport::streamFinished(int32_t streamId,
-                                    ReqResult result,
-                                    StreamCloseErrorCode errorCode)
+void Http2Transport::responseErrored(int32_t streamId, ReqResult result)
 {
     auto it = streams.find(streamId);
     assert(it != streams.end());

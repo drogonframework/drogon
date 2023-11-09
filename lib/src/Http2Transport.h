@@ -160,10 +160,8 @@ class Http2Transport : public HttpTransport
     size_t avaliableRxWindow = 65535;
 
     internal::H2Stream &createStream(int32_t streamId);
-    void streamFinished(internal::H2Stream &stream);
-    void streamFinished(int32_t streamId,
-                        ReqResult result,
-                        StreamCloseErrorCode errorCode);
+    void responseSuccess(internal::H2Stream &stream);
+    void responseErrored(int32_t streamId, ReqResult result);
 
     int32_t nextStreamId()
     {
