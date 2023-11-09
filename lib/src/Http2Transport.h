@@ -88,13 +88,26 @@ struct ContinuationFrame
     bool serialize(OByteStream &stream, uint8_t &flags) const;
 };
 
+struct PushPromiseFrame
+{
+    uint8_t padLength = 0;
+    bool endHeaders = false;
+    int32_t promisedStreamId = 0;
+    std::vector<uint8_t> headerBlockFragment;
+
+    static std::optional<PushPromiseFrame> parse(ByteStream &payload,
+                                                 uint8_t flags);
+    bool serialize(OByteStream &stream, uint8_t &flags) const;
+};
+
 using H2Frame = std::variant<SettingsFrame,
                              WindowUpdateFrame,
                              HeadersFrame,
                              GoAwayFrame,
                              DataFrame,
                              PingFrame,
-                             ContinuationFrame>;
+                             ContinuationFrame,
+                             PushPromiseFrame>;
 
 enum class StreamState
 {

@@ -501,6 +501,43 @@ bool ContinuationFrame::serialize(OByteStream &stream, uint8_t &flags) const
     stream.write(headerBlockFragment.data(), headerBlockFragment.size());
     return true;
 }
+
+std::optional<PushPromiseFrame> PushPromiseFrame::parse(ByteStream &payload,
+                                                        uint8_t flags)
+{
+    bool endHeaders = flags & (uint8_t)H2HeadersFlags::EndHeaders;
+    bool padded = flags & (uint8_t)H2HeadersFlags::Padded;
+
+    PushPromiseFrame frame;
+    if (padded)
+        frame.padLength = payload.readU8();
+    if (endHeaders)
+        frame.endHeaders = true;
+
+    auto [_, promisedStreamId] = payload.readBI32BE();
+    frame.promisedStreamId = promisedStreamId;
+    frame.headerBlockFragment.resize(payload.remaining() - frame.padLength);
+    payload.read(frame.headerBlockFragment.data(),
+                 frame.headerBlockFragment.size());
+    payload.skip(frame.padLength);
+    return frame;
+}
+
+bool PushPromiseFrame::serialize(OByteStream &stream, uint8_t &flags) const
+{
+    flags = 0x0;
+    if (endHeaders)
+        flags |= (uint8_t)H2HeadersFlags::EndHeaders;
+    assert(promisedStreamId > 0);
+    stream.writeU32BE(promisedStreamId);
+    stream.write(headerBlockFragment.data(), headerBlockFragment.size());
+    if (padLength > 0)
+    {
+        flags |= (uint8_t)H2HeadersFlags::Padded;
+        stream.writeU8(padLength);
+    }
+    return true;
+}
 }  // namespace drogon::internal
 
 // Print the HEX and ASCII representation of the buffer side by side
@@ -598,6 +635,12 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, int32_t streamId)
         ok = f.serialize(buffer, flags);
         type = (uint8_t)H2FrameType::Continuation;
     }
+    else if (std::holds_alternative<PushPromiseFrame>(frame))
+    {
+        const auto &f = std::get<PushPromiseFrame>(frame);
+        ok = f.serialize(buffer, flags);
+        type = (uint8_t)H2FrameType::PushPromise;
+    }
     else
     {
         LOG_ERROR << "Unsupported frame type";
@@ -678,6 +721,8 @@ static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
         frame = PingFrame::parse(payload, flags);
     else if (type == (uint8_t)H2FrameType::Continuation)
         frame = ContinuationFrame::parse(payload, flags);
+    else if (type == (uint8_t)H2FrameType::PushPromise)
+        frame = PushPromiseFrame::parse(payload, flags);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
@@ -909,6 +954,16 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                            StreamCloseErrorCode::ProtocolError,
                            "Expecting CONTINUATION frame for stream " +
                                std::to_string(expectngContinuationStreamId));
+            return;
+        }
+
+        if (std::holds_alternative<PushPromiseFrame>(frame))
+        {
+            LOG_TRACE << "Push promise frame received. Not supported yet. "
+                         "Connection will die";
+            killConnection(streamId,
+                           StreamCloseErrorCode::ProtocolError,
+                           "Push promise not supported");
             return;
         }
 
