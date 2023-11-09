@@ -21,11 +21,14 @@ SessionManager::SessionManager(
     trantor::EventLoop *loop,
     size_t timeout,
     const std::vector<AdviceStartSessionCallback> &startAdvices,
-    const std::vector<AdviceDestroySessionCallback> &destroyAdvices)
+    const std::vector<AdviceDestroySessionCallback> &destroyAdvices,
+    IdGeneratorCallback idGeneratorCallback)
     : loop_(loop),
       timeout_(timeout),
       sessionStartAdvices_(startAdvices),
-      sessionDestroyAdvices_(destroyAdvices)
+      sessionDestroyAdvices_(destroyAdvices),
+      idGeneratorCallback_(idGeneratorCallback ? idGeneratorCallback
+                                               : utils::getUuid)
 {
     if (timeout_ > 0)
     {
@@ -115,7 +118,7 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
 void SessionManager::changeSessionId(const SessionPtr &sessionPtr)
 {
     auto oldId = sessionPtr->sessionId();
-    auto newId = utils::getUuid();
+    auto newId = idGeneratorCallback_();
     sessionPtr->setSessionId(newId);
     sessionMapPtr_->insert(newId, sessionPtr, timeout_);
     // For requests sent before setting the new session ID to the client, we

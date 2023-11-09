@@ -826,6 +826,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /**
      * @param timeout The number of seconds which is the timeout of a session
      * @param sameSite The default value of SameSite attribute
+     * @param cookieKey The key of the session cookie
      *
      * @note
      * Session support is disabled by default.
@@ -836,7 +837,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &enableSession(
         const size_t timeout = 0,
-        Cookie::SameSite sameSite = Cookie::SameSite::kNull) = 0;
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull,
+        const std::string &cookieKey = "JSESSIONID",
+        int maxAge = -1,
+        std::function<std::string()> idGeneratorCallback = nullptr) = 0;
 
     /// A wrapper of the above method.
     /**
@@ -848,9 +852,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     inline HttpAppFramework &enableSession(
         const std::chrono::duration<double> &timeout,
-        Cookie::SameSite sameSite = Cookie::SameSite::kNull)
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull,
+        const std::string &cookieKey = "JSESSIONID",
+        int maxAge = -1,
+        std::function<std::string()> idGeneratorCallback = nullptr)
     {
-        return enableSession((size_t)timeout.count(), sameSite);
+        return enableSession((size_t)timeout.count(),
+                             sameSite,
+                             cookieKey,
+                             maxAge,
+                             idGeneratorCallback);
     }
 
     /// Register an advice called when starting a new session.

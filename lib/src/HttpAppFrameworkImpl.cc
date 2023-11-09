@@ -637,7 +637,8 @@ void HttpAppFrameworkImpl::run()
             std::make_unique<SessionManager>(getLoop(),
                                              sessionTimeout_,
                                              sessionStartAdvices_,
-                                             sessionDestroyAdvices_);
+                                             sessionDestroyAdvices_,
+                                             sessionIdGeneratorCallback_);
     }
     // now start running!!
     running_ = true;
@@ -775,7 +776,7 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
 {
     if (useSession_)
     {
-        std::string sessionId = req->getCookie("JSESSIONID");
+        std::string sessionId = req->getCookie(sessionCookieKey_);
         bool needSetJsessionid = false;
         if (sessionId.empty())
         {
@@ -857,20 +858,26 @@ void HttpAppFrameworkImpl::callCallback(
                 auto newResp = std::make_shared<HttpResponseImpl>(
                     *static_cast<HttpResponseImpl *>(resp.get()));
                 newResp->setExpiredTime(-1);  // make it temporary
-                auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
-                jsessionid.setPath("/");
-                jsessionid.setSameSite(sessionSameSite_);
-                newResp->addCookie(std::move(jsessionid));
+                auto sessionid =
+                    Cookie(sessionCookieKey_, sessionPtr->sessionId());
+                sessionid.setPath("/");
+                sessionid.setSameSite(sessionSameSite_);
+                if (sessionMaxAge_ >= 0)
+                    sessionid.setMaxAge(sessionMaxAge_);
+                newResp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
                 callback(newResp);
                 return;
             }
             else
             {
-                auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
-                jsessionid.setPath("/");
-                jsessionid.setSameSite(sessionSameSite_);
-                resp->addCookie(std::move(jsessionid));
+                auto sessionid =
+                    Cookie(sessionCookieKey_, sessionPtr->sessionId());
+                sessionid.setPath("/");
+                sessionid.setSameSite(sessionSameSite_);
+                if (sessionMaxAge_ >= 0)
+                    sessionid.setMaxAge(sessionMaxAge_);
+                resp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
                 callback(resp);
                 return;
