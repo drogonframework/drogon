@@ -706,6 +706,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 
     LOG_TRACE << "Sending HTTP/2 headers: size=" << headers.size();
     hpack::HPacker::KeyValueVector headersToEncode;
+    headersToEncode.reserve(headers.size() + 5);
     const std::array<std::string_view, 2> headersToSkip = {
         {"host", "connection"}};
     headersToEncode.emplace_back(":method", req->methodString());
