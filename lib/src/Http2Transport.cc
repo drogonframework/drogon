@@ -933,7 +933,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 {
                     hpackRx.setMaxTableSize(value);
                 }
-                if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
+                else if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
                 {
                     // Note: MAX_CONCURRENT_STREAMS can be 0, which means
                     // the client is not allowed to send any request. I doubt
