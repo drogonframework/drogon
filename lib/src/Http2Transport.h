@@ -88,6 +88,15 @@ struct ContinuationFrame
     bool serialize(OByteStream &stream, uint8_t &flags) const;
 };
 
+struct RstStreamFrame
+{
+    uint32_t errorCode = 0;
+
+    static std::optional<RstStreamFrame> parse(ByteStream &payload,
+                                               uint8_t flags);
+    bool serialize(OByteStream &stream, uint8_t &flags) const;
+};
+
 struct PushPromiseFrame
 {
     uint8_t padLength = 0;
@@ -107,7 +116,8 @@ using H2Frame = std::variant<SettingsFrame,
                              DataFrame,
                              PingFrame,
                              ContinuationFrame,
-                             PushPromiseFrame>;
+                             PushPromiseFrame,
+                             RstStreamFrame>;
 
 enum class StreamState
 {

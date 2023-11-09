@@ -538,6 +538,26 @@ bool PushPromiseFrame::serialize(OByteStream &stream, uint8_t &flags) const
     }
     return true;
 }
+
+std::optional<RstStreamFrame> RstStreamFrame::parse(ByteStream &payload,
+                                                    uint8_t flags)
+{
+    if (payload.size() != 4)
+    {
+        LOG_TRACE << "Invalid RST_STREAM frame length";
+        return std::nullopt;
+    }
+    RstStreamFrame frame;
+    frame.errorCode = payload.readU32BE();
+    return frame;
+}
+
+bool RstStreamFrame::serialize(OByteStream &stream, uint8_t &flags) const
+{
+    flags = 0x0;
+    stream.writeU32BE(errorCode);
+    return true;
+}
 }  // namespace drogon::internal
 
 // Print the HEX and ASCII representation of the buffer side by side
@@ -641,6 +661,12 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, int32_t streamId)
         ok = f.serialize(buffer, flags);
         type = (uint8_t)H2FrameType::PushPromise;
     }
+    else if (std::holds_alternative<RstStreamFrame>(frame))
+    {
+        const auto &f = std::get<RstStreamFrame>(frame);
+        ok = f.serialize(buffer, flags);
+        type = (uint8_t)H2FrameType::RstStream;
+    }
     else
     {
         LOG_ERROR << "Unsupported frame type";
@@ -723,6 +749,8 @@ static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
         frame = ContinuationFrame::parse(payload, flags);
     else if (type == (uint8_t)H2FrameType::PushPromise)
         frame = PushPromiseFrame::parse(payload, flags);
+    else if (type == (uint8_t)H2FrameType::RstStream)
+        frame = RstStreamFrame::parse(payload, flags);
     else
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
