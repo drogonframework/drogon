@@ -842,8 +842,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 {
                     streamFinished(streamId,
                                    ReqResult::BadResponse,
-                                   StreamCloseErrorCode::RefusedStream,
-                                   "Stream refused by server");
+                                   StreamCloseErrorCode::RefusedStream);
                 }
             }
             // TODO: Should be half-closed but transport doesn't support it yet
@@ -1014,8 +1013,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     {
         if (stream.state != StreamState::ExpectingHeaders)
         {
-            streamFinished(streamId,
-                           ReqResult::BadResponse,
+            killConnection(streamId,
                            StreamCloseErrorCode::ProtocolError,
                            "Unexpected headers frame");
             return;
@@ -1030,8 +1028,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         if (n < 0)
         {
             LOG_TRACE << "Failed to decode headers";
-            streamFinished(streamId,
-                           ReqResult::BadResponse,
+            killConnection(streamId,
                            StreamCloseErrorCode::CompressionError,
                            "Failed to decode headers");
             return;
@@ -1047,10 +1044,9 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 auto sz = stosz(value);
                 if (!sz)
                 {
-                    streamFinished(streamId,
-                                   ReqResult::BadResponse,
+                    killConnection(streamId,
                                    StreamCloseErrorCode::ProtocolError,
-                                   "Invalid content-length header");
+                                   "Invalid content-length");
                     return;
                 }
                 it->second.contentLength = std::move(sz);
@@ -1070,8 +1066,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             {
                 streamFinished(streamId,
                                ReqResult::BadResponse,
-                               StreamCloseErrorCode::ProtocolError,
-                               "CR or LF found in header name or value");
+                               StreamCloseErrorCode::ProtocolError);
                 return;
             }
 
@@ -1099,16 +1094,14 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         // TODO: Make sure this logic fits RFC
         if (avaliableRxWindow < f.data.size())
         {
-            streamFinished(streamId,
-                           ReqResult::BadResponse,
+            killConnection(streamId,
                            StreamCloseErrorCode::FlowControlError,
                            "Too much for connection-level flow control");
             return;
         }
         else if (stream.avaliableRxWindow < f.data.size())
         {
-            streamFinished(streamId,
-                           ReqResult::BadResponse,
+            killConnection(streamId,
                            StreamCloseErrorCode::FlowControlError,
                            "Too much for stream-level flow control");
             return;
@@ -1119,8 +1112,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         if (stream.state != StreamState::ExpectingData)
         {
-            streamFinished(streamId,
-                           ReqResult::BadResponse,
+            killConnection(streamId,
                            StreamCloseErrorCode::ProtocolError,
                            "Unexpected data frame");
             return;
@@ -1136,8 +1128,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 LOG_TRACE << "Content-length mismatch";
                 streamFinished(streamId,
                                ReqResult::BadResponse,
-                               StreamCloseErrorCode::ProtocolError,
-                               "Content-length mismatch");
+                               StreamCloseErrorCode::ProtocolError);
                 return;
             }
             // TODO: Optmize setting body
@@ -1200,10 +1191,8 @@ void Http2Transport::streamFinished(internal::H2Stream &stream)
 
 void Http2Transport::streamFinished(int32_t streamId,
                                     ReqResult result,
-                                    StreamCloseErrorCode errorCode,
-                                    std::string errorMsg)
+                                    StreamCloseErrorCode errorCode)
 {
-    LOG_TRACE << "Stopping stream: " << streamId << " with error: " << errorMsg;
     auto it = streams.find(streamId);
     assert(it != streams.end());
     it->second.callback(result, nullptr);

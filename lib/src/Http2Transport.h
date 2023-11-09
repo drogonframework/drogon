@@ -163,8 +163,7 @@ class Http2Transport : public HttpTransport
     void streamFinished(internal::H2Stream &stream);
     void streamFinished(int32_t streamId,
                         ReqResult result,
-                        StreamCloseErrorCode errorCode,
-                        std::string errorMsg = "");
+                        StreamCloseErrorCode errorCode);
 
     int32_t nextStreamId()
     {
