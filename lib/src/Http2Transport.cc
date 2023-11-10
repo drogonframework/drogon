@@ -18,7 +18,11 @@ static std::optional<size_t> stosz(const std::string &str)
 {
     try
     {
-        return std::stoull(str);
+        size_t idx = 0;
+        size_t res = std::stoull(str, &idx);
+        if (idx != str.size())
+            return std::nullopt;
+        return res;
     }
     catch (const std::exception &)
     {
@@ -1212,9 +1216,14 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
         }
         if (key == ":status")
         {
+            auto status = stosz(value);
+            if (!status)
+            {
+                responseErrored(streamId, ReqResult::BadResponse);
+                return false;
+            }
             // TODO: Validate status code
-            stream.response->setStatusCode(
-                (drogon::HttpStatusCode)std::stoi(value));
+            stream.response->setStatusCode((HttpStatusCode)*status);
             continue;
         }
 
