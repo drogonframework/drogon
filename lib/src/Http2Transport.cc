@@ -875,6 +875,8 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 
     bool haveBody = req->body().length() > 0;
     auto &stream = createStream(streamId);
+    stream.callback = std::move(callback);
+    stream.request = req;
     bool needsContinuation = encodedHeaders.size() > maxFrameSize;
     for (size_t i = 0; i < encodedHeaders.size(); i += maxFrameSize)
     {
@@ -905,11 +907,8 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         connPtr->send(serializeFrame(frame, streamId));
         return;
     }
-    stream.callback = std::move(callback);
-    stream.request = req;
 
-    // TODO: Don't dump the entire body into TCP at once
-    if (req->body().length() == 0)
+    if (!haveBody)
     {
         LOG_TRACE << "No body to send";
         return;
