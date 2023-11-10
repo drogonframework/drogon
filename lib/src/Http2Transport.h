@@ -218,6 +218,7 @@ class Http2Transport : public HttpTransport
     bool parseAndApplyHeaders(internal::H2Stream &stream,
                               const void *data,
                               size_t len);
+    size_t sendBodyForStream(internal::H2Stream &stream, size_t offset);
 
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
