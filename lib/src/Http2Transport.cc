@@ -985,7 +985,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             // TODO: Should be half-closed but transport doesn't support it yet
             connPtr->shutdown();
         }
-        if (std::holds_alternative<PingFrame>(frame))
+        else if (std::holds_alternative<PingFrame>(frame))
         {
             auto &f = std::get<PingFrame>(frame);
             if (f.ack)
@@ -1138,6 +1138,13 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             killConnection(streamId,
                            StreamCloseErrorCode::ProtocolError,
                            "CONTINUATION frame on stream 0");
+        }
+        else if (std::holds_alternative<RstStreamFrame>(frame))
+        {
+            LOG_FATAL << "Protocol error: RST_STREAM frame on stream 0";
+            killConnection(streamId,
+                           StreamCloseErrorCode::ProtocolError,
+                           "RST_STREAM frame on stream 0");
         }
         else
         {
@@ -1356,6 +1363,12 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     {
         auto &f = std::get<WindowUpdateFrame>(frame);
         stream.avaliableTxWindow += f.windowSizeIncrement;
+    }
+    else if (std::holds_alternative<RstStreamFrame>(frame))
+    {
+        auto &f = std::get<RstStreamFrame>(frame);
+        LOG_TRACE << "RST_STREAM frame received: errorCode=" << f.errorCode;
+        responseErrored(streamId, ReqResult::BadResponse);
     }
     else
     {
