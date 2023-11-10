@@ -807,12 +807,6 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                                        HttpReqCallback &&callback)
 {
     connPtr->getLoop()->assertInLoopThread();
-    if (!serverSettingsReceived)
-    {
-        bufferedRequests.push({req, std::move(callback)});
-        return;
-    }
-
     if (streams.size() >= maxConcurrentStreams)
     {
         LOG_TRACE << "Too many streams in flight. Buffering request";
@@ -1139,27 +1133,6 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     LOG_TRACE << "Unsupported settings key: " << key;
                 }
             }
-
-            if (!serverSettingsReceived)
-            {
-                LOG_TRACE
-                    << "Server settings received. Sending our own WindowUpdate";
-
-                WindowUpdateFrame windowUpdateFrame;
-                windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
-                connPtr->send(serializeFrame(windowUpdateFrame, 0));
-                avaliableRxWindow = initialWindowSize;
-
-                serverSettingsReceived = true;
-                while (!bufferedRequests.empty() &&
-                       streams.size() < maxConcurrentStreams)
-                {
-                    auto &[req, cb] = bufferedRequests.front();
-                    sendRequestInLoop(req, std::move(cb));
-                    bufferedRequests.pop();
-                }
-            }
-
             // Somehow nghttp2 wants us to send ACK after sending our
             // preferences??
             if (flags == 1)

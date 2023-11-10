@@ -174,7 +174,6 @@ class Http2Transport : public HttpTransport
 
     int32_t currentStreamId = 1;
     std::unordered_map<int32_t, internal::H2Stream> streams;
-    bool serverSettingsReceived = false;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
     trantor::MsgBuffer headerBufferRx;
     int32_t expectngContinuationStreamId = 0;
