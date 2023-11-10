@@ -813,7 +813,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                                        HttpReqCallback &&callback)
 {
     connPtr->getLoop()->assertInLoopThread();
-    if (streams.size()+1 >= maxConcurrentStreams)
+    if (streams.size() + 1 >= maxConcurrentStreams)
     {
         LOG_TRACE << "Too many streams in flight. Buffering request";
         bufferedRequests.push({req, std::move(callback)});
@@ -988,7 +988,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             avaliableRxWindow += windowIncreaseSize;
         }
 
-        if(msg->readableBytes() == 0)
+        if (msg->readableBytes() == 0)
             break;
 
         // FIXME: The code cannot distinguish between a out-of-data and
