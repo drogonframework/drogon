@@ -7,13 +7,6 @@ using namespace drogon::internal;
 
 static const std::string_view h2_preamble = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
-static std::vector<uint8_t> s2vec(const std::string &str)
-{
-    std::vector<uint8_t> vec(str.size());
-    memcpy(vec.data(), str.data(), str.size());
-    return vec;
-}
-
 static std::optional<size_t> stosz(const std::string &str)
 {
     try
@@ -85,7 +78,8 @@ static GoAwayFrame goAway(int32_t lastStreamId,
                           StreamCloseErrorCode ec)
 {
     GoAwayFrame frame;
-    frame.additionalDebugData = s2vec(msg);
+    uint8_t *ptr = (uint8_t *)msg.data();
+    frame.additionalDebugData = std::vector<uint8_t>(ptr, ptr + msg.size());
     frame.errorCode = (uint32_t)ec;
     frame.lastStreamId = lastStreamId;
     return frame;
@@ -890,24 +884,13 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 
         auto frame = [&]() -> H2Frame {
             if (isFirst)
-            {
-                HeadersFrame frame;
-                frame.headerBlockFragment.resize(dataSize);
-                memcpy(frame.headerBlockFragment.data(),
-                       encodedHeaders.data() + i,
-                       dataSize);
-                frame.endHeaders = isLast;
-                frame.endStream = (!haveBody && isLast);
-                return frame;
-            }
-            ContinuationFrame frame;
-            frame.headerBlockFragment.resize(dataSize);
-            assert(encodedHeaders.size() > i + dataSize);
-            memcpy(frame.headerBlockFragment.data(),
-                   encodedHeaders.data() + i,
-                   dataSize);
-            frame.endHeaders = (!haveBody && isLast);
-            return frame;
+                return HeadersFrame(encodedHeaders.data() + i,
+                                    dataSize,
+                                    isLast,
+                                    !haveBody && isLast);
+            return ContinuationFrame(encodedHeaders.data() + i,
+                                     dataSize,
+                                     isLast);
         }();
 
         auto f = serializeFrame(frame, streamId);
@@ -918,8 +901,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     }
     if (needsContinuation && !haveBody)
     {
-        DataFrame frame;
-        frame.endStream = true;
+        DataFrame frame({}, true);
         connPtr->send(serializeFrame(frame, streamId));
         return;
     }
@@ -959,8 +941,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     {
         if (avaliableRxWindow < windowIncreaseThreshold)
         {
-            WindowUpdateFrame windowUpdateFrame;
-            windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
+            WindowUpdateFrame windowUpdateFrame(windowIncreaseSize);
             connPtr->send(serializeFrame(windowUpdateFrame, 0));
             avaliableRxWindow += windowIncreaseSize;
         }
@@ -1018,9 +999,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 continue;
             }
             LOG_TRACE << "Ping frame received. Sending ACK";
-            PingFrame ackFrame;
-            ackFrame.ack = true;
-            ackFrame.opaqueData = f.opaqueData;
+            PingFrame ackFrame(f.opaqueData, true);
             connPtr->send(serializeFrame(ackFrame, 0));
             continue;
         }
@@ -1139,8 +1118,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             if (flags == 1)
                 continue;
             LOG_TRACE << "Acknowledge settings frame";
-            SettingsFrame ackFrame;
-            ackFrame.ack = true;
+            SettingsFrame ackFrame(true);
             connPtr->send(serializeFrame(ackFrame, streamId));
         }
         else if (std::holds_alternative<HeadersFrame>(frame))
@@ -1383,8 +1361,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         if (stream.avaliableRxWindow < windowIncreaseThreshold)
         {
-            WindowUpdateFrame windowUpdateFrame;
-            windowUpdateFrame.windowSizeIncrement = windowIncreaseSize;
+            WindowUpdateFrame windowUpdateFrame(windowIncreaseSize);
             connPtr->send(serializeFrame(windowUpdateFrame, streamId));
             stream.avaliableRxWindow += windowIncreaseSize;
         }
@@ -1535,15 +1512,11 @@ size_t Http2Transport::sendBodyForStream(internal::H2Stream &stream,
     {
         size_t remaining = stream.request->body().length() - i;
         size_t readSize = (std::min)(maxFrameSize, remaining);
-        std::vector<uint8_t> buffer;
-        buffer.resize(readSize);
-        memcpy(buffer.data(),
-               stream.request->body().data() + offset + i,
-               readSize);
-        DataFrame dataFrame;
-        dataFrame.data = std::move(buffer);
-        dataFrame.endStream =
-            (i + maxFrameSize >= stream.request->body().length() - offset);
+        bool endStream = sendEverything && i + maxFrameSize >= sendEndPos;
+        DataFrame dataFrame((uint8_t *)stream.request->body().data() + offset +
+                                i,
+                            readSize,
+                            endStream);
         LOG_TRACE << "Sending data frame: size=" << dataFrame.data.size()
                   << " endStream=" << dataFrame.endStream;
         connPtr->send(serializeFrame(dataFrame, streamId));

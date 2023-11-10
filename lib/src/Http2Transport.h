@@ -17,6 +17,12 @@ struct OByteStream;
 
 struct SettingsFrame
 {
+    SettingsFrame() = default;
+
+    SettingsFrame(bool ack) : ack(ack)
+    {
+    }
+
     bool ack = false;
     std::vector<std::pair<uint16_t, uint32_t>> settings;
 
@@ -27,6 +33,13 @@ struct SettingsFrame
 
 struct WindowUpdateFrame
 {
+    WindowUpdateFrame() = default;
+
+    WindowUpdateFrame(uint32_t windowSizeIncrement)
+        : windowSizeIncrement(windowSizeIncrement)
+    {
+    }
+
     uint32_t windowSizeIncrement = 0;
 
     static std::optional<WindowUpdateFrame> parse(ByteStream &payload,
@@ -36,6 +49,27 @@ struct WindowUpdateFrame
 
 struct HeadersFrame
 {
+    HeadersFrame() = default;
+
+    HeadersFrame(std::vector<uint8_t> headerBlockFragment,
+                 bool endHeaders,
+                 bool endStream)
+        : headerBlockFragment(std::vector(headerBlockFragment)),
+          endHeaders(endHeaders),
+          endStream(endStream)
+    {
+    }
+
+    HeadersFrame(const uint8_t *ptr,
+                 size_t size,
+                 bool endHeaders,
+                 bool endStream)
+        : headerBlockFragment(ptr, ptr + size),
+          endHeaders(endHeaders),
+          endStream(endStream)
+    {
+    }
+
     uint8_t padLength = 0;
     bool exclusive = false;
     uint32_t streamDependency = 0;
@@ -51,6 +85,19 @@ struct HeadersFrame
 
 struct GoAwayFrame
 {
+    GoAwayFrame() = default;
+
+    GoAwayFrame(uint32_t lastStreamId,
+                uint32_t errorCode,
+                const std::string &additionalDebugData)
+        : lastStreamId(lastStreamId),
+          errorCode(errorCode),
+          additionalDebugData((const uint8_t *)additionalDebugData.data(),
+                              (const uint8_t *)additionalDebugData.data() +
+                                  additionalDebugData.size())
+    {
+    }
+
     uint32_t lastStreamId = 0;
     uint32_t errorCode = 0;
     std::vector<uint8_t> additionalDebugData;
@@ -61,6 +108,18 @@ struct GoAwayFrame
 
 struct DataFrame
 {
+    DataFrame() = default;
+
+    DataFrame(std::vector<uint8_t> data, bool endStream)
+        : data(std::move(data)), endStream(endStream)
+    {
+    }
+
+    DataFrame(const uint8_t *ptr, size_t size, bool endStream)
+        : data(ptr, ptr + size), endStream(endStream)
+    {
+    }
+
     uint8_t padLength = 0;
     std::vector<uint8_t> data;
     bool endStream = false;
@@ -71,6 +130,13 @@ struct DataFrame
 
 struct PingFrame
 {
+    PingFrame() = default;
+
+    PingFrame(std::array<uint8_t, 8> opaqueData, bool ack)
+        : opaqueData(opaqueData), ack(ack)
+    {
+    }
+
     std::array<uint8_t, 8> opaqueData;
     bool ack = false;
 
@@ -80,6 +146,19 @@ struct PingFrame
 
 struct ContinuationFrame
 {
+    ContinuationFrame() = default;
+
+    ContinuationFrame(std::vector<uint8_t> headerBlockFragment, bool endHeaders)
+        : headerBlockFragment(std::move(headerBlockFragment)),
+          endHeaders(endHeaders)
+    {
+    }
+
+    ContinuationFrame(const uint8_t *ptr, size_t size, bool endHeaders)
+        : headerBlockFragment(ptr, ptr + size), endHeaders(endHeaders)
+    {
+    }
+
     std::vector<uint8_t> headerBlockFragment;
     bool endHeaders = false;
 
@@ -90,6 +169,12 @@ struct ContinuationFrame
 
 struct RstStreamFrame
 {
+    RstStreamFrame() = default;
+
+    RstStreamFrame(uint32_t errorCode) : errorCode(errorCode)
+    {
+    }
+
     uint32_t errorCode = 0;
 
     static std::optional<RstStreamFrame> parse(ByteStream &payload,
@@ -99,6 +184,17 @@ struct RstStreamFrame
 
 struct PushPromiseFrame
 {
+    PushPromiseFrame() = default;
+
+    PushPromiseFrame(uint32_t promisedStreamId,
+                     std::vector<uint8_t> headerBlockFragment,
+                     bool endHeaders)
+        : promisedStreamId(promisedStreamId),
+          headerBlockFragment(std::move(headerBlockFragment)),
+          endHeaders(endHeaders)
+    {
+    }
+
     uint8_t padLength = 0;
     bool endHeaders = false;
     int32_t promisedStreamId = 0;
