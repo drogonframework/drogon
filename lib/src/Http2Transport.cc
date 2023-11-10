@@ -834,12 +834,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     }
 
     auto headers = req->headers();
-    HeadersFrame frame;
-    frame.padLength = 0;
-    frame.exclusive = false;
-    frame.streamDependency = 0;
-    frame.weight = 0;
-    frame.headerBlockFragment.resize(maxCompressiedHeaderSize);
+    std::vector<uint8_t> encodedHeaders(maxCompressiedHeaderSize);
 
     LOG_TRACE << "Sending HTTP/2 headers: size=" << headers.size();
     hpack::HPacker::KeyValueVector headersToEncode;
@@ -864,8 +859,8 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     for (auto &[key, value] : headersToEncode)
         LOG_TRACE << "  " << key << ": " << value;
     int n = hpackTx.encode(headersToEncode,
-                           frame.headerBlockFragment.data(),
-                           frame.headerBlockFragment.size());
+                           encodedHeaders.data(),
+                           encodedHeaders.size());
     if (n < 0)
     {
         LOG_TRACE << "Failed to encode headers. Internal error or header "
@@ -880,17 +875,54 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         abort();
         return;
     }
-    frame.headerBlockFragment.resize(n);
-    frame.endHeaders = true;
 
+    encodedHeaders.resize(n);
+    LOG_TRACE << "Encoded headers size: " << encodedHeaders.size();
+
+    bool haveBody = req->body().length() > 0;
     auto &stream = createStream(streamId);
-    if (req->body().length() == 0)
-        frame.endStream = true;
-    LOG_TRACE << "Sending headers frame";
-    auto f = serializeFrame(frame, streamId);
-    LOG_TRACE << dump_hex_beautiful(f.peek(), f.readableBytes());
-    connPtr->send(f);
+    bool needsContinuation = encodedHeaders.size() > maxFrameSize;
+    for (size_t i = 0; i < encodedHeaders.size(); i += maxFrameSize)
+    {
+        bool isFirst = i == 0;
+        bool isLast = i + maxFrameSize >= encodedHeaders.size();
+        size_t dataSize = (std::min)(maxFrameSize, encodedHeaders.size() - i);
 
+        auto frame = [&]() -> H2Frame {
+            if (isFirst)
+            {
+                HeadersFrame frame;
+                frame.headerBlockFragment.resize(dataSize);
+                memcpy(frame.headerBlockFragment.data(),
+                       encodedHeaders.data() + i,
+                       dataSize);
+                frame.endHeaders = isLast;
+                frame.endStream = (!haveBody && isLast);
+                return frame;
+            }
+            ContinuationFrame frame;
+            frame.headerBlockFragment.resize(dataSize);
+            assert(encodedHeaders.size() > i + dataSize);
+            memcpy(frame.headerBlockFragment.data(),
+                   encodedHeaders.data() + i,
+                   dataSize);
+            frame.endHeaders = (!haveBody && isLast);
+            return frame;
+        }();
+
+        auto f = serializeFrame(frame, streamId);
+        LOG_TRACE << "Sending " << (isFirst ? "HEADERS" : "CONTINUATION")
+                  << " frame:";
+        LOG_TRACE << dump_hex_beautiful(f.peek(), f.readableBytes());
+        connPtr->send(serializeFrame(frame, streamId));
+    }
+    if (needsContinuation && !haveBody)
+    {
+        DataFrame frame;
+        frame.endStream = true;
+        connPtr->send(serializeFrame(frame, streamId));
+        return;
+    }
     stream.callback = std::move(callback);
     stream.request = req;
 
