@@ -1102,7 +1102,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                        "InitialWindowSize too large");
                         return;
                     }
-                    initialWindowSize = value;
+                    initialTxWindowSize = value;
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxHeaderListSize)
                 {
@@ -1406,6 +1406,8 @@ internal::H2Stream &Http2Transport::createStream(int32_t streamId)
     }
     auto &stream = streams[streamId];
     stream.streamId = streamId;
+    stream.avaliableTxWindow = initialTxWindowSize;
+    stream.avaliableRxWindow = initialRxWindowSize;
     return stream;
 }
 

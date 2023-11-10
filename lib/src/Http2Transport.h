@@ -279,7 +279,8 @@ class Http2Transport : public HttpTransport
 
     // HTTP/2 client-wide settings (can be changed by server)
     size_t maxConcurrentStreams = 100;
-    size_t initialWindowSize = 65535;
+    size_t initialRxWindowSize = 65535;
+    size_t initialTxWindowSize = 65535;
     size_t maxFrameSize = 16384;
 
     // Configuration settings
