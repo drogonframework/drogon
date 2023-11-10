@@ -24,6 +24,7 @@
 #include <regex>
 #include <string>
 #include <vector>
+#include "SessionManager.h"
 #include "impl_forwards.h"
 
 namespace trantor
@@ -33,7 +34,8 @@ class EventLoopThreadPool;
 
 namespace drogon
 {
-HttpResponsePtr defaultErrorHandler(HttpStatusCode code);
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code,
+                                    const HttpRequestPtr &req);
 void defaultExceptionHandler(const std::exception &,
                              const HttpRequestPtr &,
                              std::function<void(const HttpResponsePtr &)> &&);
@@ -108,8 +110,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     HttpAppFramework &setCustomErrorHandler(
-        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
-        override;
+        std::function<HttpResponsePtr(HttpStatusCode,
+                                      const HttpRequestPtr &req)>
+            &&resp_generator) override;
 
     const HttpResponsePtr &getCustom404Page();
 
@@ -230,11 +233,24 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     HttpAppFramework &enableSession(
         const size_t timeout,
-        Cookie::SameSite sameSite = Cookie::SameSite::kNull) override
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull,
+        const std::string &cookieKey = "JSESSIONID",
+        int maxAge = -1,
+        SessionManager::IdGeneratorCallback idGeneratorCallback =
+            nullptr) override
     {
         useSession_ = true;
         sessionTimeout_ = timeout;
         sessionSameSite_ = sameSite;
+        sessionCookieKey_ = cookieKey;
+        sessionMaxAge_ = maxAge;
+        return setSessionIdGenerator(idGeneratorCallback);
+    }
+
+    HttpAppFramework &setSessionIdGenerator(
+        SessionManager::IdGeneratorCallback idGeneratorCallback = nullptr)
+    {
+        sessionIdGeneratorCallback_ = idGeneratorCallback;
         return *this;
     }
 
@@ -619,7 +635,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     bool areAllDbClientsAvailable() const noexcept override;
-    const std::function<HttpResponsePtr(HttpStatusCode)>
+    const std::function<HttpResponsePtr(HttpStatusCode,
+                                        const HttpRequestPtr &req)>
         &getCustomErrorHandler() const override;
 
     bool isUsingCustomErrorHandler() const
@@ -695,6 +712,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     // cookies;
     size_t sessionTimeout_{0};
     Cookie::SameSite sessionSameSite_{Cookie::SameSite::kNull};
+    std::string sessionCookieKey_{"JSESSIONID"};
+    int sessionMaxAge_{-1};
     size_t idleConnectionTimeout_{60};
     bool useSession_{false};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
@@ -760,12 +779,13 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     std::vector<AdviceStartSessionCallback> sessionStartAdvices_;
     std::vector<AdviceDestroySessionCallback> sessionDestroyAdvices_;
+    SessionManager::IdGeneratorCallback sessionIdGeneratorCallback_;
     std::shared_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
     Json::Value jsonRuntimeConfig_;
     HttpResponsePtr custom404_;
-    std::function<HttpResponsePtr(HttpStatusCode)> customErrorHandler_ =
-        &defaultErrorHandler;
+    std::function<HttpResponsePtr(HttpStatusCode, const HttpRequestPtr &req)>
+        customErrorHandler_ = &defaultErrorHandler;
     static InitBeforeMainFunction initFirst_;
     bool enableServerHeader_{true};
     bool enableDateHeader_{true};
