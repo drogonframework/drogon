@@ -111,7 +111,7 @@ struct ByteStream
 
     uint32_t readU24BE()
     {
-        assert(offset <= length - 3);
+        assert(length >= 3 && offset <= length - 3);
         uint32_t res =
             ptr[offset] << 16 | ptr[offset + 1] << 8 | ptr[offset + 2];
         offset += 3;
@@ -120,7 +120,7 @@ struct ByteStream
 
     uint32_t readU32BE()
     {
-        assert(offset <= length - 4);
+        assert(length >= 4 && offset <= length - 4);
         uint32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
                        ptr[offset + 2] << 8 | ptr[offset + 3];
         offset += 4;
@@ -129,7 +129,7 @@ struct ByteStream
 
     std::pair<bool, int32_t> readBI32BE()
     {
-        assert(offset <= length - 4);
+        assert(length >= 4 && offset <= length - 4);
         int32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
                       ptr[offset + 2] << 8 | ptr[offset + 3];
         offset += 4;
@@ -141,7 +141,7 @@ struct ByteStream
 
     uint16_t readU16BE()
     {
-        assert(offset <= length - 2);
+        assert(length >= 2 && offset <= length - 2);
         uint16_t res = ptr[offset] << 8 | ptr[offset + 1];
         offset += 2;
         return res;
@@ -149,13 +149,13 @@ struct ByteStream
 
     uint8_t readU8()
     {
-        assert(offset <= length - 1);
+        assert(length >= 1 && offset <= length - 1);
         return ptr[offset++];
     }
 
     void read(uint8_t *buffer, size_t size)
     {
-        assert(offset <= length - size || size == 0);
+        assert((length >= size && offset <= length - size) || size == 0);
         memcpy(buffer, ptr + offset, size);
         offset += size;
     }
@@ -175,7 +175,7 @@ struct ByteStream
 
     void skip(size_t n)
     {
-        assert(offset <= length - n || n == 0);
+        assert((length >= n && offset <= length - n) || n == 0);
         offset += n;
     }
 
@@ -231,6 +231,7 @@ struct OByteStream
     {
         assert(value <= 0xffffff);
         assert(offset <= buffer.readableBytes() - 3);
+        assert(buffer.writableBytes() >= 3);
         auto ptr = (uint8_t *)buffer.peek() + offset;
         ptr[0] = value >> 16;
         ptr[1] = value >> 8;
@@ -240,6 +241,7 @@ struct OByteStream
     void overwriteU8(size_t offset, uint8_t value)
     {
         assert(offset <= buffer.readableBytes() - 1);
+        assert(buffer.writableBytes() >= 1);
         auto ptr = (uint8_t *)buffer.peek() + offset;
         ptr[0] = value;
     }
@@ -811,7 +813,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                                        HttpReqCallback &&callback)
 {
     connPtr->getLoop()->assertInLoopThread();
-    if (streams.size() >= maxConcurrentStreams)
+    if (streams.size()+1 >= maxConcurrentStreams)
     {
         LOG_TRACE << "Too many streams in flight. Buffering request";
         bufferedRequests.push({req, std::move(callback)});
@@ -953,7 +955,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         connPtr->send(serializeFrame(dataFrame, streamId));
 
         stream.avaliableTxWindow -= dataFrame.data.size();
-        avaliableRxWindow -= dataFrame.data.size();
+        avaliableTxWindow -= dataFrame.data.size();
     }
 
     if (!sendEverything)
@@ -985,6 +987,9 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             connPtr->send(serializeFrame(windowUpdateFrame, 0));
             avaliableRxWindow += windowIncreaseSize;
         }
+
+        if(msg->readableBytes() == 0)
+            break;
 
         // FIXME: The code cannot distinguish between a out-of-data and
         // unsupported frame type. We need to fix this as it should be handled
@@ -1340,7 +1345,6 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     else if (std::holds_alternative<DataFrame>(frame))
     {
         auto &f = std::get<DataFrame>(frame);
-        // TODO: Make sure this logic fits RFC
         if (avaliableRxWindow < f.data.size())
         {
             killConnection(streamId,
@@ -1406,6 +1410,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         size_t i = 0;
         size_t sendOffset = it->second;
+        assert(stream.request != nullptr);
+        assert(stream.request->body().length() > sendOffset);
         size_t maxSendSize = stream.request->body().length() - sendOffset;
         maxSendSize = (std::min)(maxSendSize, stream.avaliableTxWindow);
         maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
@@ -1431,7 +1437,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             connPtr->send(serializeFrame(dataFrame, streamId));
 
             stream.avaliableTxWindow -= dataFrame.data.size();
-            avaliableRxWindow -= dataFrame.data.size();
+            avaliableTxWindow -= dataFrame.data.size();
         }
 
         if (sendEverything)
@@ -1518,6 +1524,8 @@ void Http2Transport::onError(ReqResult result)
         cb(result, nullptr);
         bufferedRequests.pop();
     }
+
+    pendingDataSend.clear();
 }
 
 void Http2Transport::killConnection(int32_t lastStreamId,
