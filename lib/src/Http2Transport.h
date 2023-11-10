@@ -172,13 +172,14 @@ class Http2Transport : public HttpTransport
     hpack::HPacker hpackTx;
     hpack::HPacker hpackRx;
 
-    std::priority_queue<int32_t> usibleStreamIds;
     int32_t currentStreamId = 1;
     std::unordered_map<int32_t, internal::H2Stream> streams;
     bool serverSettingsReceived = false;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
     trantor::MsgBuffer headerBufferRx;
     int32_t expectngContinuationStreamId = 0;
+
+    std::unordered_map<int32_t, size_t> pendingDataSend;
     // TODO: Handle server-initiated stream creation
 
     // HTTP/2 client-wide settings (can be changed by server)

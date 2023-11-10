@@ -933,29 +933,41 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         return;
     }
 
-    if (req->body().length() > stream.avaliableTxWindow)
-    {
-        LOG_ERROR << "HTTP/2 body too large to fit in INITIAL_WINDOW_SIZE. Not "
-                     "supported yet.";
-        abort();
-        return;
-    }
+    size_t bodySize = req->body().length();
+    bool sendEverything =
+        bodySize <= stream.avaliableTxWindow && bodySize <= avaliableTxWindow;
+    size_t maxSendSize = bodySize;
+    maxSendSize = (std::min)(maxSendSize, stream.avaliableTxWindow);
+    maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
 
     DataFrame dataFrame;
-    for (size_t i = 0; i < req->body().length(); i += maxFrameSize)
+    size_t i;
+    for (i = 0; i < maxSendSize; i += maxFrameSize)
     {
-        size_t readSize = (std::min)(maxFrameSize, req->body().length() - i);
+        size_t readSize = (std::min)(maxFrameSize, bodySize - i);
         std::vector<uint8_t> buffer;
         buffer.resize(readSize);
         memcpy(buffer.data(), req->body().data() + i, readSize);
         dataFrame.data = std::move(buffer);
-        dataFrame.endStream = (i + maxFrameSize >= req->body().length());
+        dataFrame.endStream = (i + maxFrameSize >= bodySize);
         LOG_TRACE << "Sending data frame: size=" << dataFrame.data.size()
                   << " endStream=" << dataFrame.endStream;
         connPtr->send(serializeFrame(dataFrame, streamId));
 
         stream.avaliableTxWindow -= dataFrame.data.size();
         avaliableRxWindow -= dataFrame.data.size();
+    }
+
+    if (!sendEverything)
+    {
+        auto it = pendingDataSend.find(streamId);
+        if (it != pendingDataSend.end())
+        {
+            LOG_FATAL << "Stream id already in use! This should not happen";
+            abort();
+        }
+
+        pendingDataSend.emplace(streamId, i);
     }
 }
 
@@ -1070,6 +1082,14 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
             avaliableTxWindow += f.windowSizeIncrement;
+
+            // HACK: Notify stream we have more window size available
+            auto it = pendingDataSend.begin();
+            if (it == pendingDataSend.end())
+                continue;
+            auto hackFrame = f;
+            hackFrame.windowSizeIncrement = 0;
+            handleFrameForStream(hackFrame, it->first, 0);
         }
         else if (std::holds_alternative<SettingsFrame>(frame))
         {
@@ -1395,6 +1415,47 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     {
         auto &f = std::get<WindowUpdateFrame>(frame);
         stream.avaliableTxWindow += f.windowSizeIncrement;
+        if (avaliableTxWindow == 0)
+            return;
+
+        auto it = pendingDataSend.find(streamId);
+        if (it == pendingDataSend.end())
+            return;
+
+        size_t i = 0;
+        size_t sendOffset = it->second;
+        size_t maxSendSize = stream.request->body().length() - sendOffset;
+        maxSendSize = (std::min)(maxSendSize, stream.avaliableTxWindow);
+        maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
+        bool sendEverything =
+            maxSendSize == stream.request->body().length() - sendOffset;
+        for (i = 0; i < maxSendSize; i += maxFrameSize)
+        {
+            size_t readSize =
+                (std::min)(maxFrameSize,
+                           stream.request->body().length() - sendOffset - i);
+            std::vector<uint8_t> buffer;
+            buffer.resize(readSize);
+            memcpy(buffer.data(),
+                   stream.request->body().data() + sendOffset + i,
+                   readSize);
+            DataFrame dataFrame;
+            dataFrame.data = std::move(buffer);
+            dataFrame.endStream =
+                (i + maxFrameSize >=
+                 stream.request->body().length() - sendOffset);
+            LOG_TRACE << "Sending data frame: size=" << dataFrame.data.size()
+                      << " endStream=" << dataFrame.endStream;
+            connPtr->send(serializeFrame(dataFrame, streamId));
+
+            stream.avaliableTxWindow -= dataFrame.data.size();
+            avaliableRxWindow -= dataFrame.data.size();
+        }
+
+        if (sendEverything)
+            pendingDataSend.erase(it);
+        else
+            it->second = sendOffset + i;
     }
     else if (std::holds_alternative<RstStreamFrame>(frame))
     {
@@ -1433,6 +1494,10 @@ void Http2Transport::responseSuccess(internal::H2Stream &stream)
     respCallback(stream.response, {stream.request, stream.callback}, connPtr);
     streams.erase(it);
 
+    auto it2 = pendingDataSend.find(streamId);
+    if (it2 != pendingDataSend.end())
+        pendingDataSend.erase(it2);
+
     if (bufferedRequests.empty())
         return;
     auto &[req, cb] = bufferedRequests.front();
@@ -1446,6 +1511,10 @@ void Http2Transport::responseErrored(int32_t streamId, ReqResult result)
     assert(it != streams.end());
     it->second.callback(result, nullptr);
     streams.erase(it);
+
+    auto it2 = pendingDataSend.find(streamId);
+    if (it2 != pendingDataSend.end())
+        pendingDataSend.erase(it2);
 
     if (bufferedRequests.empty())
         return;
@@ -1488,5 +1557,7 @@ bool Http2Transport::handleConnectionClose()
         return false;
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);
+    streams.clear();
+    pendingDataSend.clear();
     return true;
 }
