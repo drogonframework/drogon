@@ -115,8 +115,8 @@ class DrObject : public virtual DrObjectBase
             }
             else
             {
-                LOG_ERROR << "Class " << className()
-                          << " is not default constructible!";
+                static_assert(std::is_default_constructible<D>::value,
+                              "Class is not default constructable!");
             }
         }
     };

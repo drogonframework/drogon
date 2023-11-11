@@ -254,8 +254,8 @@ class HttpBinder : public HttpBinderBase
                 "your handler argument type must be value type or const left "
                 "reference type or right reference type");
             using ValueType =
-                typename std::remove_cv<typename std::remove_reference<
-                    nth_argument_type<sizeof...(Values)>>::type>::type;
+                typename std::remove_cv_t<typename std::remove_reference_t<
+                    nth_argument_type<sizeof...(Values)>>>;
             ValueType value = ValueType();
             if (!pathArguments.empty())
             {
