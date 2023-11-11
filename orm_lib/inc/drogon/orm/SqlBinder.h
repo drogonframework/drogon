@@ -372,67 +372,64 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     self &operator<<(T &&parameter)
     {
         using ParaType = std::remove_cv_t<std::remove_reference_t<T>>;
-        if constexpr (!std::is_same_v<ParaType, trantor::Date>)
+        ++parametersNumber_;
+        std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
+        if (type_ == ClientType::PostgreSQL)
         {
-            ++parametersNumber_;
-            std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
-            if (type_ == ClientType::PostgreSQL)
+            switch (sizeof(T))
             {
-                switch (sizeof(T))
-                {
-                    case 2:
-                        *std::static_pointer_cast<uint16_t>(obj) =
-                            htons((uint16_t)parameter);
-                        break;
-                    case 4:
-                        *std::static_pointer_cast<uint32_t>(obj) =
-                            htonl((uint32_t)parameter);
-                        break;
-                    case 8:
-                        *std::static_pointer_cast<uint64_t>(obj) =
-                            htonll((uint64_t)parameter);
-                        break;
-                    case 1:
-                    default:
-                        break;
-                }
-                objs_.push_back(obj);
-                parameters_.push_back((char *)obj.get());
-                lengths_.push_back(sizeof(T));
-                formats_.push_back(1);
+                case 2:
+                    *std::static_pointer_cast<uint16_t>(obj) =
+                        htons((uint16_t)parameter);
+                    break;
+                case 4:
+                    *std::static_pointer_cast<uint32_t>(obj) =
+                        htonl((uint32_t)parameter);
+                    break;
+                case 8:
+                    *std::static_pointer_cast<uint64_t>(obj) =
+                        htonll((uint64_t)parameter);
+                    break;
+                case 1:
+                default:
+                    break;
             }
-            else if (type_ == ClientType::Mysql)
-            {
-                objs_.push_back(obj);
-                parameters_.push_back((char *)obj.get());
-                lengths_.push_back(0);
-                formats_.push_back(getMysqlTypeBySize(sizeof(T)));
-            }
-            else if (type_ == ClientType::Sqlite3)
-            {
-                objs_.push_back(obj);
-                parameters_.push_back((char *)obj.get());
-                lengths_.push_back(0);
-                switch (sizeof(T))
-                {
-                    case 1:
-                        formats_.push_back(Sqlite3TypeChar);
-                        break;
-                    case 2:
-                        formats_.push_back(Sqlite3TypeShort);
-                        break;
-                    case 4:
-                        formats_.push_back(Sqlite3TypeInt);
-                        break;
-                    case 8:
-                        formats_.push_back(Sqlite3TypeInt64);
-                    default:
-                        break;
-                }
-            }
-            // LOG_TRACE << "Bind parameter:" << parameter;
-            return *this;
+            objs_.push_back(obj);
+            parameters_.push_back((char *)obj.get());
+            lengths_.push_back(sizeof(T));
+            formats_.push_back(1);
         }
+        else if (type_ == ClientType::Mysql)
+        {
+            objs_.push_back(obj);
+            parameters_.push_back((char *)obj.get());
+            lengths_.push_back(0);
+            formats_.push_back(getMysqlTypeBySize(sizeof(T)));
+        }
+        else if (type_ == ClientType::Sqlite3)
+        {
+            objs_.push_back(obj);
+            parameters_.push_back((char *)obj.get());
+            lengths_.push_back(0);
+            switch (sizeof(T))
+            {
+                case 1:
+                    formats_.push_back(Sqlite3TypeChar);
+                    break;
+                case 2:
+                    formats_.push_back(Sqlite3TypeShort);
+                    break;
+                case 4:
+                    formats_.push_back(Sqlite3TypeInt);
+                    break;
+                case 8:
+                    formats_.push_back(Sqlite3TypeInt64);
+                default:
+                    break;
+            }
+        }
+        // LOG_TRACE << "Bind parameter:" << parameter;
+        return *this;
     }
 
     // template <>
@@ -467,19 +464,9 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
 
     self &operator<<(std::string &&str);
 
-    self &operator<<(trantor::Date &&date)
+    self &operator<<(trantor::Date date)
     {
         return operator<<(date.toDbStringLocal());
-    }
-
-    self &operator<<(const trantor::Date &date)
-    {
-        return operator<<(date.toDbStringLocal());
-    }
-
-    self &operator<<(trantor::Date &date)
-    {
-        return operator<<((const trantor::Date &)date);
     }
 
     self &operator<<(const std::vector<char> &v);
