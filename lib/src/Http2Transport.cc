@@ -1170,6 +1170,7 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
         LOG_TRACE << "  " << key << ": " << value;
     assert(stream.response == nullptr);
     stream.response = std::make_shared<HttpResponseImpl>();
+    stream.response->setVersion(Version::kHttp2);
     for (const auto &[key, value] : headers)
     {
         // TODO: Filter more pseudo headers
