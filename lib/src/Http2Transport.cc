@@ -899,7 +899,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         LOG_TRACE << "Sending " << (isFirst ? "HEADERS" : "CONTINUATION")
                   << " frame:";
         LOG_TRACE << dump_hex_beautiful(f.peek(), f.readableBytes());
-        connPtr->send(serializeFrame(frame, streamId));
+        connPtr->send(f);
     }
     if (needsContinuation && !haveBody)
     {
