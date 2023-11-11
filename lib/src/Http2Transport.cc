@@ -699,11 +699,6 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, int32_t streamId)
         ok = f.serialize(buffer, flags);
         type = (uint8_t)H2FrameType::RstStream;
     }
-    else
-    {
-        LOG_ERROR << "Unsupported frame type";
-        abort();
-    }
 
     if (!ok)
     {

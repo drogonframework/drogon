@@ -87,6 +87,8 @@ class HttpRequestImpl : public HttpRequest
         return loop_;
     }
 
+    // [[deprcated("Now version is controlled by the HttpClient. Calling
+    // setVersion() will have no effect.")]]
     void setVersion(Version v)
     {
         version_ = v;
@@ -169,9 +171,10 @@ class HttpRequestImpl : public HttpRequest
         pathEncode_ = pathEncode;
     }
 
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &parameters() const override
+    const std::unordered_map<std::string,
+                             std::string,
+                             utils::internal::SafeStringHash> &
+    parameters() const override
     {
         parseParametersOnce();
         return parameters_;
@@ -341,16 +344,18 @@ class HttpRequestImpl : public HttpRequest
         return defaultVal;
     }
 
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &headers() const override
+    const std::unordered_map<std::string,
+                             std::string,
+                             utils::internal::SafeStringHash> &
+    headers() const override
     {
         return headers_;
     }
 
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &cookies() const override
+    const std::unordered_map<std::string,
+                             std::string,
+                             utils::internal::SafeStringHash> &
+    cookies() const override
     {
         return cookies_;
     }
