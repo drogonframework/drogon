@@ -904,7 +904,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     if (needsContinuation && !haveBody)
     {
         DataFrame frame({}, true);
-        connPtr->send(serializeFrame(frame, streamId));
+        sendFrame(frame, streamId);
         return;
     }
 
@@ -941,7 +941,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         if (avaliableRxWindow < windowIncreaseThreshold)
         {
             WindowUpdateFrame windowUpdateFrame(windowIncreaseSize);
-            connPtr->send(serializeFrame(windowUpdateFrame, 0));
+            sendFrame(windowUpdateFrame, 0);
             avaliableRxWindow += windowIncreaseSize;
         }
 
@@ -999,7 +999,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             }
             LOG_TRACE << "Ping frame received. Sending ACK";
             PingFrame ackFrame(f.opaqueData, true);
-            connPtr->send(serializeFrame(ackFrame, 0));
+            sendFrame(ackFrame, 0);
             continue;
         }
 
@@ -1118,7 +1118,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 continue;
             LOG_TRACE << "Acknowledge settings frame";
             SettingsFrame ackFrame(true);
-            connPtr->send(serializeFrame(ackFrame, streamId));
+            sendFrame(ackFrame, streamId);
         }
         else if (std::holds_alternative<HeadersFrame>(frame))
         {
@@ -1225,13 +1225,14 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
         return;
     // Send HTTP/2 magic string
     connPtr->send(h2_preamble.data(), h2_preamble.length());
+    *bytesSent_ += h2_preamble.length();
 
     // RFC 9113 3.4
     // > This sequence MUST be followed by a SETTINGS frame.
     SettingsFrame settingsFrame;
     settingsFrame.settings.emplace_back((uint16_t)H2SettingsKey::EnablePush,
                                         0);  // Disable push
-    connPtr->send(serializeFrame(settingsFrame, 0));
+    sendFrame(settingsFrame, 0);
 }
 
 void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
@@ -1361,7 +1362,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         if (stream.avaliableRxWindow < windowIncreaseThreshold)
         {
             WindowUpdateFrame windowUpdateFrame(windowIncreaseSize);
-            connPtr->send(serializeFrame(windowUpdateFrame, streamId));
+            sendFrame(windowUpdateFrame, streamId);
             stream.avaliableRxWindow += windowIncreaseSize;
         }
     }
@@ -1474,7 +1475,7 @@ void Http2Transport::killConnection(int32_t lastStreamId,
 {
     LOG_TRACE << "Killing connection with error: " << errorMsg;
     connPtr->getLoop()->assertInLoopThread();
-    connPtr->send(serializeFrame(goAway(lastStreamId, errorMsg, errorCode), 0));
+    sendFrame(goAway(lastStreamId, errorMsg, errorCode), 0);
 
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);
@@ -1520,10 +1521,17 @@ size_t Http2Transport::sendBodyForStream(internal::H2Stream &stream,
                             endStream);
         LOG_TRACE << "Sending data frame: size=" << dataFrame.data.size()
                   << " endStream=" << dataFrame.endStream;
-        connPtr->send(serializeFrame(dataFrame, streamId));
+        sendFrame(dataFrame, streamId);
 
         stream.avaliableTxWindow -= dataFrame.data.size();
         avaliableTxWindow -= dataFrame.data.size();
     }
     return i;
+}
+
+void Http2Transport::sendFrame(const internal::H2Frame &frame, int32_t streamId)
+{
+    auto serializedFrame = serializeFrame(frame, streamId);
+    *bytesSent_ += serializedFrame.readableBytes();
+    connPtr->send(std::move(serializedFrame));
 }

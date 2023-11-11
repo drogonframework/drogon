@@ -316,6 +316,7 @@ class Http2Transport : public HttpTransport
                               const void *data,
                               size_t len);
     size_t sendBodyForStream(internal::H2Stream &stream, size_t offset);
+    void sendFrame(const internal::H2Frame &frame, int32_t streamId);
 
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
