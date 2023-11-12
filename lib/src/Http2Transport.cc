@@ -1376,7 +1376,6 @@ void Http2Transport::sendFrame(const internal::H2Frame &frame, int32_t streamId)
 
 void Http2Transport::sendBufferedData()
 {
-    LOG_WARN << "Sending buffered data. Size: " << batchedSendBuffer.size();
     if (batchedSendBuffer.size() == 0)
         return;
     OByteStream buffer;
