@@ -73,180 +73,23 @@ enum class H2PingFlags
     Ack = 0x1
 };
 
-static GoAwayFrame goAway(int32_t lastStreamId,
-                          const std::string &msg,
-                          StreamCloseErrorCode ec)
-{
-    GoAwayFrame frame;
-    uint8_t *ptr = (uint8_t *)msg.data();
-    frame.additionalDebugData = std::vector<uint8_t>(ptr, ptr + msg.size());
-    frame.errorCode = (uint32_t)ec;
-    frame.lastStreamId = lastStreamId;
-    return frame;
-}
-
 namespace drogon::internal
 {
-
-// Quick and dirty ByteStream implementation and extensions so we can use it
-// to read from the buffer, safely. At least it checks for buffer overflows
-// in debug mode.
-struct ByteStream
+template <typename T>
+struct Defer
 {
-    ByteStream(uint8_t *ptr, size_t length) : ptr(ptr), length(length)
+    Defer(T &&f) : f(std::move(f))
     {
     }
 
-    ByteStream(const trantor::MsgBuffer &buffer, size_t length)
-        : ptr((uint8_t *)buffer.peek()), length(length)
+    ~Defer()
     {
-        assert(length <= buffer.readableBytes());
+        f();
     }
 
-    uint32_t readU24BE()
-    {
-        assert(length >= 3 && offset <= length - 3);
-        uint32_t res =
-            ptr[offset] << 16 | ptr[offset + 1] << 8 | ptr[offset + 2];
-        offset += 3;
-        return res;
-    }
-
-    uint32_t readU32BE()
-    {
-        assert(length >= 4 && offset <= length - 4);
-        uint32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
-                       ptr[offset + 2] << 8 | ptr[offset + 3];
-        offset += 4;
-        return res;
-    }
-
-    std::pair<bool, int32_t> readBI32BE()
-    {
-        assert(length >= 4 && offset <= length - 4);
-        int32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
-                      ptr[offset + 2] << 8 | ptr[offset + 3];
-        offset += 4;
-        constexpr int32_t mask = 0x7fffffff;
-        bool flag = res & (~mask);
-        res &= mask;
-        return {flag, res};
-    }
-
-    uint16_t readU16BE()
-    {
-        assert(length >= 2 && offset <= length - 2);
-        uint16_t res = ptr[offset] << 8 | ptr[offset + 1];
-        offset += 2;
-        return res;
-    }
-
-    uint8_t readU8()
-    {
-        assert(length >= 1 && offset <= length - 1);
-        return ptr[offset++];
-    }
-
-    void read(uint8_t *buffer, size_t size)
-    {
-        assert((length >= size && offset <= length - size) || size == 0);
-        memcpy(buffer, ptr + offset, size);
-        offset += size;
-    }
-
-    void read(std::vector<uint8_t> &buffer, size_t size)
-    {
-        buffer.resize(buffer.size() + size);
-        read(buffer.data(), size);
-    }
-
-    std::vector<uint8_t> read(size_t size)
-    {
-        std::vector<uint8_t> buffer;
-        read(buffer, size);
-        return buffer;
-    }
-
-    void skip(size_t n)
-    {
-        assert((length >= n && offset <= length - n) || n == 0);
-        offset += n;
-    }
-
-    size_t size() const
-    {
-        return length;
-    }
-
-    size_t remaining() const
-    {
-        return length - offset;
-    }
-
-  protected:
-    uint8_t *ptr;
-    size_t length;
-    size_t offset = 0;
+    T f;
 };
 
-// DITTO but for serialization
-struct OByteStream
-{
-    void writeU24BE(uint32_t value)
-    {
-        assert(value <= 0xffffff);
-        value = htonl(value);
-        buffer.append((char *)&value + 1, 3);
-    }
-
-    void writeU32BE(uint32_t value)
-    {
-        value = htonl(value);
-        buffer.append((char *)&value, 4);
-    }
-
-    void writeU16BE(uint16_t value)
-    {
-        value = htons(value);
-        buffer.append((char *)&value, 2);
-    }
-
-    void writeU8(uint8_t value)
-    {
-        buffer.append((char *)&value, 1);
-    }
-
-    void write(const uint8_t *ptr, size_t size)
-    {
-        buffer.append((char *)ptr, size);
-    }
-
-    void overwriteU24BE(size_t offset, uint32_t value)
-    {
-        assert(value <= 0xffffff);
-        assert(offset <= buffer.readableBytes() - 3);
-        assert(buffer.writableBytes() >= 3);
-        auto ptr = (uint8_t *)buffer.peek() + offset;
-        ptr[0] = value >> 16;
-        ptr[1] = value >> 8;
-        ptr[2] = value;
-    }
-
-    void overwriteU8(size_t offset, uint8_t value)
-    {
-        assert(offset <= buffer.readableBytes() - 1);
-        assert(buffer.writableBytes() >= 1);
-        auto ptr = (uint8_t *)buffer.peek() + offset;
-        ptr[0] = value;
-    }
-
-    uint8_t *peek()
-    {
-        return (uint8_t *)buffer.peek();
-    }
-
-    trantor::MsgBuffer buffer;
-};
 
 std::optional<SettingsFrame> SettingsFrame::parse(ByteStream &payload,
                                                   uint8_t flags)
@@ -634,9 +477,11 @@ static std::string dump_hex_beautiful(const void *ptr, size_t size)
     return ss.str();
 }
 
-static trantor::MsgBuffer serializeFrame(const H2Frame &frame, int32_t streamId)
+static void serializeFrame(OByteStream &buffer,
+                           const H2Frame &frame,
+                           int32_t streamId)
 {
-    OByteStream buffer;
+    size_t baseOffset = buffer.size();
     buffer.writeU24BE(0);  // Placeholder for length
     buffer.writeU8(0);     // Placeholder for type
     buffer.writeU8(0);     // Placeholder for flags
@@ -706,16 +551,15 @@ static trantor::MsgBuffer serializeFrame(const H2Frame &frame, int32_t streamId)
         abort();
     }
 
-    auto length = buffer.buffer.readableBytes() - 9;
+    auto length = buffer.buffer.readableBytes() - 9 - baseOffset;
     if (length > 0x7fffff)
     {
         LOG_FATAL << "HTTP/2 frame too large during serialization";
         abort();
     }
-    buffer.overwriteU24BE(0, (int)length);
-    buffer.overwriteU8(3, type);
-    buffer.overwriteU8(4, flags);
-    return buffer.buffer;
+    buffer.overwriteU24BE(baseOffset + 0, (int)length);
+    buffer.overwriteU8(baseOffset + 3, type);
+    buffer.overwriteU8(baseOffset + 4, flags);
 }
 
 // return streamId, frame, error and should continue parsing
@@ -801,6 +645,7 @@ static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
 void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                                        HttpReqCallback &&callback)
 {
+    Defer d([this]() { sendBufferedData(); });
     connPtr->getLoop()->assertInLoopThread();
     if (streams.size() + 1 >= maxConcurrentStreams)
     {
@@ -890,11 +735,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                                      isLast);
         }();
 
-        auto f = serializeFrame(frame, streamId);
-        LOG_TRACE << "Sending " << (isFirst ? "HEADERS" : "CONTINUATION")
-                  << " frame:";
-        LOG_TRACE << dump_hex_beautiful(f.peek(), f.readableBytes());
-        connPtr->send(f);
+        sendFrame(frame, streamId);
     }
     if (needsContinuation && !haveBody)
     {
@@ -927,6 +768,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                    trantor::MsgBuffer *msg)
 {
+    Defer d([this]() { sendBufferedData(); });
     LOG_TRACE << "HTTP/2 message received:";
     assert(bytesReceived_ != nullptr);
     *bytesReceived_ += msg->readableBytes();
@@ -1011,7 +853,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                            StreamCloseErrorCode::ProtocolError,
                            "Expecting CONTINUATION frame for stream " +
                                std::to_string(expectngContinuationStreamId));
-            return;
+            break;
         }
 
         if (std::holds_alternative<PushPromiseFrame>(frame))
@@ -1021,7 +863,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             killConnection(streamId,
                            StreamCloseErrorCode::ProtocolError,
                            "Push promise not supported");
-            return;
+            break;
         }
 
         if (streamId != 0)
@@ -1083,7 +925,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                        StreamCloseErrorCode::ProtocolError,
                                        "MaxFrameSize must be between 16384 and "
                                        "16777215");
-                        return;
+                        break;
                     }
                     maxFrameSize = value;
                 }
@@ -1094,7 +936,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                         killConnection(streamId,
                                        StreamCloseErrorCode::FlowControlError,
                                        "InitialWindowSize too large");
-                        return;
+                        break;
                     }
                     initialTxWindowSize = value;
                 }
@@ -1471,7 +1313,7 @@ void Http2Transport::killConnection(int32_t lastStreamId,
 {
     LOG_TRACE << "Killing connection with error: " << errorMsg;
     connPtr->getLoop()->assertInLoopThread();
-    sendFrame(goAway(lastStreamId, errorMsg, errorCode), 0);
+    sendFrame(GoAwayFrame(lastStreamId, (uint32_t)errorCode, errorMsg), 0);
 
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);
@@ -1527,7 +1369,17 @@ size_t Http2Transport::sendBodyForStream(internal::H2Stream &stream,
 
 void Http2Transport::sendFrame(const internal::H2Frame &frame, int32_t streamId)
 {
-    auto serializedFrame = serializeFrame(frame, streamId);
-    *bytesSent_ += serializedFrame.readableBytes();
-    connPtr->send(std::move(serializedFrame));
+    size_t frameSize = batchedSendBuffer.size();
+    serializeFrame(batchedSendBuffer, frame, streamId);
+    *bytesSent_ += batchedSendBuffer.size() - frameSize;
+}
+
+void Http2Transport::sendBufferedData()
+{
+    LOG_WARN << "Sending buffered data. Size: " << batchedSendBuffer.size();
+    if (batchedSendBuffer.size() == 0)
+        return;
+    OByteStream buffer;
+    std::swap(buffer, batchedSendBuffer);
+    connPtr->send(std::move(buffer.buffer));
 }

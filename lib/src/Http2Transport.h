@@ -12,8 +12,170 @@ namespace drogon
 
 namespace internal
 {
-struct ByteStream;
-struct OByteStream;
+// Quick and dirty ByteStream implementation and extensions so we can use it
+// to read from the buffer, safely. At least it checks for buffer overflows
+// in debug mode.
+struct ByteStream
+{
+    ByteStream(uint8_t *ptr, size_t length) : ptr(ptr), length(length)
+    {
+    }
+
+    ByteStream(const trantor::MsgBuffer &buffer, size_t length)
+        : ptr((uint8_t *)buffer.peek()), length(length)
+    {
+        assert(length <= buffer.readableBytes());
+    }
+
+    uint32_t readU24BE()
+    {
+        assert(length >= 3 && offset <= length - 3);
+        uint32_t res =
+            ptr[offset] << 16 | ptr[offset + 1] << 8 | ptr[offset + 2];
+        offset += 3;
+        return res;
+    }
+
+    uint32_t readU32BE()
+    {
+        assert(length >= 4 && offset <= length - 4);
+        uint32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
+                       ptr[offset + 2] << 8 | ptr[offset + 3];
+        offset += 4;
+        return res;
+    }
+
+    std::pair<bool, int32_t> readBI32BE()
+    {
+        assert(length >= 4 && offset <= length - 4);
+        int32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
+                      ptr[offset + 2] << 8 | ptr[offset + 3];
+        offset += 4;
+        constexpr int32_t mask = 0x7fffffff;
+        bool flag = res & (~mask);
+        res &= mask;
+        return {flag, res};
+    }
+
+    uint16_t readU16BE()
+    {
+        assert(length >= 2 && offset <= length - 2);
+        uint16_t res = ptr[offset] << 8 | ptr[offset + 1];
+        offset += 2;
+        return res;
+    }
+
+    uint8_t readU8()
+    {
+        assert(length >= 1 && offset <= length - 1);
+        return ptr[offset++];
+    }
+
+    void read(uint8_t *buffer, size_t size)
+    {
+        assert((length >= size && offset <= length - size) || size == 0);
+        memcpy(buffer, ptr + offset, size);
+        offset += size;
+    }
+
+    void read(std::vector<uint8_t> &buffer, size_t size)
+    {
+        buffer.resize(buffer.size() + size);
+        read(buffer.data(), size);
+    }
+
+    std::vector<uint8_t> read(size_t size)
+    {
+        std::vector<uint8_t> buffer;
+        read(buffer, size);
+        return buffer;
+    }
+
+    void skip(size_t n)
+    {
+        assert((length >= n && offset <= length - n) || n == 0);
+        offset += n;
+    }
+
+    size_t size() const
+    {
+        return length;
+    }
+
+    size_t remaining() const
+    {
+        return length - offset;
+    }
+
+  protected:
+    uint8_t *ptr;
+    size_t length;
+    size_t offset = 0;
+};
+
+// DITTO but for serialization
+struct OByteStream
+{
+    void writeU24BE(uint32_t value)
+    {
+        assert(value <= 0xffffff);
+        value = htonl(value);
+        buffer.append((char *)&value + 1, 3);
+    }
+
+    void writeU32BE(uint32_t value)
+    {
+        value = htonl(value);
+        buffer.append((char *)&value, 4);
+    }
+
+    void writeU16BE(uint16_t value)
+    {
+        value = htons(value);
+        buffer.append((char *)&value, 2);
+    }
+
+    void writeU8(uint8_t value)
+    {
+        buffer.append((char *)&value, 1);
+    }
+
+    void write(const uint8_t *ptr, size_t size)
+    {
+        buffer.append((char *)ptr, size);
+    }
+
+    void overwriteU24BE(size_t offset, uint32_t value)
+    {
+        assert(value <= 0xffffff);
+        assert(offset <= buffer.readableBytes() - 3);
+        assert(buffer.writableBytes() >= 3);
+        auto ptr = (uint8_t *)buffer.peek() + offset;
+        ptr[0] = value >> 16;
+        ptr[1] = value >> 8;
+        ptr[2] = value;
+    }
+
+    void overwriteU8(size_t offset, uint8_t value)
+    {
+        assert(offset <= buffer.readableBytes() - 1);
+        assert(buffer.writableBytes() >= 1);
+        auto ptr = (uint8_t *)buffer.peek() + offset;
+        ptr[0] = value;
+    }
+
+    uint8_t *peek()
+    {
+        return (uint8_t *)buffer.peek();
+    }
+
+    size_t size() const
+    {
+        return buffer.readableBytes();
+    }
+
+    trantor::MsgBuffer buffer;
+};
 
 struct SettingsFrame
 {
@@ -272,6 +434,7 @@ class Http2Transport : public HttpTransport
     std::unordered_map<int32_t, internal::H2Stream> streams;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> bufferedRequests;
     trantor::MsgBuffer headerBufferRx;
+    internal::OByteStream batchedSendBuffer;
     int32_t expectngContinuationStreamId = 0;
 
     std::unordered_map<int32_t, size_t> pendingDataSend;
@@ -317,6 +480,8 @@ class Http2Transport : public HttpTransport
                               size_t len);
     size_t sendBodyForStream(internal::H2Stream &stream, size_t offset);
     void sendFrame(const internal::H2Frame &frame, int32_t streamId);
+
+    void sendBufferedData();
 
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
