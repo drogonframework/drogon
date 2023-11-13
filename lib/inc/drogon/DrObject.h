@@ -57,6 +57,26 @@ class DROGON_EXPORT DrObjectBase
     }
 };
 
+template <typename T>
+struct isAutoCreationClass
+{
+    template <class C>
+    static auto check(C *)
+        -> std::enable_if_t<std::is_same_v<decltype(C::isAutoCreation), bool>,
+                            bool>
+    {
+        return C::isAutoCreation;
+    }
+
+    template <typename>
+    static bool check(...)
+    {
+        return false;
+    }
+
+    static constexpr bool value = check<T>(nullptr);
+};
+
 /**
  * a class template to
  * implement the reflection function of creating the class object by class name
@@ -113,7 +133,7 @@ class DrObject : public virtual DrObjectBase
                         return std::make_shared<T>();
                     });
             }
-            else
+            else if constexpr (isAutoCreationClass<D>::value)
             {
                 static_assert(std::is_default_constructible<D>::value,
                               "Class is not default constructable!");
