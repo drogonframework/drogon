@@ -70,6 +70,85 @@ struct BinderArgTypeTraits<const T &>
     static const bool isValid = true;
 };
 
+template <typename T>
+T getHandlerArgumentValue(std::string &&p)
+{
+    if constexpr (internal::CanConstructFromString<T>::value)
+    {
+        return T(std::move(p));
+    }
+    else if constexpr (internal::CanConvertFromStringStream<T>::value)
+    {
+        T value{T()};
+        if (!p.empty())
+        {
+            std::stringstream ss(std::move(p));
+            ss >> value;
+        }
+        return value;
+    }
+    else
+    {
+        LOG_ERROR << "Can't convert string to type " << typeid(T).name();
+        return T();
+    }
+}
+
+template <>
+inline std::string getHandlerArgumentValue<std::string>(std::string &&p)
+{
+    return std::move(p);
+}
+
+template <>
+inline int getHandlerArgumentValue<int>(std::string &&p)
+{
+    return std::stoi(p);
+}
+
+template <>
+inline long getHandlerArgumentValue<long>(std::string &&p)
+{
+    return std::stol(p);
+}
+
+template <>
+inline long long getHandlerArgumentValue<long long>(std::string &&p)
+{
+    return std::stoll(p);
+}
+
+template <>
+inline unsigned long getHandlerArgumentValue<unsigned long>(std::string &&p)
+{
+    return std::stoul(p);
+}
+
+template <>
+inline unsigned long long getHandlerArgumentValue<unsigned long long>(
+    std::string &&p)
+{
+    return std::stoull(p);
+}
+
+template <>
+inline float getHandlerArgumentValue<float>(std::string &&p)
+{
+    return std::stof(p);
+}
+
+template <>
+inline double getHandlerArgumentValue<double>(std::string &&p)
+{
+    return std::stod(p);
+}
+
+template <>
+inline long double getHandlerArgumentValue<long double>(std::string &&p)
+{
+    return std::stold(p);
+}
+
 class HttpBinderBase
 {
   public:
@@ -178,85 +257,6 @@ class HttpBinder : public HttpBinderBase
 
     static const size_t argument_count = traits::arity;
     std::string handlerName_;
-
-    template <typename T>
-    T getHandlerArgumentValue(std::string &&p)
-    {
-        if constexpr (internal::CanConstructFromString<T>::value)
-        {
-            return T(std::move(p));
-        }
-        else if constexpr (internal::CanConvertFromStringStream<T>::value)
-        {
-            T value{T()};
-            if (!p.empty())
-            {
-                std::stringstream ss(std::move(p));
-                ss >> value;
-            }
-            return value;
-        }
-        else
-        {
-            LOG_ERROR << "Can't convert string to type " << typeid(T).name();
-            return T();
-        }
-    }
-
-    template <>
-    inline std::string getHandlerArgumentValue<std::string>(std::string &&p)
-    {
-        return std::move(p);
-    }
-
-    template <>
-    inline int getHandlerArgumentValue<int>(std::string &&p)
-    {
-        return std::stoi(p);
-    }
-
-    template <>
-    inline long getHandlerArgumentValue<long>(std::string &&p)
-    {
-        return std::stol(p);
-    }
-
-    template <>
-    inline long long getHandlerArgumentValue<long long>(std::string &&p)
-    {
-        return std::stoll(p);
-    }
-
-    template <>
-    inline unsigned long getHandlerArgumentValue<unsigned long>(std::string &&p)
-    {
-        return std::stoul(p);
-    }
-
-    template <>
-    inline unsigned long long getHandlerArgumentValue<unsigned long long>(
-        std::string &&p)
-    {
-        return std::stoull(p);
-    }
-
-    template <>
-    inline float getHandlerArgumentValue<float>(std::string &&p)
-    {
-        return std::stof(p);
-    }
-
-    template <>
-    inline double getHandlerArgumentValue<double>(std::string &&p)
-    {
-        return std::stod(p);
-    }
-
-    template <>
-    inline long double getHandlerArgumentValue<long double>(std::string &&p)
-    {
-        return std::stold(p);
-    }
 
     template <typename... Values,
               std::size_t Boundary = argument_count,
