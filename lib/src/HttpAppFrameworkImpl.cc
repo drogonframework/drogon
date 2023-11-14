@@ -777,14 +777,14 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
     if (useSession_)
     {
         std::string sessionId = req->getCookie(sessionCookieKey_);
-        bool needSetJsessionid = false;
+        bool needSetSessionid = false;
         if (sessionId.empty())
         {
             sessionId = sessionIdGeneratorCallback_();
-            needSetJsessionid = true;
+            needSetSessionid = true;
         }
         req->setSession(
-            sessionManagerPtr_->getSession(sessionId, needSetJsessionid));
+            sessionManagerPtr_->getSession(sessionId, needSetSessionid));
     }
 }
 
