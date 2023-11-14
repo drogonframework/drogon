@@ -55,6 +55,25 @@ struct CanConvertFromStringStream
     static constexpr bool value =
         std::is_same_v<decltype(test<T>(nullptr, std::stringstream())), yes>;
 };
+
+template <typename T>
+struct CanConstructFromString
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+
+    template <typename U>
+    static auto test(U *p) -> decltype(U(std::string{}), yes());
+
+    template <typename>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+};
+
 }  // namespace internal
 
 namespace utils

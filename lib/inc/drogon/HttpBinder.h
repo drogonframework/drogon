@@ -180,61 +180,82 @@ class HttpBinder : public HttpBinderBase
     std::string handlerName_;
 
     template <typename T>
-    void getHandlerArgumentValue(T &value, std::string &&p)
+    T getHandlerArgumentValue(std::string &&p)
     {
-        if constexpr (internal::CanConvertFromStringStream<T>::value)
+        if constexpr (internal::CanConstructFromString<T>::value)
         {
+            return T(std::move(p));
+        }
+        else if constexpr (internal::CanConvertFromStringStream<T>::value)
+        {
+            T value{T()};
             if (!p.empty())
             {
                 std::stringstream ss(std::move(p));
                 ss >> value;
             }
+            return value;
+        }
+        else
+        {
+            LOG_ERROR << "Can't convert string to type " << typeid(T).name();
+            return T();
         }
     }
 
-    void getHandlerArgumentValue(std::string &value, std::string &&p)
+    template <>
+    inline std::string getHandlerArgumentValue<std::string>(std::string &&p)
     {
-        value = std::move(p);
+        return std::move(p);
     }
 
-    void getHandlerArgumentValue(int &value, std::string &&p)
+    template <>
+    inline int getHandlerArgumentValue<int>(std::string &&p)
     {
-        value = std::stoi(p);
+        return std::stoi(p);
     }
 
-    void getHandlerArgumentValue(long &value, std::string &&p)
+    template <>
+    inline long getHandlerArgumentValue<long>(std::string &&p)
     {
-        value = std::stol(p);
+        return std::stol(p);
     }
 
-    void getHandlerArgumentValue(long long &value, std::string &&p)
+    template <>
+    inline long long getHandlerArgumentValue<long long>(std::string &&p)
     {
-        value = std::stoll(p);
+        return std::stoll(p);
     }
 
-    void getHandlerArgumentValue(unsigned long &value, std::string &&p)
+    template <>
+    inline unsigned long getHandlerArgumentValue<unsigned long>(std::string &&p)
     {
-        value = std::stoul(p);
+        return std::stoul(p);
     }
 
-    void getHandlerArgumentValue(unsigned long long &value, std::string &&p)
+    template <>
+    inline unsigned long long getHandlerArgumentValue<unsigned long long>(
+        std::string &&p)
     {
-        value = std::stoull(p);
+        return std::stoull(p);
     }
 
-    void getHandlerArgumentValue(float &value, std::string &&p)
+    template <>
+    inline float getHandlerArgumentValue<float>(std::string &&p)
     {
-        value = std::stof(p);
+        return std::stof(p);
     }
 
-    void getHandlerArgumentValue(double &value, std::string &&p)
+    template <>
+    inline double getHandlerArgumentValue<double>(std::string &&p)
     {
-        value = std::stod(p);
+        return std::stod(p);
     }
 
-    void getHandlerArgumentValue(long double &value, std::string &&p)
+    template <>
+    inline long double getHandlerArgumentValue<long double>(std::string &&p)
     {
-        value = std::stold(p);
+        return std::stold(p);
     }
 
     template <typename... Values,
@@ -255,15 +276,23 @@ class HttpBinder : public HttpBinderBase
                 "reference type or right reference type");
             using ValueType = std::remove_cv_t<
                 std::remove_reference_t<nth_argument_type<sizeof...(Values)>>>;
-            ValueType value = ValueType();
             if (!pathArguments.empty())
             {
-                std::string v = std::move(pathArguments.front());
+                std::string v{std::move(pathArguments.front())};
                 pathArguments.pop_front();
                 try
                 {
-                    if (v.empty() == false)
-                        getHandlerArgumentValue(value, std::move(v));
+                    if (!v.empty())
+                    {
+                        auto value =
+                            getHandlerArgumentValue<ValueType>(std::move(v));
+                        run(pathArguments,
+                            req,
+                            std::move(callback),
+                            std::forward<Values>(values)...,
+                            std::move(value));
+                        return;
+                    }
                 }
                 catch (const std::exception &e)
                 {
@@ -275,7 +304,13 @@ class HttpBinder : public HttpBinderBase
             {
                 try
                 {
-                    value = req->as<ValueType>();
+                    auto value = req->as<ValueType>();
+                    run(pathArguments,
+                        req,
+                        std::move(callback),
+                        std::forward<Values>(values)...,
+                        std::move(value));
+                    return;
                 }
                 catch (const std::exception &e)
                 {
@@ -293,7 +328,7 @@ class HttpBinder : public HttpBinderBase
                 req,
                 std::move(callback),
                 std::forward<Values>(values)...,
-                std::move(value));
+                ValueType());
         }
         else if constexpr (sizeof...(Values) == Boundary)
         {
