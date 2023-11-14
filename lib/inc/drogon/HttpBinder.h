@@ -370,8 +370,8 @@ class HttpBinder : public HttpBinderBase
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass,
-              bool isNormal = std::is_same<typename traits::first_param_type,
-                                           HttpRequestPtr>::value>
+              bool isNormal = std::is_same_v<typename traits::first_param_type,
+                                             HttpRequestPtr>>
     typename traits::return_type callFunction(const HttpRequestPtr &req,
                                               Values &&...values)
     {

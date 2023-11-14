@@ -37,8 +37,7 @@ struct CanConvertToString
     static no test(...);
 
   public:
-    static constexpr bool value =
-        std::is_same<decltype(test<Type>(0)), yes>::value;
+    static constexpr bool value = std::is_same_v<decltype(test<Type>(0)), yes>;
 };
 }  // namespace internal
 

@@ -62,8 +62,7 @@ struct has_sqlForFindingByPrimaryKey
     static no test(...);
 
   public:
-    static constexpr bool value =
-        std::is_same<decltype(test<T>(0)), yes>::value;
+    static constexpr bool value = std::is_same_v<decltype(test<T>(0)), yes>;
 };
 
 template <typename T>
@@ -81,8 +80,7 @@ struct has_sqlForDeletingByPrimaryKey
     static no test(...);
 
   public:
-    static constexpr bool value =
-        std::is_same<decltype(test<T>(0)), yes>::value;
+    static constexpr bool value = std::is_same_v<decltype(test<T>(0)), yes>;
 };
 }  // namespace internal
 
@@ -185,7 +183,7 @@ class Mapper
     using CountCallback = std::function<void(const size_t)>;
 
     using TraitsPKType = typename internal::
-        Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type;
+        Traits<T, !std::is_same_v<typename T::PrimaryKeyType, void>>::type;
 
     /**
      * @brief Find a record by the primary key.
@@ -198,11 +196,10 @@ class Mapper
     template <typename U = T>
     inline T findByPrimaryKey(const TraitsPKType &key) noexcept(false)
     {
-        if constexpr (!std::is_same<typename U::PrimaryKeyType, void>::value)
+        if constexpr (!std::is_same_v<typename U::PrimaryKeyType, void>)
         {
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             static_assert(
                 internal::has_sqlForFindingByPrimaryKey<T>::value,
                 "No function member named sqlForFindingByPrimaryKey, please "
@@ -253,11 +250,10 @@ class Mapper
                                  const SingleRowCallback &rcb,
                                  const ExceptionCallback &ecb) noexcept
     {
-        if constexpr (!std::is_same<typename U::PrimaryKeyType, void>::value)
+        if constexpr (!std::is_same_v<typename U::PrimaryKeyType, void>)
         {
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             static_assert(
                 internal::has_sqlForFindingByPrimaryKey<T>::value,
                 "No function member named sqlForFindingByPrimaryKey, please "
@@ -308,11 +304,10 @@ class Mapper
     inline std::future<T> findFutureByPrimaryKey(
         const TraitsPKType &key) noexcept
     {
-        if constexpr (!std::is_same<typename U::PrimaryKeyType, void>::value)
+        if constexpr (!std::is_same_v<typename U::PrimaryKeyType, void>)
         {
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             static_assert(
                 internal::has_sqlForFindingByPrimaryKey<T>::value,
                 "No function member named sqlForFindingByPrimaryKey, please "
@@ -690,14 +685,14 @@ class Mapper
     template <typename PKType = decltype(T::primaryKeyName)>
     void makePrimaryKeyCriteria(std::string &sql)
     {
-        if constexpr (std::is_same<const std::string, PKType>::value)
+        if constexpr (std::is_same_v<const std::string, PKType>)
         {
             sql += " where ";
             sql += T::primaryKeyName;
             sql += " = $?";
         }
-        else if constexpr (std::is_same<const std::vector<std::string>,
-                                        PKType>::value)
+        else if constexpr (std::is_same_v<const std::vector<std::string>,
+                                          PKType>)
         {
             sql += " where ";
             for (size_t i = 0; i < T::primaryKeyName.size(); ++i)
@@ -716,12 +711,12 @@ class Mapper
     void outputPrimeryKeyToBinder(const TraitsPKType &pk,
                                   internal::SqlBinder &binder)
     {
-        if constexpr (std::is_same<const std::string, PKType>::value)
+        if constexpr (std::is_same_v<const std::string, PKType>)
         {
             binder << pk;
         }
-        else if constexpr (std::is_same<const std::vector<std::string>,
-                                        PKType>::value)
+        else if constexpr (std::is_same_v<const std::vector<std::string>,
+                                          PKType>)
         {
             tupleToBinder<typename T::PrimaryKeyType>(pk, binder);
         }
@@ -1298,7 +1293,7 @@ template <typename T>
 inline size_t Mapper<T>::update(const T &obj) noexcept(false)
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
@@ -1371,7 +1366,7 @@ inline void Mapper<T>::update(const T &obj,
                               const ExceptionCallback &ecb) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
@@ -1434,7 +1429,7 @@ template <typename T>
 inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
@@ -1506,7 +1501,7 @@ template <typename T>
 inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
@@ -1533,7 +1528,7 @@ inline void Mapper<T>::deleteOne(const T &obj,
                                  const ExceptionCallback &ecb) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
@@ -1552,7 +1547,7 @@ template <typename T>
 inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
@@ -1576,7 +1571,7 @@ template <typename T>
 inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
@@ -1608,7 +1603,7 @@ inline void Mapper<T>::deleteBy(const Criteria &criteria,
                                 const ExceptionCallback &ecb) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
@@ -1634,7 +1629,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureBy(
     const Criteria &criteria) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
@@ -1774,7 +1769,7 @@ template <typename T>
 inline size_t Mapper<T>::deleteByPrimaryKey(
     const typename Mapper<T>::TraitsPKType &key) noexcept(false)
 {
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     static_assert(internal::has_sqlForDeletingByPrimaryKey<T>::value,
                   "No function member named sqlForDeletingByPrimaryKey, please "
@@ -1798,7 +1793,7 @@ inline void Mapper<T>::deleteByPrimaryKey(
     const CountCallback &rcb,
     const ExceptionCallback &ecb) noexcept
 {
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     static_assert(internal::has_sqlForDeletingByPrimaryKey<T>::value,
                   "No function member named sqlForDeletingByPrimaryKey, please "
@@ -1816,7 +1811,7 @@ template <typename T>
 inline std::future<size_t> Mapper<T>::deleteFutureByPrimaryKey(
     const typename Mapper<T>::TraitsPKType &key) noexcept
 {
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+    static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
     static_assert(internal::has_sqlForDeletingByPrimaryKey<T>::value,
                   "No function member named sqlForDeletingByPrimaryKey, please "

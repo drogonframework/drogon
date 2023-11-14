@@ -69,10 +69,10 @@ struct is_printable : std::false_type
 };
 
 template <typename _Tp>
-struct is_printable<_Tp,
-                    typename std::enable_if_t<std::is_same_v<
-                        decltype(std::cout << std::declval<_Tp>()),
-                        std::ostream &>>> : std::true_type
+struct is_printable<
+    _Tp,
+    std::enable_if_t<std::is_same_v<decltype(std::cout << std::declval<_Tp>()),
+                                    std::ostream &>>> : std::true_type
 {
 };
 
@@ -280,7 +280,7 @@ struct Lhs
     template <typename RhsType>
     ComparsionResult operator&&(const RhsType &rhs)
     {
-        static_assert(!std::is_same<RhsType, void>::value,
+        static_assert(!std::is_same_v<RhsType, void>,
                       " && is not supported in expression decomposition");
         return {};
     }
@@ -288,7 +288,7 @@ struct Lhs
     template <typename RhsType>
     ComparsionResult operator||(const RhsType &rhs)
     {
-        static_assert(!std::is_same<RhsType, void>::value,
+        static_assert(!std::is_same_v<RhsType, void>,
                       " || is not supported in expression decomposition");
         return {};
     }
@@ -296,7 +296,7 @@ struct Lhs
     template <typename RhsType>
     ComparsionResult operator|(const RhsType &rhs)
     {
-        static_assert(!std::is_same<RhsType, void>::value,
+        static_assert(!std::is_same_v<RhsType, void>,
                       " | is not supported in expression decomposition");
         return {};
     }
@@ -304,7 +304,7 @@ struct Lhs
     template <typename RhsType>
     ComparsionResult operator&(const RhsType &rhs)
     {
-        static_assert(!std::is_same<RhsType, void>::value,
+        static_assert(!std::is_same_v<RhsType, void>,
                       " & is not supported in expression decomposition");
         return {};
     }

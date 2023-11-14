@@ -80,13 +80,12 @@ class CoroMapper : public Mapper<T>
 
     inline internal::MapperAwaiter<T> findByPrimaryKey(const TraitsPKType &key)
     {
-        if constexpr (!std::is_same<typename T::PrimaryKeyType, void>::value)
+        if constexpr (!std::is_same_v<typename T::PrimaryKeyType, void>)
         {
             auto lb = [this, key](SingleRowCallback &&callback,
                                   ExceptPtrCallback &&errCallback) mutable {
-                static_assert(
-                    !std::is_same<typename T::PrimaryKeyType, void>::value,
-                    "No primary key in the table!");
+                static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                              "No primary key in the table!");
                 static_assert(
                     internal::has_sqlForFindingByPrimaryKey<T>::value,
                     "No function member named sqlForFindingByPrimaryKey, "
@@ -417,9 +416,8 @@ class CoroMapper : public Mapper<T>
         auto lb = [this, obj](CountCallback &&callback,
                               ExceptPtrCallback &&errCallback) {
             this->clear();
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             std::string sql = "update ";
             sql += T::tableName;
             sql += " set ";
@@ -530,9 +528,8 @@ class CoroMapper : public Mapper<T>
         auto lb = [this, obj](CountCallback &&callback,
                               ExceptPtrCallback &&errCallback) {
             this->clear();
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             std::string sql = "delete from ";
             sql += T::tableName;
             sql += " ";
@@ -555,9 +552,8 @@ class CoroMapper : public Mapper<T>
         auto lb = [this, criteria](CountCallback &&callback,
                                    ExceptPtrCallback &&errCallback) {
             this->clear();
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             std::string sql = "delete from ";
             sql += T::tableName;
 
@@ -584,7 +580,7 @@ class CoroMapper : public Mapper<T>
     inline internal::MapperAwaiter<size_t> deleteByPrimaryKey(
         const TraitsPKType &key)
     {
-        static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+        static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                       "No primary key in the table!");
         static_assert(
             internal::has_sqlForDeletingByPrimaryKey<T>::value,

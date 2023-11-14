@@ -53,8 +53,7 @@ struct CanConvertFromStringStream
 
   public:
     static constexpr bool value =
-        std::is_same<decltype(test<T>(nullptr, std::stringstream())),
-                     yes>::value;
+        std::is_same_v<decltype(test<T>(nullptr, std::stringstream())), yes>;
 };
 }  // namespace internal
 
