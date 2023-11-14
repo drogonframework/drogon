@@ -13,7 +13,6 @@
  */
 
 #include "SessionManager.h"
-#include <drogon/utils/Utilities.h>
 
 using namespace drogon;
 
@@ -27,8 +26,7 @@ SessionManager::SessionManager(
       timeout_(timeout),
       sessionStartAdvices_(startAdvices),
       sessionDestroyAdvices_(destroyAdvices),
-      idGeneratorCallback_(idGeneratorCallback ? idGeneratorCallback
-                                               : utils::getUuid)
+      idGeneratorCallback_(idGeneratorCallback)
 {
     if (timeout_ > 0)
     {

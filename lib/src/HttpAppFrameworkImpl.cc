@@ -780,7 +780,7 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
         bool needSetJsessionid = false;
         if (sessionId.empty())
         {
-            sessionId = utils::getUuid();
+            sessionId = sessionIdGeneratorCallback_();
             needSetJsessionid = true;
         }
         req->setSession(
