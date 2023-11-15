@@ -87,6 +87,12 @@ T getHandlerArgumentValue(std::string &&p)
         }
         return value;
     }
+    else if constexpr (internal::CanConvertFromString<T>::value)
+    {
+        T value;
+        value = p;
+        return value;
+    }
     else
     {
         LOG_ERROR << "Can't convert string to type " << typeid(T).name();

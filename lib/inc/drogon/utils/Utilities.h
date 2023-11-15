@@ -74,6 +74,22 @@ struct CanConstructFromString
         std::is_same_v<decltype(test<T>(nullptr)), yes>;
 };
 
+template <typename T>
+struct CanConvertFromString
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+    template <class U>
+    static auto test(U *p) -> decltype(*p = std::string(), yes());
+    template <class>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+};
+
 }  // namespace internal
 
 namespace utils
