@@ -395,7 +395,22 @@ std::string getUuid()
 #else
     uuid_t uu;
     uuid_generate(uu);
-    return binaryStringToHex(uu, 16);
+    std::string hexUuid{binaryStringToHex(uu, 16)};
+
+    std::string uuid;
+    for (char &c : hexUuid) {
+        c = std::tolower(static_cast<unsigned char>(c));
+    }
+
+    for (std::size_t i = 0; i < 32; i++) {
+        if (i == 8 || i == 12 || i == 16 || i == 20) {
+            uuid += "-";
+        }
+        uuid += hexUuid[i];
+    }
+
+    return uuid;
+    
 #endif
 }
 
