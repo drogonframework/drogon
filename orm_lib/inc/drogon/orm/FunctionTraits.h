@@ -110,9 +110,10 @@ struct FunctionTraits<ReturnType (*)(Arguments...)>
 
     static const std::size_t arity = sizeof...(Arguments);
 
-    // static const bool isSqlCallback = false;
     static const bool isSqlCallback = true;
     static const bool isStepResultCallback = true;
+    static const bool isExceptCallback = false;
+    static const bool isPtr = false;
 };
 }  // namespace internal
 }  // namespace orm

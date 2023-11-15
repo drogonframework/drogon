@@ -53,9 +53,43 @@ struct CanConvertFromStringStream
 
   public:
     static constexpr bool value =
-        std::is_same<decltype(test<T>(nullptr, std::stringstream())),
-                     yes>::value;
+        std::is_same_v<decltype(test<T>(nullptr, std::stringstream())), yes>;
 };
+
+template <typename T>
+struct CanConstructFromString
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+
+    template <typename U>
+    static auto test(U *p) -> decltype(U(std::string{}), yes());
+
+    template <typename>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+};
+
+template <typename T>
+struct CanConvertFromString
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+    template <class U>
+    static auto test(U *p) -> decltype(*p = std::string(), yes());
+    template <class>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+};
+
 }  // namespace internal
 
 namespace utils
@@ -396,24 +430,22 @@ DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
 DROGON_EXPORT std::string secureRandomString(size_t size);
 
 template <typename T>
-typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
-fromString(const std::string &p) noexcept(false)
+T fromString(const std::string &p) noexcept(false)
 {
-    T value{};
-    if (!p.empty())
+    if constexpr (internal::CanConvertFromStringStream<T>::value)
     {
-        std::stringstream ss(p);
-        ss >> value;
+        T value{};
+        if (!p.empty())
+        {
+            std::stringstream ss(p);
+            ss >> value;
+        }
+        return value;
     }
-    return value;
-}
-
-template <typename T>
-typename std::enable_if<!(internal::CanConvertFromStringStream<T>::value),
-                        T>::type
-fromString(const std::string &) noexcept(false)
-{
-    throw std::runtime_error("Bad type conversion");
+    else
+    {
+        throw std::runtime_error("Bad type conversion");
+    }
 }
 
 template <>
