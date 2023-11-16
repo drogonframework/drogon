@@ -289,7 +289,7 @@ std::string hexToBinaryString(const char *ptr, size_t length)
     return ret;
 }
 
-std::string binaryStringToHex(const unsigned char *ptr, size_t length)
+std::string binaryStringToHex(const unsigned char *ptr, size_t length, bool lowercase=false)
 {
     std::string idString;
     for (size_t i = 0; i < length; ++i)
@@ -314,6 +314,13 @@ std::string binaryStringToHex(const unsigned char *ptr, size_t length)
             idString.append(1, char(value + 55));
         }
     }
+
+    if ( lowercase == true ){
+        for (char &c : idString) {
+            c = std::tolower(c);
+        }
+    }
+
     return idString;
 }
 
@@ -395,22 +402,9 @@ std::string getUuid()
 #else
     uuid_t uu;
     uuid_generate(uu);
-    std::string hexUuid{binaryStringToHex(uu, 16)};
-
-    std::string uuid;
-    for (char &c : hexUuid) {
-        c = std::tolower(static_cast<unsigned char>(c));
-    }
-
-    for (std::size_t i = 0; i < 32; i++) {
-        if (i == 8 || i == 12 || i == 16 || i == 20) {
-            uuid += "-";
-        }
-        uuid += hexUuid[i];
-    }
-
+    std::string uuid {binaryStringToHex(uu, 16, true)};
+    uuid.insert( 8, "-" ).insert(13, "-").insert(18, "-").insert(23,"-");
     return uuid;
-    
 #endif
 }
 
