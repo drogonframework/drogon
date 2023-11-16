@@ -90,7 +90,6 @@ struct Defer
     T f;
 };
 
-
 std::optional<SettingsFrame> SettingsFrame::parse(ByteStream &payload,
                                                   uint8_t flags)
 {
@@ -699,7 +698,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     {
         LOG_TRACE << "Failed to encode headers. Internal error or header "
                      "block too large";
-        callback(ReqResult::BadResponse, nullptr);
+        errorCallback(ReqResult::BadResponse);
         return;
     }
     // TODO: Send CONTINUATION frames if the header block fragment is too large
