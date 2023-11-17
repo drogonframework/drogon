@@ -289,38 +289,55 @@ std::string hexToBinaryString(const char *ptr, size_t length)
     return ret;
 }
 
-std::string binaryStringToHex(const unsigned char *ptr, size_t length, bool lowercase=false)
+DROGON_EXPORT void binaryStringToHex(const char *ptr,
+                                     size_t length,
+                                     char *out,
+                                     bool lowerCase)
 {
-    std::string idString;
     for (size_t i = 0; i < length; ++i)
     {
         int value = (ptr[i] & 0xf0) >> 4;
         if (value < 10)
         {
-            idString.append(1, char(value + 48));
+            out[i * 2] = char(value + 48);
         }
         else
         {
-            idString.append(1, char(value + 55));
+            if (!lowerCase)
+            {
+                out[i * 2] = char(value + 55);
+            }
+            else
+            {
+                out[i * 2] = char(value + 87);
+            }
         }
 
         value = (ptr[i] & 0x0f);
         if (value < 10)
         {
-            idString.append(1, char(value + 48));
+            out[i * 2 + 1] = char(value + 48);
         }
         else
         {
-            idString.append(1, char(value + 55));
+            if (!lowerCase)
+            {
+                out[i * 2] = char(value + 55);
+            }
+            else
+            {
+                out[i * 2] = char(value + 87);
+            }
         }
     }
+}
 
-    if ( lowercase == true ){
-        for (char &c : idString) {
-            c = std::tolower(c);
-        }
-    }
-
+std::string binaryStringToHex(const unsigned char *ptr,
+                              size_t length,
+                              bool lowercase)
+{
+    std::string idString(length * 2, '\0');
+    binaryStringToHex((const char *)ptr, length, &idString[0], lowercase);
     return idString;
 }
 
@@ -349,6 +366,22 @@ std::set<std::string> splitStringToSet(const std::string &str,
     return ret;
 }
 
+inline std::string createUuidString(const char *str, size_t len)
+{
+    assert(len == 16);
+    std::string uuid(36, '\0');
+    binaryStringToHex(str, 4, &uuid[0], true);
+    uuid[8] = '-';
+    binaryStringToHex(str + 4, 2, &uuid[9], true);
+    uuid[13] = '-';
+    binaryStringToHex(str + 6, 2, &uuid[14], true);
+    uuid[18] = '-';
+    binaryStringToHex(str + 8, 2, &uuid[19], true);
+    uuid[23] = '-';
+    binaryStringToHex(str + 10, 6, &uuid[24], true);
+    return uuid;
+}
+
 std::string getUuid()
 {
 #if USE_OSSP_UUID
@@ -359,7 +392,7 @@ std::string getUuid()
     size_t len{0};
     uuid_export(uuid, UUID_FMT_BIN, &str, &len);
     uuid_destroy(uuid);
-    std::string ret{binaryStringToHex((const unsigned char *)str, len)};
+    auto ret = createUuidString(str, len);
     free(str);
     return ret;
 #elif defined __FreeBSD__ || defined __OpenBSD__
@@ -377,7 +410,7 @@ std::string getUuid()
     uuid_enc_be(binstr, uuid);
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
     delete uuid;
-    std::string ret{binaryStringToHex((const unsigned char *)binstr, 16)};
+    auto ret = createUuidString(binstr, 16);
     free(binstr);
     return ret;
 #elif defined _WIN32
@@ -386,7 +419,7 @@ std::string getUuid()
     char tempStr[100];
     auto len = snprintf(tempStr,
                         sizeof(tempStr),
-                        "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                        "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                         uu.Data1,
                         uu.Data2,
                         uu.Data3,
@@ -402,8 +435,7 @@ std::string getUuid()
 #else
     uuid_t uu;
     uuid_generate(uu);
-    std::string uuid {binaryStringToHex(uu, 16, true)};
-    uuid.insert( 8, "-" ).insert(13, "-").insert(18, "-").insert(23,"-");
+    auto uuid = createUuidString((const char *)uu, 16);
     return uuid;
 #endif
 }
