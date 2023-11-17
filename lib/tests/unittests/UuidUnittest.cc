@@ -3,7 +3,7 @@
 #include <iostream>
 #include <drogon/drogon_test.h>
 
-DROGON_TEST(URLCodec)
+DROGON_TEST(UuidTest)
 {
     auto uuid = drogon::utils::getUuid();
 
