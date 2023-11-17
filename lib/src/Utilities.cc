@@ -322,11 +322,11 @@ DROGON_EXPORT void binaryStringToHex(const char *ptr,
         {
             if (!lowerCase)
             {
-                out[i * 2] = char(value + 55);
+                out[i * 2 + 1] = char(value + 55);
             }
             else
             {
-                out[i * 2] = char(value + 87);
+                out[i * 2 + 1] = char(value + 87);
             }
         }
     }
