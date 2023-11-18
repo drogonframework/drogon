@@ -252,7 +252,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         SessionManager::IdGeneratorCallback idGeneratorCallback = nullptr)
     {
         sessionIdGeneratorCallback_ =
-            idGeneratorCallback ? idGeneratorCallback : utils::getUuid;
+            idGeneratorCallback ? idGeneratorCallback
+                                : []() { return utils::getUuid(true); };
         return *this;
     }
 

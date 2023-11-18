@@ -113,7 +113,8 @@ DROGON_EXPORT std::string genRandomString(int length);
 
 /// Convert a binary string to hex format
 DROGON_EXPORT std::string binaryStringToHex(const unsigned char *ptr,
-                                            size_t length);
+                                            size_t length,
+                                            bool lowerCase = false);
 
 /// Get a binary string from hexadecimal format
 DROGON_EXPORT std::string hexToBinaryString(const char *ptr, size_t length);
@@ -121,6 +122,11 @@ DROGON_EXPORT std::string hexToBinaryString(const char *ptr, size_t length);
 /// Get a binary vector from hexadecimal format
 DROGON_EXPORT std::vector<char> hexToBinaryVector(const char *ptr,
                                                   size_t length);
+
+DROGON_EXPORT void binaryStringToHex(const char *ptr,
+                                     size_t length,
+                                     char *out,
+                                     bool lowerCase = false);
 
 /// Split the string into multiple separated strings.
 /**
@@ -140,7 +146,7 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
     const std::string &separator);
 
 /// Get UUID string.
-DROGON_EXPORT std::string getUuid();
+DROGON_EXPORT std::string getUuid(bool lowercase = true);
 
 /// Get the encoded length of base64.
 constexpr size_t base64EncodedLength(size_t in_len, bool padded = true)

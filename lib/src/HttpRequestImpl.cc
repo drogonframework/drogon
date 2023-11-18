@@ -760,7 +760,7 @@ void HttpRequestImpl::appendToBody(const char *data, size_t length)
 void HttpRequestImpl::createTmpFile()
 {
     auto tmpfile = HttpAppFrameworkImpl::instance().getUploadPath();
-    auto fileName = utils::getUuid();
+    auto fileName = utils::getUuid(false);
     tmpfile.append("/tmp/")
         .append(1, fileName[0])
         .append(1, fileName[1])
