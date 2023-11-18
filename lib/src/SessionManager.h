@@ -37,7 +37,7 @@ class SessionManager : public trantor::NonCopyable
         size_t timeout,
         const std::vector<AdviceStartSessionCallback> &startAdvices,
         const std::vector<AdviceDestroySessionCallback> &destroyAdvices,
-        IdGeneratorCallback idGeneratorCallback = nullptr);
+        IdGeneratorCallback idGeneratorCallback);
 
     ~SessionManager()
     {

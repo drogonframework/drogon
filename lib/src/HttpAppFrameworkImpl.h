@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include "SessionManager.h"
+#include "drogon/utils/Utilities.h"
 #include "impl_forwards.h"
 
 namespace trantor
@@ -250,7 +251,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &setSessionIdGenerator(
         SessionManager::IdGeneratorCallback idGeneratorCallback = nullptr)
     {
-        sessionIdGeneratorCallback_ = idGeneratorCallback;
+        sessionIdGeneratorCallback_ =
+            idGeneratorCallback ? idGeneratorCallback : utils::getUuid;
         return *this;
     }
 
