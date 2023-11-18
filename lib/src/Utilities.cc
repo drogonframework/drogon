@@ -366,23 +366,23 @@ std::set<std::string> splitStringToSet(const std::string &str,
     return ret;
 }
 
-inline std::string createUuidString(const char *str, size_t len)
+inline std::string createUuidString(const char *str, size_t len, bool lowercase)
 {
     assert(len == 16);
     std::string uuid(36, '\0');
-    binaryStringToHex(str, 4, &uuid[0], true);
+    binaryStringToHex(str, 4, &uuid[0], lowercase);
     uuid[8] = '-';
-    binaryStringToHex(str + 4, 2, &uuid[9], true);
+    binaryStringToHex(str + 4, 2, &uuid[9], lowercase);
     uuid[13] = '-';
-    binaryStringToHex(str + 6, 2, &uuid[14], true);
+    binaryStringToHex(str + 6, 2, &uuid[14], lowercase);
     uuid[18] = '-';
-    binaryStringToHex(str + 8, 2, &uuid[19], true);
+    binaryStringToHex(str + 8, 2, &uuid[19], lowercase);
     uuid[23] = '-';
-    binaryStringToHex(str + 10, 6, &uuid[24], true);
+    binaryStringToHex(str + 10, 6, &uuid[24], lowercase);
     return uuid;
 }
 
-std::string getUuid()
+std::string getUuid(bool lowercase)
 {
 #if USE_OSSP_UUID
     uuid_t *uuid;
@@ -392,7 +392,7 @@ std::string getUuid()
     size_t len{0};
     uuid_export(uuid, UUID_FMT_BIN, &str, &len);
     uuid_destroy(uuid);
-    auto ret = createUuidString(str, len);
+    auto ret = createUuidString(str, len, lowercase);
     free(str);
     return ret;
 #elif defined __FreeBSD__ || defined __OpenBSD__
@@ -410,7 +410,7 @@ std::string getUuid()
     uuid_enc_be(binstr, uuid);
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
     delete uuid;
-    auto ret = createUuidString(binstr, 16);
+    auto ret = createUuidString(binstr, 16, lowercase);
     free(binstr);
     return ret;
 #elif defined _WIN32
@@ -435,7 +435,7 @@ std::string getUuid()
 #else
     uuid_t uu;
     uuid_generate(uu);
-    auto uuid = createUuidString((const char *)uu, 16);
+    auto uuid = createUuidString((const char *)uu, 16, lowercase);
     return uuid;
 #endif
 }

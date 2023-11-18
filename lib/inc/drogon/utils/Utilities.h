@@ -146,7 +146,7 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
     const std::string &separator);
 
 /// Get UUID string.
-DROGON_EXPORT std::string getUuid();
+DROGON_EXPORT std::string getUuid(bool lowercase = true);
 
 /// Get the encoded length of base64.
 constexpr size_t base64EncodedLength(size_t in_len, bool padded = true)
