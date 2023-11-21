@@ -57,6 +57,26 @@ class DROGON_EXPORT DrObjectBase
     }
 };
 
+template <typename T>
+struct isAutoCreationClass
+{
+    template <class C>
+    static constexpr auto check(C *)
+        -> std::enable_if_t<std::is_same_v<decltype(C::isAutoCreation), bool>,
+                            bool>
+    {
+        return C::isAutoCreation;
+    }
+
+    template <typename>
+    static constexpr bool check(...)
+    {
+        return false;
+    }
+
+    static constexpr bool value = check<T>(nullptr);
+};
+
 /**
  * a class template to
  * implement the reflection function of creating the class object by class name
@@ -102,23 +122,22 @@ class DrObject : public virtual DrObjectBase
         }
 
         template <typename D>
-        typename std::enable_if<std::is_default_constructible<D>::value,
-                                void>::type
-        registerClass()
+        void registerClass()
         {
-            DrClassMap::registerClass(
-                className(),
-                []() -> DrObjectBase * { return new T; },
-                []() -> std::shared_ptr<DrObjectBase> {
-                    return std::make_shared<T>();
-                });
-        }
-
-        template <typename D>
-        typename std::enable_if<!std::is_default_constructible<D>::value,
-                                void>::type
-        registerClass()
-        {
+            if constexpr (std::is_default_constructible<D>::value)
+            {
+                DrClassMap::registerClass(
+                    className(),
+                    []() -> DrObjectBase * { return new T; },
+                    []() -> std::shared_ptr<DrObjectBase> {
+                        return std::make_shared<T>();
+                    });
+            }
+            else if constexpr (isAutoCreationClass<D>::value)
+            {
+                static_assert(std::is_default_constructible<D>::value,
+                              "Class is not default constructable!");
+            }
         }
     };
 

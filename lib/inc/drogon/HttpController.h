@@ -59,7 +59,7 @@ template <typename T, bool AutoCreation = true>
 class HttpController : public DrObject<T>, public HttpControllerBase
 {
   public:
-    static const bool isAutoCreation = AutoCreation;
+    static constexpr bool isAutoCreation = AutoCreation;
 
   protected:
     template <typename FUNCTION>

@@ -106,8 +106,7 @@ class DROGON_EXPORT PluginBase : public virtual DrObjectBase,
 template <typename T>
 struct IsPlugin
 {
-    using TYPE =
-        typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+    using TYPE = std::remove_cv_t<typename std::remove_reference_t<T>>;
 
     static int test(void *)
     {

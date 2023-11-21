@@ -167,7 +167,6 @@ class BaseBuilder
     }
 
   public:
-#ifdef __cpp_if_constexpr
     static ResultType convert_result(const Result &r)
     {
         if constexpr (SelectAll)
@@ -198,48 +197,6 @@ class BaseBuilder
             }
         }
     }
-#else
-    template <bool SA = SelectAll,
-              bool SI = Single,
-              std::enable_if_t<SA, std::nullptr_t> = nullptr,
-              std::enable_if_t<SI, std::nullptr_t> = nullptr>
-    static inline T convert_result(const Result &r)
-    {
-        return T(r[0]);
-    }
-
-    template <bool SA = SelectAll,
-              bool SI = Single,
-              std::enable_if_t<SA, std::nullptr_t> = nullptr,
-              std::enable_if_t<!SI, std::nullptr_t> = nullptr>
-    static inline std::vector<T> convert_result(const Result &r)
-    {
-        std::vector<T> ret;
-        for (const Row &row : r)
-        {
-            ret.template emplace_back(T(row));
-        }
-        return ret;
-    }
-
-    template <bool SA = SelectAll,
-              bool SI = Single,
-              std::enable_if_t<!SA, std::nullptr_t> = nullptr,
-              std::enable_if_t<SI, std::nullptr_t> = nullptr>
-    static inline Row convert_result(const Result &r)
-    {
-        return r[0];
-    }
-
-    template <bool SA = SelectAll,
-              bool SI = Single,
-              std::enable_if_t<!SA, std::nullptr_t> = nullptr,
-              std::enable_if_t<!SI, std::nullptr_t> = nullptr>
-    static inline Result convert_result(const Result &r)
-    {
-        return r;
-    }
-#endif
 
     inline ResultType execSync(const DbClientPtr &client)
     {
