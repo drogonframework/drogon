@@ -77,7 +77,6 @@ void Http1xTransport::onRecvMessage(const trantor::TcpConnectionPtr &conn,
         if (responseParser->gotAll())
         {
             auto resp = responseParser->responseImpl();
-            resp->setPeerCertificate(connPtr->peerCertificate());
             responseParser->reset();
             *bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
@@ -678,6 +677,7 @@ void HttpClientImpl::handleResponse(
     {
         resp->parseJson();
     }
+    resp->setPeerCertificate(connPtr->peerCertificate());
     auto cb = std::move(reqAndCb);
     handleCookies(resp);
     cb.second(ReqResult::Ok, resp);

@@ -140,6 +140,14 @@ struct OByteStream
         buffer.append((char *)&value, 1);
     }
 
+    void pad(size_t size, uint8_t value = 0)
+    {
+        buffer.ensureWritableBytes(size);
+        auto ptr = (uint8_t *)buffer.peek() + buffer.readableBytes();
+        memset(ptr, value, size);
+        buffer.hasWritten(size);
+    }
+
     void write(const uint8_t *ptr, size_t size)
     {
         buffer.append((char *)ptr, size);
@@ -278,13 +286,32 @@ struct DataFrame
     }
 
     DataFrame(const uint8_t *ptr, size_t size, bool endStream)
-        : data(ptr, ptr + size), endStream(endStream)
+        : data(std::vector<uint8_t>(ptr, ptr + size)), endStream(endStream)
+    {
+    }
+
+    explicit DataFrame(std::string_view data, bool endStream)
+        : data(data), endStream(endStream)
     {
     }
 
     uint8_t padLength = 0;
-    std::vector<uint8_t> data;
+    std::variant<std::vector<uint8_t>, std::string_view> data;
     bool endStream = false;
+
+    std::pair<const uint8_t *, size_t> getData() const
+    {
+        if (std::holds_alternative<std::vector<uint8_t>>(data))
+        {
+            auto &vec = std::get<std::vector<uint8_t>>(data);
+            return {vec.data(), vec.size()};
+        }
+        else
+        {
+            auto &str = std::get<std::string_view>(data);
+            return {(const uint8_t *)str.data(), str.size()};
+        }
+    }
 
     static std::optional<DataFrame> parse(ByteStream &payload, uint8_t flags);
     bool serialize(OByteStream &stream, uint8_t &flags) const;
@@ -358,9 +385,9 @@ struct PushPromiseFrame
     }
 
     uint8_t padLength = 0;
-    bool endHeaders = false;
     int32_t promisedStreamId = 0;
     std::vector<uint8_t> headerBlockFragment;
+    bool endHeaders = false;
 
     static std::optional<PushPromiseFrame> parse(ByteStream &payload,
                                                  uint8_t flags);
@@ -393,7 +420,7 @@ struct H2Stream
     HttpReqCallback callback;
     HttpResponseImplPtr response;
     HttpRequestPtr request;
-    trantor::MsgBuffer body;
+    std::string body;
     std::optional<size_t> contentLength;
     int32_t streamId = 0;
     size_t avaliableTxWindow = 65535;
