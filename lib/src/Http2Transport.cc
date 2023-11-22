@@ -1,5 +1,7 @@
 #include "Http2Transport.h"
+#include "HttpFileUploadRequest.h"
 
+#include <fstream>
 #include <variant>
 
 using namespace drogon;
@@ -709,7 +711,10 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     encoded.resize(n);
     LOG_TRACE << "Encoded headers size: " << encoded.size();
 
-    bool haveBody = req->body().length() > 0;
+    bool haveBody =
+        req->body().length() > 0 ||
+        (req->contentType() != CT_MULTIPART_FORM_DATA &&
+         dynamic_cast<HttpFileUploadRequest *>(req.get()) != nullptr);
     auto &stream = createStream(streamId);
     stream.callback = std::move(callback);
     stream.request = req;
@@ -742,9 +747,8 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     if (!haveBody)
         return;
 
-    size_t sentOffset = sendBodyForStream(stream, 0);
-    assert(sentOffset <= req->body().length());
-    if (sentOffset != req->body().length())
+    auto [sentOffset, done] = sendBodyForStream(stream, 0);
+    if (!done)
     {
         auto it = pendingDataSend.find(streamId);
         if (it != pendingDataSend.end())
@@ -876,8 +880,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             do
             {
                 auto &stream = streams[it->first];
-                auto sentOffset = sendBodyForStream(stream, it->second);
-                if (sentOffset == stream.request->body().length())
+                auto [sentOffset, done] = sendBodyForStream(stream, it->second);
+                if (done)
                 {
                     pendingDataSend.erase(it);
                     it = pendingDataSend.begin();
@@ -1233,9 +1237,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         if (it == pendingDataSend.end())
             return;
 
-        auto sentOffset = sendBodyForStream(stream, it->second);
-        assert(sentOffset <= stream.request->body().length());
-        if (sentOffset == stream.request->body().length())
+        auto [sentOffset, done] = sendBodyForStream(stream, it->second);
+        if (done)
             pendingDataSend.erase(it);
         else
             it->second = sentOffset;
@@ -1350,29 +1353,27 @@ bool Http2Transport::handleConnectionClose()
     return true;
 }
 
-size_t Http2Transport::sendBodyForStream(internal::H2Stream &stream,
-                                         size_t offset)
+std::pair<size_t, bool> Http2Transport::sendBodyForStream(
+    internal::H2Stream &stream,
+    const void *data,
+    size_t size)
 {
     auto streamId = stream.streamId;
     if (stream.avaliableTxWindow == 0 || avaliableTxWindow == 0)
-        return offset;
+        return {0, false};
 
-    assert(stream.request != nullptr);
-    assert(stream.request->body().length() >= offset);
-    size_t maxSendSize = stream.request->body().length() - offset;
+    size_t maxSendSize = size;
     maxSendSize = (std::min)(maxSendSize, stream.avaliableTxWindow);
     maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
-    size_t sendEndPos = offset + maxSendSize;
-    bool sendEverything =
-        maxSendSize == stream.request->body().length() - offset;
+    bool sendEverything = maxSendSize == size;
 
     size_t i = 0;
-    for (i = offset; i < sendEndPos; i += maxFrameSize)
+    for (i = 0; i < size; i += maxFrameSize)
     {
-        size_t remaining = stream.request->body().length() - i;
+        size_t remaining = size - i;
         size_t readSize = (std::min)(maxFrameSize, remaining);
-        bool endStream = sendEverything && i + maxFrameSize >= sendEndPos;
-        std::string_view sendData(stream.request->body().data() + i, readSize);
+        bool endStream = sendEverything && i + maxFrameSize >= size;
+        const std::string_view sendData((const char *)data + i, readSize);
         DataFrame dataFrame(sendData, endStream);
         LOG_TRACE << "Sending data frame: size=" << readSize
                   << " endStream=" << dataFrame.endStream;
@@ -1381,8 +1382,45 @@ size_t Http2Transport::sendBodyForStream(internal::H2Stream &stream,
         stream.avaliableTxWindow -= readSize;
         avaliableTxWindow -= readSize;
     }
-    assert(i >= offset && i <= sendEndPos);
-    return i;
+    i = (std::min)(i, size);
+    return {i, sendEverything};
+}
+
+std::pair<size_t, bool> Http2Transport::sendBodyForStream(
+    internal::H2Stream &stream,
+    size_t offset)
+{
+    auto streamId = stream.streamId;
+    if (stream.avaliableTxWindow == 0 || avaliableTxWindow == 0)
+        return {offset, false};
+
+    // Special handling for multipart because different underlying code
+    auto mPtr = dynamic_cast<HttpFileUploadRequest *>(stream.request.get());
+    if (mPtr)
+    {
+        // TODO: Don't put everything in memory. This causes a lot of memory
+        // when uploading large files. Howerver, we are not doing better in 1.x
+        // client either. So, meh.
+        if (stream.multipartData.readableBytes() == 0)
+            mPtr->renderMultipartFormData(stream.multipartData);
+        auto &content = stream.multipartData;
+        // CANNOT be empty. At least we are sending the boundary
+        assert(content.readableBytes() > 0);
+        auto [amount, done] =
+            sendBodyForStream(stream, content.peek(), content.readableBytes());
+
+        if (done)
+            // force release memory
+            stream.multipartData = trantor::MsgBuffer();
+        return {offset + amount, done};
+    }
+
+    auto [amount, done] =
+        sendBodyForStream(stream,
+                          stream.request->body().data() + offset,
+                          stream.request->body().length() - offset);
+    assert(offset + amount <= stream.request->body().length());
+    return {offset + amount, done};
 }
 
 void Http2Transport::sendFrame(const internal::H2Frame &frame, int32_t streamId)

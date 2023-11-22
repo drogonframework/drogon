@@ -426,6 +426,8 @@ struct H2Stream
     size_t avaliableTxWindow = 65535;
     size_t avaliableRxWindow = 65535;
     StreamState state = StreamState::ExpectingHeaders;
+
+    trantor::MsgBuffer multipartData;
 };
 }  // namespace internal
 
@@ -517,7 +519,11 @@ class Http2Transport : public HttpTransport
     bool parseAndApplyHeaders(internal::H2Stream &stream,
                               const void *data,
                               size_t len);
-    size_t sendBodyForStream(internal::H2Stream &stream, size_t offset);
+    std::pair<size_t, bool> sendBodyForStream(internal::H2Stream &stream,
+                                              const void *data,
+                                              size_t size);
+    std::pair<size_t, bool> sendBodyForStream(internal::H2Stream &stream,
+                                              size_t offset);
     void sendFrame(const internal::H2Frame &frame, int32_t streamId);
 
     void sendBufferedData();
