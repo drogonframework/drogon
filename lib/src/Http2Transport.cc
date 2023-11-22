@@ -1277,6 +1277,9 @@ void Http2Transport::responseSuccess(internal::H2Stream &stream)
     auto it = streams.find(stream.streamId);
     assert(it != streams.end());
     auto streamId = stream.streamId;
+    // It is technically possible for a server to response before we fully
+    // send the body. So cehck and remove.
+    pendingDataSend.erase(streamId);
     // XXX: This callback seems to be able to cause the destruction of this
     // object
     respCallback(stream.response,
@@ -1284,12 +1287,9 @@ void Http2Transport::responseSuccess(internal::H2Stream &stream)
                  connPtr);
     streams.erase(it);  // NOTE: stream is now invalid
 
-    // It is technically possible for a server to response before we fully
-    // send the body. So cehck and remove.
-    pendingDataSend.erase(streamId);
-
     if (bufferedRequests.empty())
         return;
+    assert(streams.size() < maxConcurrentStreams);
     auto &[req, cb] = bufferedRequests.front();
     sendRequestInLoop(req, std::move(cb));
     bufferedRequests.pop();
