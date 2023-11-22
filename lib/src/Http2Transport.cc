@@ -277,7 +277,7 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
     }
 
     size_t minSize = frame.padLength;
-    if (payload.size() < minSize)
+    if (payload.remaining() < minSize)
     {
         LOG_TRACE << "Invalid data frame length";
         return std::nullopt;

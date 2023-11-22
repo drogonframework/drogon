@@ -6,6 +6,7 @@
 #include "hpack/HPacker.h"
 
 #include <variant>
+#include <climits>
 
 namespace drogon
 {
