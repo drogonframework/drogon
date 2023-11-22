@@ -119,6 +119,7 @@ void HttpClientImpl::createTcpClient()
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
     tcpClientPtr_ =
         std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
+    Version version = targetHttpVersion_.value_or(Version::kHttp2);
 
     if (useSSL_ && utils::supportsTls())
     {
@@ -131,7 +132,7 @@ void HttpClientImpl::createTcpClient()
             .setConfCmds(sslConfCmds_)
             .setCertPath(clientCertPath_)
             .setKeyPath(clientKeyPath_);
-        if (targetHttpVersion_.value_or(Version::kHttp2) == Version::kHttp2)
+        if (version == Version::kHttp2)
             policy->setAlpnProtocols({"h2", "http/1.1"});
         tcpClientPtr_->enableSSL(std::move(policy));
     }
@@ -180,11 +181,9 @@ void HttpClientImpl::createTcpClient()
                 // Either we are not using TLS or the server does not support
                 // ALPN. Use HTTP/1.1 if not specified otherwise.
                 bool force1_0 = thisPtr->targetHttpVersion_.value_or(
-                                    Version::kHttp2) == Version::kHttp10;
-                if (force1_0)
-                    thisPtr->httpVersion_ = Version::kHttp10;
-                else
-                    thisPtr->httpVersion_ = Version::kHttp11;
+                                    Version::kUnknown) == Version::kHttp10;
+                thisPtr->httpVersion_ =
+                    force1_0 ? Version::kHttp10 : Version::kHttp11;
             }
             else
             {
