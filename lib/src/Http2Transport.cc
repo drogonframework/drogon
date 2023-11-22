@@ -996,7 +996,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     {
         reconnectionIssued = true;
         LOG_TRACE << "Reconnect due to running out of stream ids.";
-        connPtr->getLoop()->runAfter(1, [connPtr = this->connPtr]() {
+        connPtr->getLoop()->queueInLoop([connPtr = this->connPtr]() {
             connPtr->shutdown();
         });
     }
