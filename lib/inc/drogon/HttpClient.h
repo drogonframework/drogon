@@ -184,6 +184,11 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * If this method is not called, the default depth value is 0 which means
      * the pipelining is disabled. For details about pipelining, see
      * rfc2616-8.1.2.2
+     *
+     * @param depth The depth value.
+     * @note This option is only valid for HTTP/1.x. If the client running in
+     * HTTP/2 mode, this settings have no effect. The maximum concurrent
+     * requests for HTTP/2 is 100 (unless the server has a different setting).
      */
     virtual void setPipeliningDepth(size_t depth) = 0;
 

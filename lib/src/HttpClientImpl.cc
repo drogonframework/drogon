@@ -220,8 +220,13 @@ void HttpClientImpl::createTcpClient()
                 thisPtr->onError(result);
             });
 
-            // TODO: respect timeout and pipeliningDepth_
-            while (!thisPtr->requestsBuffer_.empty())
+            size_t maxSendReq = (*(thisPtr->httpVersion_) == Version::kHttp2)
+                                    ? size_t{0xfffffff}
+                                    : thisPtr->pipeliningDepth_;
+            if (maxSendReq == 0)
+                maxSendReq = 1;
+            while (!thisPtr->requestsBuffer_.empty() &&
+                   thisPtr->transport_->requestsInFlight() < maxSendReq)
             {
                 auto &reqAndCb = thisPtr->requestsBuffer_.front();
                 thisPtr->transport_->sendRequestInLoop(reqAndCb.first,
@@ -656,10 +661,15 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         return;
     }
     assert(transport_ != nullptr);
+    assert(httpVersion_.has_value());
+
+    size_t maxSendReq = (*httpVersion_ == Version::kHttp2) ? size_t{0xfffffffff}
+                                                           : pipeliningDepth_;
+    if (maxSendReq == 0)
+        maxSendReq = 1;
 
     // Connected, send request now
-    if (transport_->requestsInFlight() <= pipeliningDepth_ &&
-        requestsBuffer_.empty())
+    if (transport_->requestsInFlight() <= maxSendReq && requestsBuffer_.empty())
     {
         transport_->sendRequestInLoop(req, std::move(callback));
     }
@@ -683,7 +693,7 @@ void Http1xTransport::sendReq(const HttpRequestPtr &req)
     assert(version_ == Version::kHttp10 || version_ == Version::kHttp11);
     implPtr->appendToBuffer(&buffer, version_);
     LOG_TRACE << "Send request:"
-              << std::string(buffer.peek(), buffer.readableBytes());
+              << std::string_view(buffer.peek(), buffer.readableBytes());
     *bytesSent_ += buffer.readableBytes();
     connPtr->send(std::move(buffer));
 }
