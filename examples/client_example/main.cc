@@ -16,10 +16,7 @@ int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     {
-        auto client = HttpClient::newHttpClient("https://clehaxze.tw:8844",
-                                                nullptr,
-                                                false,
-                                                false);
+        auto client = HttpClient::newHttpClient("http://www.baidu.com");
         client->setSockOptCallback([](int fd) {
             std::cout << "setSockOptCallback:" << fd << std::endl;
 #ifdef __linux__
@@ -48,7 +45,7 @@ int main()
         req->setParameter("wd", "wx");
         req->setParameter("oq", "wx");
 
-        for (int i = 0; i < 1; ++i)
+        for (int i = 0; i < 10; ++i)
         {
             client->sendRequest(
                 req, [](ReqResult result, const HttpResponsePtr &response) {
@@ -74,8 +71,8 @@ int main()
                     }
                     std::cout << "count=" << nth_resp << std::endl;
                 });
-            LOG_INFO << "send request";
         }
     }
+
     app().run();
 }

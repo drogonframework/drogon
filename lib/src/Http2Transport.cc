@@ -561,12 +561,11 @@ static void serializeFrame(OByteStream &buffer,
     buffer.overwriteU8(baseOffset + 4, flags);
 }
 
-// return streamId, frame, error and should continue parsing
+// return data {frame, streamId, h2flags, fatal-error}
 // Note that error can orrcur on a stream level or the entire connection
 // We need to handle both cases. Also it could happen that the TCP stream
 // just cuts off in the middle of a frame (or header). We need to handle that
 // too.
-// return data {frame, streamId, h2flags, fatal-error}
 static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
     trantor::MsgBuffer *msg)
 {
