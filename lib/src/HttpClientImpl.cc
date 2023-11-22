@@ -130,8 +130,9 @@ void HttpClientImpl::createTcpClient()
             .setHostname(domain_)
             .setConfCmds(sslConfCmds_)
             .setCertPath(clientCertPath_)
-            .setKeyPath(clientKeyPath_)
-            .setAlpnProtocols({"h2", "http/1.1"});
+            .setKeyPath(clientKeyPath_);
+        if (targetHttpVersion_.value_or(Version::kHttp2) == Version::kHttp2)
+            policy->setAlpnProtocols({"h2", "http/1.1"});
         tcpClientPtr_->enableSSL(std::move(policy));
     }
 
@@ -156,13 +157,14 @@ void HttpClientImpl::createTcpClient()
             LOG_TRACE << "Connection established!";
 
             auto protocol = connPtr->applicationProtocol();
-            if (protocol.empty() || protocol == "http/1.1")
+            if (protocol == "http/1.1")
             {
                 LOG_TRACE << "Select http/1.1 protocol";
                 thisPtr->transport_ =
                     std::make_unique<Http1xTransport>(connPtr,
                                                       &thisPtr->bytesSent_,
                                                       &thisPtr->bytesReceived_);
+                thisPtr->httpVersion_ = Version::kHttp11;
             }
             else if (protocol == "h2")
             {
@@ -171,6 +173,18 @@ void HttpClientImpl::createTcpClient()
                     std::make_unique<Http2Transport>(connPtr,
                                                      &thisPtr->bytesSent_,
                                                      &thisPtr->bytesReceived_);
+                thisPtr->httpVersion_ = Version::kHttp2;
+            }
+            else if (protocol.empty())
+            {
+                // Either we are not using TLS or the server does not support
+                // ALPN. Use HTTP/1.1 if not specified otherwise.
+                bool force1_0 = thisPtr->targetHttpVersion_.value_or(
+                                    Version::kHttp2) == Version::kHttp10;
+                if (force1_0)
+                    thisPtr->httpVersion_ = Version::kHttp10;
+                else
+                    thisPtr->httpVersion_ = Version::kHttp11;
             }
             else
             {
@@ -179,6 +193,8 @@ void HttpClientImpl::createTcpClient()
                 thisPtr->onError(ReqResult::BadResponse);
                 return;
             }
+
+            assert(thisPtr->httpVersion_.has_value());
             thisPtr->transport_->setRespCallback(
                 [weakPtr](const HttpResponseImplPtr &resp,
                           std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
@@ -268,20 +284,26 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL,
                                bool useOldTLS,
-                               bool validateCert)
+                               bool validateCert,
+                               std::optional<Version> targetVersion)
     : loop_(loop),
       serverAddr_(addr),
       useSSL_(useSSL),
       validateCert_(validateCert),
-      useOldTLS_(useOldTLS)
+      useOldTLS_(useOldTLS),
+      targetHttpVersion_(targetVersion)
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString,
                                bool useOldTLS,
-                               bool validateCert)
-    : loop_(loop), validateCert_(validateCert), useOldTLS_(useOldTLS)
+                               bool validateCert,
+                               std::optional<Version> targetVersion)
+    : loop_(loop),
+      validateCert_(validateCert),
+      useOldTLS_(useOldTLS),
+      targetHttpVersion_(targetVersion)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -722,7 +744,8 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         bool useSSL,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS,
-                                        bool validateCert)
+                                        bool validateCert,
+                                        std::optional<Version> targetVersion)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
@@ -730,19 +753,22 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
         useOldTLS,
-        validateCert);
+        validateCert,
+        targetVersion);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS,
-                                        bool validateCert)
+                                        bool validateCert,
+                                        std::optional<Version> targetVersion)
 {
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         hostString,
         useOldTLS,
-        validateCert);
+        validateCert,
+        targetVersion);
 }
 
 void HttpClientImpl::onError(ReqResult result)

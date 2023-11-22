@@ -76,11 +76,13 @@ class HttpClientImpl final : public HttpClient,
                    const trantor::InetAddress &addr,
                    bool useSSL = false,
                    bool useOldTLS = false,
-                   bool validateCert = true);
+                   bool validateCert = true,
+                   std::optional<Version> httpVersion = std::nullopt);
     HttpClientImpl(trantor::EventLoop *loop,
                    const std::string &hostString,
                    bool useOldTLS = false,
-                   bool validateCert = true);
+                   bool validateCert = true,
+                   std::optional<Version> httpVersion = std::nullopt);
     void sendRequest(const HttpRequestPtr &req,
                      const HttpReqCallback &callback,
                      double timeout = 0) override;
@@ -156,6 +158,11 @@ class HttpClientImpl final : public HttpClient,
         sockOptCallback_ = std::move(cb);
     }
 
+    std::optional<Version> protocolVersion() const override
+    {
+        return httpVersion_;
+    }
+
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
@@ -191,6 +198,8 @@ class HttpClientImpl final : public HttpClient,
     std::string clientKeyPath_;
     std::function<void(int)> sockOptCallback_;
     std::unique_ptr<HttpTransport> transport_;
+    std::optional<Version> targetHttpVersion_;
+    std::optional<Version> httpVersion_;
 };
 
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
