@@ -252,6 +252,8 @@ void HttpClientImpl::createTcpClient()
 
             // temporary fix of dead tcpClientPtr_
             // TODO: fix HttpResponseParser when content-length absence
+            // TODO: HTTP/2 transport also relies on this behavior to reconnect
+            //   when running out of stream IDs
             thisPtr->tcpClientPtr_.reset();
             if (!thisPtr->requestsBuffer_.empty())
             {

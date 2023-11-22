@@ -465,6 +465,7 @@ class Http2Transport : public HttpTransport
     int32_t expectngContinuationStreamId = 0;
 
     std::unordered_map<int32_t, size_t> pendingDataSend;
+    bool reconnectionIssued = false;
     // TODO: Handle server-initiated stream creation
 
     // HTTP/2 client-wide settings (can be changed by server)
@@ -477,6 +478,7 @@ class Http2Transport : public HttpTransport
     const uint32_t windowIncreaseThreshold = 16384;
     const uint32_t windowIncreaseSize = 10 * 1024 * 1024;  // 10 MiB
     const uint32_t maxCompressiedHeaderSize = 2048;
+    const int32_t streamIdReconnectThreshold = INT_MAX - 8192;
 
     // HTTP/2 connection-wide state
     size_t avaliableTxWindow = 65535;
@@ -486,13 +488,23 @@ class Http2Transport : public HttpTransport
     void responseSuccess(internal::H2Stream &stream);
     void responseErrored(int32_t streamId, ReqResult result);
 
-    int32_t nextStreamId()
+    std::optional<int32_t> nextStreamId()
     {
-        // TODO: Handling stream ID requires to reconnect
-        // the entire connection. Handle this somehow
+        // XXX: Technically UB. But no one acrually uses 1's complement
+        if (currentStreamId < 0)
+            return std::nullopt;
+
         int32_t streamId = currentStreamId;
         currentStreamId += 2;
         return streamId;
+    }
+
+    // Returns true when we SHOULD reconnect due to exhausting stream IDs.
+    // Doesn't mean we will. We will force a reconnect when we actually
+    // run out.
+    inline bool runningOutStreamId()
+    {
+        return currentStreamId > streamIdReconnectThreshold;
     }
 
     void handleFrameForStream(const internal::H2Frame &frame,
@@ -522,7 +534,7 @@ class Http2Transport : public HttpTransport
 
     size_t requestsInFlight() const override
     {
-        return 0;
+        return streams.size();
     }
 
     bool handleConnectionClose() override;

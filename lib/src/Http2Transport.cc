@@ -652,7 +652,15 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         return;
     }
 
-    const int32_t streamId = nextStreamId();
+    const auto sid = nextStreamId();
+    if (!sid.has_value())
+    {
+        // Upper HTTP client should see this and retry
+        // TODO: Need more elegant handling
+        connPtr->forceClose();
+        return;
+    }
+    const auto streamId = *sid;
     assert(streamId % 2 == 1);
     LOG_TRACE << "Sending HTTP/2 request: streamId=" << streamId;
     if (streams.find(streamId) != streams.end())
@@ -975,6 +983,19 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         {
             // Do nothing. RFC says to ignore unknown frames
         }
+    }
+
+    if (!runningOutStreamId() || reconnectionIssued)
+        return;
+
+    // Only attempt to reconnect if there is no request in progress
+    if (requestsInFlight() == 0 && bufferedRequests.empty())
+    {
+        reconnectionIssued = true;
+        LOG_TRACE << "Reconnect due to running out of stream ids.";
+        connPtr->getLoop()->runAfter(1, [connPtr = this->connPtr]() {
+            connPtr->shutdown();
+        });
     }
 }
 
