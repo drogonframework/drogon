@@ -101,6 +101,7 @@ void HttpClientImpl::createTcpClient()
                 bool force1_0 = thisPtr->targetHttpVersion_.value_or(
                                     Version::kUnknown) == Version::kHttp10;
                 auto version = force1_0 ? Version::kHttp10 : Version::kHttp11;
+                thisPtr->httpVersion_ = version;
                 thisPtr->transport_ =
                     std::make_unique<Http1xTransport>(connPtr,
                                                       version,
