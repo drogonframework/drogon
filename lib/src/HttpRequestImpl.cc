@@ -182,7 +182,8 @@ void HttpRequestImpl::parseParameters() const
     }
 }
 
-void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
+void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output,
+                                     Version protoVer) const
 {
     switch (method_)
     {
@@ -266,11 +267,11 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
 
     output->append(" ");
-    if (version_ == Version::kHttp11)
+    if (protoVer == Version::kHttp11)
     {
         output->append("HTTP/1.1");
     }
-    else if (version_ == Version::kHttp10)
+    else if (protoVer == Version::kHttp10)
     {
         output->append("HTTP/1.0");
     }
@@ -506,7 +507,6 @@ HttpRequestPtr HttpRequest::newHttpRequest()
 {
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
-    req->setVersion(drogon::Version::kHttp11);
     return req;
 }
 
@@ -514,7 +514,6 @@ HttpRequestPtr HttpRequest::newHttpFormPostRequest()
 {
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Post);
-    req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_X_FORM;
     req->flagForParsingContentType_ = true;
     return req;
@@ -540,7 +539,6 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     });
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
-    req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_JSON;
     req->setContent(writeString(builder, data));
     req->flagForParsingContentType_ = true;
@@ -597,6 +595,10 @@ const char *HttpRequestImpl::versionString() const
 
         case Version::kHttp11:
             result = "HTTP/1.1";
+            break;
+
+        case Version::kHttp2:
+            result = "HTTP/2";
             break;
 
         default:

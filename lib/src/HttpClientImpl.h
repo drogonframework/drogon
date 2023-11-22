@@ -37,11 +37,13 @@ class Http1xTransport : public HttpTransport
     trantor::TcpConnectionPtr connPtr;
     size_t *bytesSent_;
     size_t *bytesReceived_;
+    Version version_{Version::kHttp11};
 
     void sendReq(const HttpRequestPtr &req);
 
   public:
     Http1xTransport(trantor::TcpConnectionPtr connPtr,
+                    Version version,
                     size_t *bytesSent,
                     size_t *bytesReceived);
     virtual ~Http1xTransport();

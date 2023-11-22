@@ -424,7 +424,7 @@ void WebSocketClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr)
     trantor::MsgBuffer buffer;
     assert(upgradeRequest_);
     auto implPtr = static_cast<HttpRequestImpl *>(upgradeRequest_.get());
-    implPtr->appendToBuffer(&buffer);
+    implPtr->appendToBuffer(&buffer, Version::kHttp11);
     LOG_TRACE << "Send request:"
               << std::string(buffer.peek(), buffer.readableBytes());
     connPtr->send(std::move(buffer));

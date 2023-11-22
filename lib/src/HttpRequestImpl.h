@@ -87,8 +87,6 @@ class HttpRequestImpl : public HttpRequest
         return loop_;
     }
 
-    // [[deprcated("Now version is controlled by the HttpClient. Calling
-    // setVersion() will have no effect.")]]
     void setVersion(Version v)
     {
         version_ = v;
@@ -418,7 +416,7 @@ class HttpRequestImpl : public HttpRequest
         return passThrough_;
     }
 
-    void appendToBuffer(trantor::MsgBuffer *output) const;
+    void appendToBuffer(trantor::MsgBuffer *output, Version protoVer) const;
 
     const SessionPtr &session() const override
     {

@@ -32,9 +32,13 @@ const static size_t kDefaultDNSTimeout{600};
 }
 
 Http1xTransport::Http1xTransport(trantor::TcpConnectionPtr connPtr,
+                                 Version version,
                                  size_t *bytesSent,
                                  size_t *bytesReceived)
-    : connPtr(connPtr), bytesSent_(bytesSent), bytesReceived_(bytesReceived)
+    : connPtr(connPtr),
+      bytesSent_(bytesSent),
+      bytesReceived_(bytesReceived),
+      version_(version)
 {
     connPtr->setContext(std::make_shared<HttpResponseParser>(connPtr));
 }
@@ -163,6 +167,7 @@ void HttpClientImpl::createTcpClient()
                 LOG_TRACE << "Select http/1.1 protocol";
                 thisPtr->transport_ =
                     std::make_unique<Http1xTransport>(connPtr,
+                                                      Version::kHttp11,
                                                       &thisPtr->bytesSent_,
                                                       &thisPtr->bytesReceived_);
                 thisPtr->httpVersion_ = Version::kHttp11;
@@ -182,8 +187,12 @@ void HttpClientImpl::createTcpClient()
                 // ALPN. Use HTTP/1.1 if not specified otherwise.
                 bool force1_0 = thisPtr->targetHttpVersion_.value_or(
                                     Version::kUnknown) == Version::kHttp10;
-                thisPtr->httpVersion_ =
-                    force1_0 ? Version::kHttp10 : Version::kHttp11;
+                auto version = force1_0 ? Version::kHttp10 : Version::kHttp11;
+                thisPtr->transport_ =
+                    std::make_unique<Http1xTransport>(connPtr,
+                                                      version,
+                                                      &thisPtr->bytesSent_,
+                                                      &thisPtr->bytesReceived_);
             }
             else
             {
@@ -194,6 +203,7 @@ void HttpClientImpl::createTcpClient()
             }
 
             assert(thisPtr->httpVersion_.has_value());
+            assert(thisPtr->transport_);
             thisPtr->transport_->setRespCallback(
                 [weakPtr](const HttpResponseImplPtr &resp,
                           std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
@@ -670,7 +680,8 @@ void Http1xTransport::sendReq(const HttpRequestPtr &req)
     trantor::MsgBuffer buffer;
     assert(req);
     auto implPtr = static_cast<HttpRequestImpl *>(req.get());
-    implPtr->appendToBuffer(&buffer);
+    assert(version_ == Version::kHttp10 || version_ == Version::kHttp11);
+    implPtr->appendToBuffer(&buffer, version_);
     LOG_TRACE << "Send request:"
               << std::string(buffer.peek(), buffer.readableBytes());
     *bytesSent_ += buffer.readableBytes();
