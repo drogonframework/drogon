@@ -245,6 +245,7 @@ set(DROGON_SOURCES
     lib/src/HttpAppFrameworkImpl.cc
     lib/src/HttpBinder.cc
     lib/src/Http2Transport.cc
+    lib/src/Http1xTransport.cc
     lib/src/HttpClientImpl.cc
     lib/src/HttpControllersRouter.cc
     lib/src/HttpFileImpl.cc
@@ -291,6 +292,8 @@ set(private_headers
     lib/src/FiltersFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h
+    lib/src/Http2Transport.h
+    lib/src/Http1xTransport.h
     lib/src/HttpControllersRouter.h
     lib/src/HttpFileImpl.h
     lib/src/HttpFileUploadRequest.h
