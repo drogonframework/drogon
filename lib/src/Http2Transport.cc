@@ -680,7 +680,10 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     vec.reserve(headers.size() + 5);
     vec.emplace_back(":method", req->methodString());
     vec.emplace_back(":path", req->path());
-    vec.emplace_back(":scheme", connPtr->isSSLConnection() ? "https" : "http");
+    std::string scheme = connPtr->isSSLConnection() ? "https" : "http";
+    if(!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
+        scheme = (req->isOnSecureConnection()) ? "https" : "http";
+    vec.emplace_back(":scheme", scheme);
     if (auto host = req->getHeader("host"); !host.empty())
         vec.emplace_back(":authority", host);
 
