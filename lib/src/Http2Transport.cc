@@ -144,7 +144,7 @@ std::optional<WindowUpdateFrame> WindowUpdateFrame::parse(ByteStream &payload,
     }
     WindowUpdateFrame frame;
     // MSB is reserved for future use
-    auto [_, windowSizeIncrement] = payload.readBI32BE();
+    auto [_, windowSizeIncrement] = payload.readBI31BE();
     frame.windowSizeIncrement = windowSizeIncrement;
     return frame;
 }
@@ -190,7 +190,7 @@ std::optional<HeadersFrame> HeadersFrame::parse(ByteStream &payload,
 
     if (priority)
     {
-        auto [exclusive, streamDependency] = payload.readBI32BE();
+        auto [exclusive, streamDependency] = payload.readBI31BE();
         frame.exclusive = exclusive;
         frame.streamDependency = streamDependency;
         frame.weight = payload.readU8();
@@ -387,7 +387,7 @@ std::optional<PushPromiseFrame> PushPromiseFrame::parse(ByteStream &payload,
         return std::nullopt;
     }
 
-    auto [_, promisedStreamId] = payload.readBI32BE();
+    auto [_, promisedStreamId] = payload.readBI31BE();
     frame.promisedStreamId = promisedStreamId;
     assert(payload.remaining() >= frame.padLength);
     frame.headerBlockFragment.resize(payload.remaining() - frame.padLength);

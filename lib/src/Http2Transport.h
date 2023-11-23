@@ -46,7 +46,7 @@ struct ByteStream
         return res;
     }
 
-    std::pair<bool, int32_t> readBI32BE()
+    std::pair<bool, int32_t> readBI31BE()
     {
         assert(length >= 4 && offset <= length - 4);
         int32_t res = ptr[offset] << 24 | ptr[offset + 1] << 16 |
@@ -469,7 +469,6 @@ class Http2Transport : public HttpTransport
 
     std::unordered_map<int32_t, size_t> pendingDataSend;
     bool reconnectionIssued = false;
-    // TODO: Handle server-initiated stream creation
 
     // HTTP/2 client-wide settings (can be changed by server)
     size_t maxConcurrentStreams = 100;
@@ -479,7 +478,7 @@ class Http2Transport : public HttpTransport
 
     // Configuration settings
     const uint32_t windowIncreaseThreshold = 16384;
-    const uint32_t windowIncreaseSize = 10 * 1024 * 1024;  // 10 MiB
+    const uint32_t windowIncreaseSize = 128 * 1024;  // 128KB
     const uint32_t maxCompressiedHeaderSize = 2048;
     const int32_t streamIdReconnectThreshold = INT_MAX - 8192;
 
@@ -493,7 +492,7 @@ class Http2Transport : public HttpTransport
 
     std::optional<int32_t> nextStreamId()
     {
-        // XXX: Technically UB. But no one acrually uses 1's complement
+        // XXX: Technically UB. But no one actually uses 1's complement
         if (currentStreamId < 0)
             return std::nullopt;
 
