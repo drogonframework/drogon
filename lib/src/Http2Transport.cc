@@ -1336,7 +1336,8 @@ void Http2Transport::killConnection(int32_t lastStreamId,
 {
     LOG_TRACE << "Killing connection with error: " << errorMsg;
     connPtr->getLoop()->assertInLoopThread();
-    sendFrame(GoAwayFrame(lastStreamId, (uint32_t)errorCode, errorMsg), 0);
+    sendFrame(
+        GoAwayFrame(lastStreamId, (uint32_t)errorCode, std::move(errorMsg)), 0);
 
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);

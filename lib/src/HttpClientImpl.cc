@@ -643,8 +643,10 @@ void HttpClientImpl::handleResponse(
         }
         else
         {
+            assert(httpVersion_.has_value());
             if (resp->ifCloseConnection() &&
-                transport_->requestsInFlight() == 0)
+                transport_->requestsInFlight() == 0 &&
+                *httpVersion_ != Version::kHttp2)
             {
                 tcpClientPtr_.reset();
             }

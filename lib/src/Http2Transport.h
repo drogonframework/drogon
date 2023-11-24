@@ -225,7 +225,7 @@ struct HeadersFrame
     HeadersFrame(std::vector<uint8_t> headerBlockFragment,
                  bool endHeaders,
                  bool endStream)
-        : headerBlockFragment(std::vector(headerBlockFragment)),
+        : headerBlockFragment(std::move(headerBlockFragment)),
           endHeaders(endHeaders),
           endStream(endStream)
     {
