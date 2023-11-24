@@ -107,82 +107,28 @@ inline std::string escapeString(const std::string_view sv)
 DROGON_EXPORT std::string prettifyString(const std::string_view sv,
                                          size_t maxLength = 120);
 
-#ifdef __cpp_fold_expressions
 template <typename... Args>
 inline void outputReason(Args &&...args)
 {
     (std::cout << ... << std::forward<Args>(args));
 }
-#else
-template <typename Head>
-inline void outputReason(Head &&head)
-{
-    std::cout << std::forward<Head>(head);
-}
 
-template <typename Head, typename... Tail>
-inline void outputReason(Head &&head, Tail &&...tail)
+template <typename T>
+inline std::string attemptPrint(T &&v)
 {
-    std::cout << std::forward<Head>(head);
-    outputReason(std::forward<Tail>(tail)...);
-}
-#endif
-
-template <bool P>
-struct AttemptPrintViaStream
-{
-    template <typename T>
-    std::string operator()(const T &v)
-    {
-        return "{un-printable}";
-    }
-};
-
-template <>
-struct AttemptPrintViaStream<true>
-{
-    template <typename T>
-    std::string operator()(const T &v)
+    if constexpr (std::is_same_v<T, std::nullptr_t>)
+        return "nullptr";
+    else if constexpr (std::is_same_v<T, char>)
+        return "'" + std::string(1, v) + "'";
+    else if constexpr (std::is_convertible_v<T, std::string_view>)
+        return prettifyString(v);
+    else if constexpr (internal::is_printable<T>::value)
     {
         std::stringstream ss;
         ss << v;
         return ss.str();
     }
-};
-
-struct StringPrinter
-{
-    std::string operator()(const std::string_view &v)
-    {
-        return prettifyString(v);
-    }
-};
-
-template <typename T>
-inline std::string attemptPrint(T &&v)
-{
-    using DefaultPrinter =
-        internal::AttemptPrintViaStream<is_printable<T>::value>;
-
-    // Poor man's if constexpr because SFINAE don't disambiguate between
-    // possible resolutions
-    return
-        typename std::conditional_t<std::is_convertible_v<T, std::string_view>,
-                                    internal::StringPrinter,
-                                    DefaultPrinter>()(v);
-}
-
-// Specializations to reduce template construction
-template <>
-inline std::string attemptPrint(const std::nullptr_t &v)
-{
-    return "nullptr";
-}
-
-template <>
-inline std::string attemptPrint(const char &v)
-{
-    return "'" + std::string(1, v) + "'";
+    return "{un-printable}";
 }
 
 inline std::string stringifyFuncCall(const std::string &funcName)
