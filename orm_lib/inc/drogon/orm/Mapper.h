@@ -578,6 +578,53 @@ class Mapper
                                        Arguments &&...args) noexcept;
 
     /**
+     * @brief Update some records that match the given criteria.
+     *
+     * @param colNames Columns to increment.
+     * @param criteria The criteria.
+     * @param args Specify the amount by which the columns should be
+     * incremented.
+     * @return size_t The number of updated records.
+     */
+    template <typename... Arguments>
+    size_t increment(const std::vector<std::string> &colNames,
+                     const Criteria &criteria,
+                     Arguments... args) noexcept(false);
+
+    /**
+     * @brief Asynchronously update some records that match the given criteria.
+     *
+     * @param colNames Columns to increment.
+     * @param criteria The criteria.
+     * @param rcb is called with the result.
+     * @param ecb is called when an error occurs.
+     * @param args Specify the amount by which the columns should be
+     * incremented.
+     */
+    template <typename... Arguments>
+    void increment(const std::vector<std::string> &colNames,
+                   const CountCallback &rcb,
+                   const ExceptionCallback &ecb,
+                   const Criteria &criteria,
+                   Arguments... args) noexcept;
+
+    /**
+     * @brief Asynchronously update some records that match the given criteria.
+     *
+     * @param colNames Columns to increment.
+     * @param criteria The criteria.
+     * @param args Specify the amount by which the columns should be
+     * incremented.
+     * @return std::future<size_t> The future object with which user can get the
+     * number of updated records.
+     */
+    template <typename... Arguments>
+    std::future<size_t> incrementFuture(
+        const std::vector<std::string> &colNames,
+        const Criteria &criteria,
+        Arguments... args) noexcept;
+
+    /**
      * @brief Delete a record from the table.
      *
      * @param obj The record.
@@ -1473,6 +1520,160 @@ inline std::future<size_t> Mapper<T>::updateFutureBy(
     {
         sql += colName;
         sql += " = $?,";
+    }
+    sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+    if (criteria)
+    {
+        sql += " where ";
+        sql += criteria.criteriaString();
+    }
+
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    auto binder = *client_ << std::move(sql);
+    (void)std::initializer_list<int>{
+        (binder << std::forward<Arguments>(args), 0)...};
+    if (criteria)
+        criteria.outputArgs(binder);
+
+    std::shared_ptr<std::promise<size_t>> prom =
+        std::make_shared<std::promise<size_t>>();
+    binder >> [prom](const Result &r) { prom->set_value(r.affectedRows()); };
+    binder >> [prom](const std::exception_ptr &e) { prom->set_exception(e); };
+    binder.exec();
+    return prom->get_future();
+}
+
+template <typename T>
+template <typename... Arguments>
+inline size_t Mapper<T>::increment(const std::vector<std::string> &colNames,
+                                   const Criteria &criteria,
+                                   Arguments... args) noexcept(false)
+{
+    static_assert(sizeof...(args) > 0);
+    assert(colNames.size() == sizeof...(args));
+    clear();
+    std::string sql = "update ";
+    sql += T::tableName;
+    sql += " set ";
+
+    std::vector<const char *> temps;
+    (void)std::initializer_list<int>{(
+        [&args, &temps] {
+            args = (args < 0) ? (temps.push_back(" - $?,"), -args)
+                              : (temps.push_back(" + $?,"), args);
+        }(),
+        0)...};
+
+    for (int i = 0; i < sizeof...(args); ++i)
+    {
+        const auto &colName = colNames[i];
+        sql += colName;
+        sql += " = ";
+        sql += colName;
+        sql += temps[i];
+    }
+    sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+    if (criteria)
+    {
+        sql += " where ";
+        sql += criteria.criteriaString();
+    }
+
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    Result r(nullptr);
+    {
+        auto binder = *client_ << std::move(sql);
+        (void)std::initializer_list<int>{
+            (binder << std::forward<Arguments>(args), 0)...};
+        if (criteria)
+            criteria.outputArgs(binder);
+        binder << Mode::Blocking;
+        binder >> [&r](const Result &result) { r = result; };
+        binder.exec();  // Maybe throw exception;
+    }
+    return r.affectedRows();
+}
+
+template <typename T>
+template <typename... Arguments>
+inline void Mapper<T>::increment(const std::vector<std::string> &colNames,
+                                 const CountCallback &rcb,
+                                 const ExceptionCallback &ecb,
+                                 const Criteria &criteria,
+                                 Arguments... args) noexcept
+{
+    static_assert(sizeof...(args) > 0);
+    assert(colNames.size() == sizeof...(args));
+    clear();
+    std::string sql = "update ";
+    sql += T::tableName;
+    sql += " set ";
+
+    std::vector<const char *> temps;
+    (void)std::initializer_list<int>{(
+        [&args, &temps] {
+            args = args < 0 ? (temps.push_back(" - $?,"), -args)
+                            : (temps.push_back(" + $?,"), args);
+        }(),
+        0)...};
+
+    for (int i = 0; i < sizeof...(args); ++i)
+    {
+        const auto &colName = colNames[i];
+        sql += colName;
+        sql += " = ";
+        sql += colName;
+        sql += temps[i];
+    }
+    sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+    if (criteria)
+    {
+        sql += " where ";
+        sql += criteria.criteriaString();
+    }
+
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    auto binder = *client_ << std::move(sql);
+    (void)std::initializer_list<int>{
+        (binder << std::forward<Arguments>(args), 0)...};
+    if (criteria)
+        criteria.outputArgs(binder);
+    binder >> [rcb](const Result &r) { rcb(r.affectedRows()); };
+    binder >> ecb;
+}
+
+template <typename T>
+template <typename... Arguments>
+inline std::future<size_t> Mapper<T>::incrementFuture(
+    const std::vector<std::string> &colNames,
+    const Criteria &criteria,
+    Arguments... args) noexcept
+{
+    static_assert(sizeof...(args) > 0);
+    assert(colNames.size() == sizeof...(args));
+    clear();
+    std::string sql = "update ";
+    sql += T::tableName;
+    sql += " set ";
+
+    std::vector<const char *> temps;
+    (void)std::initializer_list<int>{(
+        [&args, &temps] {
+            args = args < 0 ? (temps.push_back(" - $?,"), -args)
+                            : (temps.push_back(" + $?,"), args);
+        }(),
+        0)...};
+
+    for (int i = 0; i < sizeof...(args); ++i)
+    {
+        const auto &colName = colNames[i];
+        sql += colName;
+        sql += " = ";
+        sql += colName;
+        sql += temps[i];
     }
     sql[sql.length() - 1] = ' ';  // Replace the last ','
 
