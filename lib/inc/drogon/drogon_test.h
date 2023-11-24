@@ -116,13 +116,14 @@ inline void outputReason(Args &&...args)
 template <typename T>
 inline std::string attemptPrint(T &&v)
 {
-    if constexpr (std::is_same_v<T, std::nullptr_t>)
+    using Type = std::remove_cv_t<std::remove_reference_t<T>>;
+    if constexpr (std::is_same_v<Type, std::nullptr_t>)
         return "nullptr";
-    else if constexpr (std::is_same_v<T, char>)
+    else if constexpr (std::is_same_v<Type, char>)
         return "'" + std::string(1, v) + "'";
-    else if constexpr (std::is_convertible_v<T, std::string_view>)
+    else if constexpr (std::is_convertible_v<Type, std::string_view>)
         return prettifyString(v);
-    else if constexpr (internal::is_printable<T>::value)
+    else if constexpr (internal::is_printable<Type>::value)
     {
         std::stringstream ss;
         ss << v;
