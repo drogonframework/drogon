@@ -391,35 +391,35 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                                                 shared_from_this(),
                                                 req);
 
-    loop_->runAfter(
-        timeout,
-        [weakCallbackBackPtr =
-             std::weak_ptr<RequestCallbackParams>(callbackParamsPtr)] {
-            auto callbackParamsPtr = weakCallbackBackPtr.lock();
-            if (callbackParamsPtr != nullptr)
-            {
-                auto &thisPtr = callbackParamsPtr->clientPtr;
-                if (callbackParamsPtr->timeoutFlag)
-                {
-                    return;
-                }
+    // TODO: Cancel the timer when the request is finished.
+    loop_->runAfter(timeout,
+                    [weakCallbackBackPtr = std::weak_ptr<RequestCallbackParams>(
+                         callbackParamsPtr)] {
+                        auto callbackParamsPtr = weakCallbackBackPtr.lock();
+                        if (callbackParamsPtr == nullptr)
+                            return;
+                        auto &thisPtr = callbackParamsPtr->clientPtr;
+                        if (callbackParamsPtr->timeoutFlag)
+                        {
+                            return;
+                        }
 
-                callbackParamsPtr->timeoutFlag = true;
+                        callbackParamsPtr->timeoutFlag = true;
 
-                for (auto iter = thisPtr->requestsBuffer_.begin();
-                     iter != thisPtr->requestsBuffer_.end();
-                     ++iter)
-                {
-                    if (iter->first == callbackParamsPtr->requestPtr)
-                    {
-                        thisPtr->requestsBuffer_.erase(iter);
-                        break;
-                    }
-                }
+                        for (auto iter = thisPtr->requestsBuffer_.begin();
+                             iter != thisPtr->requestsBuffer_.end();
+                             ++iter)
+                        {
+                            if (iter->first == callbackParamsPtr->requestPtr)
+                            {
+                                thisPtr->requestsBuffer_.erase(iter);
+                                break;
+                            }
+                        }
 
-                (callbackParamsPtr->callback)(ReqResult::Timeout, nullptr);
-            }
-        });
+                        (callbackParamsPtr->callback)(ReqResult::Timeout,
+                                                      nullptr);
+                    });
     sendRequestInLoop(req,
                       [callbackParamsPtr](ReqResult r,
                                           const HttpResponsePtr &resp) {
@@ -427,6 +427,7 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                           {
                               return;
                           }
+
                           callbackParamsPtr->timeoutFlag = true;
                           (callbackParamsPtr->callback)(r, resp);
                       });
