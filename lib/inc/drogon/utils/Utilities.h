@@ -95,12 +95,8 @@ struct CanConvertFromString
 namespace utils
 {
 /// Determine if the string is an integer
-DROGON_EXPORT bool isInteger(const std::string &str);
-/// Determine if the string is an integer
 DROGON_EXPORT bool isInteger(std::string_view str);
 
-/// Determine if the string is base64 encoded
-DROGON_EXPORT bool isBase64(const std::string &str);
 /// Determine if the string is base64 encoded
 DROGON_EXPORT bool isBase64(std::string_view str);
 
