@@ -657,9 +657,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return reusePort_;
     }
 
-    void setExceptionHandler(ExceptionHandler handler) override
+    HttpAppFramework &setExceptionHandler(ExceptionHandler handler) override
     {
         exceptionHandler_ = std::move(handler);
+        return *this;
     }
 
     const ExceptionHandler &getExceptionHandler() const override
