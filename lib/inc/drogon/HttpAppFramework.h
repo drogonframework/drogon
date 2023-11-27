@@ -1505,7 +1505,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /**
      * @brief handler will be called upon an exception escapes a request handler
      */
-    virtual void setExceptionHandler(ExceptionHandler handler) = 0;
+    virtual HttpAppFramework &setExceptionHandler(ExceptionHandler handler) = 0;
 
     /**
      * @brief returns the excaption handler
