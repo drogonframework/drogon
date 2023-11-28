@@ -150,6 +150,7 @@ void TransactionImpl::execSqlInLoop(
         exceptCallback(exceptPtr);
     }
 }
+
 void TransactionImpl::commit(std::function<void(bool)> callback)
 {
     auto thisPtr = shared_from_this();
@@ -212,6 +213,7 @@ void TransactionImpl::commit(std::function<void(bool)> callback)
             });
     });
 }
+
 void TransactionImpl::rollback()
 {
     auto thisPtr = shared_from_this();
