@@ -59,6 +59,10 @@ class WebsocketControllersRouter : public trantor::NonCopyable
         const std::string &pathName,
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods);
+    void registerWebSocketControllerRegex(
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods);
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
                const WebSocketConnectionImplPtr &wsConnPtr);
@@ -81,9 +85,12 @@ class WebsocketControllersRouter : public trantor::NonCopyable
 
     struct WebSocketControllerRouterItem
     {
+        std::string path_;
+        std::regex regex_;
         CtrlBinderPtr binders_[Invalid];
     };
     std::unordered_map<std::string, WebSocketControllerRouterItem> wsCtrlMap_;
+    std::vector<WebSocketControllerRouterItem> wsCtrlVector_;
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
                                          AdviceChainCallback &&)>>

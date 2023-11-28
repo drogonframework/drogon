@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         LOG_INFO << "WebSocket connection closed!";
     });
 
-    LOG_INFO << "Connecting to WebSocket at " << server;
+    LOG_INFO << "Connecting to WebSocket at " << server << path;
     wsPtr->connectToServer(
         req,
         [](ReqResult r,
@@ -72,6 +72,49 @@ int main(int argc, char *argv[])
             wsPtr->getConnection()->send("hello!");
         });
 
+    auto wsRegexPtr = WebSocketClient::newWebSocketClient(serverString);
+    auto reqRegex = HttpRequest::newHttpRequest();
+    auto pathRegex = path + "regex";
+    reqRegex->setPath(pathRegex);
+
+    wsRegexPtr->setMessageHandler([](const std::string &message,
+                                     const WebSocketClientPtr &,
+                                     const WebSocketMessageType &type) {
+        std::string messageType = "Unknown";
+        if (type == WebSocketMessageType::Text)
+            messageType = "text";
+        else if (type == WebSocketMessageType::Pong)
+            messageType = "pong";
+        else if (type == WebSocketMessageType::Ping)
+            messageType = "ping";
+        else if (type == WebSocketMessageType::Binary)
+            messageType = "binary";
+        else if (type == WebSocketMessageType::Close)
+            messageType = "Close";
+
+        LOG_INFO << "new message (" << messageType << "): " << message;
+    });
+
+    wsRegexPtr->setConnectionClosedHandler([](const WebSocketClientPtr &) {
+        LOG_INFO << "WebSocket connection closed!";
+    });
+
+    LOG_INFO << "Connecting to WebSocket at " << server << pathRegex;
+    wsRegexPtr->connectToServer(
+        reqRegex,
+        [](ReqResult r,
+           const HttpResponsePtr &,
+           const WebSocketClientPtr &wsRegexPtr) {
+            if (r != ReqResult::Ok)
+            {
+                LOG_ERROR << "Failed to establish WebSocket connection!";
+                wsRegexPtr->stop();
+                return;
+            }
+            LOG_INFO << "WebSocket connected!";
+            wsRegexPtr->getConnection()->setPingMessage("", 2s);
+            wsRegexPtr->getConnection()->send("hello regex!");
+        });
     // Quit the application after 15 seconds
     app().getLoop()->runAfter(15, []() { app().quit(); });
 

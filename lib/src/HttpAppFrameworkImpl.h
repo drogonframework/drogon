@@ -88,6 +88,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
         override;
+    HttpAppFramework &registerWebSocketControllerRegex(
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods)
+        override;
     HttpAppFramework &registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
