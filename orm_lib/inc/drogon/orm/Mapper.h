@@ -215,7 +215,7 @@ class Mapper
             Result r(nullptr);
             {
                 auto binder = *client_ << std::move(sql);
-                outputPrimeryKeyToBinder(key, binder);
+                outputPrimaryKeyToBinder(key, binder);
                 binder << Mode::Blocking;
                 binder >> [&r](const Result &result) { r = result; };
                 binder.exec();  // exec may be throw exception;
@@ -267,7 +267,7 @@ class Mapper
             }
             clear();
             auto binder = *client_ << std::move(sql);
-            outputPrimeryKeyToBinder(key, binder);
+            outputPrimaryKeyToBinder(key, binder);
             binder >> [ecb, rcb](const Result &r) {
                 if (r.size() == 0)
                 {
@@ -321,7 +321,7 @@ class Mapper
             }
             clear();
             auto binder = *client_ << std::move(sql);
-            outputPrimeryKeyToBinder(key, binder);
+            outputPrimaryKeyToBinder(key, binder);
 
             std::shared_ptr<std::promise<T>> prom =
                 std::make_shared<std::promise<T>>();
@@ -755,7 +755,7 @@ class Mapper
     }
 
     template <typename PKType = decltype(T::primaryKeyName)>
-    void outputPrimeryKeyToBinder(const TraitsPKType &pk,
+    void outputPrimaryKeyToBinder(const TraitsPKType &pk,
                                   internal::SqlBinder &binder)
     {
         if constexpr (std::is_same_v<const std::string, PKType>)
@@ -1359,7 +1359,7 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     {
         auto binder = *client_ << std::move(sql);
         obj.updateArgs(binder);
-        outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+        outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
         binder.exec();  // Maybe throw exception;
@@ -1430,7 +1430,7 @@ inline void Mapper<T>::update(const T &obj,
     sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *client_ << std::move(sql);
     obj.updateArgs(binder);
-    outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+    outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
     binder >> [rcb](const Result &r) { rcb(r.affectedRows()); };
     binder >> ecb;
 }
@@ -1493,7 +1493,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *client_ << std::move(sql);
     obj.updateArgs(binder);
-    outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+    outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
 
     std::shared_ptr<std::promise<size_t>> prom =
         std::make_shared<std::promise<size_t>>();
@@ -1715,7 +1715,7 @@ inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
     Result r(nullptr);
     {
         auto binder = *client_ << std::move(sql);
-        outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+        outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
         binder.exec();  // Maybe throw exception;
@@ -1739,7 +1739,7 @@ inline void Mapper<T>::deleteOne(const T &obj,
 
     sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *client_ << std::move(sql);
-    outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+    outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
     binder >> [rcb](const Result &r) { rcb(r.affectedRows()); };
     binder >> ecb;
 }
@@ -1758,7 +1758,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
 
     sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *client_ << std::move(sql);
-    outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+    outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
 
     std::shared_ptr<std::promise<size_t>> prom =
         std::make_shared<std::promise<size_t>>();
@@ -1980,7 +1980,7 @@ inline size_t Mapper<T>::deleteByPrimaryKey(
     Result r(nullptr);
     {
         auto binder = *client_ << T::sqlForDeletingByPrimaryKey();
-        outputPrimeryKeyToBinder(key, binder);
+        outputPrimaryKeyToBinder(key, binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
         binder.exec();  // exec may be throw exception;
@@ -2002,7 +2002,7 @@ inline void Mapper<T>::deleteByPrimaryKey(
                   "version of drogon_ctl");
     clear();
     auto binder = *client_ << T::sqlForDeletingByPrimaryKey();
-    outputPrimeryKeyToBinder(key, binder);
+    outputPrimaryKeyToBinder(key, binder);
     binder >>
         [rcb = std::move(rcb)](const Result &r) { rcb(r.affectedRows()); };
     binder >> ecb;
@@ -2020,7 +2020,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureByPrimaryKey(
                   "version of drogon_ctl");
     clear();
     auto binder = *client_ << T::sqlForDeletingByPrimaryKey();
-    outputPrimeryKeyToBinder(key, binder);
+    outputPrimaryKeyToBinder(key, binder);
 
     std::shared_ptr<std::promise<size_t>> prom =
         std::make_shared<std::promise<size_t>>();

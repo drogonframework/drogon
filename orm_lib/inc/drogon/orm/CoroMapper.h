@@ -100,7 +100,7 @@ class CoroMapper : public Mapper<T>
                 }
                 this->clear();
                 auto binder = *(this->client_) << std::move(sql);
-                this->outputPrimeryKeyToBinder(key, binder);
+                this->outputPrimaryKeyToBinder(key, binder);
 
                 binder >> [callback = std::move(callback),
                            errCallback](const Result &r) {
@@ -433,7 +433,7 @@ class CoroMapper : public Mapper<T>
             sql = this->replaceSqlPlaceHolder(sql, "$?");
             auto binder = *(this->client_) << std::move(sql);
             obj.updateArgs(binder);
-            this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+            this->outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };
@@ -573,7 +573,7 @@ class CoroMapper : public Mapper<T>
 
             sql = this->replaceSqlPlaceHolder(sql, "$?");
             auto binder = *(this->client_) << std::move(sql);
-            this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+            this->outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };
@@ -626,7 +626,7 @@ class CoroMapper : public Mapper<T>
                               ExceptPtrCallback &&errCallback) {
             this->clear();
             auto binder = *(this->client_) << T::sqlForDeletingByPrimaryKey();
-            this->outputPrimeryKeyToBinder(key, binder);
+            this->outputPrimaryKeyToBinder(key, binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };
