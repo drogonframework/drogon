@@ -488,7 +488,7 @@ class Http2Transport : public HttpTransport
 
     internal::H2Stream &createStream(int32_t streamId);
     void responseSuccess(internal::H2Stream &stream);
-    void responseErrored(int32_t streamId, ReqResult result);
+    void streamErrored(int32_t streamId, ReqResult result);
 
     std::optional<int32_t> nextStreamId()
     {
@@ -512,9 +512,9 @@ class Http2Transport : public HttpTransport
     void handleFrameForStream(const internal::H2Frame &frame,
                               int32_t streamId,
                               uint8_t flags);
-    void killConnection(int32_t lastStreamId,
-                        StreamCloseErrorCode errorCode,
-                        std::string errorMsg = "");
+    void connectionErrored(int32_t lastStreamId,
+                           StreamCloseErrorCode errorCode,
+                           std::string errorMsg = "");
 
     bool parseAndApplyHeaders(internal::H2Stream &stream,
                               const void *data,
