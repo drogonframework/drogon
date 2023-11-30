@@ -23,6 +23,7 @@
 #include <algorithm>
 #include "AOPAdvice.h"
 #include "ConfigLoader.h"
+#include "CtrlBinderBase.h"
 #include "DbClientManager.h"
 #include "HttpClientImpl.h"
 #include "HttpControllersRouter.h"
@@ -39,6 +40,8 @@
 #include "StaticFileRouter.h"
 #include "WebSocketConnectionImpl.h"
 #include "WebsocketControllersRouter.h"
+
+#include <drogon/HttpSimpleController.h>  // TODO: temporary
 
 #include <iostream>
 #include <memory>
@@ -82,19 +85,8 @@ using namespace std::placeholders;
 
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
     : staticFileRouterPtr_(new StaticFileRouter{}),
-      httpCtrlsRouterPtr_(new HttpControllersRouter(*staticFileRouterPtr_,
-                                                    postRoutingAdvices_,
-                                                    postRoutingObservers_,
-                                                    preHandlingAdvices_,
-                                                    preHandlingObservers_,
-                                                    postHandlingAdvices_)),
-      httpSimpleCtrlsRouterPtr_(
-          new HttpSimpleControllersRouter(*httpCtrlsRouterPtr_,
-                                          postRoutingAdvices_,
-                                          postRoutingObservers_,
-                                          preHandlingAdvices_,
-                                          preHandlingObservers_,
-                                          postHandlingAdvices_)),
+      httpCtrlsRouterPtr_(new HttpControllersRouter()),
+      httpSimpleCtrlsRouterPtr_(new HttpSimpleControllersRouter()),
       websockCtrlsRouterPtr_(
           new WebsocketControllersRouter(postRoutingAdvices_,
                                          postRoutingObservers_,
@@ -933,6 +925,7 @@ void HttpAppFrameworkImpl::callCallback(
     }
 }
 
+// on HttpRequest
 void HttpAppFrameworkImpl::onAsyncRequest(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
@@ -961,7 +954,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     }
     if (preRoutingAdvices_.empty())
     {
-        httpSimpleCtrlsRouterPtr_->route(req, std::move(callback));
+        httpRequestRouting(req, std::move(callback));
     }
     else
     {
@@ -977,9 +970,334 @@ void HttpAppFrameworkImpl::onAsyncRequest(
                     callCallback(req, resp, *callbackPtr);
                 }),
             [this, callbackPtr, req]() {
-                httpSimpleCtrlsRouterPtr_->route(req, std::move(*callbackPtr));
+                httpRequestRouting(req, std::move(*callbackPtr));
             });
     }
+}
+
+static void handleInvalidHttpMethod(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    if (req->method() != Options)
+    {
+        callback(app().getCustomErrorHandler()(k405MethodNotAllowed, req));
+    }
+    else
+    {
+        callback(app().getCustomErrorHandler()(k403Forbidden, req));
+    }
+}
+
+void HttpAppFrameworkImpl::httpRequestRouting(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    internal::RouteResult result = httpSimpleCtrlsRouterPtr_->tryRoute(req);
+    if (result.found)
+    {
+        if (!result.binderPtr)
+        {
+            // Invalid Http Method
+            handleInvalidHttpMethod(req, std::move(callback));
+            return;
+        }
+        httpRequestPostRouting(req, result.binderPtr, std::move(callback));
+        return;
+    }
+    result = httpCtrlsRouterPtr_->tryRoute(req);
+    if (result.found)
+    {
+        if (!result.binderPtr)
+        {
+            // Invalid Http Method
+            handleInvalidHttpMethod(req, std::move(callback));
+            return;
+        }
+        httpRequestPostRouting(req, result.binderPtr, std::move(callback));
+        return;
+    }
+
+    // Fallback to static file router
+    // TODO: make this router a plugin
+    if (req->path() == "/" &&
+        !HttpAppFrameworkImpl::instance().getHomePage().empty())
+    {
+        req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
+    }
+    staticFileRouterPtr_->route(req, std::move(callback));
+}
+
+void HttpAppFrameworkImpl::httpRequestPostRouting(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    // Do post routing advices.
+    if (!postRoutingObservers_.empty())
+    {
+        for (auto &observer : postRoutingObservers_)
+        {
+            observer(req);
+        }
+    }
+
+    if (postRoutingAdvices_.empty())
+    {
+        httpRequestPassFilters(req, binderPtr, std::move(callback));
+        return;
+    }
+
+    auto callbackPtr =
+        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+            std::move(callback));
+    doAdvicesChain(postRoutingAdvices_,
+                   0,
+                   req,
+                   callbackPtr,
+                   [this, req, binderPtr, callbackPtr]() mutable {
+                       httpRequestPassFilters(req,
+                                              binderPtr,
+                                              std::move(*callbackPtr));
+                   });
+}
+
+void HttpAppFrameworkImpl::httpRequestPassFilters(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    auto &filters = binderPtr->filters_;
+    if (filters.empty())
+    {
+        httpRequestPreHandling(req, binderPtr, std::move(callback));
+        return;
+    }
+    auto callbackPtr =
+        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+            std::move(callback));
+    filters_function::doFilters(
+        filters,
+        req,
+        callbackPtr,
+        [this, req, binderPtr, callbackPtr]() mutable {
+            httpRequestPreHandling(req, binderPtr, std::move(*callbackPtr));
+        });
+}
+
+void HttpAppFrameworkImpl::httpRequestPreHandling(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    if (req->method() == Options)
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+        resp->addHeader("ALLOW", *binderPtr->corsMethods_);
+
+        auto &origin = req->getHeader("Origin");
+        if (origin.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+        }
+        else
+        {
+            resp->addHeader("Access-Control-Allow-Origin", origin);
+        }
+        resp->addHeader("Access-Control-Allow-Methods",
+                        *binderPtr->corsMethods_);
+        auto &headers = req->getHeaderBy("access-control-request-headers");
+        if (!headers.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Headers", headers);
+        }
+        callback(resp);
+        return;
+    }
+
+    if (!preHandlingObservers_.empty())
+    {
+        for (auto &observer : preHandlingObservers_)
+        {
+            observer(req);
+        }
+    }
+
+    if (preHandlingAdvices_.empty())
+    {
+        httpRequestHandling(req, binderPtr, std::move(callback));
+        return;
+    }
+
+    auto callbackPtr =
+        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+            std::move(callback));
+    doAdvicesChain(
+        preHandlingAdvices_,
+        0,
+        req,
+        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+            [this, req, callbackPtr](const HttpResponsePtr &resp) {
+                callCallback(req, resp, *callbackPtr);  // use callCallback()
+            }),
+        [this, binderPtr, req, callbackPtr]() {
+            httpRequestHandling(req, binderPtr, std::move(*callbackPtr));
+        });
+}
+
+void HttpAppFrameworkImpl::httpRequestHandling(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    // TODO: temporary solution, fix before merge
+    if (binderPtr->isSimple_)
+    {
+        auto ctrlBinderPtr =
+            std::static_pointer_cast<HttpSimpleControllersRouter::CtrlBinder>(
+                binderPtr);
+        auto &controller = ctrlBinderPtr->controller_;
+        if (controller)
+        {
+            auto &responsePtr = *(ctrlBinderPtr->responseCache_);
+            if (responsePtr)
+            {
+                if (responsePtr->expiredTime() == 0 ||
+                    (trantor::Date::now() <
+                     responsePtr->creationDate().after(
+                         static_cast<double>(responsePtr->expiredTime()))))
+                {
+                    // use cached response!
+                    LOG_TRACE << "Use cached response";
+                    httpRequestPostHandling(req, responsePtr, callback);
+                    return;
+                }
+                else
+                {
+                    responsePtr.reset();
+                }
+            }
+            try
+            {
+                controller->asyncHandleHttpRequest(
+                    req,
+                    [this, req, callback, &ctrlBinderPtr](
+                        const HttpResponsePtr &resp) {
+                        auto newResp = resp;
+                        if (resp->expiredTime() >= 0 &&
+                            resp->statusCode() != k404NotFound)
+                        {
+                            // cache the response;
+                            static_cast<HttpResponseImpl *>(resp.get())
+                                ->makeHeaderString();
+                            auto loop = req->getLoop();
+
+                            if (loop->isInLoopThread())
+                            {
+                                ctrlBinderPtr->responseCache_.setThreadData(
+                                    resp);
+                            }
+                            else
+                            {
+                                loop->queueInLoop([resp, &ctrlBinderPtr]() {
+                                    ctrlBinderPtr->responseCache_.setThreadData(
+                                        resp);
+                                });
+                            }
+                        }
+                        httpRequestPostHandling(req, newResp, callback);
+                    });
+            }
+            catch (const std::exception &e)
+            {
+                app().getExceptionHandler()(e, req, std::move(callback));
+                return;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "Exception not derived from std::exception";
+                return;
+            }
+
+            return;
+        }
+        else
+        {
+            const std::string &ctrlName = ctrlBinderPtr->handlerName_;
+            LOG_ERROR << "can't find controller " << ctrlName;
+            auto res = drogon::HttpResponse::newNotFoundResponse(req);
+            httpRequestPostHandling(req, res, callback);
+        }
+    }
+    else
+    {
+        auto ctrlBinderPtr =
+            std::static_pointer_cast<HttpControllersRouter::CtrlBinder>(
+                binderPtr);
+        auto &responsePtr = *(ctrlBinderPtr->responseCache_);
+        if (responsePtr)
+        {
+            if (responsePtr->expiredTime() == 0 ||
+                (trantor::Date::now() <
+                 responsePtr->creationDate().after(
+                     static_cast<double>(responsePtr->expiredTime()))))
+            {
+                // use cached response!
+                LOG_TRACE << "Use cached response";
+                httpRequestPostHandling(req, responsePtr, callback);
+                return;
+            }
+            else
+            {
+                responsePtr.reset();
+            }
+        }
+
+        auto &paramsVector = req->getRoutingParameters();
+        std::deque<std::string> params(paramsVector.size());
+        for (int i = 0; i < paramsVector.size(); i++)
+        {
+            params[i] = paramsVector[i];
+        }
+        ctrlBinderPtr->binderPtr_->handleHttpRequest(
+            params,
+            req,
+            [this, req, ctrlBinderPtr, callback = std::move(callback)](
+                const HttpResponsePtr &resp) {
+                if (resp->expiredTime() >= 0 &&
+                    resp->statusCode() != k404NotFound)
+                {
+                    // cache the response;
+                    static_cast<HttpResponseImpl *>(resp.get())
+                        ->makeHeaderString();
+                    auto loop = req->getLoop();
+                    if (loop->isInLoopThread())
+                    {
+                        ctrlBinderPtr->responseCache_.setThreadData(resp);
+                    }
+                    else
+                    {
+                        req->getLoop()->queueInLoop([resp, &ctrlBinderPtr]() {
+                            ctrlBinderPtr->responseCache_.setThreadData(resp);
+                        });
+                    }
+                }
+                httpRequestPostHandling(req, resp, callback);
+            });
+    }
+}
+
+void HttpAppFrameworkImpl::httpRequestPostHandling(
+    const HttpRequestImplPtr &req,
+    const HttpResponsePtr &resp,
+    const std::function<void(const HttpResponsePtr &)> &callback)
+{
+    for (auto &advice : postHandlingAdvices_)
+    {
+        advice(req, resp);
+    }
+    callCallback(req, resp, callback);
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
@@ -1238,8 +1556,9 @@ HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
     return *this;
 }
 
-const std::function<HttpResponsePtr(HttpStatusCode, const HttpRequestPtr &req)>
-    &HttpAppFrameworkImpl::getCustomErrorHandler() const
+const std::function<HttpResponsePtr(HttpStatusCode,
+                                    const HttpRequestPtr &req)> &
+HttpAppFrameworkImpl::getCustomErrorHandler() const
 {
     return customErrorHandler_;
 }

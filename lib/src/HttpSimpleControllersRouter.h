@@ -15,6 +15,7 @@
 #pragma once
 
 #include "impl_forwards.h"
+#include "CtrlBinderBase.h"
 #include <drogon/drogon_callbacks.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/IOThreadStorage.h>
@@ -34,70 +35,22 @@ namespace drogon
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
   public:
-    HttpSimpleControllersRouter(
-        HttpControllersRouter &httpCtrlRouter,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             AdviceCallback &&,
-                                             AdviceChainCallback &&)>>
-            &postRoutingAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &)>>
-            &postRoutingObservers,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             AdviceCallback &&,
-                                             AdviceChainCallback &&)>>
-            &preHandlingAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &)>>
-            &preHandlingObservers,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             const HttpResponsePtr &)>>
-            &postHandlingAdvices)
-        : httpCtrlsRouter_(httpCtrlRouter),
-          postRoutingAdvices_(postRoutingAdvices),
-          preHandlingAdvices_(preHandlingAdvices),
-          postRoutingObservers_(postRoutingObservers),
-          preHandlingObservers_(preHandlingObservers),
-          postHandlingAdvices_(postHandlingAdvices)
-    {
-    }
+    HttpSimpleControllersRouter() = default;
 
     void registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods);
-    void route(const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback);
+    internal::RouteResult tryRoute(const HttpRequestImplPtr &req);
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
     std::vector<std::tuple<std::string, HttpMethod, std::string>>
     getHandlersInfo() const;
 
-  private:
-    HttpControllersRouter &httpCtrlsRouter_;
-    const std::vector<std::function<void(const HttpRequestPtr &,
-                                         AdviceCallback &&,
-                                         AdviceChainCallback &&)>>
-        &postRoutingAdvices_;
-    const std::vector<std::function<void(const HttpRequestPtr &,
-                                         AdviceCallback &&,
-                                         AdviceChainCallback &&)>>
-        &preHandlingAdvices_;
-    const std::vector<std::function<void(const HttpRequestPtr &)>>
-        &postRoutingObservers_;
-    const std::vector<std::function<void(const HttpRequestPtr &)>>
-        &preHandlingObservers_;
-
-    const std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &postHandlingAdvices_;
-
-    struct CtrlBinder
+    // TODO: temporarily move to public visibility, fix it before merge
+    struct CtrlBinder : public internal::CtrlBinderBase
     {
         std::shared_ptr<HttpSimpleControllerBase> controller_;
-        std::string controllerName_;
-        std::vector<std::string> filterNames_;
-        std::vector<std::shared_ptr<HttpFilterBase>> filters_;
-        IOThreadStorage<HttpResponsePtr> responseCache_;
-        bool isCORS_{false};
     };
 
     using CtrlBinderPtr = std::shared_ptr<CtrlBinder>;
@@ -107,21 +60,8 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         CtrlBinderPtr binders_[Invalid];
     };
 
+  private:
     std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
     std::mutex simpleCtrlMutex_;
-
-    void doPreHandlingAdvices(
-        const CtrlBinderPtr &ctrlBinderPtr,
-        const SimpleControllerRouterItem &routerItem,
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void doControllerHandler(
-        const CtrlBinderPtr &ctrlBinderPtr,
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void invokeCallback(
-        const std::function<void(const HttpResponsePtr &)> &callback,
-        const HttpRequestImplPtr &req,
-        const HttpResponsePtr &resp);
 };
 }  // namespace drogon

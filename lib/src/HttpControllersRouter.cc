@@ -25,41 +25,64 @@
 
 using namespace drogon;
 
-void HttpControllersRouter::doWhenNoHandlerFound(
-    const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+static std::string method_to_string(HttpMethod method)
 {
-    if (req->path() == "/" &&
-        !HttpAppFrameworkImpl::instance().getHomePage().empty())
+    switch (method)
     {
-        req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
-        // Just call the fileRouter_.route instead of forwarding. so comment out
-        // those sentences.
-        // HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
-        // return;
+        case Get:
+            return "GET";
+        case Post:
+            return "POST";
+        case Put:
+            return "PUT";
+        case Delete:
+            return "DELETE";
+        case Head:
+            return "HEAD";
+        case Options:
+            return "OPTIONS";
+        case Patch:
+            return "PATCH";
+        default:
+            return "Invalid";
     }
-    fileRouter_.route(req, std::move(callback));
 }
 
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> & /*ioLoops*/)
 {
-    auto initFilters = [](auto &binders) {
-        for (auto &binder : binders)
+    auto initFiltersAndCorsMethods = [](const HttpControllerRouterItem &item) {
+        auto corsMethods = std::make_shared<std::string>("OPTIONS,");
+        for (size_t i = 0; i < Invalid; ++i)
         {
+            auto &binder = item.binders_[i];
             if (binder)
             {
                 binder->filters_ =
                     filters_function::createFilters(binder->filterNames_);
+                binder->corsMethods_ = corsMethods;
+                if (binder->isCORS_)
+                {
+                    if (i == Get)
+                    {
+                        corsMethods->append("GET,HEAD,");
+                    }
+                    else if (i != Options)
+                    {
+                        corsMethods->append(method_to_string((HttpMethod)i));
+                        corsMethods->append(",");
+                    }
+                }
             }
         }
+        corsMethods->pop_back();
     };
 
     for (auto &router : ctrlVector_)
     {
         router.regex_ = std::regex(router.pathParameterPattern_,
                                    std::regex_constants::icase);
-        initFilters(router.binders_);
+        initFiltersAndCorsMethods(router);
     }
 
     for (auto &p : ctrlMap_)
@@ -67,7 +90,7 @@ void HttpControllersRouter::init(
         auto &router = p.second;
         router.regex_ = std::regex(router.pathParameterPattern_,
                                    std::regex_constants::icase);
-        initFilters(router.binders_);
+        initFiltersAndCorsMethods(router);
     }
 }
 
@@ -466,9 +489,8 @@ void HttpControllersRouter::addHttpPath(
     }
 }
 
-void HttpControllersRouter::route(
-    const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+internal::RouteResult HttpControllersRouter::tryRoute(
+    const HttpRequestImplPtr &req)
 {
     // Find http controller
     HttpControllerRouterItem *routerItemPtr = nullptr;
@@ -503,26 +525,15 @@ void HttpControllersRouter::route(
     // No handler found
     if (routerItemPtr == nullptr)
     {
-        doWhenNoHandlerFound(req, std::move(callback));
-        return;
+        return {false, nullptr};
     }
-
     HttpControllerRouterItem &routerItem = *routerItemPtr;
     assert(Invalid > req->method());
     req->setMatchedPathPattern(routerItem.pathPattern_);
     auto &binder = routerItem.binders_[req->method()];
     if (!binder)
     {
-        // Invalid Http Method
-        if (req->method() != Options)
-        {
-            callback(app().getCustomErrorHandler()(k405MethodNotAllowed, req));
-        }
-        else
-        {
-            callback(app().getCustomErrorHandler()(k403Forbidden, req));
-        }
-        return;
+        return {true, nullptr};
     }
     std::vector<std::string> params;
     for (size_t j = 1; j < result.size(); ++j)
@@ -560,254 +571,5 @@ void HttpControllersRouter::route(
         }
     }
     req->setRoutingParameters(std::move(params));
-    if (!postRoutingObservers_.empty())
-    {
-        for (auto &observer : postRoutingObservers_)
-        {
-            observer(req);
-        }
-    }
-    if (postRoutingAdvices_.empty())
-    {
-        if (!binder->filters_.empty())
-        {
-            auto &filters = binder->filters_;
-            auto callbackPtr =
-                std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                    std::move(callback));
-            filters_function::doFilters(filters,
-                                        req,
-                                        callbackPtr,
-                                        [req,
-                                         callbackPtr,
-                                         this,
-                                         &binder,
-                                         &routerItem,
-                                         result = std::move(result)]() mutable {
-                                            doPreHandlingAdvices(
-                                                binder,
-                                                routerItem,
-                                                req,
-                                                std::move(result),
-                                                std::move(*callbackPtr));
-                                        });
-        }
-        else
-        {
-            doPreHandlingAdvices(binder,
-                                 routerItem,
-                                 req,
-                                 std::move(result),
-                                 std::move(callback));
-        }
-    }
-    else
-    {
-        auto callbackPtr =
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                std::move(callback));
-        doAdvicesChain(postRoutingAdvices_,
-                       0,
-                       req,
-                       callbackPtr,
-                       [&binder,
-                        callbackPtr,
-                        req,
-                        this,
-                        &routerItem,
-                        result = std::move(result)]() mutable {
-                           if (!binder->filters_.empty())
-                           {
-                               auto &filters = binder->filters_;
-                               filters_function::doFilters(
-                                   filters,
-                                   req,
-                                   callbackPtr,
-                                   [this,
-                                    req,
-                                    callbackPtr,
-                                    &binder,
-                                    &routerItem,
-                                    result = std::move(result)]() mutable {
-                                       doPreHandlingAdvices(binder,
-                                                            routerItem,
-                                                            req,
-                                                            std::move(result),
-                                                            std::move(
-                                                                *callbackPtr));
-                                   });
-                           }
-                           else
-                           {
-                               doPreHandlingAdvices(binder,
-                                                    routerItem,
-                                                    req,
-                                                    std::move(result),
-                                                    std::move(*callbackPtr));
-                           }
-                       });
-    }
-}
-
-void HttpControllersRouter::doControllerHandler(
-    const CtrlBinderPtr &ctrlBinderPtr,
-    const HttpControllerRouterItem & /*routerItem*/,
-    const HttpRequestImplPtr &req,
-    const std::smatch &matchResult,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
-    auto &responsePtr = *(ctrlBinderPtr->responseCache_);
-    if (responsePtr)
-    {
-        if (responsePtr->expiredTime() == 0 ||
-            (trantor::Date::now() <
-             responsePtr->creationDate().after(
-                 static_cast<double>(responsePtr->expiredTime()))))
-        {
-            // use cached response!
-            LOG_TRACE << "Use cached response";
-            invokeCallback(callback, req, responsePtr);
-            return;
-        }
-        else
-        {
-            responsePtr.reset();
-        }
-    }
-
-    auto &paramsVector = req->getRoutingParameters();
-    std::deque<std::string> params(paramsVector.size());
-    for (int i = 0; i < paramsVector.size(); i++)
-    {
-        params[i] = paramsVector[i];
-    }
-    ctrlBinderPtr->binderPtr_->handleHttpRequest(
-        params,
-        req,
-        [this, req, ctrlBinderPtr, callback = std::move(callback)](
-            const HttpResponsePtr &resp) {
-            if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
-            {
-                // cache the response;
-                static_cast<HttpResponseImpl *>(resp.get())->makeHeaderString();
-                auto loop = req->getLoop();
-                if (loop->isInLoopThread())
-                {
-                    ctrlBinderPtr->responseCache_.setThreadData(resp);
-                }
-                else
-                {
-                    req->getLoop()->queueInLoop([resp, &ctrlBinderPtr]() {
-                        ctrlBinderPtr->responseCache_.setThreadData(resp);
-                    });
-                }
-            }
-            invokeCallback(callback, req, resp);
-        });
-}
-
-void HttpControllersRouter::doPreHandlingAdvices(
-    const CtrlBinderPtr &ctrlBinderPtr,
-    const HttpControllerRouterItem &routerItem,
-    const HttpRequestImplPtr &req,
-    std::smatch &&matchResult,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
-    if (req->method() == Options)
-    {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-        std::string methods = "OPTIONS,";
-        if (routerItem.binders_[Get] && routerItem.binders_[Get]->isCORS_)
-        {
-            methods.append("GET,HEAD,");
-        }
-        if (routerItem.binders_[Post] && routerItem.binders_[Post]->isCORS_)
-        {
-            methods.append("POST,");
-        }
-        if (routerItem.binders_[Put] && routerItem.binders_[Put]->isCORS_)
-        {
-            methods.append("PUT,");
-        }
-        if (routerItem.binders_[Delete] && routerItem.binders_[Delete]->isCORS_)
-        {
-            methods.append("DELETE,");
-        }
-        if (routerItem.binders_[Patch] && routerItem.binders_[Patch]->isCORS_)
-        {
-            methods.append("PATCH,");
-        }
-        methods.resize(methods.length() - 1);
-        resp->addHeader("ALLOW", methods);
-        auto &origin = req->getHeader("Origin");
-        if (origin.empty())
-        {
-            resp->addHeader("Access-Control-Allow-Origin", "*");
-        }
-        else
-        {
-            resp->addHeader("Access-Control-Allow-Origin", origin);
-        }
-        resp->addHeader("Access-Control-Allow-Methods", methods);
-        auto &headers = req->getHeaderBy("access-control-request-headers");
-        if (!headers.empty())
-        {
-            resp->addHeader("Access-Control-Allow-Headers", headers);
-        }
-        callback(resp);
-        return;
-    }
-    if (!preHandlingObservers_.empty())
-    {
-        for (auto &observer : preHandlingObservers_)
-        {
-            observer(req);
-        }
-    }
-    if (preHandlingAdvices_.empty())
-    {
-        doControllerHandler(
-            ctrlBinderPtr, routerItem, req, matchResult, std::move(callback));
-    }
-    else
-    {
-        auto callbackPtr =
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                std::move(callback));
-        doAdvicesChain(
-            preHandlingAdvices_,
-            0,
-            req,
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                [req, callbackPtr](const HttpResponsePtr &resp) {
-                    HttpAppFrameworkImpl::instance().callCallback(req,
-                                                                  resp,
-                                                                  *callbackPtr);
-                }),
-            [this,
-             ctrlBinderPtr,
-             &routerItem,
-             req,
-             callbackPtr,
-             result = std::move(matchResult)]() {
-                doControllerHandler(ctrlBinderPtr,
-                                    routerItem,
-                                    req,
-                                    result,
-                                    std::move(*callbackPtr));
-            });
-    }
-}
-
-void HttpControllersRouter::invokeCallback(
-    const std::function<void(const HttpResponsePtr &)> &callback,
-    const HttpRequestImplPtr &req,
-    const HttpResponsePtr &resp)
-{
-    for (auto &advice : postHandlingAdvices_)
-    {
-        advice(req, resp);
-    }
-    HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+    return {true, binder};
 }

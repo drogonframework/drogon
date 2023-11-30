@@ -27,6 +27,7 @@
 #include "SessionManager.h"
 #include "drogon/utils/Utilities.h"
 #include "impl_forwards.h"
+#include "CtrlBinderBase.h"
 
 namespace trantor
 {
@@ -150,8 +151,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
-    const std::vector<std::function<void(const HttpResponsePtr &)>>
-        &getResponseCreationAdvices() const
+    const std::vector<std::function<void(const HttpResponsePtr &)>> &
+    getResponseCreationAdvices() const
     {
         return responseCreationAdvices_;
     }
@@ -640,8 +641,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     bool areAllDbClientsAvailable() const noexcept override;
     const std::function<HttpResponsePtr(HttpStatusCode,
-                                        const HttpRequestPtr &req)>
-        &getCustomErrorHandler() const override;
+                                        const HttpRequestPtr &req)> &
+    getCustomErrorHandler() const override;
 
     bool isUsingCustomErrorHandler() const
     {
@@ -704,6 +705,30 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     void onAsyncRequest(
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback);
+    void httpRequestRouting(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void httpRequestPostRouting(
+        const HttpRequestImplPtr &req,
+        const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void httpRequestPassFilters(
+        const HttpRequestImplPtr &req,
+        const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void httpRequestPreHandling(
+        const HttpRequestImplPtr &req,
+        const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void httpRequestHandling(
+        const HttpRequestImplPtr &req,
+        const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void httpRequestPostHandling(
+        const HttpRequestImplPtr &req,
+        const HttpResponsePtr &resp,
+        const std::function<void(const HttpResponsePtr &)> &callback);
+    
     void onNewWebsockRequest(
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
