@@ -416,6 +416,7 @@ class DROGON_EXPORT HttpRequest
 
     /// Set the path of the request
     virtual void setPath(const std::string &path) = 0;
+    virtual void setPath(std::string &&path) = 0;
 
     /**
      * @brief The default behavior is to encode the value of setPath

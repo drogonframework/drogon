@@ -80,13 +80,12 @@ class CoroMapper : public Mapper<T>
 
     inline internal::MapperAwaiter<T> findByPrimaryKey(const TraitsPKType &key)
     {
-        if constexpr (!std::is_same<typename T::PrimaryKeyType, void>::value)
+        if constexpr (!std::is_same_v<typename T::PrimaryKeyType, void>)
         {
             auto lb = [this, key](SingleRowCallback &&callback,
                                   ExceptPtrCallback &&errCallback) mutable {
-                static_assert(
-                    !std::is_same<typename T::PrimaryKeyType, void>::value,
-                    "No primary key in the table!");
+                static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                              "No primary key in the table!");
                 static_assert(
                     internal::has_sqlForFindingByPrimaryKey<T>::value,
                     "No function member named sqlForFindingByPrimaryKey, "
@@ -101,7 +100,7 @@ class CoroMapper : public Mapper<T>
                 }
                 this->clear();
                 auto binder = *(this->client_) << std::move(sql);
-                this->outputPrimeryKeyToBinder(key, binder);
+                this->outputPrimaryKeyToBinder(key, binder);
 
                 binder >> [callback = std::move(callback),
                            errCallback](const Result &r) {
@@ -417,9 +416,8 @@ class CoroMapper : public Mapper<T>
         auto lb = [this, obj](CountCallback &&callback,
                               ExceptPtrCallback &&errCallback) {
             this->clear();
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             std::string sql = "update ";
             sql += T::tableName;
             sql += " set ";
@@ -435,7 +433,7 @@ class CoroMapper : public Mapper<T>
             sql = this->replaceSqlPlaceHolder(sql, "$?");
             auto binder = *(this->client_) << std::move(sql);
             obj.updateArgs(binder);
-            this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+            this->outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };
@@ -491,6 +489,41 @@ class CoroMapper : public Mapper<T>
                               std::forward<Arguments>(args)...);
     }
 
+    template <typename... Arguments>
+    inline internal::MapperAwaiter<size_t> increment(
+        const std::vector<std::string> &colNames,
+        const Criteria &criteria,
+        Arguments... args)
+    {
+        static_assert(sizeof...(args) > 0);
+        assert(colNames.size() == sizeof...(args));
+        std::string sql = "update ";
+        sql += T::tableName;
+        sql += " set ";
+
+        std::vector<const char *> temps;
+        (void)std::initializer_list<int>{(
+            [&args, &temps] {
+                args = (args < 0) ? (temps.push_back(" - $?,"), -args)
+                                  : (temps.push_back(" + $?,"), args);
+            }(),
+            0)...};
+
+        for (int i = 0; i < sizeof...(args); ++i)
+        {
+            const auto &colName = colNames[i];
+            sql += colName;
+            sql += " = ";
+            sql += colName;
+            sql += temps[i];
+        }
+        sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+        return updateByHelper(std::move(sql),
+                              criteria,
+                              std::forward<Arguments>(args)...);
+    }
+
   private:
     template <typename... Arguments>
     internal::MapperAwaiter<size_t> updateByHelper(std::string &&sql,
@@ -530,9 +563,8 @@ class CoroMapper : public Mapper<T>
         auto lb = [this, obj](CountCallback &&callback,
                               ExceptPtrCallback &&errCallback) {
             this->clear();
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             std::string sql = "delete from ";
             sql += T::tableName;
             sql += " ";
@@ -541,7 +573,7 @@ class CoroMapper : public Mapper<T>
 
             sql = this->replaceSqlPlaceHolder(sql, "$?");
             auto binder = *(this->client_) << std::move(sql);
-            this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+            this->outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };
@@ -555,9 +587,8 @@ class CoroMapper : public Mapper<T>
         auto lb = [this, criteria](CountCallback &&callback,
                                    ExceptPtrCallback &&errCallback) {
             this->clear();
-            static_assert(
-                !std::is_same<typename T::PrimaryKeyType, void>::value,
-                "No primary key in the table!");
+            static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
+                          "No primary key in the table!");
             std::string sql = "delete from ";
             sql += T::tableName;
 
@@ -584,7 +615,7 @@ class CoroMapper : public Mapper<T>
     inline internal::MapperAwaiter<size_t> deleteByPrimaryKey(
         const TraitsPKType &key)
     {
-        static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+        static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                       "No primary key in the table!");
         static_assert(
             internal::has_sqlForDeletingByPrimaryKey<T>::value,
@@ -595,7 +626,7 @@ class CoroMapper : public Mapper<T>
                               ExceptPtrCallback &&errCallback) {
             this->clear();
             auto binder = *(this->client_) << T::sqlForDeletingByPrimaryKey();
-            this->outputPrimeryKeyToBinder(key, binder);
+            this->outputPrimaryKeyToBinder(key, binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };

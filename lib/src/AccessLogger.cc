@@ -251,7 +251,7 @@ void AccessLogger::createLogFunctions(std::string format)
     std::string rawString;
     while (!format.empty())
     {
-        LOG_INFO << format;
+        LOG_TRACE << format;
         auto pos = format.find('$');
         if (pos != std::string::npos)
         {

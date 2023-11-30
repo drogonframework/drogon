@@ -53,20 +53,50 @@ struct CanConvertFromStringStream
 
   public:
     static constexpr bool value =
-        std::is_same<decltype(test<T>(nullptr, std::stringstream())),
-                     yes>::value;
+        std::is_same_v<decltype(test<T>(nullptr, std::stringstream())), yes>;
 };
+
+template <typename T>
+struct CanConstructFromString
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+
+    template <typename U>
+    static auto test(U *p) -> decltype(U(std::string{}), yes());
+
+    template <typename>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+};
+
+template <typename T>
+struct CanConvertFromString
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+    template <class U>
+    static auto test(U *p) -> decltype(*p = std::string(), yes());
+    template <class>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+};
+
 }  // namespace internal
 
 namespace utils
 {
 /// Determine if the string is an integer
-DROGON_EXPORT bool isInteger(const std::string &str);
-/// Determine if the string is an integer
 DROGON_EXPORT bool isInteger(std::string_view str);
 
-/// Determine if the string is base64 encoded
-DROGON_EXPORT bool isBase64(const std::string &str);
 /// Determine if the string is base64 encoded
 DROGON_EXPORT bool isBase64(std::string_view str);
 
@@ -79,7 +109,8 @@ DROGON_EXPORT std::string genRandomString(int length);
 
 /// Convert a binary string to hex format
 DROGON_EXPORT std::string binaryStringToHex(const unsigned char *ptr,
-                                            size_t length);
+                                            size_t length,
+                                            bool lowerCase = false);
 
 /// Get a binary string from hexadecimal format
 DROGON_EXPORT std::string hexToBinaryString(const char *ptr, size_t length);
@@ -87,6 +118,11 @@ DROGON_EXPORT std::string hexToBinaryString(const char *ptr, size_t length);
 /// Get a binary vector from hexadecimal format
 DROGON_EXPORT std::vector<char> hexToBinaryVector(const char *ptr,
                                                   size_t length);
+
+DROGON_EXPORT void binaryStringToHex(const char *ptr,
+                                     size_t length,
+                                     char *out,
+                                     bool lowerCase = false);
 
 /// Split the string into multiple separated strings.
 /**
@@ -108,7 +144,7 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
     const std::string &separator);
 
 /// Get UUID string.
-DROGON_EXPORT std::string getUuid();
+DROGON_EXPORT std::string getUuid(bool lowercase = true);
 
 /// Get the encoded length of base64.
 constexpr size_t base64EncodedLength(size_t in_len, bool padded = true)
@@ -399,24 +435,22 @@ DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
 DROGON_EXPORT std::string secureRandomString(size_t size);
 
 template <typename T>
-typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
-fromString(const std::string &p) noexcept(false)
+T fromString(const std::string &p) noexcept(false)
 {
-    T value{};
-    if (!p.empty())
+    if constexpr (internal::CanConvertFromStringStream<T>::value)
     {
-        std::stringstream ss(p);
-        ss >> value;
+        T value{};
+        if (!p.empty())
+        {
+            std::stringstream ss(p);
+            ss >> value;
+        }
+        return value;
     }
-    return value;
-}
-
-template <typename T>
-typename std::enable_if<!(internal::CanConvertFromStringStream<T>::value),
-                        T>::type
-fromString(const std::string &) noexcept(false)
-{
-    throw std::runtime_error("Bad type conversion");
+    else
+    {
+        throw std::runtime_error("Bad type conversion");
+    }
 }
 
 template <>

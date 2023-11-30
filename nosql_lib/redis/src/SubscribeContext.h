@@ -25,8 +25,8 @@ class SubscribeContext
 {
   public:
     static std::shared_ptr<SubscribeContext> newContext(
-        std::weak_ptr<RedisSubscriber>&& weakSub,
-        const std::string& channel,
+        std::weak_ptr<RedisSubscriber> &&weakSub,
+        const std::string &channel,
         bool isPattern = false)
     {
         return std::shared_ptr<SubscribeContext>(
@@ -38,22 +38,22 @@ class SubscribeContext
         return contextId_;
     }
 
-    const std::string& channel() const
+    const std::string &channel() const
     {
         return channel_;
     }
 
-    const std::string& subscribeCommand() const
+    const std::string &subscribeCommand() const
     {
         return subscribeCommand_;
     }
 
-    const std::string& unsubscribeCommand() const
+    const std::string &unsubscribeCommand() const
     {
         return unsubscribeCommand_;
     }
 
-    void addMessageCallback(RedisMessageCallback&& messageCallback)
+    void addMessageCallback(RedisMessageCallback &&messageCallback)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         messageCallbacks_.emplace_back(std::move(messageCallback));
@@ -78,17 +78,17 @@ class SubscribeContext
      * @param channel : target channel name
      * @param message : message from channel
      */
-    void onMessage(const std::string& channel, const std::string& message);
+    void onMessage(const std::string &channel, const std::string &message);
 
     /**
      * Callback called by RedisConnection, whenever a sub or re-sub is success
      */
-    void onSubscribe(const std::string& channel, long long numChannels);
+    void onSubscribe(const std::string &channel, long long numChannels);
 
     /**
      * Callback called by RedisConnection, when unsubscription success.
      */
-    void onUnsubscribe(const std::string& channel, long long numChannels);
+    void onUnsubscribe(const std::string &channel, long long numChannels);
 
     bool alive() const
     {
@@ -96,8 +96,8 @@ class SubscribeContext
     }
 
   private:
-    SubscribeContext(std::weak_ptr<RedisSubscriber>&& weakSub,
-                     const std::string& channel,
+    SubscribeContext(std::weak_ptr<RedisSubscriber> &&weakSub,
+                     const std::string &channel,
                      bool isPattern);
     static std::atomic<unsigned long long> maxContextId_;
 

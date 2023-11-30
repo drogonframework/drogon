@@ -516,11 +516,11 @@ void HttpControllersRouter::route(
         // Invalid Http Method
         if (req->method() != Options)
         {
-            callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
+            callback(app().getCustomErrorHandler()(k405MethodNotAllowed, req));
         }
         else
         {
-            callback(app().getCustomErrorHandler()(k403Forbidden));
+            callback(app().getCustomErrorHandler()(k403Forbidden, req));
         }
         return;
     }

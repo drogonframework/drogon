@@ -40,7 +40,7 @@ void GlobalFilters::initAndStart(const Json::Value &config)
             {
                 if (ex.isString())
                 {
-                    regexStr.append("(").append(exempt.asString()).append(")|");
+                    regexStr.append("(").append(ex.asString()).append(")|");
                 }
                 else
                 {

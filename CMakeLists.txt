@@ -23,8 +23,8 @@ CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF
 CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "USE_SUBMODULE" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
-set(DROGON_MINOR_VERSION 8)
-set(DROGON_PATCH_VERSION 6)
+set(DROGON_MINOR_VERSION 9)
+set(DROGON_PATCH_VERSION 1)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
@@ -284,6 +284,7 @@ set(DROGON_SOURCES
     lib/src/RateLimiter.cc
     lib/src/RealIpResolver.cc
     lib/src/SecureSSLRedirector.cc
+    lib/src/Redirector.cc
     lib/src/SessionManager.cc
     lib/src/SlashRemover.cc
     lib/src/SlidingWindowRateLimiter.cc
@@ -726,6 +727,7 @@ install(FILES ${DROGON_MONITORING_HEADERS}
 
 set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/Plugin.h
+    lib/inc/drogon/plugins/Redirector.h
     lib/inc/drogon/plugins/SecureSSLRedirector.h
     lib/inc/drogon/plugins/AccessLogger.h
     lib/inc/drogon/plugins/RealIpResolver.h

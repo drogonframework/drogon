@@ -130,7 +130,7 @@ std::string getGitCommit()
     return DROGON_VERSION_SHA1;
 }
 
-HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code, const HttpRequestPtr &)
 {
     return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
 }
@@ -146,7 +146,7 @@ void defaultExceptionHandler(
     LOG_ERROR << "Unhandled exception in " << pathWithQuery
               << ", what(): " << e.what();
     const auto &handler = app().getCustomErrorHandler();
-    callback(handler(k500InternalServerError));
+    callback(handler(k500InternalServerError, req));
 }
 
 static void godaemon()
@@ -654,7 +654,8 @@ void HttpAppFrameworkImpl::run()
             std::make_unique<SessionManager>(getLoop(),
                                              sessionTimeout_,
                                              sessionStartAdvices_,
-                                             sessionDestroyAdvices_);
+                                             sessionDestroyAdvices_,
+                                             sessionIdGeneratorCallback_);
     }
     // now start running!!
     running_ = true;
@@ -792,15 +793,15 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
 {
     if (useSession_)
     {
-        std::string sessionId = req->getCookie("JSESSIONID");
-        bool needSetJsessionid = false;
+        std::string sessionId = req->getCookie(sessionCookieKey_);
+        bool needSetSessionid = false;
         if (sessionId.empty())
         {
-            sessionId = utils::getUuid();
-            needSetJsessionid = true;
+            sessionId = sessionIdGeneratorCallback_();
+            needSetSessionid = true;
         }
         req->setSession(
-            sessionManagerPtr_->getSession(sessionId, needSetJsessionid));
+            sessionManagerPtr_->getSession(sessionId, needSetSessionid));
     }
 }
 
@@ -874,20 +875,26 @@ void HttpAppFrameworkImpl::callCallback(
                 auto newResp = std::make_shared<HttpResponseImpl>(
                     *static_cast<HttpResponseImpl *>(resp.get()));
                 newResp->setExpiredTime(-1);  // make it temporary
-                auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
-                jsessionid.setPath("/");
-                jsessionid.setSameSite(sessionSameSite_);
-                newResp->addCookie(std::move(jsessionid));
+                auto sessionid =
+                    Cookie(sessionCookieKey_, sessionPtr->sessionId());
+                sessionid.setPath("/");
+                sessionid.setSameSite(sessionSameSite_);
+                if (sessionMaxAge_ >= 0)
+                    sessionid.setMaxAge(sessionMaxAge_);
+                newResp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
                 callback(newResp);
                 return;
             }
             else
             {
-                auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
-                jsessionid.setPath("/");
-                jsessionid.setSameSite(sessionSameSite_);
-                resp->addCookie(std::move(jsessionid));
+                auto sessionid =
+                    Cookie(sessionCookieKey_, sessionPtr->sessionId());
+                sessionid.setPath("/");
+                sessionid.setSameSite(sessionSameSite_);
+                if (sessionMaxAge_ >= 0)
+                    sessionid.setMaxAge(sessionMaxAge_);
+                resp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
                 callback(resp);
                 return;
@@ -1051,8 +1058,8 @@ void HttpAppFrameworkImpl::forward(
         req->setPassThrough(true);
         clientPtr->sendRequest(
             req,
-            [callback = std::move(callback)](ReqResult result,
-                                             const HttpResponsePtr &resp) {
+            [callback = std::move(callback), req](ReqResult result,
+                                                  const HttpResponsePtr &resp) {
                 if (result == ReqResult::Ok)
                 {
                     resp->setPassThrough(true);
@@ -1060,7 +1067,7 @@ void HttpAppFrameworkImpl::forward(
                 }
                 else
                 {
-                    callback(HttpResponse::newNotFoundResponse());
+                    callback(HttpResponse::newNotFoundResponse(req));
                 }
             },
             timeout);
@@ -1223,14 +1230,15 @@ bool HttpAppFrameworkImpl::areAllDbClientsAvailable() const noexcept
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
-    std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+    std::function<HttpResponsePtr(HttpStatusCode, const HttpRequestPtr &req)>
+        &&resp_generator)
 {
     customErrorHandler_ = std::move(resp_generator);
     usingCustomErrorHandler_ = true;
     return *this;
 }
 
-const std::function<HttpResponsePtr(HttpStatusCode)>
+const std::function<HttpResponsePtr(HttpStatusCode, const HttpRequestPtr &req)>
     &HttpAppFrameworkImpl::getCustomErrorHandler() const
 {
     return customErrorHandler_;

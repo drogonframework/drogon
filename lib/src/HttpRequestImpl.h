@@ -149,7 +149,7 @@ class HttpRequestImpl : public HttpRequest
         return routingParams_;
     }
 
-    void setRoutingParameters(std::vector<std::string> &&params)
+    void setRoutingParameters(std::vector<std::string> &&params) override
     {
         routingParams_ = std::move(params);
     }
@@ -157,6 +157,11 @@ class HttpRequestImpl : public HttpRequest
     void setPath(const std::string &path) override
     {
         path_ = path;
+    }
+
+    void setPath(std::string &&path) override
+    {
+        path_ = std::move(path);
     }
 
     void setPathEncode(bool pathEncode) override

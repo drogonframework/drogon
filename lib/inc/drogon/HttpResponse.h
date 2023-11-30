@@ -17,6 +17,7 @@
 #include <trantor/net/Certificate.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
+#include <drogon/HttpRequest.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/HttpViewData.h>
 #include <drogon/utils/Utilities.h>
@@ -368,7 +369,8 @@ class DROGON_EXPORT HttpResponse
     static HttpResponsePtr newHttpResponse(HttpStatusCode code,
                                            ContentType type);
     /// Create a response which returns a 404 page.
-    static HttpResponsePtr newNotFoundResponse();
+    static HttpResponsePtr newNotFoundResponse(
+        const HttpRequestPtr &req = HttpRequestPtr());
     /// Create a response which returns a json object. Its content-type is set
     /// to application/json.
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
@@ -384,7 +386,8 @@ class DROGON_EXPORT HttpResponse
      */
     static HttpResponsePtr newHttpViewResponse(
         const std::string &viewName,
-        const HttpViewData &data = HttpViewData());
+        const HttpViewData &data = HttpViewData(),
+        const HttpRequestPtr &req = HttpRequestPtr());
 
     /// Create a response that returns a redirection page, redirecting to
     /// another page located in the location parameter.
@@ -411,7 +414,8 @@ class DROGON_EXPORT HttpResponse
         const std::string &fullPath,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE,
-        const std::string &typeString = "");
+        const std::string &typeString = "",
+        const HttpRequestPtr &req = HttpRequestPtr());
 
     /// Create a response that returns part of a file to the client.
     /**
@@ -437,7 +441,8 @@ class DROGON_EXPORT HttpResponse
         bool setContentRange = true,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE,
-        const std::string &typeString = "");
+        const std::string &typeString = "",
+        const HttpRequestPtr &req = HttpRequestPtr());
 
     /// Create a response that returns a file to the client from buffer in
     /// memory/stack
@@ -480,7 +485,8 @@ class DROGON_EXPORT HttpResponse
         const std::function<std::size_t(char *, std::size_t)> &callback,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE,
-        const std::string &typeString = "");
+        const std::string &typeString = "",
+        const HttpRequestPtr &req = HttpRequestPtr());
 
     /**
      * @brief Create a custom HTTP response object. For using this template,

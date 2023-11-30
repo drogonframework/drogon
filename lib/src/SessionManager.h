@@ -19,6 +19,7 @@
 #include <drogon/CacheMap.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
+#include <functional>
 #include <memory>
 #include <string>
 #include <mutex>
@@ -29,11 +30,14 @@ namespace drogon
 class SessionManager : public trantor::NonCopyable
 {
   public:
+    using IdGeneratorCallback = std::function<std::string()>;
+
     SessionManager(
         trantor::EventLoop *loop,
         size_t timeout,
         const std::vector<AdviceStartSessionCallback> &startAdvices,
-        const std::vector<AdviceDestroySessionCallback> &destroyAdvices);
+        const std::vector<AdviceDestroySessionCallback> &destroyAdvices,
+        IdGeneratorCallback idGeneratorCallback);
 
     ~SessionManager()
     {
@@ -49,5 +53,6 @@ class SessionManager : public trantor::NonCopyable
     size_t timeout_;
     const std::vector<AdviceStartSessionCallback> &sessionStartAdvices_;
     const std::vector<AdviceDestroySessionCallback> &sessionDestroyAdvices_;
+    IdGeneratorCallback idGeneratorCallback_;
 };
 }  // namespace drogon

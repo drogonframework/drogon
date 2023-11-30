@@ -13,19 +13,20 @@
  */
 
 #include "SessionManager.h"
-#include <drogon/utils/Utilities.h>
 
 using namespace drogon;
 
 SessionManager::SessionManager(
-    trantor::EventLoop* loop,
+    trantor::EventLoop *loop,
     size_t timeout,
-    const std::vector<AdviceStartSessionCallback>& startAdvices,
-    const std::vector<AdviceDestroySessionCallback>& destroyAdvices)
+    const std::vector<AdviceStartSessionCallback> &startAdvices,
+    const std::vector<AdviceDestroySessionCallback> &destroyAdvices,
+    IdGeneratorCallback idGeneratorCallback)
     : loop_(loop),
       timeout_(timeout),
       sessionStartAdvices_(startAdvices),
-      sessionDestroyAdvices_(destroyAdvices)
+      sessionDestroyAdvices_(destroyAdvices),
+      idGeneratorCallback_(idGeneratorCallback)
 {
     if (timeout_ > 0)
     {
@@ -52,14 +53,14 @@ SessionManager::SessionManager(
                 1.0,
                 wheelNum,
                 bucketNum,
-                [this](const std::string& key) {
-                    for (auto& advice : sessionStartAdvices_)
+                [this](const std::string &key) {
+                    for (auto &advice : sessionStartAdvices_)
                     {
                         advice(key);
                     }
                 },
-                [this](const std::string& key) {
-                    for (auto& advice : sessionDestroyAdvices_)
+                [this](const std::string &key) {
+                    for (auto &advice : sessionDestroyAdvices_)
                     {
                         advice(key);
                     }
@@ -73,14 +74,14 @@ SessionManager::SessionManager(
                 0,
                 0,
                 0,
-                [this](const std::string& key) {
-                    for (auto& advice : sessionStartAdvices_)
+                [this](const std::string &key) {
+                    for (auto &advice : sessionStartAdvices_)
                     {
                         advice(key);
                     }
                 },
-                [this](const std::string& key) {
-                    for (auto& advice : sessionDestroyAdvices_)
+                [this](const std::string &key) {
+                    for (auto &advice : sessionDestroyAdvices_)
                     {
                         advice(key);
                     }
@@ -88,14 +89,14 @@ SessionManager::SessionManager(
     }
 }
 
-SessionPtr SessionManager::getSession(const std::string& sessionID,
+SessionPtr SessionManager::getSession(const std::string &sessionID,
                                       bool needToSet)
 {
     assert(!sessionID.empty());
     SessionPtr sessionPtr;
     sessionMapPtr_->modify(
         sessionID,
-        [&sessionPtr, &sessionID, needToSet](SessionPtr& sessionInCache) {
+        [&sessionPtr, &sessionID, needToSet](SessionPtr &sessionInCache) {
             if (sessionInCache)
             {
                 sessionPtr = sessionInCache;
@@ -112,10 +113,10 @@ SessionPtr SessionManager::getSession(const std::string& sessionID,
     return sessionPtr;
 }
 
-void SessionManager::changeSessionId(const SessionPtr& sessionPtr)
+void SessionManager::changeSessionId(const SessionPtr &sessionPtr)
 {
     auto oldId = sessionPtr->sessionId();
-    auto newId = utils::getUuid();
+    auto newId = idGeneratorCallback_();
     sessionPtr->setSessionId(newId);
     sessionMapPtr_->insert(newId, sessionPtr, timeout_);
     // For requests sent before setting the new session ID to the client, we

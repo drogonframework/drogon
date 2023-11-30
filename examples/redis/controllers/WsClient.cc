@@ -9,9 +9,9 @@ struct ClientContext
     std::shared_ptr<nosql::RedisSubscriber> subscriber_;
 };
 
-void WsClient::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
-                                std::string&& message,
-                                const WebSocketMessageType& type)
+void WsClient::handleNewMessage(const WebSocketConnectionPtr &wsConnPtr,
+                                std::string &&message,
+                                const WebSocketMessageType &type)
 {
     if (type == WebSocketMessageType::Ping ||
         type == WebSocketMessageType::Pong ||
@@ -44,13 +44,13 @@ void WsClient::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
 
         // Publisher
         drogon::app().getRedisClient()->execCommandAsync(
-            [wsConnPtr](const nosql::RedisResult& result) {
+            [wsConnPtr](const nosql::RedisResult &result) {
                 std::string nSubs = std::to_string(result.asInteger());
                 LOG_INFO << "PUBLISH success to " << nSubs << " subscribers.";
                 wsConnPtr->send("PUBLISH success to " + nSubs +
                                 " subscribers.");
             },
-            [wsConnPtr](const nosql::RedisException& ex) {
+            [wsConnPtr](const nosql::RedisException &ex) {
                 LOG_INFO << "PUBLISH failed, " << ex.what();
                 wsConnPtr->send(std::string("PUBLISH failed: ") + ex.what());
             },
@@ -84,8 +84,8 @@ void WsClient::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
 
         context->subscriber_->subscribe(
             channel,
-            [channel, wsConnPtr](const std::string& subChannel,
-                                 const std::string& subMessage) {
+            [channel, wsConnPtr](const std::string &subChannel,
+                                 const std::string &subMessage) {
                 assert(subChannel == channel);
                 LOG_INFO << "Receive channel message " << subMessage;
                 std::string resp = "{\"channel\":\"" + subChannel +
@@ -109,8 +109,8 @@ void WsClient::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
     }
 }
 
-void WsClient::handleNewConnection(const HttpRequestPtr& req,
-                                   const WebSocketConnectionPtr& wsConnPtr)
+void WsClient::handleNewConnection(const HttpRequestPtr &req,
+                                   const WebSocketConnectionPtr &wsConnPtr)
 {
     if (req->getPath() == "/sub")
     {
@@ -128,7 +128,7 @@ void WsClient::handleNewConnection(const HttpRequestPtr& req,
     }
 }
 
-void WsClient::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr)
+void WsClient::handleConnectionClosed(const WebSocketConnectionPtr &wsConnPtr)
 {
     LOG_DEBUG << "WsClient close connection from "
               << wsConnPtr->peerAddr().toIpPort();

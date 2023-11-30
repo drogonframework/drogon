@@ -15,7 +15,7 @@ namespace internal
 std::mutex mtxRegister;
 std::mutex mtxTestStats;
 bool testHasPrinted = false;
-std::set<Case*> registeredTests;
+std::set<Case *> registeredTests;
 std::promise<void> allTestRan;
 std::atomic<size_t> numAssertions;
 std::atomic<size_t> numCorrectAssertions;
@@ -23,13 +23,13 @@ size_t numTestCases;
 std::atomic<size_t> numFailedTestCases;
 bool printSuccessfulTests;
 
-void registerCase(Case* test)
+void registerCase(Case *test)
 {
     std::unique_lock<std::mutex> l(mtxRegister);
     registeredTests.insert(test);
 }
 
-void unregisterCase(Case* test)
+void unregisterCase(Case *test)
 {
     std::unique_lock<std::mutex> l(mtxRegister);
     registeredTests.erase(test);
@@ -38,7 +38,7 @@ void unregisterCase(Case* test)
         allTestRan.set_value();
 }
 
-static std::string leftpad(const std::string& str, size_t len)
+static std::string leftpad(const std::string &str, size_t len)
 {
     if (len <= str.size())
         return str;
@@ -136,7 +136,7 @@ void printTestStats()
     internal::testHasPrinted = true;
 }
 
-int run(int argc, char** argv)
+int run(int argc, char **argv)
 {
     internal::numCorrectAssertions = 0;
     internal::numAssertions = 0;
@@ -190,13 +190,13 @@ int run(int argc, char** argv)
     if (listTests)
     {
         print() << "Avaliable Tests:\n";
-        for (const auto& name : classNames)
+        for (const auto &name : classNames)
         {
             if (name.find(DROGON_TESTCASE_PREIX_STR_) == 0)
             {
                 auto test =
                     std::unique_ptr<DrObjectBase>(DrClassMap::newObject(name));
-                auto ptr = dynamic_cast<TestCase*>(test.get());
+                auto ptr = dynamic_cast<TestCase *>(test.get());
                 if (ptr == nullptr)
                     continue;
                 print() << "  " << ptr->name() << "\n";
@@ -209,7 +209,7 @@ int run(int argc, char** argv)
     // NOTE: Registering a dummy case prevents the test-end signal to be
     // emited too early as there's always an case that hasn't finish
     std::shared_ptr<Case> dummyCase = std::make_shared<Case>("__dummy_dummy_");
-    for (const auto& name : classNames)
+    for (const auto &name : classNames)
     {
         if (name.find(DROGON_TESTCASE_PREIX_STR_) == 0)
         {

@@ -30,7 +30,7 @@ class QueryBuilder : public FilterBuilder<T, true>
      *
      * @return std::string The table name
      */
-    inline const std::string& getTableName() const
+    inline const std::string &getTableName() const
     {
         return this->from_.empty() ? T::tableName : this->from_;
     }
@@ -43,7 +43,7 @@ class QueryBuilder : public FilterBuilder<T, true>
      *
      * @return QueryBuilder& The QueryBuilder itself.
      */
-    inline QueryBuilder& from(const std::string& table)
+    inline QueryBuilder &from(const std::string &table)
     {
         this->from_ = table;
         return *this;
@@ -59,7 +59,7 @@ class QueryBuilder : public FilterBuilder<T, true>
      * @note If you would return all rows, please use the `selectAll` method.
      * The method can return rows as model type `T`.
      */
-    inline FilterBuilder<T, false> select(const std::string& columns) const
+    inline FilterBuilder<T, false> select(const std::string &columns) const
     {
         return {getTableName(), columns};
     }

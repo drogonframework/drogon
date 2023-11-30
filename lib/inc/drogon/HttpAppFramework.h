@@ -171,7 +171,19 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * be sent to the client to provide a custom layout.
      */
     virtual HttpAppFramework &setCustomErrorHandler(
-        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator) = 0;
+        std::function<HttpResponsePtr(HttpStatusCode,
+                                      const HttpRequestPtr &req)>
+            &&resp_generator) = 0;
+
+    HttpAppFramework &setCustomErrorHandler(
+        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+    {
+        return setCustomErrorHandler(
+            [cb = std::move(resp_generator)](HttpStatusCode code,
+                                             const HttpRequestPtr &) {
+                return cb(code);
+            });
+    }
 
     /// Get custom error handler
     /**
@@ -179,7 +191,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * setCustomErrorHandler. If none was provided, the default error handler is
      * returned.
      */
-    virtual const std::function<HttpResponsePtr(HttpStatusCode)>
+    virtual const std::function<HttpResponsePtr(HttpStatusCode,
+                                                const HttpRequestPtr &req)>
         &getCustomErrorHandler() const = 0;
 
     /// Get the plugin object registered in the framework
@@ -814,6 +827,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /**
      * @param timeout The number of seconds which is the timeout of a session
      * @param sameSite The default value of SameSite attribute
+     * @param cookieKey The key of the session cookie
      *
      * @note
      * Session support is disabled by default.
@@ -824,7 +838,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &enableSession(
         const size_t timeout = 0,
-        Cookie::SameSite sameSite = Cookie::SameSite::kNull) = 0;
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull,
+        const std::string &cookieKey = "JSESSIONID",
+        int maxAge = -1,
+        std::function<std::string()> idGeneratorCallback = nullptr) = 0;
 
     /// A wrapper of the above method.
     /**
@@ -836,9 +853,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     inline HttpAppFramework &enableSession(
         const std::chrono::duration<double> &timeout,
-        Cookie::SameSite sameSite = Cookie::SameSite::kNull)
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull,
+        const std::string &cookieKey = "JSESSIONID",
+        int maxAge = -1,
+        std::function<std::string()> idGeneratorCallback = nullptr)
     {
-        return enableSession((size_t)timeout.count(), sameSite);
+        return enableSession((size_t)timeout.count(),
+                             sameSite,
+                             cookieKey,
+                             maxAge,
+                             idGeneratorCallback);
     }
 
     /// Register an advice called when starting a new session.
@@ -1513,7 +1537,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /**
      * @brief handler will be called upon an exception escapes a request handler
      */
-    virtual void setExceptionHandler(ExceptionHandler handler) = 0;
+    virtual HttpAppFramework &setExceptionHandler(ExceptionHandler handler) = 0;
 
     /**
      * @brief returns the excaption handler

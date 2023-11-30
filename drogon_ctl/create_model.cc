@@ -693,7 +693,7 @@ void create_model::createModelClassFromSqlite3(
 
             if (type.find("int") != std::string::npos)
             {
-                info.colType_ = "uint64_t";
+                info.colType_ = "int64_t";
                 info.colLength_ = 8;
             }
             else if (type.find("char") != std::string::npos || type == "text" ||
