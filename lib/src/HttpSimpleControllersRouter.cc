@@ -58,10 +58,17 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
     auto binder = std::make_shared<HttpSimpleControllerBinder>();
     binder->handlerName_ = ctrlName;
     binder->filterNames_ = filters;
-    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+    drogon::app().getLoop()->queueInLoop([this, binder, ctrlName, path]() {
         auto &object_ = DrClassMap::getSingleInstance(ctrlName);
         auto controller =
             std::dynamic_pointer_cast<HttpSimpleControllerBase>(object_);
+        if (!controller)
+        {
+            LOG_ERROR << "Controller class not found: " << ctrlName;
+            std::lock_guard<std::mutex> guard(simpleCtrlMutex_);
+            simpleCtrlMap_.erase(path);
+            return;
+        }
         binder->controller_ = controller;
         // Recreate this with the correct number of threads.
         binder->responseCache_ = IOThreadStorage<HttpResponsePtr>();
