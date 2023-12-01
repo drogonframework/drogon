@@ -483,8 +483,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return clientMaxWebSocketMessageSize_;
     }
 
-    std::vector<std::tuple<std::string, HttpMethod, std::string>>
-    getHandlersInfo() const override;
+    std::vector<HttpHandlerInfo> getHandlersInfo() const override;
 
     size_t keepaliveRequestsNumber() const
     {

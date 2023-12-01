@@ -89,7 +89,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
     }
 }
 
-RouteResult HttpSimpleControllersRouter::tryRoute(const HttpRequestImplPtr &req)
+RouteResult HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req)
 {
     std::string pathLower(req->path().length(), 0);
     std::transform(req->path().begin(),
@@ -112,10 +112,10 @@ RouteResult HttpSimpleControllersRouter::tryRoute(const HttpRequestImplPtr &req)
     return {true, binder};
 }
 
-std::vector<std::tuple<std::string, HttpMethod, std::string>>
-HttpSimpleControllersRouter::getHandlersInfo() const
+std::vector<HttpHandlerInfo> HttpSimpleControllersRouter::getHandlersInfo()
+    const
 {
-    std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
+    std::vector<HttpHandlerInfo> ret;
     for (auto &item : simpleCtrlMap_)
     {
         for (size_t i = 0; i < Invalid; ++i)
@@ -132,29 +132,6 @@ HttpSimpleControllersRouter::getHandlersInfo() const
         }
     }
     return ret;
-}
-
-static std::string method_to_string(HttpMethod method)
-{
-    switch (method)
-    {
-        case Get:
-            return "GET";
-        case Post:
-            return "POST";
-        case Put:
-            return "PUT";
-        case Delete:
-            return "DELETE";
-        case Head:
-            return "HEAD";
-        case Options:
-            return "OPTIONS";
-        case Patch:
-            return "PATCH";
-        default:
-            return "Invalid";
-    }
 }
 
 void HttpSimpleControllersRouter::init(
@@ -181,7 +158,7 @@ void HttpSimpleControllersRouter::init(
                     }
                     else if (i != Options)
                     {
-                        corsMethods->append(method_to_string((HttpMethod)i));
+                        corsMethods->append(to_string_view((HttpMethod)i));
                         corsMethods->append(",");
                     }
                 }

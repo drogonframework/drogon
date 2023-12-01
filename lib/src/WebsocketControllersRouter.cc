@@ -304,10 +304,9 @@ void WebsocketControllersRouter::route(
     callback(resp);
 }
 
-std::vector<std::tuple<std::string, HttpMethod, std::string>>
-WebsocketControllersRouter::getHandlersInfo() const
+std::vector<HttpHandlerInfo> WebsocketControllersRouter::getHandlersInfo() const
 {
-    std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
+    std::vector<HttpHandlerInfo> ret;
     for (auto &item : wsCtrlMap_)
     {
         for (size_t i = 0; i < Invalid; ++i)

@@ -66,6 +66,8 @@ using ExceptionHandler =
 using DefaultHandler =
     std::function<void(const HttpRequestPtr &,
                        std::function<void(const HttpResponsePtr &)> &&)>;
+using HttpHandlerInfo = std::tuple<std::string, HttpMethod, std::string>;
+
 #ifdef __cpp_impl_coroutine
 class HttpAppFramework;
 
@@ -192,8 +194,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * returned.
      */
     virtual const std::function<HttpResponsePtr(HttpStatusCode,
-                                                const HttpRequestPtr &req)>
-        &getCustomErrorHandler() const = 0;
+                                                const HttpRequestPtr &req)> &
+    getCustomErrorHandler() const = 0;
 
     /// Get the plugin object registered in the framework
     /**
@@ -744,8 +746,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * pattern of the handler;
      * The last item in std::tuple is the description of the handler.
      */
-    virtual std::vector<std::tuple<std::string, HttpMethod, std::string>>
-    getHandlersInfo() const = 0;
+    virtual std::vector<HttpHandlerInfo> getHandlersInfo() const = 0;
 
     /// Get the custom configuration defined by users in the configuration file.
     virtual const Json::Value &getCustomConfig() const = 0;
@@ -1420,8 +1421,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      *
      * @return std::pair<size_t, std::string>
      */
-    virtual const std::pair<unsigned int, std::string>
-        &getFloatPrecisionInJson() const noexcept = 0;
+    virtual const std::pair<unsigned int, std::string> &
+    getFloatPrecisionInJson() const noexcept = 0;
     /// Create a database client
     /**
      * @param dbType The database type is one of

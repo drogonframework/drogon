@@ -16,6 +16,7 @@
 
 #include "impl_forwards.h"
 #include <drogon/HttpTypes.h>
+#include <drogon/HttpAppFramework.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/drogon_callbacks.h>
 #include <trantor/utils/NonCopyable.h>
@@ -66,8 +67,7 @@ class WebsocketControllersRouter : public trantor::NonCopyable
                const WebSocketConnectionImplPtr &wsConnPtr);
     void init();
 
-    std::vector<std::tuple<std::string, HttpMethod, std::string>>
-    getHandlersInfo() const;
+    std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
   private:
     struct CtrlBinder

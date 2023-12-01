@@ -834,8 +834,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(
     }
 }
 
-std::vector<std::tuple<std::string, HttpMethod, std::string>>
-HttpAppFrameworkImpl::getHandlersInfo() const
+std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const
 {
     auto ret = httpSimpleCtrlsRouterPtr_->getHandlersInfo();
     auto v = httpCtrlsRouterPtr_->getHandlersInfo();
@@ -991,7 +990,7 @@ void HttpAppFrameworkImpl::httpRequestRouting(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    RouteResult result = httpSimpleCtrlsRouterPtr_->tryRoute(req);
+    RouteResult result = httpSimpleCtrlsRouterPtr_->route(req);
     if (result.found)
     {
         if (!result.binderPtr)
@@ -1003,7 +1002,7 @@ void HttpAppFrameworkImpl::httpRequestRouting(
         httpRequestPostRouting(req, result.binderPtr, std::move(callback));
         return;
     }
-    result = httpCtrlsRouterPtr_->tryRoute(req);
+    result = httpCtrlsRouterPtr_->route(req);
     if (result.found)
     {
         if (!result.binderPtr)

@@ -46,9 +46,8 @@ class HttpControllersRouter : public trantor::NonCopyable
                       const std::vector<HttpMethod> &validMethods,
                       const std::vector<std::string> &filters,
                       const std::string &handlerName = "");
-    RouteResult tryRoute(const HttpRequestImplPtr &req);
-    std::vector<std::tuple<std::string, HttpMethod, std::string>>
-    getHandlersInfo() const;
+    RouteResult route(const HttpRequestImplPtr &req);
+    std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
     // TODO: temporarily move to public visibility, fix it before merge
     using CtrlBinderPtr = std::shared_ptr<HttpControllerBinder>;
@@ -63,6 +62,14 @@ class HttpControllersRouter : public trantor::NonCopyable
     };
 
   private:
+    void addRegexCtrlBinder(const CtrlBinderPtr &binderPtr,
+                            const std::string &pathPattern,
+                            const std::string &pathParameterPattern,
+                            const std::vector<HttpMethod> &methods);
+    void addCtrlBinderToRouterItem(const CtrlBinderPtr &binderPtr,
+                                   HttpControllerRouterItem &router,
+                                   const std::vector<HttpMethod> &methods);
+
     std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
     std::vector<HttpControllerRouterItem> ctrlVector_;
 };

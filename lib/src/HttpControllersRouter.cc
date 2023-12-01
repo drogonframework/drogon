@@ -25,29 +25,6 @@
 
 using namespace drogon;
 
-static std::string method_to_string(HttpMethod method)
-{
-    switch (method)
-    {
-        case Get:
-            return "GET";
-        case Post:
-            return "POST";
-        case Put:
-            return "PUT";
-        case Delete:
-            return "DELETE";
-        case Head:
-            return "HEAD";
-        case Options:
-            return "OPTIONS";
-        case Patch:
-            return "PATCH";
-        default:
-            return "Invalid";
-    }
-}
-
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> & /*ioLoops*/)
 {
@@ -69,7 +46,7 @@ void HttpControllersRouter::init(
                     }
                     else if (i != Options)
                     {
-                        corsMethods->append(method_to_string((HttpMethod)i));
+                        corsMethods->append(to_string_view((HttpMethod)i));
                         corsMethods->append(",");
                     }
                 }
@@ -94,10 +71,9 @@ void HttpControllersRouter::init(
     }
 }
 
-std::vector<std::tuple<std::string, HttpMethod, std::string>>
-HttpControllersRouter::getHandlersInfo() const
+std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
 {
-    std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
+    std::vector<HttpHandlerInfo> ret;
     auto gatherInfo = [&](const auto &item) {
         for (size_t i = 0; i < Invalid; ++i)
         {
@@ -141,49 +117,8 @@ void HttpControllersRouter::addHttpRegex(
         // Recreate this with the correct number of threads.
         binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>();
     });
-    {
-        for (auto &router : ctrlVector_)
-        {
-            if (router.pathParameterPattern_ == regExp)
-            {
-                if (!validMethods.empty())
-                {
-                    for (auto const &method : validMethods)
-                    {
-                        router.binders_[method] = binderInfo;
-                        if (method == Options)
-                            binderInfo->isCORS_ = true;
-                    }
-                }
-                else
-                {
-                    binderInfo->isCORS_ = true;
-                    for (int i = 0; i < Invalid; ++i)
-                        router.binders_[i] = binderInfo;
-                }
-                return;
-            }
-        }
-    }
-    struct HttpControllerRouterItem router;
-    router.pathParameterPattern_ = regExp;
-    router.pathPattern_ = regExp;
-    if (!validMethods.empty())
-    {
-        for (auto const &method : validMethods)
-        {
-            router.binders_[method] = binderInfo;
-            if (method == Options)
-                binderInfo->isCORS_ = true;
-        }
-    }
-    else
-    {
-        binderInfo->isCORS_ = true;
-        for (int i = 0; i < Invalid; ++i)
-            router.binders_[i] = binderInfo;
-    }
-    ctrlVector_.push_back(std::move(router));
+
+    addRegexCtrlBinder(binderInfo, regExp, regExp, validMethods);
 }
 
 void HttpControllersRouter::addHttpPath(
@@ -207,6 +142,7 @@ void HttpControllersRouter::addHttpPath(
     }
     std::string originPath = tmpPath;
     size_t placeIndex = 1;
+    // Process path parameter placeholders
     while (std::regex_search(tmpPath, results, regex))
     {
         if (results.size() > 1)
@@ -287,6 +223,7 @@ void HttpControllersRouter::addHttpPath(
         }
         tmpPath = results.suffix();
     }
+    // Process query parameter placeholders
     std::vector<std::pair<std::string, size_t>> parametersPlaces;
     if (!paras.empty())
     {
@@ -398,8 +335,8 @@ void HttpControllersRouter::addHttpPath(
             paras = results.suffix();
         }
     }
-    auto pathParameterPattern =
-        std::regex_replace(originPath, regex, "([^/]*)");
+
+    // Create new ControllerBinder
     auto binderInfo = std::make_shared<HttpControllerBinder>();
     binderInfo->filterNames_ = filters;
     binderInfo->handlerName_ = handlerName;
@@ -410,86 +347,46 @@ void HttpControllersRouter::addHttpPath(
         // Recreate this with the correct number of threads.
         binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>();
     });
-    bool routingRequiresRegex = (originPath != pathParameterPattern);
-    HttpControllerRouterItem *existingRouterItemPtr = nullptr;
 
-    // If exists another controllers on the same route. Updathe them then exit
-    if (routingRequiresRegex)
+    // Create or update RouterItem
+    auto pathParameterPattern =
+        std::regex_replace(originPath, regex, "([^/]*)");
+    if (originPath != pathParameterPattern)  // require regex
     {
-        for (auto &router : ctrlVector_)
-        {
-            if (router.pathParameterPattern_ == pathParameterPattern)
-                existingRouterItemPtr = &router;
-        }
-    }
-    else
-    {
-        std::string loweredPath;
-        loweredPath.resize(originPath.size());
-        std::transform(originPath.begin(),
-                       originPath.end(),
-                       loweredPath.begin(),
-                       [](unsigned char c) { return tolower(c); });
-        auto it = ctrlMap_.find(loweredPath);
-        if (it != ctrlMap_.end())
-            existingRouterItemPtr = &it->second;
-    }
-
-    if (existingRouterItemPtr != nullptr)
-    {
-        auto &router = *existingRouterItemPtr;
-        if (!validMethods.empty())
-        {
-            for (auto const &method : validMethods)
-            {
-                router.binders_[method] = binderInfo;
-                if (method == Options)
-                    binderInfo->isCORS_ = true;
-            }
-        }
-        else
-        {
-            binderInfo->isCORS_ = true;
-            for (int i = 0; i < Invalid; ++i)
-                router.binders_[i] = binderInfo;
-        }
+        addRegexCtrlBinder(binderInfo,
+                           path,
+                           pathParameterPattern,
+                           validMethods);
         return;
     }
 
-    struct HttpControllerRouterItem router;
-    router.pathParameterPattern_ = pathParameterPattern;
-    router.pathPattern_ = path;
-    if (!validMethods.empty())
+    std::string loweredPath;
+    std::transform(originPath.begin(),
+                   originPath.end(),
+                   std::back_inserter(loweredPath),
+                   [](unsigned char c) { return tolower(c); });
+
+    HttpControllerRouterItem *routerItemPtr;
+    // If exists another controllers on the same route, update them
+    auto it = ctrlMap_.find(loweredPath);
+    if (it != ctrlMap_.end())
     {
-        for (auto const &method : validMethods)
-        {
-            router.binders_[method] = binderInfo;
-            if (method == Options)
-                binderInfo->isCORS_ = true;
-        }
+        routerItemPtr = &it->second;
     }
+    // Create new router item if not exists
     else
     {
-        binderInfo->isCORS_ = true;
-        for (int i = 0; i < Invalid; ++i)
-            router.binders_[i] = binderInfo;
+        struct HttpControllerRouterItem router;
+        router.pathParameterPattern_ = pathParameterPattern;
+        router.pathPattern_ = path;
+        routerItemPtr =
+            &ctrlMap_.emplace(loweredPath, std::move(router)).first->second;
     }
 
-    if (routingRequiresRegex)
-        ctrlVector_.push_back(std::move(router));
-    else
-    {
-        std::string loweredPath;
-        loweredPath.resize(originPath.size());
-        std::transform(originPath.begin(),
-                       originPath.end(),
-                       loweredPath.begin(),
-                       [](unsigned char c) { return tolower(c); });
-        ctrlMap_[loweredPath] = std::move(router);
-    }
+    addCtrlBinderToRouterItem(binderInfo, *routerItemPtr, validMethods);
 }
 
-RouteResult HttpControllersRouter::tryRoute(const HttpRequestImplPtr &req)
+RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
 {
     // Find http controller
     HttpControllerRouterItem *routerItemPtr = nullptr;
@@ -571,4 +468,55 @@ RouteResult HttpControllersRouter::tryRoute(const HttpRequestImplPtr &req)
     }
     req->setRoutingParameters(std::move(params));
     return {true, binder};
+}
+
+void HttpControllersRouter::addRegexCtrlBinder(
+    const CtrlBinderPtr &binderPtr,
+    const std::string &pathPattern,
+    const std::string &pathParameterPattern,
+    const std::vector<HttpMethod> &methods)
+{
+    HttpControllerRouterItem *routerItemPtr;
+    auto existRouter = std::find_if(ctrlVector_.begin(),
+                                    ctrlVector_.end(),
+                                    [&pathParameterPattern](const auto &item) {
+                                        return item.pathParameterPattern_ ==
+                                               pathParameterPattern;
+                                    });
+    if (existRouter == ctrlVector_.end())
+    {
+        struct HttpControllerRouterItem router;
+        router.pathParameterPattern_ = pathParameterPattern;
+        router.pathPattern_ = pathPattern;
+        ctrlVector_.push_back(std::move(router));
+        routerItemPtr = &ctrlVector_.back();
+    }
+    else
+    {
+        routerItemPtr = &(*existRouter);
+    }
+
+    addCtrlBinderToRouterItem(binderPtr, *routerItemPtr, methods);
+}
+
+void HttpControllersRouter::addCtrlBinderToRouterItem(
+    const CtrlBinderPtr &binderPtr,
+    HttpControllerRouterItem &router,
+    const std::vector<HttpMethod> &methods)
+{
+    if (!methods.empty())
+    {
+        for (auto const &method : methods)
+        {
+            router.binders_[method] = binderPtr;
+            if (method == Options)
+                binderPtr->isCORS_ = true;
+        }
+    }
+    else
+    {
+        binderPtr->isCORS_ = true;
+        for (int i = 0; i < Invalid; ++i)
+            router.binders_[i] = binderPtr;
+    }
 }

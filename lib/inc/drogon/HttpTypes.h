@@ -216,4 +216,34 @@ inline trantor::LogStream &operator<<(trantor::LogStream &out,
 {
     return out << to_string_view(result);
 }
+
+inline std::string_view to_string_view(drogon::HttpMethod method)
+{
+    switch (method)
+    {
+        case drogon::HttpMethod::Get:
+            return "GET";
+        case drogon::HttpMethod::Post:
+            return "POST";
+        case drogon::HttpMethod::Head:
+            return "HEAD";
+        case drogon::HttpMethod::Put:
+            return "PUT";
+        case drogon::HttpMethod::Delete:
+            return "DELETE";
+        case drogon::HttpMethod::Options:
+            return "OPTIONS";
+        case drogon::HttpMethod::Patch:
+            return "PATCH";
+        default:
+            return "INVALID";
+    }
+}
+
+inline std::string to_string(drogon::HttpMethod method)
+{
+    auto sv = to_string_view(method);
+    return std::string(sv.data(), sv.size());
+}
+
 }  // namespace drogon

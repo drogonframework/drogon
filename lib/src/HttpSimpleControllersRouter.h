@@ -41,11 +41,10 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         const std::string &pathName,
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods);
-    RouteResult tryRoute(const HttpRequestImplPtr &req);
+    RouteResult route(const HttpRequestImplPtr &req);
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
-    std::vector<std::tuple<std::string, HttpMethod, std::string>>
-    getHandlersInfo() const;
+    std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
     // TODO: temporarily move to public visibility, fix it before merge
     using CtrlBinderPtr = std::shared_ptr<HttpSimpleControllerBinder>;
