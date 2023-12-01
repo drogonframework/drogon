@@ -133,7 +133,7 @@ void HttpControllersRouter::addHttpRegex(
     const std::vector<std::string> &filters,
     const std::string &handlerName)
 {
-    auto binderInfo = std::make_shared<CtrlBinder>();
+    auto binderInfo = std::make_shared<HttpControllerBinder>();
     binderInfo->filterNames_ = filters;
     binderInfo->handlerName_ = handlerName;
     binderInfo->binderPtr_ = binder;
@@ -400,7 +400,7 @@ void HttpControllersRouter::addHttpPath(
     }
     auto pathParameterPattern =
         std::regex_replace(originPath, regex, "([^/]*)");
-    auto binderInfo = std::make_shared<CtrlBinder>();
+    auto binderInfo = std::make_shared<HttpControllerBinder>();
     binderInfo->filterNames_ = filters;
     binderInfo->handlerName_ = handlerName;
     binderInfo->binderPtr_ = binder;
@@ -489,8 +489,7 @@ void HttpControllersRouter::addHttpPath(
     }
 }
 
-internal::RouteResult HttpControllersRouter::tryRoute(
-    const HttpRequestImplPtr &req)
+RouteResult HttpControllersRouter::tryRoute(const HttpRequestImplPtr &req)
 {
     // Find http controller
     HttpControllerRouterItem *routerItemPtr = nullptr;

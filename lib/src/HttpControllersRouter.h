@@ -15,7 +15,7 @@
 #pragma once
 
 #include "impl_forwards.h"
-#include "CtrlBinderBase.h"
+#include "HttpControllerBinder.h"
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpBinder.h>
 #include <drogon/IOThreadStorage.h>
@@ -46,19 +46,12 @@ class HttpControllersRouter : public trantor::NonCopyable
                       const std::vector<HttpMethod> &validMethods,
                       const std::vector<std::string> &filters,
                       const std::string &handlerName = "");
-    internal::RouteResult tryRoute(const HttpRequestImplPtr &req);
+    RouteResult tryRoute(const HttpRequestImplPtr &req);
     std::vector<std::tuple<std::string, HttpMethod, std::string>>
     getHandlersInfo() const;
 
     // TODO: temporarily move to public visibility, fix it before merge
-    struct CtrlBinder : public internal::CtrlBinderBase
-    {
-        internal::HttpBinderBasePtr binderPtr_;
-        std::vector<size_t> parameterPlaces_;
-        std::vector<std::pair<std::string, size_t>> queryParametersPlaces_;
-    };
-
-    using CtrlBinderPtr = std::shared_ptr<CtrlBinder>;
+    using CtrlBinderPtr = std::shared_ptr<HttpControllerBinder>;
 
     struct HttpControllerRouterItem
     {

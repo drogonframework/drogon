@@ -27,7 +27,7 @@
 #include "SessionManager.h"
 #include "drogon/utils/Utilities.h"
 #include "impl_forwards.h"
-#include "CtrlBinderBase.h"
+#include "ControllerBinderBase.h"
 
 namespace trantor
 {
@@ -710,25 +710,21 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         std::function<void(const HttpResponsePtr &)> &&callback);
     void httpRequestPostRouting(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+        const std::shared_ptr<ControllerBinderBase> &binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void httpRequestPassFilters(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+        const std::shared_ptr<ControllerBinderBase> &binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void httpRequestPreHandling(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+        const std::shared_ptr<ControllerBinderBase> &binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void httpRequestHandling(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+        const std::shared_ptr<ControllerBinderBase> &binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
-    void httpRequestPostHandling(
-        const HttpRequestImplPtr &req,
-        const HttpResponsePtr &resp,
-        const std::function<void(const HttpResponsePtr &)> &callback);
-    
+
     void onNewWebsockRequest(
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,

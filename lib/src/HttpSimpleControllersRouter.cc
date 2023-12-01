@@ -55,8 +55,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
         }
     }
     auto &item = simpleCtrlMap_[path];
-    auto binder = std::make_shared<CtrlBinder>();
-    binder->isSimple_ = true;
+    auto binder = std::make_shared<HttpSimpleControllerBinder>();
     binder->handlerName_ = ctrlName;
     binder->filterNames_ = filters;
     drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
@@ -90,8 +89,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
     }
 }
 
-internal::RouteResult HttpSimpleControllersRouter::tryRoute(
-    const HttpRequestImplPtr &req)
+RouteResult HttpSimpleControllersRouter::tryRoute(const HttpRequestImplPtr &req)
 {
     std::string pathLower(req->path().length(), 0);
     std::transform(req->path().begin(),

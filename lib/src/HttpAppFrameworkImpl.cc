@@ -23,7 +23,7 @@
 #include <algorithm>
 #include "AOPAdvice.h"
 #include "ConfigLoader.h"
-#include "CtrlBinderBase.h"
+#include "ControllerBinderBase.h"
 #include "DbClientManager.h"
 #include "HttpClientImpl.h"
 #include "HttpControllersRouter.h"
@@ -40,8 +40,6 @@
 #include "StaticFileRouter.h"
 #include "WebSocketConnectionImpl.h"
 #include "WebsocketControllersRouter.h"
-
-#include <drogon/HttpSimpleController.h>  // TODO: temporary
 
 #include <iostream>
 #include <memory>
@@ -993,7 +991,7 @@ void HttpAppFrameworkImpl::httpRequestRouting(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    internal::RouteResult result = httpSimpleCtrlsRouterPtr_->tryRoute(req);
+    RouteResult result = httpSimpleCtrlsRouterPtr_->tryRoute(req);
     if (result.found)
     {
         if (!result.binderPtr)
@@ -1030,7 +1028,7 @@ void HttpAppFrameworkImpl::httpRequestRouting(
 
 void HttpAppFrameworkImpl::httpRequestPostRouting(
     const HttpRequestImplPtr &req,
-    const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+    const std::shared_ptr<ControllerBinderBase> &binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     // Do post routing advices.
@@ -1064,7 +1062,7 @@ void HttpAppFrameworkImpl::httpRequestPostRouting(
 
 void HttpAppFrameworkImpl::httpRequestPassFilters(
     const HttpRequestImplPtr &req,
-    const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+    const std::shared_ptr<ControllerBinderBase> &binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto &filters = binderPtr->filters_;
@@ -1087,7 +1085,7 @@ void HttpAppFrameworkImpl::httpRequestPassFilters(
 
 void HttpAppFrameworkImpl::httpRequestPreHandling(
     const HttpRequestImplPtr &req,
-    const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+    const std::shared_ptr<ControllerBinderBase> &binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     if (req->method() == Options)
@@ -1148,156 +1146,21 @@ void HttpAppFrameworkImpl::httpRequestPreHandling(
 
 void HttpAppFrameworkImpl::httpRequestHandling(
     const HttpRequestImplPtr &req,
-    const std::shared_ptr<internal::CtrlBinderBase> &binderPtr,
+    const std::shared_ptr<ControllerBinderBase> &binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    // TODO: temporary solution, fix before merge
-    if (binderPtr->isSimple_)
-    {
-        auto ctrlBinderPtr =
-            std::static_pointer_cast<HttpSimpleControllersRouter::CtrlBinder>(
-                binderPtr);
-        auto &controller = ctrlBinderPtr->controller_;
-        if (controller)
-        {
-            auto &responsePtr = *(ctrlBinderPtr->responseCache_);
-            if (responsePtr)
+    binderPtr->handleRequest(
+        req,
+        std::move(callback),
+        [this](const HttpRequestImplPtr &req_,
+               const HttpResponsePtr &resp_,
+               const std::function<void(const HttpResponsePtr &)> &cb) {
+            for (auto &advice : postHandlingAdvices_)
             {
-                if (responsePtr->expiredTime() == 0 ||
-                    (trantor::Date::now() <
-                     responsePtr->creationDate().after(
-                         static_cast<double>(responsePtr->expiredTime()))))
-                {
-                    // use cached response!
-                    LOG_TRACE << "Use cached response";
-                    httpRequestPostHandling(req, responsePtr, callback);
-                    return;
-                }
-                else
-                {
-                    responsePtr.reset();
-                }
+                advice(req_, resp_);
             }
-            try
-            {
-                controller->asyncHandleHttpRequest(
-                    req,
-                    [this, req, callback, &ctrlBinderPtr](
-                        const HttpResponsePtr &resp) {
-                        auto newResp = resp;
-                        if (resp->expiredTime() >= 0 &&
-                            resp->statusCode() != k404NotFound)
-                        {
-                            // cache the response;
-                            static_cast<HttpResponseImpl *>(resp.get())
-                                ->makeHeaderString();
-                            auto loop = req->getLoop();
-
-                            if (loop->isInLoopThread())
-                            {
-                                ctrlBinderPtr->responseCache_.setThreadData(
-                                    resp);
-                            }
-                            else
-                            {
-                                loop->queueInLoop([resp, &ctrlBinderPtr]() {
-                                    ctrlBinderPtr->responseCache_.setThreadData(
-                                        resp);
-                                });
-                            }
-                        }
-                        httpRequestPostHandling(req, newResp, callback);
-                    });
-            }
-            catch (const std::exception &e)
-            {
-                app().getExceptionHandler()(e, req, std::move(callback));
-                return;
-            }
-            catch (...)
-            {
-                LOG_ERROR << "Exception not derived from std::exception";
-                return;
-            }
-
-            return;
-        }
-        else
-        {
-            const std::string &ctrlName = ctrlBinderPtr->handlerName_;
-            LOG_ERROR << "can't find controller " << ctrlName;
-            auto res = drogon::HttpResponse::newNotFoundResponse(req);
-            httpRequestPostHandling(req, res, callback);
-        }
-    }
-    else
-    {
-        auto ctrlBinderPtr =
-            std::static_pointer_cast<HttpControllersRouter::CtrlBinder>(
-                binderPtr);
-        auto &responsePtr = *(ctrlBinderPtr->responseCache_);
-        if (responsePtr)
-        {
-            if (responsePtr->expiredTime() == 0 ||
-                (trantor::Date::now() <
-                 responsePtr->creationDate().after(
-                     static_cast<double>(responsePtr->expiredTime()))))
-            {
-                // use cached response!
-                LOG_TRACE << "Use cached response";
-                httpRequestPostHandling(req, responsePtr, callback);
-                return;
-            }
-            else
-            {
-                responsePtr.reset();
-            }
-        }
-
-        auto &paramsVector = req->getRoutingParameters();
-        std::deque<std::string> params(paramsVector.size());
-        for (int i = 0; i < paramsVector.size(); i++)
-        {
-            params[i] = paramsVector[i];
-        }
-        ctrlBinderPtr->binderPtr_->handleHttpRequest(
-            params,
-            req,
-            [this, req, ctrlBinderPtr, callback = std::move(callback)](
-                const HttpResponsePtr &resp) {
-                if (resp->expiredTime() >= 0 &&
-                    resp->statusCode() != k404NotFound)
-                {
-                    // cache the response;
-                    static_cast<HttpResponseImpl *>(resp.get())
-                        ->makeHeaderString();
-                    auto loop = req->getLoop();
-                    if (loop->isInLoopThread())
-                    {
-                        ctrlBinderPtr->responseCache_.setThreadData(resp);
-                    }
-                    else
-                    {
-                        req->getLoop()->queueInLoop([resp, &ctrlBinderPtr]() {
-                            ctrlBinderPtr->responseCache_.setThreadData(resp);
-                        });
-                    }
-                }
-                httpRequestPostHandling(req, resp, callback);
-            });
-    }
-}
-
-void HttpAppFrameworkImpl::httpRequestPostHandling(
-    const HttpRequestImplPtr &req,
-    const HttpResponsePtr &resp,
-    const std::function<void(const HttpResponsePtr &)> &callback)
-{
-    for (auto &advice : postHandlingAdvices_)
-    {
-        advice(req, resp);
-    }
-    callCallback(req, resp, callback);
+            callCallback(req_, resp_, cb);
+        });
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
