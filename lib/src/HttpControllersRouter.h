@@ -49,7 +49,7 @@ class HttpControllersRouter : public trantor::NonCopyable
     RouteResult route(const HttpRequestImplPtr &req);
     std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
-    // TODO: temporarily move to public visibility, fix it before merge
+  private:
     using CtrlBinderPtr = std::shared_ptr<HttpControllerBinder>;
 
     struct HttpControllerRouterItem
@@ -61,7 +61,6 @@ class HttpControllersRouter : public trantor::NonCopyable
             nullptr};  // The enum value of Invalid is the http methods number
     };
 
-  private:
     void addRegexCtrlBinder(const CtrlBinderPtr &binderPtr,
                             const std::string &pathPattern,
                             const std::string &pathParameterPattern,

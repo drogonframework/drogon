@@ -46,7 +46,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
 
     std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
-    // TODO: temporarily move to public visibility, fix it before merge
+  private:
     using CtrlBinderPtr = std::shared_ptr<HttpSimpleControllerBinder>;
 
     struct SimpleControllerRouterItem
@@ -54,7 +54,6 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         CtrlBinderPtr binders_[Invalid];
     };
 
-  private:
     std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
     std::mutex simpleCtrlMutex_;
 };
