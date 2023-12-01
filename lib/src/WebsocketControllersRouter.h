@@ -15,6 +15,7 @@
 #pragma once
 
 #include "impl_forwards.h"
+#include "ControllerBinderBase.h"
 #include <drogon/HttpTypes.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/utils/HttpConstraint.h>
@@ -34,85 +35,38 @@ class HttpAppFrameworkImpl;
 class WebsocketControllersRouter : public trantor::NonCopyable
 {
   public:
-    WebsocketControllersRouter(
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             AdviceCallback &&,
-                                             AdviceChainCallback &&)>>
-            &postRoutingAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &)>>
-            &postRoutingObservers,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             AdviceCallback &&,
-                                             AdviceChainCallback &&)>>
-            &preHandlingAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &)>>
-            &preHandlingObservers,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             const HttpResponsePtr &)>>
-            &postHandlingAdvices)
-        : postRoutingAdvices_(postRoutingAdvices),
-          postRoutingObservers_(postRoutingObservers),
-          preHandlingAdvices_(preHandlingAdvices),
-          preHandlingObservers_(preHandlingObservers),
-          postHandlingAdvices_(postHandlingAdvices)
-    {
-    }
+    WebsocketControllersRouter() = default;
 
     void registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods);
-    void route(const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback,
-               const WebSocketConnectionImplPtr &wsConnPtr);
+    RouteResult route(const HttpRequestImplPtr &req);
     void init();
 
     std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
-  private:
-    struct CtrlBinder
+    // TODO: temporarily moved to public visibility
+    struct CtrlBinder : public ControllerBinderBase
     {
         std::shared_ptr<WebSocketControllerBase> controller_;
-        std::string controllerName_;
-        std::vector<std::string> filterNames_;
-        std::vector<std::shared_ptr<HttpFilterBase>> filters_;
-        bool isCORS_{false};
+
+        void handleRequest(
+            const HttpRequestImplPtr &req,
+            std::function<void(const HttpResponsePtr &)> &&callback) override
+        {
+            // TODO
+        }
     };
 
     using CtrlBinderPtr = std::shared_ptr<CtrlBinder>;
 
+  private:
     struct WebSocketControllerRouterItem
     {
         CtrlBinderPtr binders_[Invalid];
     };
 
     std::unordered_map<std::string, WebSocketControllerRouterItem> wsCtrlMap_;
-    const std::vector<std::function<void(const HttpRequestPtr &,
-                                         AdviceCallback &&,
-                                         AdviceChainCallback &&)>>
-        &postRoutingAdvices_;
-    const std::vector<std::function<void(const HttpRequestPtr &)>>
-        &postRoutingObservers_;
-    const std::vector<std::function<void(const HttpRequestPtr &,
-                                         AdviceCallback &&,
-                                         AdviceChainCallback &&)>>
-        &preHandlingAdvices_;
-    const std::vector<std::function<void(const HttpRequestPtr &)>>
-        &preHandlingObservers_;
-    const std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &postHandlingAdvices_;
-    void doControllerHandler(
-        const WebSocketControllerRouterItem &routerItem,
-        std::string &wsKey,
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    void doPreHandlingAdvices(
-        const WebSocketControllerRouterItem &routerItem,
-        std::string &wsKey,
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
 };
 }  // namespace drogon

@@ -728,6 +728,33 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
         const WebSocketConnectionImplPtr &wsConnPtr);
+    void websocketRequestRouting(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    void websocketRequestPostRouting(
+        const HttpRequestImplPtr &req,
+        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    void websocketRequestPassFilters(
+        const HttpRequestImplPtr &req,
+        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    void websocketRequestPreHandling(
+        const HttpRequestImplPtr &req,
+        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    void websocketRequestHandling(
+        const HttpRequestImplPtr &req,
+        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    
+
+
     void onConnection(const trantor::TcpConnectionPtr &conn);
 
     void findSessionForRequest(const HttpRequestImplPtr &req);

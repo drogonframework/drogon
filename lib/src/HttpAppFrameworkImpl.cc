@@ -85,12 +85,7 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
     : staticFileRouterPtr_(new StaticFileRouter{}),
       httpCtrlsRouterPtr_(new HttpControllersRouter()),
       httpSimpleCtrlsRouterPtr_(new HttpSimpleControllersRouter()),
-      websockCtrlsRouterPtr_(
-          new WebsocketControllersRouter(postRoutingAdvices_,
-                                         postRoutingObservers_,
-                                         preHandlingAdvices_,
-                                         preHandlingObservers_,
-                                         postHandlingAdvices_)),
+      websockCtrlsRouterPtr_(new WebsocketControllersRouter()),
       listenerManagerPtr_(new ListenerManager),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
@@ -107,6 +102,10 @@ static std::function<void()> f = [] {
 drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::initFirst_([]() {
     HttpAppFrameworkImpl::instance().getLoop()->runInLoop(f);
 });
+
+static void handleInvalidHttpMethod(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback);
 
 namespace drogon
 {
@@ -811,7 +810,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(
     }
     if (preRoutingAdvices_.empty())
     {
-        websockCtrlsRouterPtr_->route(req, std::move(callback), wsConnPtr);
+        websocketRequestRouting(req, std::move(callback), wsConnPtr);
     }
     else
     {
@@ -827,11 +826,219 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(
                     callCallback(req, resp, *callbackPtr);
                 }),
             [this, callbackPtr, req, wsConnPtr]() {
-                websockCtrlsRouterPtr_->route(req,
-                                              std::move(*callbackPtr),
-                                              wsConnPtr);
+                websocketRequestRouting(req,
+                                        std::move(*callbackPtr),
+                                        wsConnPtr);
             });
     }
+}
+
+void HttpAppFrameworkImpl::websocketRequestRouting(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
+{
+    RouteResult result = websockCtrlsRouterPtr_->route(req);
+
+    if (result.found)
+    {
+        if (!result.binderPtr)
+        {
+            // Invalid Http Method
+            handleInvalidHttpMethod(req, std::move(callback));
+            return;
+        }
+        websocketRequestPostRouting(req,
+                                    result.binderPtr,
+                                    std::move(callback),
+                                    wsConnPtr);
+    }
+    else
+    {
+        auto resp = drogon::HttpResponse::newNotFoundResponse(req);
+        resp->setCloseConnection(true);
+        callback(resp);
+    }
+}
+
+void HttpAppFrameworkImpl::websocketRequestPostRouting(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<ControllerBinderBase> &binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
+{
+    // Do post routing advices.
+    if (!postRoutingObservers_.empty())
+    {
+        for (auto &observer : postRoutingObservers_)
+        {
+            observer(req);
+        }
+    }
+    auto &filters = binderPtr->filters_;
+    if (postRoutingAdvices_.empty())
+    {
+        websocketRequestPassFilters(req,
+                                    binderPtr,
+                                    std::move(callback),
+                                    wsConnPtr);
+        return;
+    }
+
+    auto callbackPtr =
+        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+            std::move(callback));
+    doAdvicesChain(postRoutingAdvices_,
+                   0,
+                   req,
+                   callbackPtr,
+                   [this, req, binderPtr, callbackPtr, wsConnPtr]() {
+                       websocketRequestPassFilters(req,
+                                                   binderPtr,
+                                                   std::move(*callbackPtr),
+                                                   wsConnPtr);
+                   });
+}
+
+void HttpAppFrameworkImpl::websocketRequestPassFilters(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<ControllerBinderBase> &binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
+{
+    auto &filters = binderPtr->filters_;
+    if (filters.empty())
+    {
+        websocketRequestPreHandling(req,
+                                    binderPtr,
+                                    std::move(callback),
+                                    wsConnPtr);
+        return;
+    }
+
+    auto callbackPtr =
+        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+            std::move(callback));
+    filters_function::doFilters(
+        filters,
+        req,
+        callbackPtr,
+        [this, req, binderPtr, callbackPtr, wsConnPtr]() {
+            websocketRequestPreHandling(req,
+                                        binderPtr,
+                                        std::move(*callbackPtr),
+                                        wsConnPtr);
+        });
+}
+
+void HttpAppFrameworkImpl::websocketRequestPreHandling(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<ControllerBinderBase> &binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
+{
+    if (req->method() == Options)
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+        resp->addHeader("ALLOW", *binderPtr->corsMethods_);
+        auto &origin = req->getHeader("Origin");
+        if (origin.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+        }
+        else
+        {
+            resp->addHeader("Access-Control-Allow-Origin", origin);
+        }
+        resp->addHeader("Access-Control-Allow-Methods",
+                        *binderPtr->corsMethods_);
+        auto &headers = req->getHeaderBy("access-control-request-headers");
+        if (!headers.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Headers", headers);
+        }
+        callback(resp);
+        return;
+    }
+
+    // pre-handling aop
+    if (!preHandlingObservers_.empty())
+    {
+        for (auto &observer : preHandlingObservers_)
+        {
+            observer(req);
+        }
+    }
+
+    if (preHandlingAdvices_.empty())
+    {
+        websocketRequestHandling(req,
+                                 binderPtr,
+                                 std::move(callback),
+                                 wsConnPtr);
+        return;
+    }
+
+    auto callbackPtr =
+        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+            std::move(callback));
+    doAdvicesChain(
+        preHandlingAdvices_,
+        0,
+        req,
+        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+            [callbackPtr](const HttpResponsePtr &resp) {
+                (*callbackPtr)(resp);
+            }),
+        [this, req, binderPtr, callbackPtr, wsConnPtr]() {
+            websocketRequestHandling(req,
+                                     binderPtr,
+                                     std::move(*callbackPtr),
+                                     wsConnPtr);
+        });
+}
+
+#include <drogon/WebSocketController.h>  // TODO: temporary
+
+void HttpAppFrameworkImpl::websocketRequestHandling(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<ControllerBinderBase> &binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
+{
+    std::string wsKey = req->getHeaderBy("sec-websocket-key");
+    wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+    unsigned char accKey[20];
+    auto sha1 = trantor::utils::sha1(wsKey.c_str(), wsKey.length());
+    memcpy(accKey, &sha1, sizeof(sha1));
+    auto base64Key = utils::base64Encode(accKey, sizeof(accKey));
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setStatusCode(k101SwitchingProtocols);
+    resp->addHeader("Upgrade", "websocket");
+    resp->addHeader("Connection", "Upgrade");
+    resp->addHeader("Sec-WebSocket-Accept", base64Key);
+    for (auto &advice : postHandlingAdvices_)
+    {
+        advice(req, resp);
+    }
+    callback(resp);
+
+    auto binder =
+        std::static_pointer_cast<WebsocketControllersRouter::CtrlBinder>(
+            binderPtr);
+    auto ctrlPtr = binder->controller_;
+    wsConnPtr->setMessageCallback(
+        [ctrlPtr](std::string &&message,
+                  const WebSocketConnectionImplPtr &connPtr,
+                  const WebSocketMessageType &type) {
+            ctrlPtr->handleNewMessage(connPtr, std::move(message), type);
+        });
+    wsConnPtr->setCloseCallback(
+        [ctrlPtr](const WebSocketConnectionImplPtr &connPtr) {
+            ctrlPtr->handleConnectionClosed(connPtr);
+        });
+    ctrlPtr->handleNewConnection(req, wsConnPtr);
 }
 
 std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const

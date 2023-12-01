@@ -112,11 +112,7 @@ RouteResult HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req)
     auto &ctrlInfo = iter->second;
     req->setMatchedPathPattern(iter->first);
     auto &binder = ctrlInfo.binders_[req->method()];
-    if (!binder)
-    {
-        return {true, nullptr};
-    }
-    return {true, binder};
+    return {true, binder};  // binder maybe null
 }
 
 std::vector<HttpHandlerInfo> HttpSimpleControllersRouter::getHandlersInfo()
