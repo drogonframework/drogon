@@ -7,62 +7,15 @@ namespace drogon
 
 void HttpSimpleControllerBinder::handleRequest(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback,
-    const std::function<void(const HttpRequestImplPtr &req,
-                             const HttpResponsePtr &resp,
-                             const std::function<void(const HttpResponsePtr &)>
-                                 &callback)> &postHandlingCallback)
+    std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto &controller = controller_;
     if (controller)
     {
-        auto &responsePtr = *responseCache_;
-        if (responsePtr)
-        {
-            if (responsePtr->expiredTime() == 0 ||
-                (trantor::Date::now() <
-                 responsePtr->creationDate().after(
-                     static_cast<double>(responsePtr->expiredTime()))))
-            {
-                // use cached response!
-                LOG_TRACE << "Use cached response";
-                postHandlingCallback(req, responsePtr, callback);
-                return;
-            }
-            else
-            {
-                responsePtr.reset();
-            }
-        }
         try
         {
-            controller->asyncHandleHttpRequest(
-                req,
-                // TODO: how to capture postHandlingCallback?
-                [this, req, callback, postHandlingCallback](
-                    const HttpResponsePtr &resp) {
-                    auto newResp = resp;
-                    if (resp->expiredTime() >= 0 &&
-                        resp->statusCode() != k404NotFound)
-                    {
-                        // cache the response;
-                        static_cast<HttpResponseImpl *>(resp.get())
-                            ->makeHeaderString();
-                        auto loop = req->getLoop();
-
-                        if (loop->isInLoopThread())
-                        {
-                            responseCache_.setThreadData(resp);
-                        }
-                        else
-                        {
-                            loop->queueInLoop([this, resp]() {
-                                responseCache_.setThreadData(resp);
-                            });
-                        }
-                    }
-                    postHandlingCallback(req, newResp, callback);
-                });
+            auto cb = callback;  // copy
+            controller->asyncHandleHttpRequest(req, std::move(cb));
         }
         catch (const std::exception &e)
         {
@@ -82,7 +35,7 @@ void HttpSimpleControllerBinder::handleRequest(
         // TODO: should we return 404 in the first place?
         LOG_ERROR << "can't find controller " << handlerName_;
         auto res = drogon::HttpResponse::newNotFoundResponse(req);
-        postHandlingCallback(req, res, callback);
+        callback(res);
     }
 }
 

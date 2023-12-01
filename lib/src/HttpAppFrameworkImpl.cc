@@ -941,7 +941,8 @@ void HttpAppFrameworkImpl::onAsyncRequest(
         return;
     }
     findSessionForRequest(req);
-    // Route to controller
+
+    // pre-routing aop
     if (!preRoutingObservers_.empty())
     {
         for (auto &observer : preRoutingObservers_)
@@ -1030,7 +1031,7 @@ void HttpAppFrameworkImpl::httpRequestPostRouting(
     const std::shared_ptr<ControllerBinderBase> &binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    // Do post routing advices.
+    // post-routing aop
     if (!postRoutingObservers_.empty())
     {
         for (auto &observer : postRoutingObservers_)
@@ -1064,6 +1065,7 @@ void HttpAppFrameworkImpl::httpRequestPassFilters(
     const std::shared_ptr<ControllerBinderBase> &binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
+    // pass filters
     auto &filters = binderPtr->filters_;
     if (filters.empty())
     {
@@ -1113,6 +1115,7 @@ void HttpAppFrameworkImpl::httpRequestPreHandling(
         return;
     }
 
+    // pre-handling aop
     if (!preHandlingObservers_.empty())
     {
         for (auto &observer : preHandlingObservers_)
@@ -1148,17 +1151,59 @@ void HttpAppFrameworkImpl::httpRequestHandling(
     const std::shared_ptr<ControllerBinderBase> &binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    binderPtr->handleRequest(
-        req,
-        std::move(callback),
-        [this](const HttpRequestImplPtr &req_,
-               const HttpResponsePtr &resp_,
-               const std::function<void(const HttpResponsePtr &)> &cb) {
+    // Check cached response
+    auto &cachedResp = *(binderPtr->responseCache_);
+    if (cachedResp)
+    {
+        if (cachedResp->expiredTime() == 0 ||
+            (trantor::Date::now() <
+             cachedResp->creationDate().after(
+                 static_cast<double>(cachedResp->expiredTime()))))
+        {
+            // use cached response!
+            LOG_TRACE << "Use cached response";
+
+            // post-handling aop
             for (auto &advice : postHandlingAdvices_)
             {
-                advice(req_, resp_);
+                advice(req, cachedResp);
             }
-            callCallback(req_, resp_, cb);
+            callCallback(req, cachedResp, callback);
+            return;
+        }
+        else
+        {
+            cachedResp.reset();
+        }
+    }
+
+    binderPtr->handleRequest(
+        req,
+        [this, req, binderPtr, callback = std::move(callback)](
+            const HttpResponsePtr &resp) {
+            // Cache
+            if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
+            {
+                // cache the response;
+                static_cast<HttpResponseImpl *>(resp.get())->makeHeaderString();
+                auto loop = req->getLoop();
+                if (loop->isInLoopThread())
+                {
+                    binderPtr->responseCache_.setThreadData(resp);
+                }
+                else
+                {
+                    loop->queueInLoop([binderPtr, resp]() {
+                        binderPtr->responseCache_.setThreadData(resp);
+                    });
+                }
+            }
+            // post-handling aop
+            for (auto &advice : postHandlingAdvices_)
+            {
+                advice(req, resp);
+            }
+            callCallback(req, resp, callback);
         });
 }
 
