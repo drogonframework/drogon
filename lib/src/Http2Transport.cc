@@ -799,6 +799,22 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         assert(frameOpt.has_value());
         auto &frame = *frameOpt;
 
+        if (firstSettingsReceived == false)
+        {
+            firstSettingsReceived = true;
+            if (std::holds_alternative<SettingsFrame>(frame) == false ||
+                streamId != 0)
+            {
+                LOG_TRACE
+                    << "First frame recv must be SETTINGS frame on stream 0";
+                connectionErrored(
+                    streamId,
+                    StreamCloseErrorCode::ProtocolError,
+                    "First frame recv must be SETTINGS frame on stream 0");
+                return;
+            }
+        }
+
         // special case for PING and GOAWAY. These are all global frames
         if (std::holds_alternative<GoAwayFrame>(frame))
         {

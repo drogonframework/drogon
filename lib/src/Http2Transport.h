@@ -469,6 +469,7 @@ class Http2Transport : public HttpTransport
 
     std::unordered_map<int32_t, size_t> pendingDataSend;
     bool reconnectionIssued = false;
+    bool firstSettingsReceived = false;
 
     // HTTP/2 client-wide settings (can be changed by server)
     size_t maxConcurrentStreams = 100;
