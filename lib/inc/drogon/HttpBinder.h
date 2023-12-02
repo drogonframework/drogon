@@ -401,6 +401,7 @@ class HttpBinder : public HttpBinderBase
                         LOG_ERROR
                             << "Exception not derived from std::exception";
                     }
+                    co_return;
                 }(req, std::move(callback), std::move(values)...);
             }
 #endif
