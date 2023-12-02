@@ -32,6 +32,19 @@ namespace drogon
 {
 class HttpAppFrameworkImpl;
 
+// TODO: move to standalone file
+struct WebsocketControllerBinder : public ControllerBinderBase
+{
+    std::shared_ptr<WebSocketControllerBase> controller_;
+
+    void handleRequest(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback) const override;
+
+    void handleNewConnection(const HttpRequestImplPtr &req,
+                             const WebSocketConnectionImplPtr &wsConnPtr) const;
+};
+
 class WebsocketControllersRouter : public trantor::NonCopyable
 {
   public:
@@ -46,22 +59,9 @@ class WebsocketControllersRouter : public trantor::NonCopyable
 
     std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
-    // TODO: temporarily moved to public visibility
-    struct CtrlBinder : public ControllerBinderBase
-    {
-        std::shared_ptr<WebSocketControllerBase> controller_;
-
-        void handleRequest(
-            const HttpRequestImplPtr &req,
-            std::function<void(const HttpResponsePtr &)> &&callback) override
-        {
-            // TODO
-        }
-    };
-
-    using CtrlBinderPtr = std::shared_ptr<CtrlBinder>;
-
   private:
+    using CtrlBinderPtr = std::shared_ptr<WebsocketControllerBinder>;
+
     struct WebSocketControllerRouterItem
     {
         CtrlBinderPtr binders_[Invalid];

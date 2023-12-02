@@ -12,7 +12,7 @@ class HttpControllerBinder : public ControllerBinderBase
   public:
     void handleRequest(
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback) override;
+        std::function<void(const HttpResponsePtr &)> &&callback) const override;
 
     internal::HttpBinderBasePtr binderPtr_;
     std::vector<size_t> parameterPlaces_;

@@ -7,7 +7,7 @@ namespace drogon
 
 void HttpSimpleControllerBinder::handleRequest(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+    std::function<void(const HttpResponsePtr &)> &&callback) const
 {
     // Binders without controller should be removed after run()
     assert(controller_);

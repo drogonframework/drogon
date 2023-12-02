@@ -6,7 +6,7 @@ namespace drogon
 
 void HttpControllerBinder::handleRequest(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+    std::function<void(const HttpResponsePtr &)> &&callback) const
 {
     auto &paramsVector = req->getRoutingParameters();
     std::deque<std::string> params(paramsVector.begin(), paramsVector.end());

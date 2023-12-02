@@ -999,46 +999,26 @@ void HttpAppFrameworkImpl::websocketRequestPreHandling(
         });
 }
 
-#include <drogon/WebSocketController.h>  // TODO: temporary
-
 void HttpAppFrameworkImpl::websocketRequestHandling(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<ControllerBinderBase> &binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
-    std::string wsKey = req->getHeaderBy("sec-websocket-key");
-    wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-    unsigned char accKey[20];
-    auto sha1 = trantor::utils::sha1(wsKey.c_str(), wsKey.length());
-    memcpy(accKey, &sha1, sizeof(sha1));
-    auto base64Key = utils::base64Encode(accKey, sizeof(accKey));
-    auto resp = HttpResponse::newHttpResponse();
-    resp->setStatusCode(k101SwitchingProtocols);
-    resp->addHeader("Upgrade", "websocket");
-    resp->addHeader("Connection", "Upgrade");
-    resp->addHeader("Sec-WebSocket-Accept", base64Key);
-    for (auto &advice : postHandlingAdvices_)
-    {
-        advice(req, resp);
-    }
-    callback(resp);
+    binderPtr->handleRequest(req,
+                             [this, req, callback = std::move(callback)](
+                                 const HttpResponsePtr &resp) {
+                                 for (auto &advice : postHandlingAdvices_)
+                                 {
+                                     advice(req, resp);
+                                 }
+                                 callback(resp);
+                             });
 
+    // TODO: more elegant?
     auto binder =
-        std::static_pointer_cast<WebsocketControllersRouter::CtrlBinder>(
-            binderPtr);
-    auto ctrlPtr = binder->controller_;
-    wsConnPtr->setMessageCallback(
-        [ctrlPtr](std::string &&message,
-                  const WebSocketConnectionImplPtr &connPtr,
-                  const WebSocketMessageType &type) {
-            ctrlPtr->handleNewMessage(connPtr, std::move(message), type);
-        });
-    wsConnPtr->setCloseCallback(
-        [ctrlPtr](const WebSocketConnectionImplPtr &connPtr) {
-            ctrlPtr->handleConnectionClosed(connPtr);
-        });
-    ctrlPtr->handleNewConnection(req, wsConnPtr);
+        std::static_pointer_cast<WebsocketControllerBinder>(binderPtr);
+    binder->handleNewConnection(req, wsConnPtr);
 }
 
 std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const

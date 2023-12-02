@@ -11,7 +11,7 @@ class HttpSimpleControllerBinder : public ControllerBinderBase
   public:
     void handleRequest(
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback) override;
+        std::function<void(const HttpResponsePtr &)> &&callback) const override;
 
     std::shared_ptr<HttpSimpleControllerBase> controller_;
 };

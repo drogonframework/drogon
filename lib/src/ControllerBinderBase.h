@@ -26,7 +26,7 @@ struct ControllerBinderBase
     virtual ~ControllerBinderBase() = default;
     virtual void handleRequest(
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+        std::function<void(const HttpResponsePtr &)> &&callback) const = 0;
 };
 
 struct RouteResult
