@@ -13,12 +13,15 @@
  */
 
 #include "HttpControllersRouter.h"
+#include "HttpControllerBinder.h"
+#include "HttpSimpleControllerBinder.h"
 #include "AOPAdvice.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "StaticFileRouter.h"
 #include "HttpAppFrameworkImpl.h"
 #include "FiltersFunction.h"
+#include <drogon/HttpSimpleController.h>
 #include <algorithm>
 #include <cctype>
 #include <deque>
@@ -28,7 +31,7 @@ using namespace drogon;
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> & /*ioLoops*/)
 {
-    auto initFiltersAndCorsMethods = [](const HttpControllerRouterItem &item) {
+    auto initFiltersAndCorsMethods = [](const auto &item) {
         auto corsMethods = std::make_shared<std::string>("OPTIONS,");
         for (size_t i = 0; i < Invalid; ++i)
         {
@@ -54,6 +57,11 @@ void HttpControllersRouter::init(
         }
         corsMethods->pop_back();
     };
+
+    for (auto &iter : simpleCtrlMap_)
+    {
+        initFiltersAndCorsMethods(iter.second);
+    }
 
     for (auto &router : ctrlVector_)
     {
@@ -91,6 +99,23 @@ std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
             }
         }
     };
+
+    // TODO: combine
+    for (auto &item : simpleCtrlMap_)
+    {
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            if (item.second.binders_[i])
+            {
+                auto info = std::tuple<std::string, HttpMethod, std::string>(
+                    item.first,
+                    (HttpMethod)i,
+                    std::string("HttpSimpleController: ") +
+                        item.second.binders_[i]->handlerName_);
+                ret.emplace_back(std::move(info));
+            }
+        }
+    }
     for (auto &item : ctrlVector_)
     {
         gatherInfo(item);
@@ -100,6 +125,79 @@ std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
         gatherInfo(data.second);
     }
     return ret;
+}
+
+void HttpControllersRouter::registerHttpSimpleController(
+    const std::string &pathName,
+    const std::string &ctrlName,
+    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+{
+    assert(!pathName.empty());
+    assert(!ctrlName.empty());
+    std::string path(pathName);
+    std::transform(pathName.begin(),
+                   pathName.end(),
+                   path.begin(),
+                   [](unsigned char c) { return tolower(c); });
+    std::lock_guard<std::mutex> guard(simpleCtrlMutex_);
+    std::vector<HttpMethod> validMethods;
+    std::vector<std::string> filters;
+    for (auto const &filterOrMethod : filtersAndMethods)
+    {
+        if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
+        {
+            filters.push_back(filterOrMethod.getFilterName());
+        }
+        else if (filterOrMethod.type() == internal::ConstraintType::HttpMethod)
+        {
+            validMethods.push_back(filterOrMethod.getHttpMethod());
+        }
+        else
+        {
+            LOG_ERROR << "Invalid controller constraint type";
+            exit(1);
+        }
+    }
+    auto &item = simpleCtrlMap_[path];
+    auto binder = std::make_shared<HttpSimpleControllerBinder>();
+    binder->handlerName_ = ctrlName;
+    binder->filterNames_ = filters;
+    drogon::app().getLoop()->queueInLoop([this, binder, ctrlName, path]() {
+        auto &object_ = DrClassMap::getSingleInstance(ctrlName);
+        auto controller =
+            std::dynamic_pointer_cast<HttpSimpleControllerBase>(object_);
+        if (!controller)
+        {
+            LOG_ERROR << "Controller class not found: " << ctrlName;
+            std::lock_guard<std::mutex> guard(simpleCtrlMutex_);
+            simpleCtrlMap_.erase(path);
+            return;
+        }
+        binder->controller_ = controller;
+        // Recreate this with the correct number of threads.
+        binder->responseCache_ = IOThreadStorage<HttpResponsePtr>();
+    });
+
+    if (!validMethods.empty())
+    {
+        for (auto const &method : validMethods)
+        {
+            item.binders_[method] = binder;
+            if (method == Options)
+            {
+                binder->isCORS_ = true;
+            }
+        }
+    }
+    else
+    {
+        // All HTTP methods are valid
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            item.binders_[i] = binder;
+        }
+        binder->isCORS_ = true;
+    }
 }
 
 void HttpControllersRouter::addHttpRegex(
@@ -388,15 +486,26 @@ void HttpControllersRouter::addHttpPath(
 
 RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
 {
+    // Find simple controller
+    std::string loweredPath(req->path().length(), 0);
+    std::transform(req->path().begin(),
+                   req->path().end(),
+                   loweredPath.begin(),
+                   [](unsigned char c) { return tolower(c); });
+    {
+        auto it = simpleCtrlMap_.find(loweredPath);
+        if (it != simpleCtrlMap_.end())
+        {
+            auto &ctrlInfo = it->second;
+            req->setMatchedPathPattern(it->first);
+            auto &binder = ctrlInfo.binders_[req->method()];
+            return {true, binder};  // binder maybe null
+        }
+    }
+
     // Find http controller
     HttpControllerRouterItem *routerItemPtr = nullptr;
     std::smatch result;
-    std::string loweredPath = req->path();
-    std::transform(loweredPath.begin(),
-                   loweredPath.end(),
-                   loweredPath.begin(),
-                   [](unsigned char c) { return tolower(c); });
-
     auto it = ctrlMap_.find(loweredPath);
     // Try to find a controller in the hash map. If can't linear search
     // with regex.

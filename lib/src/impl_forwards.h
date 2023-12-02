@@ -29,7 +29,6 @@ class HttpRequestParser;
 class StaticFileRouter;
 class HttpControllersRouter;
 class WebsocketControllersRouter;
-class HttpSimpleControllersRouter;
 class PluginsManager;
 class ListenerManager;
 class SharedLibManager;

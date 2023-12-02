@@ -31,11 +31,19 @@
 
 namespace drogon
 {
+class HttpControllerBinder;
+class HttpSimpleControllerBinder;
+
 class HttpControllersRouter : public trantor::NonCopyable
 {
   public:
     HttpControllersRouter() = default;
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
+
+    void registerHttpSimpleController(
+        const std::string &pathName,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
@@ -71,5 +79,15 @@ class HttpControllersRouter : public trantor::NonCopyable
 
     std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
     std::vector<HttpControllerRouterItem> ctrlVector_;
+
+    using SimpleCtrlBinderPtr = std::shared_ptr<HttpSimpleControllerBinder>;
+
+    struct SimpleControllerRouterItem
+    {
+        SimpleCtrlBinderPtr binders_[Invalid];
+    };
+
+    std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
+    std::mutex simpleCtrlMutex_;
 };
 }  // namespace drogon

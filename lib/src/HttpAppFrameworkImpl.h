@@ -773,7 +773,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
     std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
-    std::unique_ptr<HttpSimpleControllersRouter> httpSimpleCtrlsRouterPtr_;
     std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
 
     std::unique_ptr<ListenerManager> listenerManagerPtr_;

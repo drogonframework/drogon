@@ -271,7 +271,6 @@ set(DROGON_SOURCES
     lib/src/HttpResponseParser.cc
     lib/src/HttpServer.cc
     lib/src/HttpSimpleControllerBinder.cc
-    lib/src/HttpSimpleControllersRouter.cc
     lib/src/HttpUtils.cc
     lib/src/HttpViewData.cc
     lib/src/IntranetIpFilter.cc
@@ -317,7 +316,6 @@ set(private_headers
     lib/src/HttpResponseParser.h
     lib/src/HttpServer.h
     lib/src/HttpSimpleControllerBinder.h
-    lib/src/HttpSimpleControllersRouter.h
     lib/src/HttpUtils.h
     lib/src/impl_forwards.h
     lib/src/ListenerManager.h
