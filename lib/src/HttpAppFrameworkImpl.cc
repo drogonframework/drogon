@@ -837,25 +837,24 @@ void HttpAppFrameworkImpl::websocketRequestRouting(
 {
     RouteResult result = websockCtrlsRouterPtr_->route(req);
 
-    if (result.found)
+    if (result.result == RouteResult::Success)
     {
-        if (!result.binderPtr)
-        {
-            // Invalid Http Method
-            handleInvalidHttpMethod(req, std::move(callback));
-            return;
-        }
         websocketRequestPostRouting(req,
                                     result.binderPtr,
                                     std::move(callback),
                                     wsConnPtr);
+        return;
     }
-    else
+    if (result.result == RouteResult::MethodNotAllowed)
     {
-        auto resp = drogon::HttpResponse::newNotFoundResponse(req);
-        resp->setCloseConnection(true);
-        callback(resp);
+        handleInvalidHttpMethod(req, std::move(callback));
+        return;
     }
+
+    // Not found
+    auto resp = drogon::HttpResponse::newNotFoundResponse(req);
+    resp->setCloseConnection(true);
+    callback(resp);
 }
 
 void HttpAppFrameworkImpl::websocketRequestPostRouting(
@@ -1174,15 +1173,14 @@ void HttpAppFrameworkImpl::httpRequestRouting(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     RouteResult result = httpCtrlsRouterPtr_->route(req);
-    if (result.found)
+    if (result.result == RouteResult::Success)
     {
-        if (!result.binderPtr)
-        {
-            // Invalid Http Method
-            handleInvalidHttpMethod(req, std::move(callback));
-            return;
-        }
         httpRequestPostRouting(req, result.binderPtr, std::move(callback));
+        return;
+    }
+    if (result.result == RouteResult::MethodNotAllowed)
+    {
+        handleInvalidHttpMethod(req, std::move(callback));
         return;
     }
 

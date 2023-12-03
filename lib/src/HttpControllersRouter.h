@@ -73,10 +73,6 @@ class HttpControllersRouter : public trantor::NonCopyable
                             const std::string &pathPattern,
                             const std::string &pathParameterPattern,
                             const std::vector<HttpMethod> &methods);
-    void addCtrlBinderToRouterItem(const CtrlBinderPtr &binderPtr,
-                                   HttpControllerRouterItem &router,
-                                   const std::vector<HttpMethod> &methods);
-
     std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
     std::vector<HttpControllerRouterItem> ctrlVector_;
 

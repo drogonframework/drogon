@@ -127,6 +127,28 @@ std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
     return ret;
 }
 
+template <typename Binder, typename RouterItem>
+static void addCtrlBinderToRouterItem(const std::shared_ptr<Binder> &binderPtr,
+                                      RouterItem &router,
+                                      const std::vector<HttpMethod> &methods)
+{
+    if (!methods.empty())
+    {
+        for (auto const &method : methods)
+        {
+            router.binders_[method] = binderPtr;
+            if (method == Options)
+                binderPtr->isCORS_ = true;
+        }
+    }
+    else
+    {
+        binderPtr->isCORS_ = true;
+        for (int i = 0; i < Invalid; ++i)
+            router.binders_[i] = binderPtr;
+    }
+}
+
 void HttpControllersRouter::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
@@ -178,26 +200,7 @@ void HttpControllersRouter::registerHttpSimpleController(
         binder->responseCache_ = IOThreadStorage<HttpResponsePtr>();
     });
 
-    if (!validMethods.empty())
-    {
-        for (auto const &method : validMethods)
-        {
-            item.binders_[method] = binder;
-            if (method == Options)
-            {
-                binder->isCORS_ = true;
-            }
-        }
-    }
-    else
-    {
-        // All HTTP methods are valid
-        for (size_t i = 0; i < Invalid; ++i)
-        {
-            item.binders_[i] = binder;
-        }
-        binder->isCORS_ = true;
-    }
+    addCtrlBinderToRouterItem(binder, item, validMethods);
 }
 
 void HttpControllersRouter::addHttpRegex(
@@ -499,7 +502,11 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
             auto &ctrlInfo = it->second;
             req->setMatchedPathPattern(it->first);
             auto &binder = ctrlInfo.binders_[req->method()];
-            return {true, binder};  // binder maybe null
+            if (!binder)
+            {
+                return {RouteResult::MethodNotAllowed, nullptr};
+            }
+            return {RouteResult::Success, binder};
         }
     }
 
@@ -528,9 +535,9 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
     }
 
     // No handler found
-    if (routerItemPtr == nullptr)
+    if (!routerItemPtr)
     {
-        return {false, nullptr};
+        return {RouteResult::NotFound, nullptr};
     }
     HttpControllerRouterItem &routerItem = *routerItemPtr;
     assert(Invalid > req->method());
@@ -538,7 +545,7 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
     auto &binder = routerItem.binders_[req->method()];
     if (!binder)
     {
-        return {true, nullptr};
+        return {RouteResult::MethodNotAllowed, nullptr};
     }
     std::vector<std::string> params;
     for (size_t j = 1; j < result.size(); ++j)
@@ -576,7 +583,7 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
         }
     }
     req->setRoutingParameters(std::move(params));
-    return {true, binder};
+    return {RouteResult::Success, binder};
 }
 
 void HttpControllersRouter::addRegexCtrlBinder(
@@ -606,26 +613,4 @@ void HttpControllersRouter::addRegexCtrlBinder(
     }
 
     addCtrlBinderToRouterItem(binderPtr, *routerItemPtr, methods);
-}
-
-void HttpControllersRouter::addCtrlBinderToRouterItem(
-    const CtrlBinderPtr &binderPtr,
-    HttpControllerRouterItem &router,
-    const std::vector<HttpMethod> &methods)
-{
-    if (!methods.empty())
-    {
-        for (auto const &method : methods)
-        {
-            router.binders_[method] = binderPtr;
-            if (method == Options)
-                binderPtr->isCORS_ = true;
-        }
-    }
-    else
-    {
-        binderPtr->isCORS_ = true;
-        for (int i = 0; i < Invalid; ++i)
-            router.binders_[i] = binderPtr;
-    }
 }

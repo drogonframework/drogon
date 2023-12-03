@@ -98,10 +98,14 @@ RouteResult WebsocketControllersRouter::route(const HttpRequestImplPtr &req)
             auto &ctrlInfo = iter->second;
             req->setMatchedPathPattern(iter->first);
             auto &binder = ctrlInfo.binders_[req->method()];
-            return {true, binder};  // binder maybe null
+            if (!binder)
+            {
+                return {RouteResult::MethodNotAllowed, nullptr};
+            }
+            return {RouteResult::Success, binder};
         }
     }
-    return {false, nullptr};
+    return {RouteResult::NotFound, nullptr};
 }
 
 std::vector<HttpHandlerInfo> WebsocketControllersRouter::getHandlersInfo() const

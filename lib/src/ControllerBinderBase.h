@@ -31,7 +31,13 @@ struct ControllerBinderBase
 
 struct RouteResult
 {
-    bool found;
+    enum
+    {
+        Success,
+        MethodNotAllowed,
+        NotFound
+    } result;
+
     std::shared_ptr<ControllerBinderBase> binderPtr;
 };
 
