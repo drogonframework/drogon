@@ -100,7 +100,7 @@ class CoroMapper : public Mapper<T>
                 }
                 this->clear();
                 auto binder = *(this->client_) << std::move(sql);
-                this->outputPrimeryKeyToBinder(key, binder);
+                this->outputPrimaryKeyToBinder(key, binder);
 
                 binder >> [callback = std::move(callback),
                            errCallback](const Result &r) {
@@ -433,7 +433,7 @@ class CoroMapper : public Mapper<T>
             sql = this->replaceSqlPlaceHolder(sql, "$?");
             auto binder = *(this->client_) << std::move(sql);
             obj.updateArgs(binder);
-            this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+            this->outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };
@@ -481,6 +481,41 @@ class CoroMapper : public Mapper<T>
         {
             sql += colName;
             sql += " = $?,";
+        }
+        sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+        return updateByHelper(std::move(sql),
+                              criteria,
+                              std::forward<Arguments>(args)...);
+    }
+
+    template <typename... Arguments>
+    inline internal::MapperAwaiter<size_t> increment(
+        const std::vector<std::string> &colNames,
+        const Criteria &criteria,
+        Arguments... args)
+    {
+        static_assert(sizeof...(args) > 0);
+        assert(colNames.size() == sizeof...(args));
+        std::string sql = "update ";
+        sql += T::tableName;
+        sql += " set ";
+
+        std::vector<const char *> temps;
+        (void)std::initializer_list<int>{(
+            [&args, &temps] {
+                args = (args < 0) ? (temps.push_back(" - $?,"), -args)
+                                  : (temps.push_back(" + $?,"), args);
+            }(),
+            0)...};
+
+        for (int i = 0; i < sizeof...(args); ++i)
+        {
+            const auto &colName = colNames[i];
+            sql += colName;
+            sql += " = ";
+            sql += colName;
+            sql += temps[i];
         }
         sql[sql.length() - 1] = ' ';  // Replace the last ','
 
@@ -538,7 +573,7 @@ class CoroMapper : public Mapper<T>
 
             sql = this->replaceSqlPlaceHolder(sql, "$?");
             auto binder = *(this->client_) << std::move(sql);
-            this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+            this->outputPrimaryKeyToBinder(obj.getPrimaryKey(), binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };
@@ -591,7 +626,7 @@ class CoroMapper : public Mapper<T>
                               ExceptPtrCallback &&errCallback) {
             this->clear();
             auto binder = *(this->client_) << T::sqlForDeletingByPrimaryKey();
-            this->outputPrimeryKeyToBinder(key, binder);
+            this->outputPrimaryKeyToBinder(key, binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };

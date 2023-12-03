@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.1] - 2023-11-27
+
+### API changes list
+
+- Pass HttpRequestPtr to custom error handlers.
+
+- Provide some functions for incrementing the value of given columns.
+
+- Return HttpAppFramework by setExceptionHandler.
+
+### Changed
+
+- Custom sessions.
+
+- Use the constexpr if instead of std::enable_if.
+
+- Make id generator consistent.
+
+- Update test_cmake.csp.
+
+- Simplify drogon test with c++17.
+
+- Remove unused and undefined overloads of isBase64.
+
+### Fixed
+
+- Fix build due to trantor commit out of date and address warnings.
+
+- Fix a bug of the GlobalFilters plugin.
+
+- Fix: uuid formatting.
+
 ## [1.9.0] - 2023-10-29
 
 ### API changes list
@@ -1493,7 +1525,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.1...HEAD
+
+[1.9.1]: https://github.com/an-tao/drogon/compare/v1.9.0...v1.9.1
 
 [1.9.0]: https://github.com/an-tao/drogon/compare/v1.9.0-rc.1...v1.9.0
 
