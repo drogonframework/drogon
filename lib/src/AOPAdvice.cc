@@ -115,6 +115,27 @@ void AopAdvice::passPostHandlingAdvices(const HttpRequestImplPtr &req,
     }
 }
 
+void AopAdvice::passPreSendingAdvices(const HttpRequestImplPtr &req,
+                                      const HttpResponsePtr &resp)
+{
+    for (auto &advice : preSendingAdvices_)
+    {
+        advice(req, resp);
+    }
+}
+
+HttpResponsePtr AopAdvice::passSyncAdvices(const HttpRequestPtr &req)
+{
+    for (auto &advice : syncAdvices_)
+    {
+        if (auto resp = advice(req))
+        {
+            return resp;
+        }
+    }
+    return nullptr;
+}
+
 static void doAdvicesChain(
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,

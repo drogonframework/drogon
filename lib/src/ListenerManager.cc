@@ -16,7 +16,6 @@
 #include <drogon/config.h>
 #include <fcntl.h>
 #include <trantor/utils/Logger.h>
-#include "AOPAdvice.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpServer.h"
 #ifndef _WIN32
@@ -113,12 +112,9 @@ void ListenerManager::createListeners(
                                  false);
             }
             std::shared_ptr<HttpServer> serverPtr =
-                std::make_shared<HttpServer>(
-                    ioLoops[i],
-                    listenAddress,
-                    "drogon",
-                    AopAdvice::instance().getSyncAdvices(),
-                    AopAdvice::instance().getPreSendingAdvices());
+                std::make_shared<HttpServer>(ioLoops[i],
+                                             listenAddress,
+                                             "drogon");
 
             if (listener.useSSL_ && utils::supportsTls())
             {

@@ -18,6 +18,7 @@
 #include <trantor/utils/Logger.h>
 #include <functional>
 #include <utility>
+#include "AOPAdvice.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpRequestParser.h"
@@ -66,8 +67,6 @@ static inline HttpResponsePtr tryDecompressRequest(
 static inline bool passSyncAdvices(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<HttpRequestParser> &requestParser,
-    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
     bool shouldBePipelined,
     bool isHeadMethod);
 static inline HttpResponsePtr getCompressedResponse(
@@ -75,15 +74,9 @@ static inline HttpResponsePtr getCompressedResponse(
     const HttpResponsePtr &response,
     bool isHeadMethod);
 
-HttpServer::HttpServer(
-    EventLoop *loop,
-    const InetAddress &listenAddr,
-    std::string name,
-    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
-    const std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &preSendingAdvices)
+HttpServer::HttpServer(EventLoop *loop,
+                       const InetAddress &listenAddr,
+                       std::string name)
 #ifdef __linux__
     : server_(loop, listenAddr, std::move(name)),
 #else
@@ -91,9 +84,7 @@ HttpServer::HttpServer(
 #endif
       httpAsyncCallback_(defaultHttpAsyncCallback),
       newWebsocketCallback_(defaultWebSockAsyncCallback),
-      connectionCallback_(defaultConnectionCallback),
-      syncAdvices_(syncAdvices),
-      preSendingAdvices_(preSendingAdvices)
+      connectionCallback_(defaultConnectionCallback)
 {
     server_.setConnectionCallback(
         [this](const auto &conn) { this->onConnection(conn); });
@@ -227,7 +218,6 @@ void HttpServer::onRequests(
         auto &req = requests[0];
         if (passSyncAdvices(req,
                             requestParser,
-                            syncAdvices_,
                             false /* Not pipelined */,
                             false /* Not HEAD */))
         {
@@ -235,14 +225,11 @@ void HttpServer::onRequests(
             wsConn->setPingMessage("", std::chrono::seconds{30});
             newWebsocketCallback_(
                 req,
-                [conn, wsConn, requestParser, this, req](
+                [conn, wsConn, requestParser, req](
                     const HttpResponsePtr &resp) mutable {
                     if (conn->connected())
                     {
-                        for (auto &advice : preSendingAdvices_)
-                        {
-                            advice(req, resp);
-                        }
+                        AopAdvice::instance().passPreSendingAdvices(req, resp);
                         if (resp->statusCode() == k101SwitchingProtocols)
                         {
                             requestParser->setWebsockConnection(wsConn);
@@ -303,8 +290,7 @@ void HttpServer::onRequests(
             requestParser->pushRequestToPipelining(req, isHeadMethod);
             reqPipelined = true;
         }
-        if (!passSyncAdvices(
-                req, requestParser, syncAdvices_, reqPipelined, isHeadMethod))
+        if (!passSyncAdvices(req, requestParser, reqPipelined, isHeadMethod))
         {
             continue;
         }
@@ -381,10 +367,8 @@ void HttpServer::handleResponse(
 
     response->setVersion(req->getVersion());
     response->setCloseConnection(!req->keepAlive());
-    for (auto &advice : preSendingAdvices_)
-    {
-        advice(req, response);
-    }
+    AopAdvice::instance().passPreSendingAdvices(req, response);
+
     auto newResp = getCompressedResponse(req, response, isHeadMethod);
     if (conn->getLoop()->isInLoopThread())
     {
@@ -769,32 +753,25 @@ static inline HttpResponsePtr tryDecompressRequest(
 static inline bool passSyncAdvices(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<HttpRequestParser> &requestParser,
-    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
     bool shouldBePipelined,
     bool isHeadMethod)
 {
-    for (auto &advice : syncAdvices)
+    if (auto resp = AopAdvice::instance().passSyncAdvices(req))
     {
-        auto resp = advice(req);
-        if (resp)
+        // Rejected by sync advice
+        resp->setVersion(req->getVersion());
+        resp->setCloseConnection(!req->keepAlive());
+        if (!shouldBePipelined)
         {
-            // Rejected by sync advice
-            resp->setVersion(req->getVersion());
-            resp->setCloseConnection(!req->keepAlive());
-            if (!shouldBePipelined)
-            {
-                requestParser->getResponseBuffer().emplace_back(
-                    getCompressedResponse(req, resp, isHeadMethod),
-                    isHeadMethod);
-            }
-            else
-            {
-                requestParser->pushResponseToPipelining(
-                    req, getCompressedResponse(req, resp, isHeadMethod));
-            }
-            return false;
+            requestParser->getResponseBuffer().emplace_back(
+                getCompressedResponse(req, resp, isHeadMethod), isHeadMethod);
         }
+        else
+        {
+            requestParser->pushResponseToPipelining(
+                req, getCompressedResponse(req, resp, isHeadMethod));
+        }
+        return false;
     }
     return true;
 }

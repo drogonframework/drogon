@@ -42,52 +42,6 @@ class AopAdvice
         return inst;
     }
 
-    // Getters
-    const ReqBlockerVector &getSyncAdvices()
-    {
-        return syncAdvices_;
-    }
-
-    const ReqObserverVector &getPreRoutingObservers()
-    {
-        return preRoutingObservers_;
-    }
-
-    const AsyncReqAdviceVector &getPreRoutingAdvices()
-    {
-        return preRoutingAdvices_;
-    }
-
-    const ReqObserverVector &getPostRoutingObservers()
-    {
-        return postRoutingObservers_;
-    }
-
-    const AsyncReqAdviceVector &getPostRoutingAdvices()
-    {
-        return postRoutingAdvices_;
-    }
-
-    const ReqObserverVector &getPreHandlingObservers()
-    {
-        return preHandlingObservers_;
-    }
-
-    const AsyncReqAdviceVector &getPreHandlingAdvices()
-    {
-        return preHandlingAdvices_;
-    }
-
-    const ReqRespObserverVector &getPostHandlingAdvices()
-    {
-        return postHandlingAdvices_;
-    }
-
-    const ReqRespObserverVector &getPreSendingAdvices()
-    {
-        return preSendingAdvices_;
-    }
-
     // Setters?
     void registerSyncAdvice(
         const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
@@ -153,8 +107,7 @@ class AopAdvice
     }
 
     // Executors
-
-    // void passSyncAdvices(const HttpRequestPtr &req);
+    HttpResponsePtr passSyncAdvices(const HttpRequestPtr &req);
     void passPreRoutingObservers(const HttpRequestImplPtr &req);
     void passPreRoutingAdvices(
         const HttpRequestImplPtr &req,
@@ -169,9 +122,8 @@ class AopAdvice
         std::function<void(const HttpResponsePtr &)> &&callback);
     void passPostHandlingAdvices(const HttpRequestImplPtr &req,
                                  const HttpResponsePtr &resp);
-    // void passPreSendingAdvices(
-    //     const HttpRequestPtr &req,
-    //     std::function<void(const HttpResponsePtr &)> &&callback);
+    void passPreSendingAdvices(const HttpRequestImplPtr &req,
+                               const HttpResponsePtr &resp);
 
   private:
     // If we want to add aop functions anytime, we can add a mutex here
