@@ -749,7 +749,7 @@ void async_run(Coro &&coro)
 
 /**
  * @brief returns a function that calls a coroutine
- * @param Coro A coroutine that is awaitable
+ * @param coro A coroutine that is awaitable
  */
 template <typename Coro>
 std::function<void()> async_func(Coro &&coro)

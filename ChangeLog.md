@@ -795,7 +795,7 @@ All notable changes to this project will be documented in this file.
 
 - Use two-phase construction for the DbClientImpl and the RedisClientImpl.
 
-- Add support 'select <db>' for redis.
+- Add support 'select &lt;db&gt;' for redis.
 
 ### Fixed
 
@@ -1105,7 +1105,7 @@ All notable changes to this project will be documented in this file.
 
 - Destroy DNS resolver of HttpClient in the correct thread.
 
-- Add the header <cctype> to resolve build errors in VS2017.
+- Add the header &lt;cctype&gt; to resolve build errors in VS2017.
 
 ## [1.0.0-beta18] - 2020-06-14
 

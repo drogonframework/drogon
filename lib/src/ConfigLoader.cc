@@ -158,17 +158,13 @@ static void loadLogSetting(const Json::Value &log)
 {
     if (!log)
         return;
+    auto useSpdlog = log.get("use_spdlog", false).asBool();
     auto logPath = log.get("log_path", "").asString();
-    if (!logPath.empty())
-    {
-        auto baseName = log.get("logfile_base_name", "").asString();
-        auto logSize = log.get("log_size_limit", 100000000).asUInt64();
-        auto maxFiles = log.get("max_files", 0).asUInt();
-        HttpAppFrameworkImpl::instance().setLogPath(logPath,
-                                                    baseName,
-                                                    logSize,
-                                                    maxFiles);
-    }
+    auto baseName = log.get("logfile_base_name", "").asString();
+    auto logSize = log.get("log_size_limit", 100000000).asUInt64();
+    auto maxFiles = log.get("max_files", 0).asUInt();
+    HttpAppFrameworkImpl::instance().setLogPath(
+        logPath, baseName, logSize, maxFiles, useSpdlog);
     auto logLevel = log.get("log_level", "DEBUG").asString();
     if (logLevel == "TRACE")
     {

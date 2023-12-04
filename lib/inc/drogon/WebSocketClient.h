@@ -76,8 +76,7 @@ class DROGON_EXPORT WebSocketClient
                                  const WebSocketMessageType &)> &callback) = 0;
 
     /// Set the connection closing handler. When the connection is established
-    /// or closed, the @param callback is called with a bool parameter.
-
+    /// or closed, the @p callback is called with a bool parameter.
     /**
      * @brief Set the connection closing handler. When the websocket connection
      * is closed, the  callback is called

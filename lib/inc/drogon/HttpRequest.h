@@ -316,7 +316,7 @@ class DROGON_EXPORT HttpRequest
     virtual const std::string &getParameter(const std::string &key) const = 0;
 
     /**
-     * @brief Get the optional parameter identified by the @param key. if the
+     * @brief Get the optional parameter identified by the @p key. if the
      * parameter doesn't exist, or the original parameter can't be converted to
      * a T type object, an empty optional object is returned.
      *

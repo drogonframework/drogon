@@ -126,6 +126,8 @@ DROGON_EXPORT void binaryStringToHex(const char *ptr,
 
 /// Split the string into multiple separated strings.
 /**
+ * @param str string to split
+ * @param separator element separator
  * @param acceptEmptyString if true, empty strings are accepted in the
  * result, for example, splitting the ",1,2,,3," by "," produces
  * ["","1","2","","3",""]
@@ -405,6 +407,7 @@ inline std::string fromNativePath(const std::wstring &strPath)
 
 /// Replace all occurances of from to to inplace
 /**
+ * @param s string to alter
  * @param from string to replace
  * @param to string to replace with
  */
