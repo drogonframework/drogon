@@ -207,29 +207,32 @@ void StaticFileRouter::route(
             }
             else
             {
-                auto callbackPtr = std::make_shared<
-                    std::function<void(const drogon::HttpResponsePtr &)>>(
-                    std::move(callback));
                 filters_function::doFilters(
                     location.filters_,
                     req,
-                    callbackPtr,
-                    [callbackPtr,
-                     this,
+                    [this,
                      req,
                      filePath = std::move(filePath),
-                     &contentType = location.defaultContentType_]() {
-                        sendStaticFileResponse(filePath,
-                                               req,
-                                               std::move(*callbackPtr),
-                                               std::string_view{contentType});
+                     contentType =
+                         std::string_view{location.defaultContentType_},
+                     callback = std::move(callback)](
+                        const HttpResponsePtr &resp) mutable {
+                        if (resp)
+                        {
+                            callback(resp);  // callCallback ?
+                        }
+                        else
+                        {
+                            sendStaticFileResponse(filePath,
+                                                   req,
+                                                   std::move(callback),
+                                                   contentType);
+                        }
                     });
+                return;
             }
-
-            return;
         }
     }
-
     std::string directoryPath =
         HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
     std::filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));

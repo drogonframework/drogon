@@ -673,19 +673,19 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         std::function<void(const HttpResponsePtr &)> &&callback);
     void httpRequestPostRouting(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void httpRequestPassFilters(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void httpRequestPreHandling(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void httpRequestHandling(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
 
     void onNewWebsockRequest(
@@ -698,22 +698,22 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const WebSocketConnectionImplPtr &wsConnPtr);
     void websocketRequestPostRouting(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback,
         const WebSocketConnectionImplPtr &wsConnPtr);
     void websocketRequestPassFilters(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback,
         const WebSocketConnectionImplPtr &wsConnPtr);
     void websocketRequestPreHandling(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback,
         const WebSocketConnectionImplPtr &wsConnPtr);
     void websocketRequestHandling(
         const HttpRequestImplPtr &req,
-        const std::shared_ptr<ControllerBinderBase> &binderPtr,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback,
         const WebSocketConnectionImplPtr &wsConnPtr);
 

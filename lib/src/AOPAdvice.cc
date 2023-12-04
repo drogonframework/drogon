@@ -136,13 +136,15 @@ static void doAdvicesChain(
                 auto ioLoop = req->getLoop();
                 if (ioLoop && !ioLoop->isInLoopThread())
                 {
-                    ioLoop->queueInLoop(
-                        [index, req, callbackPtr, &advices]() mutable {
-                            doAdvicesChain(advices,
-                                           index + 1,
-                                           req,
-                                           std::move(callbackPtr));
-                        });
+                    ioLoop->queueInLoop([index,
+                                         req,
+                                         callbackPtr = std::move(callbackPtr),
+                                         &advices]() mutable {
+                        doAdvicesChain(advices,
+                                       index + 1,
+                                       req,
+                                       std::move(callbackPtr));
+                    });
                 }
                 else
                 {
