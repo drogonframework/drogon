@@ -159,75 +159,39 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     HttpAppFramework &registerSyncAdvice(
         const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
-        override
-    {
-        syncAdvices_.emplace_back(advice);
-        return *this;
-    }
+        override;
 
     HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice) override
-    {
-        preRoutingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 AdviceChainCallback &&)> &advice) override;
 
     HttpAppFramework &registerPostRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice) override
-    {
-        postRoutingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 AdviceChainCallback &&)> &advice) override;
 
     HttpAppFramework &registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice) override
-    {
-        preHandlingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 AdviceChainCallback &&)> &advice) override;
 
     HttpAppFramework &registerPreRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &)> &advice) override
-    {
-        preRoutingObservers_.emplace_back(advice);
-        return *this;
-    }
+        const std::function<void(const HttpRequestPtr &)> &advice) override;
 
     HttpAppFramework &registerPostRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &)> &advice) override
-    {
-        postRoutingObservers_.emplace_back(advice);
-        return *this;
-    }
+        const std::function<void(const HttpRequestPtr &)> &advice) override;
 
     HttpAppFramework &registerPreHandlingAdvice(
-        const std::function<void(const HttpRequestPtr &)> &advice) override
-    {
-        preHandlingObservers_.emplace_back(advice);
-        return *this;
-    }
+        const std::function<void(const HttpRequestPtr &)> &advice) override;
 
     HttpAppFramework &registerPostHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
-                                 const HttpResponsePtr &)> &advice) override
-    {
-        postHandlingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 const HttpResponsePtr &)> &advice) override;
 
     HttpAppFramework &registerPreSendingAdvice(
         const std::function<void(const HttpRequestPtr &,
-                                 const HttpResponsePtr &)> &advice) override
-    {
-        preSendingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 const HttpResponsePtr &)> &advice) override;
 
     HttpAppFramework &setDefaultHandler(DefaultHandler handler) override;
 
@@ -752,8 +716,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const std::shared_ptr<ControllerBinderBase> &binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback,
         const WebSocketConnectionImplPtr &wsConnPtr);
-    
-
 
     void onConnection(const trantor::TcpConnectionPtr &conn);
 
@@ -848,32 +810,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         newConnectionAdvices_;
     std::vector<std::function<void(const HttpResponsePtr &)>>
         responseCreationAdvices_;
-    std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        syncAdvices_;
-    std::vector<std::function<void(const HttpRequestPtr &,
-                                   AdviceCallback &&,
-                                   AdviceChainCallback &&)>>
-        preRoutingAdvices_;
-    std::vector<std::function<void(const HttpRequestPtr &,
-                                   AdviceCallback &&,
-                                   AdviceChainCallback &&)>>
-        postRoutingAdvices_;
-    std::vector<std::function<void(const HttpRequestPtr &,
-                                   AdviceCallback &&,
-                                   AdviceChainCallback &&)>>
-        preHandlingAdvices_;
-    std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        postHandlingAdvices_;
-    std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        preSendingAdvices_;
-    std::vector<std::function<void(const HttpRequestPtr &)>>
-        preRoutingObservers_;
-    std::vector<std::function<void(const HttpRequestPtr &)>>
-        postRoutingObservers_;
-    std::vector<std::function<void(const HttpRequestPtr &)>>
-        preHandlingObservers_;
+
     ExceptionHandler exceptionHandler_{defaultExceptionHandler};
     bool enableCompressedRequest_{false};
 };

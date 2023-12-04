@@ -22,22 +22,168 @@
 
 namespace drogon
 {
-void doAdvicesChain(
-    const std::vector<std::function<void(const HttpRequestPtr &,
-                                         AdviceCallback &&,
-                                         AdviceChainCallback &&)>> &advices,
-    size_t index,
-    const HttpRequestImplPtr &req,
-    const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
-        &callbackPtr,
-    std::function<void()> &&missCallback);
-void doAdvicesChain(
-    const std::deque<std::function<void(const HttpRequestPtr &,
-                                        AdviceCallback &&,
-                                        AdviceChainCallback &&)>> &advices,
-    size_t index,
-    const HttpRequestImplPtr &req,
-    const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
-        &callbackPtr,
-    std::function<void()> &&missCallback);
+class AopAdvice
+{
+  public:
+    using ReqBlockerVector =
+        std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>;
+    using ReqObserverVector =
+        std::vector<std::function<void(const HttpRequestPtr &)>>;
+    using ReqRespObserverVector = std::vector<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>;
+    using AsyncReqAdviceVector =
+        std::vector<std::function<void(const HttpRequestPtr &,
+                                       AdviceCallback &&,
+                                       AdviceChainCallback &&)>>;
+
+    static AopAdvice &instance()
+    {
+        static AopAdvice inst;
+        return inst;
+    }
+
+    // Getters
+    const ReqBlockerVector &getSyncAdvices()
+    {
+        return syncAdvices_;
+    }
+
+    const ReqObserverVector &getPreRoutingObservers()
+    {
+        return preRoutingObservers_;
+    }
+
+    const AsyncReqAdviceVector &getPreRoutingAdvices()
+    {
+        return preRoutingAdvices_;
+    }
+
+    const ReqObserverVector &getPostRoutingObservers()
+    {
+        return postRoutingObservers_;
+    }
+
+    const AsyncReqAdviceVector &getPostRoutingAdvices()
+    {
+        return postRoutingAdvices_;
+    }
+
+    const ReqObserverVector &getPreHandlingObservers()
+    {
+        return preHandlingObservers_;
+    }
+
+    const AsyncReqAdviceVector &getPreHandlingAdvices()
+    {
+        return preHandlingAdvices_;
+    }
+
+    const ReqRespObserverVector &getPostHandlingAdvices()
+    {
+        return postHandlingAdvices_;
+    }
+
+    const ReqRespObserverVector &getPreSendingAdvices()
+    {
+        return preSendingAdvices_;
+    }
+
+    // Setters?
+    void registerSyncAdvice(
+        const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
+
+    {
+        syncAdvices_.emplace_back(advice);
+    }
+
+    void registerPreRoutingObserver(
+        const std::function<void(const HttpRequestPtr &)> &advice)
+    {
+        preRoutingObservers_.emplace_back(advice);
+    }
+
+    void registerPreRoutingAdvice(
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice)
+    {
+        preRoutingAdvices_.emplace_back(advice);
+    }
+
+    void registerPostRoutingObserver(
+        const std::function<void(const HttpRequestPtr &)> &advice)
+    {
+        postRoutingObservers_.emplace_back(advice);
+    }
+
+    void registerPostRoutingAdvice(
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice)
+    {
+        postRoutingAdvices_.emplace_back(advice);
+    }
+
+    void registerPreHandlingObserver(
+        const std::function<void(const HttpRequestPtr &)> &advice)
+    {
+        preHandlingObservers_.emplace_back(advice);
+    }
+
+    void registerPreHandlingAdvice(
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice)
+    {
+        preHandlingAdvices_.emplace_back(advice);
+    }
+
+    void registerPostHandlingAdvice(
+        const std::function<void(const HttpRequestPtr &,
+                                 const HttpResponsePtr &)> &advice)
+    {
+        postHandlingAdvices_.emplace_back(advice);
+    }
+
+    void registerPreSendingAdvice(
+        const std::function<void(const HttpRequestPtr &,
+                                 const HttpResponsePtr &)> &advice)
+    {
+        preSendingAdvices_.emplace_back(advice);
+    }
+
+    // Executors
+
+    // void passSyncAdvices(const HttpRequestPtr &req);
+    void passPreRoutingObservers(const HttpRequestImplPtr &req);
+    void passPreRoutingAdvices(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void passPostRoutingObservers(const HttpRequestImplPtr &req);
+    void passPostRoutingAdvices(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void passPreHandlingObservers(const HttpRequestImplPtr &req);
+    void passPreHandlingAdvices(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void passPostHandlingAdvices(const HttpRequestImplPtr &req,
+                                 const HttpResponsePtr &resp);
+    // void passPreSendingAdvices(
+    //     const HttpRequestPtr &req,
+    //     std::function<void(const HttpResponsePtr &)> &&callback);
+
+  private:
+    // If we want to add aop functions anytime, we can add a mutex here
+    ReqBlockerVector syncAdvices_;
+    ReqObserverVector preRoutingObservers_;
+    AsyncReqAdviceVector preRoutingAdvices_;
+    ReqObserverVector postRoutingObservers_;
+    AsyncReqAdviceVector postRoutingAdvices_;
+    ReqObserverVector preHandlingObservers_;
+    AsyncReqAdviceVector preHandlingAdvices_;
+    ReqRespObserverVector postHandlingAdvices_;
+    ReqRespObserverVector preSendingAdvices_;
+};
+
 }  // namespace drogon

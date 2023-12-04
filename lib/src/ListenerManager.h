@@ -51,13 +51,7 @@ class ListenerManager : public trantor::NonCopyable
         const std::string &globalCertFile,
         const std::string &globalKeyFile,
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
-        const std::vector<trantor::EventLoop *> &ioLoops,
-        const std::vector<
-            std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-            &syncAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             const HttpResponsePtr &)>>
-            &preSendingAdvices);
+        const std::vector<trantor::EventLoop *> &ioLoops);
     void startListening();
     void stopListening();
 

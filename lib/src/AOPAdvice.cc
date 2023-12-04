@@ -18,59 +18,144 @@
 
 namespace drogon
 {
-void doAdvicesChain(
+
+static void doAdvicesChain(
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
                                          AdviceChainCallback &&)>> &advices,
     size_t index,
     const HttpRequestImplPtr &req,
-    const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
-        &callbackPtr,
-    std::function<void()> &&missCallback)
+    std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
+        &&callbackPtr);
+
+void AopAdvice::passPreRoutingObservers(const HttpRequestImplPtr &req)
+{
+    if (!preRoutingObservers_.empty())
+    {
+        for (auto &observer : preRoutingObservers_)
+        {
+            observer(req);
+        }
+    }
+}
+
+void AopAdvice::passPreRoutingAdvices(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    if (preRoutingAdvices_.empty())
+    {
+        callback(nullptr);
+        return;
+    }
+
+    auto callbackPtr =
+        std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
+    doAdvicesChain(preRoutingAdvices_, 0, req, std::move(callbackPtr));
+}
+
+void AopAdvice::passPostRoutingObservers(const HttpRequestImplPtr &req)
+{
+    if (!postRoutingObservers_.empty())
+    {
+        for (auto &observer : postRoutingObservers_)
+        {
+            observer(req);
+        }
+    }
+}
+
+void AopAdvice::passPostRoutingAdvices(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    if (postRoutingAdvices_.empty())
+    {
+        callback(nullptr);
+        return;
+    }
+
+    auto callbackPtr =
+        std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
+    doAdvicesChain(postRoutingAdvices_, 0, req, std::move(callbackPtr));
+}
+
+void AopAdvice::passPreHandlingObservers(const HttpRequestImplPtr &req)
+{
+    if (!preHandlingObservers_.empty())
+    {
+        for (auto &observer : preHandlingObservers_)
+        {
+            observer(req);
+        }
+    }
+}
+
+void AopAdvice::passPreHandlingAdvices(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    if (preHandlingAdvices_.empty())
+    {
+        callback(nullptr);
+        return;
+    }
+
+    auto callbackPtr =
+        std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
+    doAdvicesChain(preHandlingAdvices_, 0, req, std::move(callbackPtr));
+}
+
+void AopAdvice::passPostHandlingAdvices(const HttpRequestImplPtr &req,
+                                        const HttpResponsePtr &resp)
+{
+    for (auto &advice : postHandlingAdvices_)
+    {
+        advice(req, resp);
+    }
+}
+
+static void doAdvicesChain(
+    const std::vector<std::function<void(const HttpRequestPtr &,
+                                         AdviceCallback &&,
+                                         AdviceChainCallback &&)>> &advices,
+    size_t index,
+    const HttpRequestImplPtr &req,
+    std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
+        &&callbackPtr)
 {
     if (index < advices.size())
     {
         auto &advice = advices[index];
         advice(
             req,
-            [callbackPtr](const HttpResponsePtr &resp) {
+            [/*copy*/ callbackPtr](const HttpResponsePtr &resp) {
                 (*callbackPtr)(resp);
             },
-            [index,
-             req,
-             callbackPtr,
-             &advices,
-             missCallback = std::move(missCallback)]() mutable {
+            [index, req, callbackPtr, &advices]() mutable {
                 auto ioLoop = req->getLoop();
                 if (ioLoop && !ioLoop->isInLoopThread())
                 {
                     ioLoop->queueInLoop(
-                        [index,
-                         req,
-                         callbackPtr,
-                         &advices,
-                         missCallback = std::move(missCallback)]() mutable {
+                        [index, req, callbackPtr, &advices]() mutable {
                             doAdvicesChain(advices,
                                            index + 1,
                                            req,
-                                           callbackPtr,
-                                           std::move(missCallback));
+                                           std::move(callbackPtr));
                         });
-                    return;
                 }
                 else
                 {
                     doAdvicesChain(advices,
                                    index + 1,
                                    req,
-                                   callbackPtr,
-                                   std::move(missCallback));
+                                   std::move(callbackPtr));
                 }
             });
     }
     else
     {
-        missCallback();
+        (*callbackPtr)(nullptr);
     }
 }
 

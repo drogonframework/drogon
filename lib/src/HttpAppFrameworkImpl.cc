@@ -105,6 +105,11 @@ static void handleInvalidHttpMethod(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback);
 
+static void handleHttpOptions(
+    const HttpRequestImplPtr &req,
+    const std::string &allowMethods,
+    std::function<void(const HttpResponsePtr &)> &&callback);
+
 namespace drogon
 {
 std::string getVersion()
@@ -626,9 +631,7 @@ void HttpAppFrameworkImpl::run()
         sslCertPath_,
         sslKeyPath_,
         sslConfCmds_,
-        ioLoops,
-        syncAdvices_,
-        preSendingAdvices_);
+        ioLoops);
 
     // A fast database client instance should be created in the main event
     // loop, so put the main loop into ioLoops.
@@ -797,37 +800,23 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
     findSessionForRequest(req);
-    // Route to controller
-    if (!preRoutingObservers_.empty())
-    {
-        for (auto &observer : preRoutingObservers_)
-        {
-            observer(req);
-        }
-    }
-    if (preRoutingAdvices_.empty())
-    {
-        websocketRequestRouting(req, std::move(callback), wsConnPtr);
-    }
-    else
-    {
-        auto callbackPtr =
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                std::move(callback));
-        doAdvicesChain(
-            preRoutingAdvices_,
-            0,
-            req,
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                [req, callbackPtr, this](const HttpResponsePtr &resp) {
-                    callCallback(req, resp, *callbackPtr);
-                }),
-            [this, callbackPtr, req, wsConnPtr]() {
-                websocketRequestRouting(req,
-                                        std::move(*callbackPtr),
-                                        wsConnPtr);
-            });
-    }
+
+    // pre-routing aop
+    auto &aop = AopAdvice::instance();
+    aop.passPreRoutingObservers(req);
+    aop.passPreRoutingAdvices(
+        req,
+        [this, req, wsConnPtr, callback = std::move(callback)](
+            const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                callCallback(req, resp, std::move(callback));
+            }
+            else
+            {
+                websocketRequestRouting(req, std::move(callback), wsConnPtr);
+            }
+        });
 }
 
 void HttpAppFrameworkImpl::websocketRequestRouting(
@@ -863,37 +852,25 @@ void HttpAppFrameworkImpl::websocketRequestPostRouting(
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
-    // Do post routing advices.
-    if (!postRoutingObservers_.empty())
-    {
-        for (auto &observer : postRoutingObservers_)
-        {
-            observer(req);
-        }
-    }
-    auto &filters = binderPtr->filters_;
-    if (postRoutingAdvices_.empty())
-    {
-        websocketRequestPassFilters(req,
-                                    binderPtr,
-                                    std::move(callback),
-                                    wsConnPtr);
-        return;
-    }
-
-    auto callbackPtr =
-        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-            std::move(callback));
-    doAdvicesChain(postRoutingAdvices_,
-                   0,
-                   req,
-                   callbackPtr,
-                   [this, req, binderPtr, callbackPtr, wsConnPtr]() {
-                       websocketRequestPassFilters(req,
-                                                   binderPtr,
-                                                   std::move(*callbackPtr),
-                                                   wsConnPtr);
-                   });
+    // post-routing aop
+    auto &aop = AopAdvice::instance();
+    aop.passPostRoutingObservers(req);
+    aop.passPostRoutingAdvices(
+        req,
+        [this, req, binderPtr, wsConnPtr, callback = std::move(callback)](
+            const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                callCallback(req, resp, std::move(callback));
+            }
+            else
+            {
+                websocketRequestPassFilters(req,
+                                            binderPtr,
+                                            std::move(callback),
+                                            wsConnPtr);
+            }
+        });
 }
 
 void HttpAppFrameworkImpl::websocketRequestPassFilters(
@@ -935,63 +912,28 @@ void HttpAppFrameworkImpl::websocketRequestPreHandling(
 {
     if (req->method() == Options)
     {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-        resp->addHeader("ALLOW", *binderPtr->corsMethods_);
-        auto &origin = req->getHeader("Origin");
-        if (origin.empty())
-        {
-            resp->addHeader("Access-Control-Allow-Origin", "*");
-        }
-        else
-        {
-            resp->addHeader("Access-Control-Allow-Origin", origin);
-        }
-        resp->addHeader("Access-Control-Allow-Methods",
-                        *binderPtr->corsMethods_);
-        auto &headers = req->getHeaderBy("access-control-request-headers");
-        if (!headers.empty())
-        {
-            resp->addHeader("Access-Control-Allow-Headers", headers);
-        }
-        callback(resp);
+        handleHttpOptions(req, *binderPtr->corsMethods_, std::move(callback));
         return;
     }
 
     // pre-handling aop
-    if (!preHandlingObservers_.empty())
-    {
-        for (auto &observer : preHandlingObservers_)
-        {
-            observer(req);
-        }
-    }
-
-    if (preHandlingAdvices_.empty())
-    {
-        websocketRequestHandling(req,
-                                 binderPtr,
-                                 std::move(callback),
-                                 wsConnPtr);
-        return;
-    }
-
-    auto callbackPtr =
-        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-            std::move(callback));
-    doAdvicesChain(
-        preHandlingAdvices_,
-        0,
+    auto &aop = AopAdvice::instance();
+    aop.passPreHandlingObservers(req);
+    aop.passPreHandlingAdvices(
         req,
-        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-            [callbackPtr](const HttpResponsePtr &resp) {
-                (*callbackPtr)(resp);
-            }),
-        [this, req, binderPtr, callbackPtr, wsConnPtr]() {
-            websocketRequestHandling(req,
-                                     binderPtr,
-                                     std::move(*callbackPtr),
-                                     wsConnPtr);
+        [this, req, wsConnPtr, binderPtr, callback = std::move(callback)](
+            const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                callCallback(req, resp, std::move(callback));
+            }
+            else
+            {
+                websocketRequestHandling(req,
+                                         binderPtr,
+                                         std::move(callback),
+                                         wsConnPtr);
+            }
         });
 }
 
@@ -1001,15 +943,12 @@ void HttpAppFrameworkImpl::websocketRequestHandling(
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
-    binderPtr->handleRequest(req,
-                             [this, req, callback = std::move(callback)](
-                                 const HttpResponsePtr &resp) {
-                                 for (auto &advice : postHandlingAdvices_)
-                                 {
-                                     advice(req, resp);
-                                 }
-                                 callback(resp);
-                             });
+    binderPtr->handleRequest(
+        req,
+        [req, callback = std::move(callback)](const HttpResponsePtr &resp) {
+            AopAdvice::instance().passPostHandlingAdvices(req, resp);
+            callback(resp);
+        });
 
     // TODO: more elegant?
     auto binder =
@@ -1124,48 +1063,23 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     findSessionForRequest(req);
 
     // pre-routing aop
-    if (!preRoutingObservers_.empty())
-    {
-        for (auto &observer : preRoutingObservers_)
-        {
-            observer(req);
-        }
-    }
-    if (preRoutingAdvices_.empty())
-    {
-        httpRequestRouting(req, std::move(callback));
-    }
-    else
-    {
-        auto callbackPtr =
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                std::move(callback));
-        doAdvicesChain(
-            preRoutingAdvices_,
-            0,
-            req,
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                [req, callbackPtr, this](const HttpResponsePtr &resp) {
-                    callCallback(req, resp, *callbackPtr);
-                }),
-            [this, callbackPtr, req]() {
-                httpRequestRouting(req, std::move(*callbackPtr));
-            });
-    }
-}
-
-static void handleInvalidHttpMethod(
-    const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
-    if (req->method() != Options)
-    {
-        callback(app().getCustomErrorHandler()(k405MethodNotAllowed, req));
-    }
-    else
-    {
-        callback(app().getCustomErrorHandler()(k403Forbidden, req));
-    }
+    auto &aop = AopAdvice::instance();
+    aop.passPreRoutingObservers(req);
+    aop.passPreRoutingAdvices(req,
+                              [this, req, callback = std::move(callback)](
+                                  const HttpResponsePtr &resp) mutable {
+                                  if (resp)
+                                  {
+                                      callCallback(req,
+                                                   resp,
+                                                   std::move(callback));
+                                  }
+                                  else
+                                  {
+                                      httpRequestRouting(req,
+                                                         std::move(callback));
+                                  }
+                              });
 }
 
 void HttpAppFrameworkImpl::httpRequestRouting(
@@ -1200,32 +1114,23 @@ void HttpAppFrameworkImpl::httpRequestPostRouting(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     // post-routing aop
-    if (!postRoutingObservers_.empty())
-    {
-        for (auto &observer : postRoutingObservers_)
-        {
-            observer(req);
-        }
-    }
-
-    if (postRoutingAdvices_.empty())
-    {
-        httpRequestPassFilters(req, binderPtr, std::move(callback));
-        return;
-    }
-
-    auto callbackPtr =
-        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-            std::move(callback));
-    doAdvicesChain(postRoutingAdvices_,
-                   0,
-                   req,
-                   callbackPtr,
-                   [this, req, binderPtr, callbackPtr]() mutable {
-                       httpRequestPassFilters(req,
-                                              binderPtr,
-                                              std::move(*callbackPtr));
-                   });
+    auto &aop = AopAdvice::instance();
+    aop.passPostRoutingObservers(req);
+    aop.passPostRoutingAdvices(
+        req,
+        [this,
+         req,
+         binderPtr = std::move(binderPtr),
+         callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                callCallback(req, resp, std::move(callback));
+            }
+            else
+            {
+                httpRequestPassFilters(req, binderPtr, std::move(callback));
+            }
+        });
 }
 
 void HttpAppFrameworkImpl::httpRequestPassFilters(
@@ -1259,58 +1164,25 @@ void HttpAppFrameworkImpl::httpRequestPreHandling(
 {
     if (req->method() == Options)
     {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-        resp->addHeader("ALLOW", *binderPtr->corsMethods_);
-
-        auto &origin = req->getHeader("Origin");
-        if (origin.empty())
-        {
-            resp->addHeader("Access-Control-Allow-Origin", "*");
-        }
-        else
-        {
-            resp->addHeader("Access-Control-Allow-Origin", origin);
-        }
-        resp->addHeader("Access-Control-Allow-Methods",
-                        *binderPtr->corsMethods_);
-        auto &headers = req->getHeaderBy("access-control-request-headers");
-        if (!headers.empty())
-        {
-            resp->addHeader("Access-Control-Allow-Headers", headers);
-        }
-        callback(resp);
+        handleHttpOptions(req, *binderPtr->corsMethods_, std::move(callback));
         return;
     }
 
     // pre-handling aop
-    if (!preHandlingObservers_.empty())
-    {
-        for (auto &observer : preHandlingObservers_)
-        {
-            observer(req);
-        }
-    }
-
-    if (preHandlingAdvices_.empty())
-    {
-        httpRequestHandling(req, binderPtr, std::move(callback));
-        return;
-    }
-
-    auto callbackPtr =
-        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-            std::move(callback));
-    doAdvicesChain(
-        preHandlingAdvices_,
-        0,
+    auto &aop = AopAdvice::instance();
+    aop.passPreHandlingObservers(req);
+    aop.passPreHandlingAdvices(
         req,
-        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-            [this, req, callbackPtr](const HttpResponsePtr &resp) {
-                callCallback(req, resp, *callbackPtr);  // use callCallback()
-            }),
-        [this, binderPtr, req, callbackPtr]() {
-            httpRequestHandling(req, binderPtr, std::move(*callbackPtr));
+        [this, req, binderPtr, callback = std::move(callback)](
+            const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                callCallback(req, resp, std::move(callback));
+            }
+            else
+            {
+                httpRequestHandling(req, binderPtr, std::move(callback));
+            }
         });
 }
 
@@ -1332,10 +1204,7 @@ void HttpAppFrameworkImpl::httpRequestHandling(
             LOG_TRACE << "Use cached response";
 
             // post-handling aop
-            for (auto &advice : postHandlingAdvices_)
-            {
-                advice(req, cachedResp);
-            }
+            AopAdvice::instance().passPostHandlingAdvices(req, cachedResp);
             callCallback(req, cachedResp, callback);
             return;
         }
@@ -1367,10 +1236,7 @@ void HttpAppFrameworkImpl::httpRequestHandling(
                 }
             }
             // post-handling aop
-            for (auto &advice : postHandlingAdvices_)
-            {
-                advice(req, resp);
-            }
+            AopAdvice::instance().passPostHandlingAdvices(req, resp);
             callCallback(req, resp, callback);
         });
 }
@@ -1753,4 +1619,119 @@ HttpAppFramework &HttpAppFrameworkImpl::registerCustomExtensionMime(
 {
     drogon::registerCustomExtensionMime(ext, mime);
     return *this;
+}
+
+// AOP registration methods
+
+HttpAppFramework &HttpAppFrameworkImpl::registerSyncAdvice(
+    const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
+
+{
+    AopAdvice::instance().registerSyncAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreRoutingAdvice(
+    const std::function<void(const HttpRequestPtr &)> &advice)
+{
+    AopAdvice::instance().registerPreRoutingObserver(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreRoutingAdvice(
+    const std::function<void(const HttpRequestPtr &,
+                             AdviceCallback &&,
+                             AdviceChainCallback &&)> &advice)
+{
+    AopAdvice::instance().registerPreRoutingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPostRoutingAdvice(
+    const std::function<void(const HttpRequestPtr &)> &advice)
+{
+    AopAdvice::instance().registerPostRoutingObserver(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPostRoutingAdvice(
+    const std::function<void(const HttpRequestPtr &,
+                             AdviceCallback &&,
+                             AdviceChainCallback &&)> &advice)
+{
+    AopAdvice::instance().registerPostRoutingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreHandlingAdvice(
+    const std::function<void(const HttpRequestPtr &)> &advice)
+{
+    AopAdvice::instance().registerPreHandlingObserver(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreHandlingAdvice(
+    const std::function<void(const HttpRequestPtr &,
+                             AdviceCallback &&,
+                             AdviceChainCallback &&)> &advice)
+{
+    AopAdvice::instance().registerPreHandlingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPostHandlingAdvice(
+    const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>
+        &advice)
+{
+    AopAdvice::instance().registerPostHandlingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreSendingAdvice(
+    const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>
+        &advice)
+{
+    AopAdvice::instance().registerPreSendingAdvice(advice);
+    return *this;
+}
+
+static void handleInvalidHttpMethod(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    if (req->method() != Options)
+    {
+        callback(app().getCustomErrorHandler()(k405MethodNotAllowed, req));
+    }
+    else
+    {
+        callback(app().getCustomErrorHandler()(k403Forbidden, req));
+    }
+}
+
+static void handleHttpOptions(
+    const HttpRequestImplPtr &req,
+    const std::string &allowMethods,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+    resp->addHeader("ALLOW", allowMethods);
+
+    auto &origin = req->getHeader("Origin");
+    if (origin.empty())
+    {
+        resp->addHeader("Access-Control-Allow-Origin", "*");
+    }
+    else
+    {
+        resp->addHeader("Access-Control-Allow-Origin", origin);
+    }
+    resp->addHeader("Access-Control-Allow-Methods", allowMethods);
+    auto &headers = req->getHeaderBy("access-control-request-headers");
+    if (!headers.empty())
+    {
+        resp->addHeader("Access-Control-Allow-Headers", headers);
+    }
+    callback(resp);
 }

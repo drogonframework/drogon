@@ -15,7 +15,6 @@
 #include "HttpControllersRouter.h"
 #include "HttpControllerBinder.h"
 #include "HttpSimpleControllerBinder.h"
-#include "AOPAdvice.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "StaticFileRouter.h"

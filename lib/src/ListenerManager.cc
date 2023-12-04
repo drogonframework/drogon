@@ -16,6 +16,7 @@
 #include <drogon/config.h>
 #include <fcntl.h>
 #include <trantor/utils/Logger.h>
+#include "AOPAdvice.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpServer.h"
 #ifndef _WIN32
@@ -83,12 +84,7 @@ void ListenerManager::createListeners(
     const std::string &globalCertFile,
     const std::string &globalKeyFile,
     const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
-    const std::vector<trantor::EventLoop *> &ioLoops,
-    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
-    const std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &preSendingAdvices)
+    const std::vector<trantor::EventLoop *> &ioLoops)
 {
     LOG_TRACE << "thread num=" << ioLoops.size();
 #ifdef __linux__
@@ -117,11 +113,12 @@ void ListenerManager::createListeners(
                                  false);
             }
             std::shared_ptr<HttpServer> serverPtr =
-                std::make_shared<HttpServer>(ioLoops[i],
-                                             listenAddress,
-                                             "drogon",
-                                             syncAdvices,
-                                             preSendingAdvices);
+                std::make_shared<HttpServer>(
+                    ioLoops[i],
+                    listenAddress,
+                    "drogon",
+                    AopAdvice::instance().getSyncAdvices(),
+                    AopAdvice::instance().getPreSendingAdvices());
 
             if (listener.useSSL_ && utils::supportsTls())
             {
