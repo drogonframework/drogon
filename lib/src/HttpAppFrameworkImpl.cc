@@ -1524,9 +1524,8 @@ HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
     return *this;
 }
 
-const std::function<HttpResponsePtr(HttpStatusCode,
-                                    const HttpRequestPtr &req)> &
-HttpAppFrameworkImpl::getCustomErrorHandler() const
+const std::function<HttpResponsePtr(HttpStatusCode, const HttpRequestPtr &req)>
+    &HttpAppFrameworkImpl::getCustomErrorHandler() const
 {
     return customErrorHandler_;
 }
