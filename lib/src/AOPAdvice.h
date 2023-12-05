@@ -25,17 +25,6 @@ namespace drogon
 class AopAdvice
 {
   public:
-    using ReqBlockerVector =
-        std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>;
-    using ReqObserverVector =
-        std::vector<std::function<void(const HttpRequestPtr &)>>;
-    using ReqRespObserverVector = std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>;
-    using AsyncReqAdviceVector =
-        std::vector<std::function<void(const HttpRequestPtr &,
-                                       AdviceCallback &&,
-                                       AdviceChainCallback &&)>>;
-
     static AopAdvice &instance()
     {
         static AopAdvice inst;
@@ -126,16 +115,24 @@ class AopAdvice
                                const HttpResponsePtr &resp);
 
   private:
+    using SyncAdvice = std::function<HttpResponsePtr(const HttpRequestPtr &)>;
+    using SyncReqObserver = std::function<void(const HttpRequestPtr &)>;
+    using SyncObserver =
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>;
+    using AsyncAdvice = std::function<void(const HttpRequestPtr &,
+                                           AdviceCallback &&,
+                                           AdviceChainCallback &&)>;
+
     // If we want to add aop functions anytime, we can add a mutex here
-    ReqBlockerVector syncAdvices_;
-    ReqObserverVector preRoutingObservers_;
-    AsyncReqAdviceVector preRoutingAdvices_;
-    ReqObserverVector postRoutingObservers_;
-    AsyncReqAdviceVector postRoutingAdvices_;
-    ReqObserverVector preHandlingObservers_;
-    AsyncReqAdviceVector preHandlingAdvices_;
-    ReqRespObserverVector postHandlingAdvices_;
-    ReqRespObserverVector preSendingAdvices_;
+    std::vector<SyncAdvice> syncAdvices_;
+    std::vector<SyncReqObserver> preRoutingObservers_;
+    std::vector<AsyncAdvice> preRoutingAdvices_;
+    std::vector<SyncReqObserver> postRoutingObservers_;
+    std::vector<AsyncAdvice> postRoutingAdvices_;
+    std::vector<SyncReqObserver> preHandlingObservers_;
+    std::vector<AsyncAdvice> preHandlingAdvices_;
+    std::vector<SyncObserver> postHandlingAdvices_;
+    std::vector<SyncObserver> preSendingAdvices_;
 };
 
 }  // namespace drogon
