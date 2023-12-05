@@ -161,9 +161,7 @@ void ListenerManager::createListeners(
             auto serverPtr = std::make_shared<HttpServer>(
                 listeningThread_->getLoop(),
                 InetAddress(ip, listener.port_, isIpv6),
-                "drogon",
-                syncAdvices,
-                preSendingAdvices);
+                "drogon");
             if (listener.useSSL_ && utils::supportsTls())
             {
                 auto cert = listener.certFile_;
