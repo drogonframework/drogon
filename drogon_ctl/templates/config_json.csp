@@ -150,8 +150,8 @@
             "apk",
             "cur",
             "xml",
-            "svg",
-            "webp"
+            "webp",
+            "svg"
         ],
         // mime: A dictionary that extends the internal MIME type support. Maps extensions into new MIME types
         // note: This option only adds MIME to the sever. `file_types` above have to be set for the server to serve them.
@@ -214,6 +214,9 @@
         },
         //log: Set log output, drogon output logs to stdout by default
         "log": {
+            //use_spdlog: Use spdlog library to log
+            //"use_spdlog": false
+            "use_spdlog": false,
             //log_path: Log file path,empty by default,in which case,logs are output to the stdout
             //"log_path": "./",
             //logfile_base_name: Log file base name,empty by default which means drogon names logfile as
@@ -248,19 +251,19 @@
         //0 means cache forever, the negative value means no cache
         "static_files_cache_time": 5,
         //simple_controllers_map: Used to configure mapping from path to simple controller
-        "simple_controllers_map": [
-            {
-                "path": "/path/name",
-                "controller": "controllerClassName",
-                "http_methods": [
-                    "get",
-                    "post"
-                ],
-                "filters": [
-                    "FilterClassName"
-                ]
-            }
-        ],
+        //"simple_controllers_map": [
+        //    {
+        //        "path": "/path/name",
+        //        "controller": "controllerClassName",
+        //        "http_methods": [
+        //            "get",
+        //            "post"
+        //        ],
+        //        "filters": [
+        //            "FilterClassName"
+        //        ]
+        //    }
+        //],
         //idle_connection_timeout: Defaults to 60 seconds, the lifetime 
         //of the connection without read or write
         "idle_connection_timeout": 60,
@@ -311,16 +314,29 @@
     "plugins": [
         {
             //name: The class name of the plugin
-            //"name": "drogon::plugin::SecureSSLRedirector",
+            "name": "drogon::plugin::PromExporter",
             //dependencies: Plugins that the plugin depends on. It can be commented out
             "dependencies": [],
             //config: The configuration of the plugin. This json object is the parameter to initialize the plugin.
             //It can be commented out
             "config": {
-                "ssl_redirect_exempt": [
-                    ".*\\.jpg"
-                ],
-                "secure_ssl_host": "localhost:8849"
+                "path": "/metrics"
+            }
+        },
+        {
+            "name": "drogon::plugin::AccessLogger",
+            "dependencies": [],
+            "config": {
+                    "use_spdlog": false,
+                    "log_path": "",
+                    "log_format": "",
+                    "log_file": "access.log",
+                    "log_size_limit": 0,
+                    "use_local_time": true,
+                    "log_index": 0,
+                    // "show_microseconds": true,
+                    // "custom_time_format": "",
+                    // "use_real_ip": false
             }
         }
     ],
