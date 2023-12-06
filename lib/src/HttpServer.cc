@@ -73,9 +73,8 @@ HttpServer::HttpServer(EventLoop *loop,
     : server_(loop, listenAddr, std::move(name), true, app().reusePort())
 #endif
 {
-    server_.setConnectionCallback([](const auto &conn) { onConnection(conn); });
-    server_.setRecvMessageCallback(
-        [](const auto &conn, auto buff) { onMessage(conn, buff); });
+    server_.setConnectionCallback(onConnection);
+    server_.setRecvMessageCallback(onMessage);
     server_.kickoffIdleConnections(
         HttpAppFrameworkImpl::instance().getIdleConnectionTimeout());
 }
@@ -382,9 +381,10 @@ void HttpServer::httpRequestRouting(
         HttpAppFrameworkImpl::instance().getHttpRouter().route(req);
     if (result.result == RouteResult::Success)
     {
-        httpRequestPostRouting(req,
-                               std::move(result.binderPtr),
-                               std::move(callback));
+        RequestParamPack pack{std::move(result.binderPtr),
+                              std::move(callback),
+                              nullptr};
+        requestPostRouting(req, std::move(pack));
         return;
     }
     if (result.result == RouteResult::MethodNotAllowed)
@@ -405,91 +405,85 @@ void HttpServer::httpRequestRouting(
                                                                      callback));
 }
 
-void HttpServer::httpRequestPostRouting(
-    const HttpRequestImplPtr &req,
-    std::shared_ptr<ControllerBinderBase> &&binderPtr,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+void HttpServer::requestPostRouting(const HttpRequestImplPtr &req,
+                                    RequestParamPack &&pack)
 {
     // post-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPostRoutingObservers(req);
-    aop.passPostRoutingAdvices(
-        req,
-        [req, binderPtr = std::move(binderPtr), callback = std::move(callback)](
-            const HttpResponsePtr &resp) mutable {
-            if (resp)
-            {
-                callback(resp);
-            }
-            else
-            {
-                httpRequestPassFilters(req,
-                                       std::move(binderPtr),
-                                       std::move(callback));
-            }
-        });
+    aop.passPostRoutingAdvices(req,
+                               [req, pack = std::move(pack)](
+                                   const HttpResponsePtr &resp) mutable {
+                                   if (resp)
+                                   {
+                                       pack.callback(resp);
+                                   }
+                                   else
+                                   {
+                                       requestPassFilters(req, std::move(pack));
+                                   }
+                               });
 }
 
-void HttpServer::httpRequestPassFilters(
-    const HttpRequestImplPtr &req,
-    std::shared_ptr<ControllerBinderBase> &&binderPtr,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+void HttpServer::requestPassFilters(const HttpRequestImplPtr &req,
+                                    RequestParamPack &&pack)
 {
     // pass filters
-    auto &filters = binderPtr->filters_;
+    auto &filters = pack.binderPtr->filters_;
     if (filters.empty())
     {
-        httpRequestPreHandling(req, std::move(binderPtr), std::move(callback));
+        requestPreHandling(req, std::move(pack));
         return;
     }
-    filters_function::doFilters(
-        filters,
-        req,
-        [req, binderPtr = std::move(binderPtr), callback = std::move(callback)](
-            const HttpResponsePtr &resp) mutable {
-            if (resp)
-            {
-                callback(resp);
-            }
-            else
-            {
-                httpRequestPreHandling(req,
-                                       std::move(binderPtr),
-                                       std::move(callback));
-            }
-        });
+    filters_function::doFilters(filters,
+                                req,
+                                [req, pack = std::move(pack)](
+                                    const HttpResponsePtr &resp) mutable {
+                                    if (resp)
+                                    {
+                                        pack.callback(resp);
+                                    }
+                                    else
+                                    {
+                                        requestPreHandling(req,
+                                                           std::move(pack));
+                                    }
+                                });
 }
 
-void HttpServer::httpRequestPreHandling(
-    const HttpRequestImplPtr &req,
-    std::shared_ptr<ControllerBinderBase> &&binderPtr,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+void HttpServer::requestPreHandling(const HttpRequestImplPtr &req,
+                                    RequestParamPack &&pack)
 {
     if (req->method() == Options)
     {
-        handleHttpOptions(req, *binderPtr->corsMethods_, std::move(callback));
+        handleHttpOptions(req,
+                          *pack.binderPtr->corsMethods_,
+                          std::move(pack.callback));
         return;
     }
 
     // pre-handling aop
     auto &aop = AopAdvice::instance();
     aop.passPreHandlingObservers(req);
-    aop.passPreHandlingAdvices(req,
-                               [req,
-                                binderPtr = std::move(binderPtr),
-                                callback = std::move(callback)](
-                                   const HttpResponsePtr &resp) mutable {
-                                   if (resp)
-                                   {
-                                       callback(resp);
-                                   }
-                                   else
-                                   {
-                                       httpRequestHandling(req,
-                                                           std::move(binderPtr),
-                                                           std::move(callback));
-                                   }
-                               });
+    aop.passPreHandlingAdvices(
+        req,
+        [req, pack = std::move(pack)](const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                pack.callback(resp);
+            }
+            else
+            {
+                pack.wsConnPtr
+                    ? websocketRequestHandling(req,
+                                               std::move(pack.binderPtr),
+                                               std::move(pack.callback),
+                                               std::move(pack.wsConnPtr))
+                    : httpRequestHandling(req,
+                                          std::move(pack.binderPtr),
+                                          std::move(pack.callback));
+            }
+        });
 }
 
 void HttpServer::httpRequestHandling(
@@ -588,10 +582,10 @@ void HttpServer::websocketRequestRouting(
 
     if (result.result == RouteResult::Success)
     {
-        websocketRequestPostRouting(req,
-                                    std::move(result.binderPtr),
-                                    std::move(callback),
-                                    wsConnPtr);
+        RequestParamPack pack{std::move(result.binderPtr),
+                              std::move(callback),
+                              wsConnPtr};
+        requestPostRouting(req, std::move(pack));
         return;
     }
     if (result.result == RouteResult::MethodNotAllowed)
@@ -606,111 +600,11 @@ void HttpServer::websocketRequestRouting(
     callback(resp);
 }
 
-void HttpServer::websocketRequestPostRouting(
-    const HttpRequestImplPtr &req,
-    std::shared_ptr<ControllerBinderBase> &&binderPtr,
-    std::function<void(const HttpResponsePtr &)> &&callback,
-    const WebSocketConnectionImplPtr &wsConnPtr)
-{
-    // post-routing aop
-    auto &aop = AopAdvice::instance();
-    aop.passPostRoutingObservers(req);
-    aop.passPostRoutingAdvices(
-        req,
-        [req,
-         binderPtr = std::move(binderPtr),
-         wsConnPtr = std::move(wsConnPtr),
-         callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
-            if (resp)
-            {
-                callback(resp);
-            }
-            else
-            {
-                websocketRequestPassFilters(req,
-                                            std::move(binderPtr),
-                                            std::move(callback),
-                                            wsConnPtr);
-            }
-        });
-}
-
-void HttpServer::websocketRequestPassFilters(
-    const HttpRequestImplPtr &req,
-    std::shared_ptr<ControllerBinderBase> &&binderPtr,
-    std::function<void(const HttpResponsePtr &)> &&callback,
-    const WebSocketConnectionImplPtr &wsConnPtr)
-{
-    auto &filters = binderPtr->filters_;
-    if (filters.empty())
-    {
-        websocketRequestPreHandling(req,
-                                    std::move(binderPtr),
-                                    std::move(callback),
-                                    wsConnPtr);
-        return;
-    }
-    filters_function::doFilters(
-        filters,
-        req,
-        [req,
-         wsConnPtr,
-         binderPtr = std::move(binderPtr),
-         callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
-            if (resp)
-            {
-                callback(resp);
-            }
-            else
-            {
-                websocketRequestPreHandling(req,
-                                            std::move(binderPtr),
-                                            std::move(callback),
-                                            wsConnPtr);
-            }
-        });
-}
-
-void HttpServer::websocketRequestPreHandling(
-    const HttpRequestImplPtr &req,
-    std::shared_ptr<ControllerBinderBase> &&binderPtr,
-    std::function<void(const HttpResponsePtr &)> &&callback,
-    const WebSocketConnectionImplPtr &wsConnPtr)
-{
-    if (req->method() == Options)
-    {
-        handleHttpOptions(req, *binderPtr->corsMethods_, std::move(callback));
-        return;
-    }
-
-    // pre-handling aop
-    auto &aop = AopAdvice::instance();
-    aop.passPreHandlingObservers(req);
-    aop.passPreHandlingAdvices(
-        req,
-        [req,
-         wsConnPtr,
-         binderPtr = std::move(binderPtr),
-         callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
-            if (resp)
-            {
-                callback(resp);
-            }
-            else
-            {
-                websocketRequestHandling(req,
-                                         std::move(binderPtr),
-                                         std::move(callback),
-                                         wsConnPtr);
-            }
-        });
-}
-
 void HttpServer::websocketRequestHandling(
     const HttpRequestImplPtr &req,
     std::shared_ptr<ControllerBinderBase> &&binderPtr,
     std::function<void(const HttpResponsePtr &)> &&callback,
-    const WebSocketConnectionImplPtr &wsConnPtr)
+    WebSocketConnectionImplPtr &&wsConnPtr)
 {
     binderPtr->handleRequest(
         req,
@@ -1242,17 +1136,10 @@ static void handleHttpOptions(
 {
     auto resp = HttpResponse::newHttpResponse();
     resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-    resp->addHeader("ALLOW", allowMethods);
+    resp->addHeader("Allow", allowMethods);
 
-    auto &origin = req->getHeader("Origin");
-    if (origin.empty())
-    {
-        resp->addHeader("Access-Control-Allow-Origin", "*");
-    }
-    else
-    {
-        resp->addHeader("Access-Control-Allow-Origin", origin);
-    }
+    auto &orig = req->getHeaderBy("origin");
+    resp->addHeader("Access-Control-Allow-Origin", orig.empty() ? "*" : orig);
     resp->addHeader("Access-Control-Allow-Methods", allowMethods);
     auto &headers = req->getHeaderBy("access-control-request-headers");
     if (!headers.empty())

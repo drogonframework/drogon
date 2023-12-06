@@ -77,23 +77,18 @@ class HttpServer : trantor::NonCopyable
                            const std::vector<HttpRequestImplPtr> &,
                            const std::shared_ptr<HttpRequestParser> &);
 
+    struct RequestParamPack
+    {
+        std::shared_ptr<ControllerBinderBase> binderPtr;
+        std::function<void(const HttpResponsePtr &)> callback;
+        WebSocketConnectionImplPtr wsConnPtr;
+    };
+
     // Http request handling steps
     static void onHttpRequest(const HttpRequestImplPtr &,
                               std::function<void(const HttpResponsePtr &)> &&);
     static void httpRequestRouting(
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    static void httpRequestPostRouting(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    static void httpRequestPassFilters(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    static void httpRequestPreHandling(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback);
     static void httpRequestHandling(
         const HttpRequestImplPtr &req,
@@ -109,27 +104,21 @@ class HttpServer : trantor::NonCopyable
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
         const WebSocketConnectionImplPtr &wsConnPtr);
-    static void websocketRequestPostRouting(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    static void websocketRequestPassFilters(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    static void websocketRequestPreHandling(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
     static void websocketRequestHandling(
         const HttpRequestImplPtr &req,
         std::shared_ptr<ControllerBinderBase> &&binderPtr,
         std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
+        WebSocketConnectionImplPtr &&wsConnPtr);
 
+    // Http/Websocket shared handling steps
+    static void requestPostRouting(const HttpRequestImplPtr &req,
+                                   RequestParamPack &&pack);
+    static void requestPassFilters(const HttpRequestImplPtr &req,
+                                   RequestParamPack &&pack);
+    static void requestPreHandling(const HttpRequestImplPtr &req,
+                                   RequestParamPack &&pack);
+
+    // Response buffering and sending
     static void handleResponse(
         const HttpResponsePtr &response,
         const std::shared_ptr<CallbackParamPack> &paramPack,
