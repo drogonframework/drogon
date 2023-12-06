@@ -14,7 +14,6 @@
 
 #include "HttpControllersRouter.h"
 #include "HttpControllerBinder.h"
-#include "HttpSimpleControllerBinder.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "StaticFileRouter.h"

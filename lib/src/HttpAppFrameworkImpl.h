@@ -27,7 +27,6 @@
 #include "SessionManager.h"
 #include "drogon/utils/Utilities.h"
 #include "impl_forwards.h"
-#include "ControllerBinderBase.h"
 
 namespace trantor
 {

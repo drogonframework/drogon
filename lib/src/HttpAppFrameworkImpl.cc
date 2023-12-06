@@ -23,7 +23,6 @@
 #include <algorithm>
 #include "AOPAdvice.h"
 #include "ConfigLoader.h"
-#include "ControllerBinderBase.h"
 #include "DbClientManager.h"
 #include "HttpClientImpl.h"
 #include "HttpControllersRouter.h"
@@ -37,7 +36,6 @@
 #include "SessionManager.h"
 #include "SharedLibManager.h"
 #include "StaticFileRouter.h"
-#include "WebSocketConnectionImpl.h"
 #include "WebsocketControllersRouter.h"
 
 #include <iostream>
