@@ -26,6 +26,8 @@ struct CallbackParamPack;
 
 namespace drogon
 {
+class ControllerBinderBase;
+
 class HttpServer : trantor::NonCopyable
 {
   public:
@@ -35,55 +37,9 @@ class HttpServer : trantor::NonCopyable
 
     ~HttpServer();
 
-    trantor::EventLoop *getLoop() const
-    {
-        return server_.getLoop();
-    }
-
-    void setHttpAsyncCallback(const HttpAsyncCallback &cb)
-    {
-        httpAsyncCallback_ = cb;
-    }
-
-    void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
-    {
-        newWebsocketCallback_ = cb;
-    }
-
-    void setConnectionCallback(const trantor::ConnectionCallback &cb)
-    {
-        connectionCallback_ = cb;
-    }
-
-    void setIoLoopThreadPool(
-        const std::shared_ptr<trantor::EventLoopThreadPool> &pool)
-    {
-        server_.setIoLoopThreadPool(pool);
-    }
-
-    void setIoLoopNum(int numThreads)
-    {
-        server_.setIoLoopNum(numThreads);
-    }
-
     void setIoLoops(const std::vector<trantor::EventLoop *> &ioLoops)
     {
         server_.setIoLoops(ioLoops);
-    }
-
-    void kickoffIdleConnections(size_t timeout)
-    {
-        server_.kickoffIdleConnections(timeout);
-    }
-
-    trantor::EventLoop *getLoop()
-    {
-        return server_.getLoop();
-    }
-
-    std::vector<trantor::EventLoop *> getIoLoops()
-    {
-        return server_.getIoLoops();
     }
 
     void start();
@@ -112,25 +68,91 @@ class HttpServer : trantor::NonCopyable
     }
 
   private:
-    void onConnection(const trantor::TcpConnectionPtr &conn);
-    void onMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
-    void onRequests(const trantor::TcpConnectionPtr &,
-                    const std::vector<HttpRequestImplPtr> &,
-                    const std::shared_ptr<HttpRequestParser> &);
-    void handleResponse(const HttpResponsePtr &response,
-                        const std::shared_ptr<CallbackParamPack> &paramPack,
-                        bool *respReadyPtr);
-    void sendResponse(const trantor::TcpConnectionPtr &,
-                      const HttpResponsePtr &,
-                      bool isHeadMethod);
-    void sendResponses(
+    friend class HttpInternalForwardHelper;
+
+    static void onConnection(const trantor::TcpConnectionPtr &conn);
+    static void onMessage(const trantor::TcpConnectionPtr &,
+                          trantor::MsgBuffer *);
+    static void onRequests(const trantor::TcpConnectionPtr &,
+                           const std::vector<HttpRequestImplPtr> &,
+                           const std::shared_ptr<HttpRequestParser> &);
+
+    // Http request handling steps
+    static void onHttpRequest(const HttpRequestImplPtr &,
+                              std::function<void(const HttpResponsePtr &)> &&);
+    static void httpRequestRouting(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    static void httpRequestPostRouting(
+        const HttpRequestImplPtr &req,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    static void httpRequestPassFilters(
+        const HttpRequestImplPtr &req,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    static void httpRequestPreHandling(
+        const HttpRequestImplPtr &req,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    static void httpRequestHandling(
+        const HttpRequestImplPtr &req,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+
+    // Websocket request handling steps
+    static void onWebsocketRequest(
+        const HttpRequestImplPtr &,
+        std::function<void(const HttpResponsePtr &)> &&,
+        const WebSocketConnectionImplPtr &);
+    static void websocketRequestRouting(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    static void websocketRequestPostRouting(
+        const HttpRequestImplPtr &req,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    static void websocketRequestPassFilters(
+        const HttpRequestImplPtr &req,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    static void websocketRequestPreHandling(
+        const HttpRequestImplPtr &req,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+    static void websocketRequestHandling(
+        const HttpRequestImplPtr &req,
+        std::shared_ptr<ControllerBinderBase> &&binderPtr,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
+
+    static void handleResponse(
+        const HttpResponsePtr &response,
+        const std::shared_ptr<CallbackParamPack> &paramPack,
+        bool *respReadyPtr);
+    static void sendResponse(const trantor::TcpConnectionPtr &,
+                             const HttpResponsePtr &,
+                             bool isHeadMethod);
+    static void sendResponses(
         const trantor::TcpConnectionPtr &conn,
         const std::vector<std::pair<HttpResponsePtr, bool>> &responses,
         trantor::MsgBuffer &buffer);
+
     trantor::TcpServer server_;
-    HttpAsyncCallback httpAsyncCallback_;
-    WebSocketNewAsyncCallback newWebsocketCallback_;
-    trantor::ConnectionCallback connectionCallback_;
+};
+
+class HttpInternalForwardHelper
+{
+  public:
+    static void forward(const HttpRequestImplPtr &req,
+                        std::function<void(const HttpResponsePtr &)> &&callback)
+    {
+        return HttpServer::onHttpRequest(req, std::move(callback));
+    }
 };
 
 }  // namespace drogon

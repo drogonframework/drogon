@@ -358,6 +358,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
+    size_t getIdleConnectionTimeout() const  // could expose in base class
+    {
+        return idleConnectionTimeout_;
+    }
+
     HttpAppFramework &setKeepaliveRequestsNumber(const size_t number) override
     {
         keepaliveRequestsNumber_ = number;
@@ -648,6 +653,32 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return connectionNum_.load(std::memory_order_relaxed);
     }
 
+    // TODO: move session related codes to its own singleton class
+    void findSessionForRequest(const HttpRequestImplPtr &req);
+    void handleSessionAndCallCallback(
+        const HttpRequestImplPtr &req,
+        const HttpResponsePtr &resp,
+        const std::function<void(const HttpResponsePtr &)> &callback);
+
+    // TODO: move connection constraints into its own class
+    void onConnection(const trantor::TcpConnectionPtr &conn);
+
+    // temporary solution, access 3 routers
+    HttpControllersRouter &getHttpRouter() const
+    {
+        return *httpCtrlsRouterPtr_;
+    }
+
+    WebsocketControllersRouter &getWebsocketRouter() const
+    {
+        return *websockCtrlsRouterPtr_;
+    }
+
+    StaticFileRouter &getStatisFileRouter() const
+    {
+        return *staticFileRouterPtr_;
+    }
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
@@ -660,65 +691,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const std::vector<HttpMethod> &validMethods,
         const std::vector<std::string> &filters,
         const std::string &handlerName) override;
-    void onAsyncRequest(
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void httpRequestRouting(
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void httpRequestPostRouting(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void httpRequestPassFilters(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void httpRequestPreHandling(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void httpRequestHandling(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-
-    void onNewWebsockRequest(
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    void websocketRequestRouting(
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    void websocketRequestPostRouting(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    void websocketRequestPassFilters(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    void websocketRequestPreHandling(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    void websocketRequestHandling(
-        const HttpRequestImplPtr &req,
-        std::shared_ptr<ControllerBinderBase> &&binderPtr,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-
-    void onConnection(const trantor::TcpConnectionPtr &conn);
-
-    void findSessionForRequest(const HttpRequestImplPtr &req);
-    void handleSessionAndCallCallback(
-        const HttpRequestImplPtr &req,
-        const HttpResponsePtr &resp,
-        const std::function<void(const HttpResponsePtr &)> &callback);
 
     // We use an uuid string as session id;
     // set sessionTimeout_=0 to make location session valid forever based on
