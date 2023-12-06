@@ -582,11 +582,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return useSendfile_;
     }
 
-    void callCallback(
-        const HttpRequestImplPtr &req,
-        const HttpResponsePtr &resp,
-        const std::function<void(const HttpResponsePtr &)> &callback);
-
     bool supportSSL() const override
     {
         return trantor::utils::tlsBackend() != "None";
@@ -720,8 +715,12 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     void onConnection(const trantor::TcpConnectionPtr &conn);
 
     void findSessionForRequest(const HttpRequestImplPtr &req);
+    void handleSessionAndCallCallback(
+        const HttpRequestImplPtr &req,
+        const HttpResponsePtr &resp,
+        const std::function<void(const HttpResponsePtr &)> &callback);
 
-    // We use a uuid string as session id;
+    // We use an uuid string as session id;
     // set sessionTimeout_=0 to make location session valid forever based on
     // cookies;
     size_t sessionTimeout_{0};

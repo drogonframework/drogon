@@ -796,11 +796,15 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
 
 void HttpAppFrameworkImpl::onNewWebsockRequest(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback,
+    std::function<void(const HttpResponsePtr &)> &&originCallback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
     findSessionForRequest(req);
-
+    // Wrap callback to handle session
+    auto callback = [this, req, cb = std::move(originCallback)](
+                        const HttpResponsePtr &resp) {
+        handleSessionAndCallCallback(req, resp, cb);
+    };
     // pre-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPreRoutingObservers(req);
@@ -810,7 +814,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(
             const HttpResponsePtr &resp) mutable {
             if (resp)
             {
-                callCallback(req, resp, std::move(callback));
+                callback(resp);
             }
             else
             {
@@ -864,7 +868,7 @@ void HttpAppFrameworkImpl::websocketRequestPostRouting(
          callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
             if (resp)
             {
-                callCallback(req, resp, std::move(callback));
+                callback(resp);
             }
             else
             {
@@ -901,7 +905,7 @@ void HttpAppFrameworkImpl::websocketRequestPassFilters(
          callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
             if (resp)
             {
-                callCallback(req, resp, std::move(callback));
+                callback(resp);
             }
             else
             {
@@ -937,7 +941,7 @@ void HttpAppFrameworkImpl::websocketRequestPreHandling(
          callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
             if (resp)
             {
-                callCallback(req, resp, std::move(callback));
+                callback(resp);
             }
             else
             {
@@ -976,7 +980,7 @@ std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const
     return ret;
 }
 
-void HttpAppFrameworkImpl::callCallback(
+void HttpAppFrameworkImpl::handleSessionAndCallCallback(
     const HttpRequestImplPtr &req,
     const HttpResponsePtr &resp,
     const std::function<void(const HttpResponsePtr &)> &callback)
@@ -1057,7 +1061,7 @@ void HttpAppFrameworkImpl::callCallback(
 // on HttpRequest
 void HttpAppFrameworkImpl::onAsyncRequest(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+    std::function<void(const HttpResponsePtr &)> &&originCallback)
 {
     LOG_TRACE << "new request:" << req->peerAddr().toIpPort() << "->"
               << req->localAddr().toIpPort();
@@ -1069,10 +1073,16 @@ void HttpAppFrameworkImpl::onAsyncRequest(
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
         resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
         resp->setExpiredTime(0);
-        callback(resp);
+        originCallback(resp);
         return;
     }
     findSessionForRequest(req);
+
+    // Wrap callback to handle session
+    auto callback = [this, req, cb = std::move(originCallback)](
+                        const HttpResponsePtr &resp) {
+        handleSessionAndCallCallback(req, resp, cb);
+    };
 
     // pre-routing aop
     auto &aop = AopAdvice::instance();
@@ -1082,9 +1092,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(
                                   const HttpResponsePtr &resp) mutable {
                                   if (resp)
                                   {
-                                      callCallback(req,
-                                                   resp,
-                                                   std::move(callback));
+                                      callback(resp);
                                   }
                                   else
                                   {
@@ -1138,7 +1146,7 @@ void HttpAppFrameworkImpl::httpRequestPostRouting(
          callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
             if (resp)
             {
-                callCallback(req, resp, std::move(callback));
+                callback(resp);
             }
             else
             {
@@ -1170,7 +1178,7 @@ void HttpAppFrameworkImpl::httpRequestPassFilters(
          callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
             if (resp)
             {
-                callCallback(req, resp, std::move(callback));
+                callback(resp);
             }
             else
             {
@@ -1195,23 +1203,23 @@ void HttpAppFrameworkImpl::httpRequestPreHandling(
     // pre-handling aop
     auto &aop = AopAdvice::instance();
     aop.passPreHandlingObservers(req);
-    aop.passPreHandlingAdvices(
-        req,
-        [this,
-         req,
-         binderPtr = std::move(binderPtr),
-         callback = std::move(callback)](const HttpResponsePtr &resp) mutable {
-            if (resp)
-            {
-                callCallback(req, resp, std::move(callback));
-            }
-            else
-            {
-                httpRequestHandling(req,
-                                    std::move(binderPtr),
-                                    std::move(callback));
-            }
-        });
+    aop.passPreHandlingAdvices(req,
+                               [this,
+                                req,
+                                binderPtr = std::move(binderPtr),
+                                callback = std::move(callback)](
+                                   const HttpResponsePtr &resp) mutable {
+                                   if (resp)
+                                   {
+                                       callback(resp);
+                                   }
+                                   else
+                                   {
+                                       httpRequestHandling(req,
+                                                           std::move(binderPtr),
+                                                           std::move(callback));
+                                   }
+                               });
 }
 
 void HttpAppFrameworkImpl::httpRequestHandling(
@@ -1233,7 +1241,7 @@ void HttpAppFrameworkImpl::httpRequestHandling(
 
             // post-handling aop
             AopAdvice::instance().passPostHandlingAdvices(req, cachedResp);
-            callCallback(req, cachedResp, callback);
+            callback(cachedResp);
             return;
         }
         else
@@ -1265,7 +1273,7 @@ void HttpAppFrameworkImpl::httpRequestHandling(
             }
             // post-handling aop
             AopAdvice::instance().passPostHandlingAdvices(req, resp);
-            callCallback(req, resp, callback);
+            callback(resp);
         });
 }
 

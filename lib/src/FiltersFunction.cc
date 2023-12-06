@@ -28,61 +28,6 @@ static void doFilterChains(
     const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
     size_t index,
     const HttpRequestImplPtr &req,
-    const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
-        &callbackPtr,
-    std::function<void()> &&missCallback)
-{
-    if (index < filters.size())
-    {
-        auto &filter = filters[index];
-        filter->doFilter(
-            req,
-            [req, callbackPtr](const HttpResponsePtr &res) {
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              res,
-                                                              *callbackPtr);
-            },
-            [index,
-             req,
-             callbackPtr,
-             &filters,
-             missCallback = std::move(missCallback)]() mutable {
-                auto ioLoop = req->getLoop();
-                if (ioLoop && !ioLoop->isInLoopThread())
-                {
-                    ioLoop->queueInLoop([index,
-                                         req,
-                                         callbackPtr,
-                                         &filters,
-                                         missCallback = std::move(missCallback),
-                                         ioLoop]() mutable {
-                        doFilterChains(filters,
-                                       index + 1,
-                                       req,
-                                       callbackPtr,
-                                       std::move(missCallback));
-                    });
-                }
-                else
-                {
-                    doFilterChains(filters,
-                                   index + 1,
-                                   req,
-                                   callbackPtr,
-                                   std::move(missCallback));
-                }
-            });
-    }
-    else
-    {
-        missCallback();
-    }
-}
-
-static void doFilterChains(
-    const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
-    size_t index,
-    const HttpRequestImplPtr &req,
     std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &&callbackPtr)
 {

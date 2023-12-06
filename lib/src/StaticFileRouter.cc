@@ -219,7 +219,7 @@ void StaticFileRouter::route(
                         const HttpResponsePtr &resp) mutable {
                         if (resp)
                         {
-                            callback(resp);  // callCallback ?
+                            callback(resp);
                         }
                         else
                         {
@@ -352,7 +352,7 @@ void StaticFileRouter::sendStaticFileResponse(
                 std::make_shared<HttpResponseImpl>();
             resp->setStatusCode(k304NotModified);
             resp->setContentTypeCode(CT_NONE);
-            HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+            callback(resp);
             return;
         }
         // Check If-Range precondition
@@ -386,9 +386,7 @@ void StaticFileRouter::sendStaticFileResponse(
                         resp->addHeader("Expires",
                                         "Thu, 01 Jan 1970 00:00:00 GMT");
                     }
-                    HttpAppFrameworkImpl::instance().callCallback(req,
-                                                                  resp,
-                                                                  callback);
+                    callback(resp);
                     return;
                 }
                 case FileRangeParseResult::NotSatisfiable:
@@ -401,9 +399,7 @@ void StaticFileRouter::sendStaticFileResponse(
                              "bytes */%zu",
                              fileStat.fileSize_);
                     resp->addHeader("Content-Range", std::string(buf));
-                    HttpAppFrameworkImpl::instance().callCallback(req,
-                                                                  resp,
-                                                                  callback);
+                    callback(resp);
                     return;
                 }
                 /** rfc7233 4.4.
@@ -444,9 +440,7 @@ void StaticFileRouter::sendStaticFileResponse(
                     std::make_shared<HttpResponseImpl>();
                 resp->setStatusCode(k304NotModified);
                 resp->setContentTypeCode(CT_NONE);
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              resp,
-                                                              callback);
+                callback(resp);
                 return;
             }
         }
@@ -467,9 +461,7 @@ void StaticFileRouter::sendStaticFileResponse(
                     std::make_shared<HttpResponseImpl>();
                 resp->setStatusCode(k304NotModified);
                 resp->setContentTypeCode(CT_NONE);
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              resp,
-                                                              callback);
+                callback(resp);
                 return;
             }
         }
@@ -477,9 +469,7 @@ void StaticFileRouter::sendStaticFileResponse(
     if (cachedResp)
     {
         LOG_TRACE << "Using file cache";
-        HttpAppFrameworkImpl::instance().callCallback(req,
-                                                      cachedResp,
-                                                      callback);
+        callback(cachedResp);
         return;
     }
     // Check existence
@@ -574,11 +564,10 @@ void StaticFileRouter::sendStaticFileResponse(
                     staticFilesCache_->getThreadData().erase(filePath);
                 });
         }
-        HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+        callback(resp);
         return;
     }
     callback(resp);
-    return;
 }
 
 void StaticFileRouter::setFileTypes(const std::vector<std::string> &types)
