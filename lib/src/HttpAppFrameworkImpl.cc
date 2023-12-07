@@ -779,10 +779,9 @@ std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const
     return ret;
 }
 
-void HttpAppFrameworkImpl::handleSessionAndCallCallback(
+HttpResponsePtr HttpAppFrameworkImpl::handleSessionForResponse(
     const HttpRequestImplPtr &req,
-    const HttpResponsePtr &resp,
-    const std::function<void(const HttpResponsePtr &)> &callback)
+    const HttpResponsePtr &resp)
 {
     if (useSession_)
     {
@@ -807,8 +806,8 @@ void HttpAppFrameworkImpl::handleSessionAndCallCallback(
                     sessionid.setMaxAge(sessionMaxAge_);
                 newResp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
-                callback(newResp);
-                return;
+
+                return newResp;
             }
             else
             {
@@ -820,8 +819,8 @@ void HttpAppFrameworkImpl::handleSessionAndCallCallback(
                     sessionid.setMaxAge(sessionMaxAge_);
                 resp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
-                callback(resp);
-                return;
+
+                return resp;
             }
         }
         else if (resp->version() != req->version())
@@ -830,13 +829,12 @@ void HttpAppFrameworkImpl::handleSessionAndCallCallback(
                 *static_cast<HttpResponseImpl *>(resp.get()));
             newResp->setVersion(req->version());
             newResp->setExpiredTime(-1);  // make it temporary
-            callback(newResp);
-            return;
+
+            return newResp;
         }
         else
         {
-            callback(resp);
-            return;
+            return resp;
         }
     }
     else
@@ -847,12 +845,12 @@ void HttpAppFrameworkImpl::handleSessionAndCallCallback(
                 *static_cast<HttpResponseImpl *>(resp.get()));
             newResp->setVersion(req->version());
             newResp->setExpiredTime(-1);  // make it temporary
-            callback(newResp);
-            return;
+
+            return newResp;
         }
         else
         {
-            callback(resp);
+            return resp;
         }
     }
 }

@@ -213,9 +213,11 @@ void HttpServer::onRequests(
             onWebsocketRequest(
                 req,
                 [conn, wsConn, requestParser, req](
-                    const HttpResponsePtr &resp) mutable {
+                    const HttpResponsePtr &resp0) mutable {
                     if (conn->connected())
                     {
+                        auto resp = HttpAppFrameworkImpl::instance()
+                                        .handleSessionForResponse(req, resp0);
                         AopAdvice::instance().passPreSendingAdvices(req, resp);
                         if (resp->statusCode() == k101SwitchingProtocols)
                         {
@@ -328,7 +330,7 @@ void HttpServer::onRequests(
 
 void HttpServer::onHttpRequest(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&originCallback)
+    std::function<void(const HttpResponsePtr &)> &&callback)
 {
     LOG_TRACE << "new request:" << req->peerAddr().toIpPort() << "->"
               << req->localAddr().toIpPort();
@@ -340,20 +342,12 @@ void HttpServer::onHttpRequest(
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
         resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
         resp->setExpiredTime(0);
-        originCallback(resp);
+        callback(resp);
         return;
     }
 
     // TODO: move session related codes to its own singleton class
     HttpAppFrameworkImpl::instance().findSessionForRequest(req);
-    // Wrap callback to handle session
-    auto callback =
-        [req, cb = std::move(originCallback)](const HttpResponsePtr &resp) {
-            HttpAppFrameworkImpl::instance().handleSessionAndCallCallback(req,
-                                                                          resp,
-                                                                          cb);
-        };
-
     // pre-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPreRoutingObservers(req);
@@ -564,17 +558,10 @@ void HttpServer::httpRequestHandling(
 
 void HttpServer::onWebsocketRequest(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&originCallback,
+    std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
     HttpAppFrameworkImpl::instance().findSessionForRequest(req);
-    // Wrap callback to handle session
-    auto callback =
-        [req, cb = std::move(originCallback)](const HttpResponsePtr &resp) {
-            HttpAppFrameworkImpl::instance().handleSessionAndCallCallback(req,
-                                                                          resp,
-                                                                          cb);
-        };
     // pre-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPreRoutingObservers(req);
@@ -668,11 +655,14 @@ void HttpServer::handleResponse(
         return;
     }
 
-    response->setVersion(req->getVersion());
-    response->setCloseConnection(!req->keepAlive());
-    AopAdvice::instance().passPreSendingAdvices(req, response);
+    auto resp =
+        HttpAppFrameworkImpl::instance().handleSessionForResponse(req,
+                                                                  response);
+    resp->setVersion(req->getVersion());
+    resp->setCloseConnection(!req->keepAlive());
+    AopAdvice::instance().passPreSendingAdvices(req, resp);
 
-    auto newResp = getCompressedResponse(req, response, isHeadMethod);
+    auto newResp = getCompressedResponse(req, resp, isHeadMethod);
     if (conn->getLoop()->isInLoopThread())
     {
         /*

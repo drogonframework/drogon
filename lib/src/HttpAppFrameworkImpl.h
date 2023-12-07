@@ -654,10 +654,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     // TODO: move session related codes to its own singleton class
     void findSessionForRequest(const HttpRequestImplPtr &req);
-    void handleSessionAndCallCallback(
-        const HttpRequestImplPtr &req,
-        const HttpResponsePtr &resp,
-        const std::function<void(const HttpResponsePtr &)> &callback);
+    HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
+                                             const HttpResponsePtr &resp);
 
     // TODO: move connection constraints into its own class
     void onConnection(const trantor::TcpConnectionPtr &conn);
