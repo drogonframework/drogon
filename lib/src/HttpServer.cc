@@ -357,6 +357,11 @@ void HttpServer::onHttpRequest(
     // pre-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPreRoutingObservers(req);
+    if (!aop.hasPreRoutingAdvices())
+    {
+        httpRequestRouting(req, std::move(callback));
+        return;
+    }
     aop.passPreRoutingAdvices(req,
                               [req, callback = std::move(callback)](
                                   const HttpResponsePtr &resp) mutable {
@@ -411,6 +416,11 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req,
     // post-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPostRoutingObservers(req);
+    if (!aop.hasPostRoutingAdvices())
+    {
+        requestPassFilters(req, std::move(pack));
+        return;
+    }
     aop.passPostRoutingAdvices(req,
                                [req, pack = std::move(pack)](
                                    const HttpResponsePtr &resp) mutable {
@@ -465,6 +475,17 @@ void HttpServer::requestPreHandling(const HttpRequestImplPtr &req,
     // pre-handling aop
     auto &aop = AopAdvice::instance();
     aop.passPreHandlingObservers(req);
+    if (!aop.hasPreHandlingAdvices())
+    {
+        pack.wsConnPtr ? websocketRequestHandling(req,
+                                                  std::move(pack.binderPtr),
+                                                  std::move(pack.callback),
+                                                  std::move(pack.wsConnPtr))
+                       : httpRequestHandling(req,
+                                             std::move(pack.binderPtr),
+                                             std::move(pack.callback));
+        return;
+    }
     aop.passPreHandlingAdvices(
         req,
         [req, pack = std::move(pack)](const HttpResponsePtr &resp) mutable {
@@ -557,6 +578,11 @@ void HttpServer::onWebsocketRequest(
     // pre-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPreRoutingObservers(req);
+    if (!aop.hasPreRoutingAdvices())
+    {
+        websocketRequestRouting(req, std::move(callback), wsConnPtr);
+        return;
+    }
     aop.passPreRoutingAdvices(req,
                               [req, wsConnPtr, callback = std::move(callback)](
                                   const HttpResponsePtr &resp) mutable {

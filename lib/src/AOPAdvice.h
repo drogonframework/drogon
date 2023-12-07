@@ -31,6 +31,22 @@ class AopAdvice
         return inst;
     }
 
+    // Getters?
+    bool hasPreRoutingAdvices() const
+    {
+        return !preRoutingAdvices_.empty();
+    }
+
+    bool hasPostRoutingAdvices() const
+    {
+        return !postRoutingAdvices_.empty();
+    }
+
+    bool hasPreHandlingAdvices() const
+    {
+        return !preHandlingAdvices_.empty();
+    }
+
     // Setters?
     void registerSyncAdvice(
         const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
