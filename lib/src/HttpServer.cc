@@ -380,9 +380,8 @@ void HttpServer::httpRequestRouting(
         HttpAppFrameworkImpl::instance().getHttpRouter().route(req);
     if (result.result == RouteResult::Success)
     {
-        RequestParamPack pack{std::move(result.binderPtr),
-                              std::move(callback),
-                              nullptr};
+        HttpRequestParamPack pack{std::move(result.binderPtr),
+                                  std::move(callback)};
         requestPostRouting(req, std::move(pack));
         return;
     }
@@ -404,19 +403,19 @@ void HttpServer::httpRequestRouting(
                                                                      callback));
 }
 
-void HttpServer::requestPostRouting(const HttpRequestImplPtr &req,
-                                    RequestParamPack &&pack)
+template <typename Pack>
+void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
 {
     // post-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPostRoutingObservers(req);
     if (!aop.hasPostRoutingAdvices())
     {
-        requestPassFilters(req, std::move(pack));
+        requestPassFilters(req, std::forward<Pack>(pack));
         return;
     }
     aop.passPostRoutingAdvices(req,
-                               [req, pack = std::move(pack)](
+                               [req, pack = std::forward<Pack>(pack)](
                                    const HttpResponsePtr &resp) mutable {
                                    if (resp)
                                    {
@@ -429,19 +428,19 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req,
                                });
 }
 
-void HttpServer::requestPassFilters(const HttpRequestImplPtr &req,
-                                    RequestParamPack &&pack)
+template <typename Pack>
+void HttpServer::requestPassFilters(const HttpRequestImplPtr &req, Pack &&pack)
 {
     // pass filters
     auto &filters = pack.binderPtr->filters_;
     if (filters.empty())
     {
-        requestPreHandling(req, std::move(pack));
+        requestPreHandling(req, std::forward<Pack>(pack));
         return;
     }
     filters_function::doFilters(filters,
                                 req,
-                                [req, pack = std::move(pack)](
+                                [req, pack = std::forward<Pack>(pack)](
                                     const HttpResponsePtr &resp) mutable {
                                     if (resp)
                                     {
@@ -455,8 +454,8 @@ void HttpServer::requestPassFilters(const HttpRequestImplPtr &req,
                                 });
 }
 
-void HttpServer::requestPreHandling(const HttpRequestImplPtr &req,
-                                    RequestParamPack &&pack)
+template <typename Pack>
+void HttpServer::requestPreHandling(const HttpRequestImplPtr &req, Pack &&pack)
 {
     if (req->method() == Options)
     {
@@ -471,32 +470,43 @@ void HttpServer::requestPreHandling(const HttpRequestImplPtr &req,
     aop.passPreHandlingObservers(req);
     if (!aop.hasPreHandlingAdvices())
     {
-        pack.wsConnPtr ? websocketRequestHandling(req,
-                                                  std::move(pack.binderPtr),
-                                                  std::move(pack.callback),
-                                                  std::move(pack.wsConnPtr))
-                       : httpRequestHandling(req,
-                                             std::move(pack.binderPtr),
-                                             std::move(pack.callback));
+        if constexpr (std::is_same_v<std::decay_t<Pack>, HttpRequestParamPack>)
+        {
+            httpRequestHandling(req,
+                                std::move(pack.binderPtr),
+                                std::move(pack.callback));
+        }
+        else
+        {
+            websocketRequestHandling(req,
+                                     std::move(pack.binderPtr),
+                                     std::move(pack.callback),
+                                     std::move(pack.wsConnPtr));
+        }
         return;
     }
     aop.passPreHandlingAdvices(
         req,
-        [req, pack = std::move(pack)](const HttpResponsePtr &resp) mutable {
+        [req,
+         pack = std::forward<Pack>(pack)](const HttpResponsePtr &resp) mutable {
             if (resp)
             {
                 pack.callback(resp);
+                return;
+            }
+            if constexpr (std::is_same_v<std::decay_t<Pack>,
+                                         HttpRequestParamPack>)
+            {
+                httpRequestHandling(req,
+                                    std::move(pack.binderPtr),
+                                    std::move(pack.callback));
             }
             else
             {
-                pack.wsConnPtr
-                    ? websocketRequestHandling(req,
-                                               std::move(pack.binderPtr),
-                                               std::move(pack.callback),
-                                               std::move(pack.wsConnPtr))
-                    : httpRequestHandling(req,
-                                          std::move(pack.binderPtr),
-                                          std::move(pack.callback));
+                websocketRequestHandling(req,
+                                         std::move(pack.binderPtr),
+                                         std::move(pack.callback),
+                                         std::move(pack.wsConnPtr));
             }
         });
 }
@@ -595,9 +605,9 @@ void HttpServer::websocketRequestRouting(
 
     if (result.result == RouteResult::Success)
     {
-        RequestParamPack pack{std::move(result.binderPtr),
-                              std::move(callback),
-                              wsConnPtr};
+        WsRequestParamPack pack{std::move(result.binderPtr),
+                                std::move(callback),
+                                wsConnPtr};
         requestPostRouting(req, std::move(pack));
         return;
     }

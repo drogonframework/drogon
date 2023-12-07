@@ -77,7 +77,13 @@ class HttpServer : trantor::NonCopyable
                            const std::vector<HttpRequestImplPtr> &,
                            const std::shared_ptr<HttpRequestParser> &);
 
-    struct RequestParamPack
+    struct HttpRequestParamPack
+    {
+        std::shared_ptr<ControllerBinderBase> binderPtr;
+        std::function<void(const HttpResponsePtr &)> callback;
+    };
+
+    struct WsRequestParamPack
     {
         std::shared_ptr<ControllerBinderBase> binderPtr;
         std::function<void(const HttpResponsePtr &)> callback;
@@ -111,12 +117,12 @@ class HttpServer : trantor::NonCopyable
         WebSocketConnectionImplPtr &&wsConnPtr);
 
     // Http/Websocket shared handling steps
-    static void requestPostRouting(const HttpRequestImplPtr &req,
-                                   RequestParamPack &&pack);
-    static void requestPassFilters(const HttpRequestImplPtr &req,
-                                   RequestParamPack &&pack);
-    static void requestPreHandling(const HttpRequestImplPtr &req,
-                                   RequestParamPack &&pack);
+    template <typename Pack>
+    static void requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack);
+    template <typename Pack>
+    static void requestPassFilters(const HttpRequestImplPtr &req, Pack &&pack);
+    template <typename Pack>
+    static void requestPreHandling(const HttpRequestImplPtr &req, Pack &&pack);
 
     // Response buffering and sending
     static void handleResponse(
