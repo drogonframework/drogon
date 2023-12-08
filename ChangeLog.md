@@ -637,7 +637,7 @@ All notable changes to this project will be documented in this file.
 
 - Return on redis connection errors
 
-- Fix(multipart): Does not respect quotes in Content-Disposition header
+- Fix(MultiPart): Does not respect quotes in Content-Disposition header
 
 - Fix(cmake): error in FindFilesystem
 
