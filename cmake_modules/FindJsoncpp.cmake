@@ -44,7 +44,7 @@ if(Jsoncpp_FOUND)
     message(FATAL_ERROR "Error: jsoncpp lib is too old.....stop")
   endif()
   if(NOT WIN32)
-    exec_program(
+    execute_process(
       cat
       ARGS
       "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'"
