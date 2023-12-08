@@ -42,7 +42,18 @@ bool AopAdvice::passNewConnectionAdvices(
     return true;
 }
 
-HttpResponsePtr AopAdvice::passSyncAdvices(const HttpRequestPtr &req)
+void AopAdvice::passResponseCreationAdvices(const HttpResponsePtr &resp) const
+{
+    if (!responseCreationAdvices_.empty())
+    {
+        for (auto &advice : responseCreationAdvices_)
+        {
+            advice(resp);
+        }
+    }
+}
+
+HttpResponsePtr AopAdvice::passSyncAdvices(const HttpRequestPtr &req) const
 {
     for (auto &advice : syncAdvices_)
     {
@@ -54,7 +65,7 @@ HttpResponsePtr AopAdvice::passSyncAdvices(const HttpRequestPtr &req)
     return nullptr;
 }
 
-void AopAdvice::passPreRoutingObservers(const HttpRequestImplPtr &req)
+void AopAdvice::passPreRoutingObservers(const HttpRequestImplPtr &req) const
 {
     if (!preRoutingObservers_.empty())
     {
@@ -67,7 +78,7 @@ void AopAdvice::passPreRoutingObservers(const HttpRequestImplPtr &req)
 
 void AopAdvice::passPreRoutingAdvices(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+    std::function<void(const HttpResponsePtr &)> &&callback) const
 {
     if (preRoutingAdvices_.empty())
     {
@@ -80,7 +91,7 @@ void AopAdvice::passPreRoutingAdvices(
     doAdvicesChain(preRoutingAdvices_, 0, req, std::move(callbackPtr));
 }
 
-void AopAdvice::passPostRoutingObservers(const HttpRequestImplPtr &req)
+void AopAdvice::passPostRoutingObservers(const HttpRequestImplPtr &req) const
 {
     if (!postRoutingObservers_.empty())
     {
@@ -93,7 +104,7 @@ void AopAdvice::passPostRoutingObservers(const HttpRequestImplPtr &req)
 
 void AopAdvice::passPostRoutingAdvices(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+    std::function<void(const HttpResponsePtr &)> &&callback) const
 {
     if (postRoutingAdvices_.empty())
     {
@@ -106,7 +117,7 @@ void AopAdvice::passPostRoutingAdvices(
     doAdvicesChain(postRoutingAdvices_, 0, req, std::move(callbackPtr));
 }
 
-void AopAdvice::passPreHandlingObservers(const HttpRequestImplPtr &req)
+void AopAdvice::passPreHandlingObservers(const HttpRequestImplPtr &req) const
 {
     if (!preHandlingObservers_.empty())
     {
@@ -119,7 +130,7 @@ void AopAdvice::passPreHandlingObservers(const HttpRequestImplPtr &req)
 
 void AopAdvice::passPreHandlingAdvices(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+    std::function<void(const HttpResponsePtr &)> &&callback) const
 {
     if (preHandlingAdvices_.empty())
     {
@@ -133,7 +144,7 @@ void AopAdvice::passPreHandlingAdvices(
 }
 
 void AopAdvice::passPostHandlingAdvices(const HttpRequestImplPtr &req,
-                                        const HttpResponsePtr &resp)
+                                        const HttpResponsePtr &resp) const
 {
     for (auto &advice : postHandlingAdvices_)
     {
@@ -142,7 +153,7 @@ void AopAdvice::passPostHandlingAdvices(const HttpRequestImplPtr &req,
 }
 
 void AopAdvice::passPreSendingAdvices(const HttpRequestImplPtr &req,
-                                      const HttpResponsePtr &resp)
+                                      const HttpResponsePtr &resp) const
 {
     for (auto &advice : preSendingAdvices_)
     {

@@ -1186,6 +1186,12 @@ HttpAppFramework &HttpAppFrameworkImpl::registerNewConnectionAdvice(
     return *this;
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::registerHttpResponseCreationAdvice(
+    const std::function<void(const HttpResponsePtr &)> &advice)
+{
+    return *this;
+}
+
 HttpAppFramework &HttpAppFrameworkImpl::registerSyncAdvice(
     const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
 

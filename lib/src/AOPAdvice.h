@@ -50,94 +50,102 @@ class AopAdvice
 
     // Setters?
     void registerNewConnectionAdvice(
-        const std::function<bool(const trantor::InetAddress &,
-                                 const trantor::InetAddress &)> &advice)
+        std::function<bool(const trantor::InetAddress &,
+                           const trantor::InetAddress &)> advice)
     {
-        newConnectionAdvices_.emplace_back(advice);
+        newConnectionAdvices_.emplace_back(std::move(advice));
+    }
+
+    void registerHttpResponseCreationAdvice(
+        std::function<void(const HttpResponsePtr &)> advice)
+    {
+        responseCreationAdvices_.emplace_back(std::move(advice));
     }
 
     void registerSyncAdvice(
-        const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
+        std::function<HttpResponsePtr(const HttpRequestPtr &)> advice)
 
     {
-        syncAdvices_.emplace_back(advice);
+        syncAdvices_.emplace_back(std::move(advice));
     }
 
     void registerPreRoutingObserver(
-        const std::function<void(const HttpRequestPtr &)> &advice)
+        std::function<void(const HttpRequestPtr &)> advice)
     {
-        preRoutingObservers_.emplace_back(advice);
+        preRoutingObservers_.emplace_back(std::move(advice));
     }
 
     void registerPreRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &,
-                                 AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice)
+        std::function<void(const HttpRequestPtr &,
+                           AdviceCallback &&,
+                           AdviceChainCallback &&)> advice)
     {
-        preRoutingAdvices_.emplace_back(advice);
+        preRoutingAdvices_.emplace_back(std::move(advice));
     }
 
     void registerPostRoutingObserver(
-        const std::function<void(const HttpRequestPtr &)> &advice)
+        std::function<void(const HttpRequestPtr &)> advice)
     {
-        postRoutingObservers_.emplace_back(advice);
+        postRoutingObservers_.emplace_back(std::move(advice));
     }
 
     void registerPostRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &,
-                                 AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice)
+        std::function<void(const HttpRequestPtr &,
+                           AdviceCallback &&,
+                           AdviceChainCallback &&)> advice)
     {
-        postRoutingAdvices_.emplace_back(advice);
+        postRoutingAdvices_.emplace_back(std::move(advice));
     }
 
     void registerPreHandlingObserver(
-        const std::function<void(const HttpRequestPtr &)> &advice)
+        std::function<void(const HttpRequestPtr &)> advice)
     {
-        preHandlingObservers_.emplace_back(advice);
+        preHandlingObservers_.emplace_back(std::move(advice));
     }
 
     void registerPreHandlingAdvice(
-        const std::function<void(const HttpRequestPtr &,
-                                 AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice)
+        std::function<void(const HttpRequestPtr &,
+                           AdviceCallback &&,
+                           AdviceChainCallback &&)> advice)
     {
-        preHandlingAdvices_.emplace_back(advice);
+        preHandlingAdvices_.emplace_back(std::move(advice));
     }
 
     void registerPostHandlingAdvice(
-        const std::function<void(const HttpRequestPtr &,
-                                 const HttpResponsePtr &)> &advice)
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>
+            advice)
     {
-        postHandlingAdvices_.emplace_back(advice);
+        postHandlingAdvices_.emplace_back(std::move(advice));
     }
 
     void registerPreSendingAdvice(
-        const std::function<void(const HttpRequestPtr &,
-                                 const HttpResponsePtr &)> &advice)
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>
+            advice)
     {
-        preSendingAdvices_.emplace_back(advice);
+        preSendingAdvices_.emplace_back(std::move(advice));
     }
 
     // Executors
     bool passNewConnectionAdvices(const trantor::TcpConnectionPtr &conn) const;
-    HttpResponsePtr passSyncAdvices(const HttpRequestPtr &req);
-    void passPreRoutingObservers(const HttpRequestImplPtr &req);
+    void passResponseCreationAdvices(const HttpResponsePtr &resp) const;
+
+    HttpResponsePtr passSyncAdvices(const HttpRequestPtr &req) const;
+    void passPreRoutingObservers(const HttpRequestImplPtr &req) const;
     void passPreRoutingAdvices(
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void passPostRoutingObservers(const HttpRequestImplPtr &req);
+        std::function<void(const HttpResponsePtr &)> &&callback) const;
+    void passPostRoutingObservers(const HttpRequestImplPtr &req) const;
     void passPostRoutingAdvices(
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void passPreHandlingObservers(const HttpRequestImplPtr &req);
+        std::function<void(const HttpResponsePtr &)> &&callback) const;
+    void passPreHandlingObservers(const HttpRequestImplPtr &req) const;
     void passPreHandlingAdvices(
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
+        std::function<void(const HttpResponsePtr &)> &&callback) const;
     void passPostHandlingAdvices(const HttpRequestImplPtr &req,
-                                 const HttpResponsePtr &resp);
+                                 const HttpResponsePtr &resp) const;
     void passPreSendingAdvices(const HttpRequestImplPtr &req,
-                               const HttpResponsePtr &resp);
+                               const HttpResponsePtr &resp) const;
 
   private:
     using SyncAdvice = std::function<HttpResponsePtr(const HttpRequestPtr &)>;
@@ -153,6 +161,9 @@ class AopAdvice
     std::vector<std::function<bool(const trantor::InetAddress &,
                                    const trantor::InetAddress &)>>
         newConnectionAdvices_;
+    std::vector<std::function<void(const HttpResponsePtr &)>>
+        responseCreationAdvices_;
+
     std::vector<SyncAdvice> syncAdvices_;
     std::vector<SyncReqObserver> preRoutingObservers_;
     std::vector<AsyncAdvice> preRoutingAdvices_;

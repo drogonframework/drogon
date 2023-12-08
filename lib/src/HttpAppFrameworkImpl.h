@@ -140,17 +140,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         override;
 
     HttpAppFramework &registerHttpResponseCreationAdvice(
-        const std::function<void(const HttpResponsePtr &)> &advice) override
-    {
-        responseCreationAdvices_.emplace_back(advice);
-        return *this;
-    }
-
-    const std::vector<std::function<void(const HttpResponsePtr &)>>
-        &getResponseCreationAdvices() const
-    {
-        return responseCreationAdvices_;
-    }
+        const std::function<void(const HttpResponsePtr &)> &advice) override;
 
     HttpAppFramework &registerSyncAdvice(
         const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
@@ -758,8 +748,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     bool enableDateHeader_{true};
     bool reusePort_{false};
     std::vector<std::function<void()>> beginningAdvices_;
-    std::vector<std::function<void(const HttpResponsePtr &)>>
-        responseCreationAdvices_;
 
     ExceptionHandler exceptionHandler_{defaultExceptionHandler};
     bool enableCompressedRequest_{false};
