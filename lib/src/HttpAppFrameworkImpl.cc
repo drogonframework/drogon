@@ -723,7 +723,10 @@ HttpResponsePtr HttpAppFrameworkImpl::handleSessionForResponse(
     if (useSession_)
     {
         auto &sessionPtr = req->getSession();
-        assert(sessionPtr);
+        if (!sessionPtr)
+        {
+            return resp;
+        }
         if (sessionPtr->needToChangeSessionId())
         {
             sessionManagerPtr_->changeSessionId(sessionPtr);
