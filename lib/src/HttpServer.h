@@ -105,11 +105,11 @@ class HttpServer : trantor::NonCopyable
     static void onWebsocketRequest(
         const HttpRequestImplPtr &,
         std::function<void(const HttpResponsePtr &)> &&,
-        const WebSocketConnectionImplPtr &);
+        WebSocketConnectionImplPtr &&);
     static void websocketRequestRouting(
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
+        WebSocketConnectionImplPtr &&wsConnPtr);
     static void websocketRequestHandling(
         const HttpRequestImplPtr &req,
         std::shared_ptr<ControllerBinderBase> &&binderPtr,

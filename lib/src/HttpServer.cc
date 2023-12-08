@@ -230,7 +230,7 @@ void HttpServer::onRequests(
                         COZ_PROGRESS
                     }
                 },
-                wsConn);
+                std::move(wsConn));
             return;
         }
 
@@ -298,8 +298,7 @@ void HttpServer::onRequests(
         }
         else
         {
-            // Although the function has 'async' in its name, the
-            // handleResponse() callback may be called synchronously. In this
+            // `handleResponse()` callback may be called synchronously. In this
             // case, the generated response should not be sent right away, but
             // be queued in buffer instead. Those ready responses will be sent
             // together after the end of the for loop.
@@ -341,7 +340,7 @@ void HttpServer::onHttpRequest(
     {
         auto resp = HttpResponse::newHttpResponse();
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-        resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
+        resp->addHeader("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
         resp->setExpiredTime(0);
         callback(resp);
         return;
@@ -542,12 +541,12 @@ void HttpServer::httpRequestHandling(
 
     binderPtr->handleRequest(
         req,
+        // This is the actual callback being passed to controller
         [req, binderPtr, callback = std::move(callback)](
             const HttpResponsePtr &resp) {
-            // Cache
+            // Check if we need to cache the response
             if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
             {
-                // cache the response;
                 static_cast<HttpResponseImpl *>(resp.get())->makeHeaderString();
                 auto loop = req->getLoop();
                 if (loop->isInLoopThread())
@@ -570,7 +569,7 @@ void HttpServer::httpRequestHandling(
 void HttpServer::onWebsocketRequest(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
-    const WebSocketConnectionImplPtr &wsConnPtr)
+    WebSocketConnectionImplPtr &&wsConnPtr)
 {
     HttpAppFrameworkImpl::instance().findSessionForRequest(req);
     // pre-routing aop
@@ -578,28 +577,30 @@ void HttpServer::onWebsocketRequest(
     aop.passPreRoutingObservers(req);
     if (!aop.hasPreRoutingAdvices())
     {
-        websocketRequestRouting(req, std::move(callback), wsConnPtr);
+        websocketRequestRouting(req, std::move(callback), std::move(wsConnPtr));
         return;
     }
-    aop.passPreRoutingAdvices(req,
-                              [req, wsConnPtr, callback = std::move(callback)](
-                                  const HttpResponsePtr &resp) mutable {
-                                  if (resp)
-                                  {
-                                      callback(resp);
-                                  }
-                                  else
-                                  {
-                                      websocketRequestRouting(
-                                          req, std::move(callback), wsConnPtr);
-                                  }
-                              });
+    aop.passPreRoutingAdvices(
+        req,
+        [req, wsConnPtr = std::move(wsConnPtr), callback = std::move(callback)](
+            const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                callback(resp);
+            }
+            else
+            {
+                websocketRequestRouting(req,
+                                        std::move(callback),
+                                        std::move(wsConnPtr));
+            }
+        });
 }
 
 void HttpServer::websocketRequestRouting(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
-    const WebSocketConnectionImplPtr &wsConnPtr)
+    WebSocketConnectionImplPtr &&wsConnPtr)
 {
     RouteResult result =
         HttpAppFrameworkImpl::instance().getWebsocketRouter().route(req);
@@ -608,7 +609,7 @@ void HttpServer::websocketRequestRouting(
     {
         WsRequestParamPack pack{std::move(result.binderPtr),
                                 std::move(callback),
-                                wsConnPtr};
+                                std::move(wsConnPtr)};
         requestPostRouting(req, std::move(pack));
         return;
     }
