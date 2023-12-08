@@ -137,11 +137,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &registerNewConnectionAdvice(
         const std::function<bool(const trantor::InetAddress &,
                                  const trantor::InetAddress &)> &advice)
-        override
-    {
-        newConnectionAdvices_.emplace_back(advice);
-        return *this;
-    }
+        override;
 
     HttpAppFramework &registerHttpResponseCreationAdvice(
         const std::function<void(const HttpResponsePtr &)> &advice) override
@@ -647,18 +643,13 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const std::string &ext,
         const std::string &mime) override;
 
-    int64_t getConnectionCount() const override
-    {
-        return connectionNum_.load(std::memory_order_relaxed);
-    }
+    // should return unsigned type!
+    int64_t getConnectionCount() const override;
 
     // TODO: move session related codes to its own singleton class
     void findSessionForRequest(const HttpRequestImplPtr &req);
     HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &resp);
-
-    // TODO: move connection constraints into its own class
-    void onConnection(const trantor::TcpConnectionPtr &conn);
 
     // temporary solution, access 3 routers
     HttpControllersRouter &getHttpRouter() const
@@ -728,12 +719,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::string sslCertPath_;
     std::string sslKeyPath_;
 
-    size_t maxConnectionNumPerIP_{0};
-    std::unordered_map<std::string, size_t> connectionsNumMap_;
-
-    int64_t maxConnectionNum_{100000};
-    std::atomic<int64_t> connectionNum_{0};
-
     bool runAsDaemon_{false};
     bool handleSigterm_{true};
     bool relaunchOnError_{false};
@@ -773,9 +758,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     bool enableDateHeader_{true};
     bool reusePort_{false};
     std::vector<std::function<void()>> beginningAdvices_;
-    std::vector<std::function<bool(const trantor::InetAddress &,
-                                   const trantor::InetAddress &)>>
-        newConnectionAdvices_;
     std::vector<std::function<void(const HttpResponsePtr &)>>
         responseCreationAdvices_;
 

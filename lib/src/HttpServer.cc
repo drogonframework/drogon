@@ -21,6 +21,7 @@
 #include "AOPAdvice.h"
 #include "FiltersFunction.h"
 #include "HttpAppFrameworkImpl.h"
+#include "HttpConnectionLimit.h"
 #include "HttpRequestImpl.h"
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
@@ -100,12 +101,12 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
         auto parser = std::make_shared<HttpRequestParser>(conn);
         parser->reset();
         conn->setContext(parser);
-        HttpAppFrameworkImpl::instance().onConnection(conn);
+        HttpConnectionLimit::instance().tryAddConnection(conn);
     }
     else if (conn->disconnected())
     {
         LOG_TRACE << "conn disconnected!";
-        HttpAppFrameworkImpl::instance().onConnection(conn);
+        HttpConnectionLimit::instance().releaseConnection(conn);
         auto requestParser = conn->getContext<HttpRequestParser>();
         if (requestParser)
         {

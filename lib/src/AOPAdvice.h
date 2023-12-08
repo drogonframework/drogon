@@ -15,6 +15,7 @@
 #pragma once
 #include "impl_forwards.h"
 #include <drogon/drogon_callbacks.h>
+#include <trantor/net/InetAddress.h>
 #include <deque>
 #include <functional>
 #include <vector>
@@ -48,6 +49,13 @@ class AopAdvice
     }
 
     // Setters?
+    void registerNewConnectionAdvice(
+        const std::function<bool(const trantor::InetAddress &,
+                                 const trantor::InetAddress &)> &advice)
+    {
+        newConnectionAdvices_.emplace_back(advice);
+    }
+
     void registerSyncAdvice(
         const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
 
@@ -112,6 +120,7 @@ class AopAdvice
     }
 
     // Executors
+    bool passNewConnectionAdvices(const trantor::TcpConnectionPtr &conn) const;
     HttpResponsePtr passSyncAdvices(const HttpRequestPtr &req);
     void passPreRoutingObservers(const HttpRequestImplPtr &req);
     void passPreRoutingAdvices(
@@ -140,6 +149,10 @@ class AopAdvice
                                            AdviceChainCallback &&)>;
 
     // If we want to add aop functions anytime, we can add a mutex here
+
+    std::vector<std::function<bool(const trantor::InetAddress &,
+                                   const trantor::InetAddress &)>>
+        newConnectionAdvices_;
     std::vector<SyncAdvice> syncAdvices_;
     std::vector<SyncReqObserver> preRoutingObservers_;
     std::vector<AsyncAdvice> preRoutingAdvices_;

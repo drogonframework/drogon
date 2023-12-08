@@ -261,6 +261,7 @@ set(DROGON_SOURCES
     lib/src/HttpAppFrameworkImpl.cc
     lib/src/HttpBinder.cc
     lib/src/HttpClientImpl.cc
+    lib/src/HttpConnectionLimit.cc
     lib/src/HttpControllerBinder.cc
     lib/src/HttpControllersRouter.cc
     lib/src/HttpFileImpl.cc
@@ -305,6 +306,7 @@ set(private_headers
     lib/src/FiltersFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h
+    lib/src/HttpConnectionLimit.h
     lib/src/HttpControllerBinder.h
     lib/src/HttpControllersRouter.h
     lib/src/HttpFileImpl.h

@@ -15,6 +15,7 @@
 #include "AOPAdvice.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include <trantor/net/TcpConnection.h>
 
 namespace drogon
 {
@@ -27,6 +28,31 @@ static void doAdvicesChain(
     const HttpRequestImplPtr &req,
     std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &&callbackPtr);
+
+bool AopAdvice::passNewConnectionAdvices(
+    const trantor::TcpConnectionPtr &conn) const
+{
+    for (auto &advice : newConnectionAdvices_)
+    {
+        if (!advice(conn->localAddr(), conn->peerAddr()))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+HttpResponsePtr AopAdvice::passSyncAdvices(const HttpRequestPtr &req)
+{
+    for (auto &advice : syncAdvices_)
+    {
+        if (auto resp = advice(req))
+        {
+            return resp;
+        }
+    }
+    return nullptr;
+}
 
 void AopAdvice::passPreRoutingObservers(const HttpRequestImplPtr &req)
 {
@@ -122,18 +148,6 @@ void AopAdvice::passPreSendingAdvices(const HttpRequestImplPtr &req,
     {
         advice(req, resp);
     }
-}
-
-HttpResponsePtr AopAdvice::passSyncAdvices(const HttpRequestPtr &req)
-{
-    for (auto &advice : syncAdvices_)
-    {
-        if (auto resp = advice(req))
-        {
-            return resp;
-        }
-    }
-    return nullptr;
 }
 
 static void doAdvicesChain(

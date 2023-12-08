@@ -25,6 +25,7 @@
 #include "ConfigLoader.h"
 #include "DbClientManager.h"
 #include "HttpClientImpl.h"
+#include "HttpConnectionLimit.h"
 #include "HttpControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -407,14 +408,15 @@ HttpAppFramework &HttpAppFrameworkImpl::addListener(
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNum(
     size_t maxConnections)
 {
-    maxConnectionNum_ = maxConnections;
+    HttpConnectionLimit::instance().setMaxConnectionNum(maxConnections);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNumPerIP(
     size_t maxConnectionsPerIP)
 {
-    maxConnectionNumPerIP_ = maxConnectionsPerIP;
+    HttpConnectionLimit::instance().setMaxConnectionNumPerIP(
+        maxConnectionsPerIP);
     return *this;
 }
 
@@ -673,71 +675,6 @@ void HttpAppFrameworkImpl::run()
     // However, we should consider other components.
     ioLoopThreadPool_->start();
     getLoop()->loop();
-}
-
-void HttpAppFrameworkImpl::onConnection(const trantor::TcpConnectionPtr &conn)
-{
-    static std::mutex mtx;
-    LOG_TRACE << "connect!!!" << maxConnectionNum_
-              << " num=" << connectionNum_.load();
-    if (conn->connected())
-    {
-        if (connectionNum_.fetch_add(1, std::memory_order_relaxed) >=
-            maxConnectionNum_)
-        {
-            LOG_ERROR << "too much connections!force close!";
-            conn->forceClose();
-            return;
-        }
-        else if (maxConnectionNumPerIP_ > 0)
-        {
-            {
-                std::lock_guard<std::mutex> lock(mtx);
-                auto iter = connectionsNumMap_.find(conn->peerAddr().toIp());
-                if (iter == connectionsNumMap_.end())
-                {
-                    connectionsNumMap_[conn->peerAddr().toIp()] = 1;
-                }
-                else if (iter->second++ > maxConnectionNumPerIP_)
-                {
-                    conn->getLoop()->queueInLoop(
-                        [conn]() { conn->forceClose(); });
-                    return;
-                }
-            }
-        }
-        for (auto &advice : newConnectionAdvices_)
-        {
-            if (!advice(conn->peerAddr(), conn->localAddr()))
-            {
-                conn->forceClose();
-                return;
-            }
-        }
-    }
-    else
-    {
-        if (!conn->hasContext())
-        {
-            // If the connection is connected to the SSL port and then
-            // disconnected before the SSL handshake.
-            return;
-        }
-        connectionNum_.fetch_sub(1, std::memory_order_relaxed);
-        if (maxConnectionNumPerIP_ > 0)
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            auto iter = connectionsNumMap_.find(conn->peerAddr().toIp());
-            if (iter != connectionsNumMap_.end())
-            {
-                --iter->second;
-                if (iter->second <= 0)
-                {
-                    connectionsNumMap_.erase(iter);
-                }
-            }
-        }
-    }
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(
@@ -1234,7 +1171,20 @@ HttpAppFramework &HttpAppFrameworkImpl::registerCustomExtensionMime(
     return *this;
 }
 
+int64_t HttpAppFrameworkImpl::getConnectionCount() const
+{
+    return HttpConnectionLimit::instance().getConnectionNum();
+}
+
 // AOP registration methods
+
+HttpAppFramework &HttpAppFrameworkImpl::registerNewConnectionAdvice(
+    const std::function<bool(const trantor::InetAddress &,
+                             const trantor::InetAddress &)> &advice)
+{
+    AopAdvice::instance().registerNewConnectionAdvice(advice);
+    return *this;
+}
 
 HttpAppFramework &HttpAppFrameworkImpl::registerSyncAdvice(
     const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
