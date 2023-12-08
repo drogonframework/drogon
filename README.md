@@ -33,7 +33,7 @@ Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, OpenBSD
 * Support ARM Architecture;
 * Provide a convenient lightweight ORM implementation that supports for regular object-to-database bidirectional mapping;
 * Support plugins which can be installed by the configuration file at load time;
-* Support AOP with build-in joinpoints.
+* Support AOP with built-in joinpoints.
 * Support C++ coroutines
 
 ## A very simple example

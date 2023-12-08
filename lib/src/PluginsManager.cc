@@ -19,7 +19,7 @@ using namespace drogon;
 
 PluginsManager::~PluginsManager()
 {
-    // Shut down all plugins in reverse order of initializaiton.
+    // Shut down all plugins in reverse order of initialization.
     for (auto iter = initializedPlugins_.rbegin();
          iter != initializedPlugins_.rend();
          iter++)

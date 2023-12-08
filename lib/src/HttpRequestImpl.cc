@@ -729,7 +729,7 @@ void HttpRequestImpl::reserveBodySize(size_t length)
     }
     else
     {
-        // Store data of body to a temperary file
+        // Store data of body to a temporary file
         createTmpFile();
     }
 }

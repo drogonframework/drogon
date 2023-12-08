@@ -57,7 +57,7 @@ class Topic : public trantor::NonCopyable
     }
 
     /**
-     * @brief Subcribe to the topic.
+     * @brief Subscribe to the topic.
      *
      * @param handler is invoked when a message arrives.
      * @return SubscriberID
@@ -70,7 +70,7 @@ class Topic : public trantor::NonCopyable
     }
 
     /**
-     * @brief Subcribe to the topic.
+     * @brief Subscribe to the topic.
      *
      * @param handler is invoked when a message arrives.
      * @return SubscriberID

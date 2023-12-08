@@ -65,7 +65,7 @@ class DROGON_EXPORT WebSocketClient
     virtual WebSocketConnectionPtr getConnection() = 0;
 
     /**
-     * @brief Set messages handler. When a message is recieved from the server,
+     * @brief Set messages handler. When a message is received from the server,
      * the callback is called.
      *
      * @param callback The function to call when a message is received.
@@ -92,7 +92,7 @@ class DROGON_EXPORT WebSocketClient
 
 #ifdef __cpp_impl_coroutine
     /**
-     * @brief Set messages handler. When a message is recieved from the server,
+     * @brief Set messages handler. When a message is received from the server,
      * the callback is called.
      *
      * @param callback The function to call when a message is received.

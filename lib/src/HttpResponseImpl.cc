@@ -328,7 +328,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
         // The advantages of sendfile() can only be reflected in sending large
         // files.
         resp->setSendfile(fullPath);
-        // Must set length with the right value! Content-Length header relys on
+        // Must set length with the right value! Content-Length header relies on
         // this value.
         resp->setSendfileRange(offset, length);
     }
@@ -701,7 +701,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
         httpString->append("\r\n");
     }
 
-    LOG_TRACE << "reponse(no body):"
+    LOG_TRACE << "response(no body):"
               << std::string_view{httpString->peek(),
                                   httpString->readableBytes()};
     if (bodyPtr_)

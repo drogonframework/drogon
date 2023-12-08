@@ -173,7 +173,7 @@ class HttpBinderBase
 template <typename T>
 T &getControllerObj()
 {
-    // Initialization of function-local statics is guaranteed to occur only once
+    // Initialization of function-local statistics is guaranteed to occur only once
     // even when
     // called from multiple threads, and may be more efficient than the
     // equivalent code using std::call_once.
@@ -342,7 +342,7 @@ class HttpBinder : public HttpBinderBase
             {
                 try
                 {
-                    // Explcit copy because `callFunction` moves it
+                    // Explicit copy because `callFunction` moves it
                     auto cb = callback;
                     callFunction(req, cb, std::move(values)...);
                 }
@@ -368,7 +368,7 @@ class HttpBinder : public HttpBinderBase
                                           AsyncTask,
                                           typename traits::return_type>)
                         {
-                            // Explcit copy because `callFunction` moves it
+                            // Explicit copy because `callFunction` moves it
                             auto cb = callback;
                             callFunction(req, cb, std::move(values)...);
                         }
@@ -376,7 +376,7 @@ class HttpBinder : public HttpBinderBase
                                                Task<>,
                                                typename traits::return_type>)
                         {
-                            // Explcit copy because `callFunction` moves it
+                            // Explicit copy because `callFunction` moves it
                             auto cb = callback;
                             co_await callFunction(req,
                                                   cb,

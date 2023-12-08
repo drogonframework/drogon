@@ -60,7 +60,7 @@ void WebSocketChat::handleNewConnection(const HttpRequestPtr &req,
     s.id_ = chatRooms_.subscribe(s.chatRoomName_,
                                  [conn](const std::string &topic,
                                         const std::string &message) {
-                                     // Supress unused variable warning
+                                     // Suppress unused variable warning
                                      (void)topic;
                                      conn->send(message);
                                  });

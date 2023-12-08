@@ -71,7 +71,7 @@ All notable changes to this project will be documented in this file.
 
 - Add isHead() method to HttpRequest, to preserve information about the original method for use in the controller.
 
-- Allow omitting template paremeter in execCommandSync.
+- Allow omitting template parameter in execCommandSync.
 
 - Add a method to HttpRequest to access the matched routing parameters.
 
@@ -637,7 +637,7 @@ All notable changes to this project will be documented in this file.
 
 - Return on redis connection errors
 
-- Fix(MutliPart): Does not respect quotes in Content-Disposition header
+- Fix(multipart): Does not respect quotes in Content-Disposition header
 
 - Fix(cmake): error in FindFilesystem
 

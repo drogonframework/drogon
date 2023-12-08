@@ -136,7 +136,7 @@ class DROGON_EXPORT HttpRequest
     /// Get the header string identified by the key parameter.
     /**
      * @note
-     * If there is no the header, a empty string is retured.
+     * If there is no the header, a empty string is returned.
      * The key is case insensitive
      */
     virtual const std::string &getHeader(std::string key) const = 0;
@@ -269,7 +269,7 @@ class DROGON_EXPORT HttpRequest
     /// Return the enum type version of the request.
     /**
      * kHttp10 means Http version is 1.0
-     * kHttp11 means Http verison is 1.1
+     * kHttp11 means Http version is 1.1
      */
     virtual Version version() const = 0;
 
@@ -456,7 +456,7 @@ class DROGON_EXPORT HttpRequest
     /**
      * @brief Set the request object to the pass-through mode or not. It's not
      * by default when a new request object is created.
-     * In pass-through mode, no addtional headers (including user-agent,
+     * In pass-through mode, no additional headers (including user-agent,
      * connection, etc.) are added to the request. This mode is useful for some
      * applications such as a proxy.
      *

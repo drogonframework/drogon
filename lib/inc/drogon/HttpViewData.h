@@ -74,7 +74,7 @@ class DROGON_EXPORT HttpViewData
         viewData_[key] = ss.str();
     }
 
-    /// Insert a formated string identified by the key parameter.
+    /// Insert a formatted string identified by the key parameter.
     void insertFormattedString(const std::string &key, const char *format, ...)
     {
         std::string strBuffer;
