@@ -173,7 +173,7 @@ class HttpBinderBase
 template <typename T>
 T &getControllerObj()
 {
-    // Initialization of function-local statistics is guaranteed to occur only once
+    // Initialization of function-local statics is guaranteed to occur only once
     // even when
     // called from multiple threads, and may be more efficient than the
     // equivalent code using std::call_once.
