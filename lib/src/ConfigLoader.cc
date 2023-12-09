@@ -214,7 +214,7 @@ static void loadControllers(const Json::Value &controllers)
                 {
                     constraints.push_back(Post);
                 }
-                else if (strMethod == "head")  // The branch nerver work
+                else if (strMethod == "head")  // The branch never work
                 {
                     constraints.push_back(Head);
                 }

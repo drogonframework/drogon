@@ -63,7 +63,7 @@ static void printHelp(std::string_view argv0)
             << "options:\n"
             << "    -r            Run a specific test\n"
             << "    -s            Print successful tests\n"
-            << "    -l            List avaliable tests\n"
+            << "    -l            List available tests\n"
             << "    -h | --help   Print this help message\n";
 }
 
@@ -189,7 +189,7 @@ int run(int argc, char **argv)
 
     if (listTests)
     {
-        print() << "Avaliable Tests:\n";
+        print() << "Available Tests:\n";
         for (const auto &name : classNames)
         {
             if (name.find(DROGON_TESTCASE_PREIX_STR_) == 0)
@@ -207,7 +207,7 @@ int run(int argc, char **argv)
 
     std::vector<std::shared_ptr<TestCase>> testCases;
     // NOTE: Registering a dummy case prevents the test-end signal to be
-    // emited too early as there's always an case that hasn't finish
+    // emitted too early as there's always an case that hasn't finish
     std::shared_ptr<Case> dummyCase = std::make_shared<Case>("__dummy_dummy_");
     for (const auto &name : classNames)
     {

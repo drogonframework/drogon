@@ -90,7 +90,7 @@ int main()
         auto trans = clientPtr->newTransaction([](bool ret) {
             if (ret)
             {
-                std::cout << "commited!!!!!!" << std::endl;
+                std::cout << "committed!!!!!!" << std::endl;
             }
         });
         *trans << "update users set file=? where id != ?"

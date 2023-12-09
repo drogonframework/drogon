@@ -833,8 +833,8 @@ DROGON_TEST(PostgreTest)
 #ifdef __cpp_impl_coroutine
     auto coro_test = [clientPtr, TEST_CTX]() -> drogon::Task<> {
         /// 7 Test coroutines.
-        /// This is by no means comprehensive. But coroutine API is esentially a
-        /// wrapper arround callbacks. The purpose is to test the interface
+        /// This is by no means comprehensive. But coroutine API is essentially
+        /// a wrapper around callbacks. The purpose is to test the interface
         /// works 7.1 Basic queries
         try
         {
@@ -1721,8 +1721,8 @@ DROGON_TEST(MySQLTest)
 #ifdef __cpp_impl_coroutine
     auto coro_test = [clientPtr, TEST_CTX]() -> drogon::Task<> {
         /// 7 Test coroutines.
-        /// This is by no means comprehensive. But coroutine API is esentially a
-        /// wrapper arround callbacks. The purpose is to test the interface
+        /// This is by no means comprehensive. But coroutine API is essentially
+        /// a wrapper around callbacks. The purpose is to test the interface
         /// works 7.1 Basic queries
         try
         {
@@ -2523,8 +2523,8 @@ DROGON_TEST(SQLite3Test)
 #ifdef __cpp_impl_coroutine
     auto coro_test = [clientPtr, TEST_CTX]() -> drogon::Task<> {
         /// 7 Test coroutines.
-        /// This is by no means comprehensive. But coroutine API is esentially a
-        /// wrapper arround callbacks. The purpose is to test the interface
+        /// This is by no means comprehensive. But coroutine API is essentially
+        /// a wrapper around callbacks. The purpose is to test the interface
         /// works 7.1 Basic queries
         try
         {

@@ -90,7 +90,7 @@ class IOThreadStorage : public trantor::NonCopyable
     }
 
     /**
-     * @brief Get the thread storage asociate with the current thread
+     * @brief Get the thread storage associate with the current thread
      *
      * This function may only be called in a request handler
      */

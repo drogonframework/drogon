@@ -76,7 +76,7 @@ class DROGON_EXPORT Result
     using ConstReverseIterator = ConstReverseResultIterator;
     using ReverseIterator = ConstReverseIterator;
 
-    // C++ type type defination compatibility
+    // C++ type type definition compatibility
     using value_type = Row;
     using size_type = SizeType;
     using difference_type = DifferenceType;

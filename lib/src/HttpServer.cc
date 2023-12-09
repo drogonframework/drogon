@@ -529,7 +529,7 @@ static std::size_t chunkingCallback(
     cbParams->nDataReturned += nDataSize;
 #endif
     return nHeaderSize + nDataSize + 2;
-    // Alternative code if there are client softwares that do not support chunk
+    // Alternative code if there are client software that do not support chunk
     // size with leading zeroes
     //    auto nHeaderLen =
     // #ifdef _WIN32

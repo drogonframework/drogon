@@ -21,7 +21,7 @@ int main()
     LOG_DEBUG << "start!";
     // *clientPtr << "Drop table groups;" << Mode::Blocking >>
     //     [](const Result &r) {
-    //         LOG_DEBUG << "droped";
+    //         LOG_DEBUG << "dropped";
     //     } >>
     //     [](const DrogonDbException &e) {
     //         std::cout << e.base().what() << std::endl;

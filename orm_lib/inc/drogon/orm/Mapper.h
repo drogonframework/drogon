@@ -162,7 +162,7 @@ class Mapper
 
     /**
      * @brief Set limit and offset to achieve pagination.
-     * This method will override limit() and offset(), and will be overriden by
+     * This method will override limit() and offset(), and will be overridden by
      * them.
      *
      * @param page The page number

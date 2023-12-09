@@ -318,7 +318,7 @@ class DROGON_EXPORT Cookie
      * str2. so the function doesn't apply tolower to the second argument
      * str2 as it's always in lower case.
      *
-     * @return true if both strings are equall ignoring case
+     * @return true if both strings are equal ignoring case
      */
     static bool stricmp(const std::string_view str1,
                         const std::string_view str2)
