@@ -55,10 +55,10 @@ void RedisConnection::startConnectionInLoop()
             disconnectCallback_(shared_from_this());
         }
 
-        // Strange things have happened. In some kinds of connection errors, such
-        // as setsockopt errors, hiredis already set redisContext_->c.fd to -1,
-        // but the tcp connection stays in ESTABLISHED status. And there is no
-        // way for us to obtain the fd of that socket nor close it. This
+        // Strange things have happened. In some kinds of connection errors,
+        // such as setsockopt errors, hiredis already set redisContext_->c.fd to
+        // -1, but the tcp connection stays in ESTABLISHED status. And there is
+        // no way for us to obtain the fd of that socket nor close it. This
         // probably is a bug of hiredis.
         return;
     }
