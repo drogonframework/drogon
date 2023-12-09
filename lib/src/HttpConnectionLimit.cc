@@ -18,7 +18,7 @@ void HttpConnectionLimit::setMaxConnectionNumPerIP(size_t num)
     maxConnectionNumPerIP_ = num;
 }
 
-void HttpConnectionLimit::tryAddConnection(
+bool HttpConnectionLimit::tryAddConnection(
     const trantor::TcpConnectionPtr &conn)
 {
     assert(conn->connected());
@@ -26,8 +26,7 @@ void HttpConnectionLimit::tryAddConnection(
         maxConnectionNum_)
     {
         LOG_ERROR << "too much connections!force close!";
-        conn->forceClose();
-        return;
+        return false;
     }
     if (maxConnectionNumPerIP_ > 0)
     {
@@ -39,15 +38,11 @@ void HttpConnectionLimit::tryAddConnection(
         }
         if (numOnThisIp > maxConnectionNumPerIP_)
         {
-            conn->forceClose();
-            return;
+            return false;
         }
     }
 
-    if (!AopAdvice::instance().passNewConnectionAdvices(conn))
-    {
-        conn->forceClose();
-    }
+    return AopAdvice::instance().passNewConnectionAdvices(conn);
 }
 
 void HttpConnectionLimit::releaseConnection(

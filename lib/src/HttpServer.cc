@@ -101,7 +101,10 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
         auto parser = std::make_shared<HttpRequestParser>(conn);
         parser->reset();
         conn->setContext(parser);
-        HttpConnectionLimit::instance().tryAddConnection(conn);
+        if (!HttpConnectionLimit::instance().tryAddConnection(conn))
+        {
+            conn->forceClose();
+        }
     }
     else if (conn->disconnected())
     {

@@ -29,7 +29,7 @@ class HttpConnectionLimit
     void setMaxConnectionNum(size_t num);
     void setMaxConnectionNumPerIP(size_t num);
 
-    void tryAddConnection(const trantor::TcpConnectionPtr &conn);
+    bool tryAddConnection(const trantor::TcpConnectionPtr &conn);
     void releaseConnection(const trantor::TcpConnectionPtr &conn);
 
   private:
