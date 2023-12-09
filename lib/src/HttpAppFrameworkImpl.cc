@@ -1192,6 +1192,9 @@ HttpAppFramework &HttpAppFrameworkImpl::registerNewConnectionAdvice(
 HttpAppFramework &HttpAppFrameworkImpl::registerHttpResponseCreationAdvice(
     const std::function<void(const HttpResponsePtr &)> &advice)
 {
+    // Is this callback really an AOP?
+    // Maybe we should store them in HttpResponseImpl class as static member
+    AopAdvice::instance().registerHttpResponseCreationAdvice(advice);
     return *this;
 }
 
