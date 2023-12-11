@@ -2,7 +2,7 @@
 
 #include "HttpTransport.h"
 #include "HttpResponseImpl.h"
-// TOOD: Write our own HPACK implementation
+// TODO: Write our own HPACK implementation
 #include "hpack/HPacker.h"
 
 #include <variant>

@@ -1308,7 +1308,7 @@ void Http2Transport::responseSuccess(internal::H2Stream &stream)
     assert(it != streams.end());
     auto streamId = stream.streamId;
     // It is technically possible for a server to response before we fully
-    // send the body. So cehck and remove.
+    // send the body. So check and remove.
     pendingDataSend.erase(streamId);
     // XXX: This callback seems to be able to cause the destruction of this
     // object
@@ -1430,7 +1430,7 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     if (mPtr)
     {
         // TODO: Don't put everything in memory. This causes a lot of memory
-        // when uploading large files. Howerver, we are not doing better in 1.x
+        // when uploading large files. However, we are not doing better in 1.x
         // client either. So, meh.
         if (stream.multipartData.readableBytes() == 0)
             mPtr->renderMultipartFormData(stream.multipartData);
