@@ -467,7 +467,8 @@ class Http2Transport : public HttpTransport
     internal::OByteStream batchedSendBuffer;
     int32_t expectngContinuationStreamId = 0;
 
-    std::unordered_map<int32_t, size_t> pendingDataSend;
+    std::map<int32_t, size_t> pendingDataSend;
+    std::optional<decltype(pendingDataSend)::iterator> currentDataSend;
     bool reconnectionIssued = false;
     bool firstSettingsReceived = false;
 

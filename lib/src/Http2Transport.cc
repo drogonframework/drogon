@@ -889,25 +889,29 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             auto &f = std::get<WindowUpdateFrame>(frame);
             avaliableTxWindow += f.windowSizeIncrement;
 
-            auto it = pendingDataSend.begin();
+            if (currentDataSend.has_value() == false)
+                currentDataSend = pendingDataSend.begin();
+
+            auto it = *currentDataSend;
             if (it == pendingDataSend.end())
                 continue;
 
-            // HACK: Not so efficient round-robin to send all pending data
-            // if we can
             do
             {
                 auto &stream = streams[it->first];
                 auto [sentOffset, done] = sendBodyForStream(stream, it->second);
                 if (done)
                 {
-                    pendingDataSend.erase(it);
-                    it = pendingDataSend.begin();
+                    it = pendingDataSend.erase(it);
+                    currentDataSend = it;
                     continue;
                 }
                 it->second = sentOffset;
                 if (avaliableTxWindow != 0)
+                {
                     ++it;
+                    currentDataSend = it;
+                }
                 else
                     break;
             } while (it != pendingDataSend.end());
@@ -1258,7 +1262,13 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         auto [sentOffset, done] = sendBodyForStream(stream, it->second);
         if (done)
-            pendingDataSend.erase(it);
+        {
+            bool should_increment = currentDataSend.has_value() &&
+                                    (*currentDataSend)->second == streamId;
+            auto next = pendingDataSend.erase(it);
+            if (should_increment)
+                currentDataSend = next;
+        }
         else
             it->second = sentOffset;
     }
