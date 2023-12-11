@@ -172,7 +172,7 @@ class DROGON_EXPORT HttpResponse
         setContentTypeCodeAndCustomString(type, typeString, N - 1);
     }
 
-    /// Set the reponse content type and the character set.
+    /// Set the response content type and the character set.
     /// virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
     /// std::string &charSet = "utf-8") = 0;
 
@@ -187,7 +187,7 @@ class DROGON_EXPORT HttpResponse
     /// Get the header string identified by the key parameter.
     /**
      * @note
-     * If there is no the header, a empty string is retured.
+     * If there is no the header, a empty string is returned.
      * The key is case insensitive
      */
     virtual const std::string &getHeader(std::string key) const = 0;
@@ -231,7 +231,7 @@ class DROGON_EXPORT HttpResponse
     virtual void addCookie(Cookie &&cookie) = 0;
 
     /// Get the cookie identified by the key parameter.
-    /// If there is no the cookie, the empty cookie is retured.
+    /// If there is no the cookie, the empty cookie is returned.
     virtual const Cookie &getCookie(const std::string &key) const = 0;
 
     /// Get all cookies.
@@ -302,7 +302,7 @@ class DROGON_EXPORT HttpResponse
         return version();
     }
 
-    /// Reset the reponse object to its initial state
+    /// Reset the response object to its initial state
     virtual void clear() = 0;
 
     /// Set the expiration time of the response cache in memory.
@@ -320,7 +320,7 @@ class DROGON_EXPORT HttpResponse
 
     /// Get the json object from the server response.
     /// If the response is not in json format, then a empty shared_ptr is
-    /// retured.
+    /// returned.
     virtual const std::shared_ptr<Json::Value> &jsonObject() const = 0;
 
     const std::shared_ptr<Json::Value> &getJsonObject() const
@@ -339,9 +339,9 @@ class DROGON_EXPORT HttpResponse
     virtual const std::string &getJsonError() const = 0;
 
     /**
-     * @brief Set the reponse object to the pass-through mode or not. It's not
+     * @brief Set the response object to the pass-through mode or not. It's not
      * by default when a new response object is created.
-     * In pass-through mode, no addtional headers (including server, date,
+     * In pass-through mode, no additional headers (including server, date,
      * content-type and content-length, etc.) are added to the response. This
      * mode is useful for some applications such as a proxy.
      *
@@ -469,16 +469,17 @@ class DROGON_EXPORT HttpResponse
     /**
      * @note if the Connection is keep-alive and the Content-Length header is
      * not set, the stream data is sent with Transfer-Encoding: chunked.
-     * @param function to retrieve the stream data (stream ends when a zero size
-     * is returned) the callback will be called with nullptr when the send is
-     * finished/interruped so that it cleans up its internals.
+     * @param callback function to retrieve the stream data (stream ends when a
+     *                 zero size is returned) the callback will be called with
+     *                 nullptr when the send is finished/interrupted so that it
+     *                 cleans up its internals.
      * @param attachmentFileName if the parameter is not empty, the browser
      *                           does not open the file, but saves it as an
-     * attachment.
+     *                           attachment.
      * @param type the content type code. If the parameter is CT_NONE, the
      *             content type is set by drogon based on the file extension and
-     * typeString. Set it to CT_CUSTOM when no drogon internal content type
-     * matches.
+     *             typeString. Set it to CT_CUSTOM when no drogon internal
+     *             content type matches.
      * @param typeString the MIME string of the content type.
      */
     static HttpResponsePtr newStreamResponse(
@@ -507,7 +508,7 @@ class DROGON_EXPORT HttpResponse
 
     /**
      * @brief Returns the range of the file response as a pair ot size_t
-     * (offset, length). Length of 0 means the entire file is sent. Behaivor of
+     * (offset, length). Length of 0 means the entire file is sent. Behavior of
      * this function is undefined if the response if not a file response
      */
     using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }

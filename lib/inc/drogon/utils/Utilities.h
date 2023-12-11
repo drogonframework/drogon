@@ -126,6 +126,8 @@ DROGON_EXPORT void binaryStringToHex(const char *ptr,
 
 /// Split the string into multiple separated strings.
 /**
+ * @param str string to split
+ * @param separator element separator
  * @param acceptEmptyString if true, empty strings are accepted in the
  * result, for example, splitting the ",1,2,,3," by "," produces
  * ["","1","2","","3",""]
@@ -250,7 +252,7 @@ inline std::string getBlake2b(const std::string &originalString)
     return getBlake2b(originalString.data(), originalString.length());
 }
 
-/// Commpress or decompress data using gzip lib.
+/// Compress or decompress data using gzip lib.
 /**
  * @param data the input data
  * @param ndata the input data length
@@ -258,7 +260,7 @@ inline std::string getBlake2b(const std::string &originalString)
 DROGON_EXPORT std::string gzipCompress(const char *data, const size_t ndata);
 DROGON_EXPORT std::string gzipDecompress(const char *data, const size_t ndata);
 
-/// Commpress or decompress data using brotli lib.
+/// Compress or decompress data using brotli lib.
 /**
  * @param data the input data
  * @param ndata the input data length
@@ -403,8 +405,9 @@ inline std::string fromNativePath(const std::wstring &strPath)
     return trantor::utils::fromNativePath(strPath);
 }
 
-/// Replace all occurances of from to to inplace
+/// Replace all occurrences of from to to inplace
 /**
+ * @param s string to alter
  * @param from string to replace
  * @param to string to replace with
  */
@@ -418,7 +421,7 @@ DROGON_EXPORT void replaceAll(std::string &s,
  * @param ptr the pointer which the random bytes are stored to
  * @param size number of bytes to generate
  *
- * @return true if generation is successfull. False otherwise
+ * @return true if generation is successful. False otherwise
  */
 DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
 

@@ -103,14 +103,14 @@
         //enable_session: False by default
         "enable_session": true,
         "session_timeout": 0,
-        //string value of SameSite attribute of the Set-Cookie HTTP respone header
+        //string value of SameSite attribute of the Set-Cookie HTTP response header
         //valid value is either 'Null' (default), 'Lax', 'Strict' or 'None'
         "session_same_site" : "Null",
         //session_cookie_key: The cookie key of the session, "JSESSIONID" by default
         "session_cookie_key": "JSESSIONID",
         //session_max_age: The max age of the session cookie, -1 by default
         "session_max_age": -1,
-        //document_root: Root path of HTTP document, defaut path is ./
+        //document_root: Root path of HTTP document, default path is ./
         "document_root": "./",
         //home_page: Set the HTML file of the home page, the default value is "index.html"
         //If there isn't any handler registered to the path "/", the home page file in the "document_root" is send to clients as a response
@@ -184,7 +184,7 @@
         ],
         //max_connections: maximum number of connections, 100000 by default
         "max_connections": 100000,
-        //max_connections_per_ip: maximum number of connections per clinet, 0 by default which means no limit
+        //max_connections_per_ip: maximum number of connections per client, 0 by default which means no limit
         "max_connections_per_ip": 0,
         //Load_dynamic_views: False by default, when set to true, drogon
         //compiles and loads dynamically "CSP View Files" in directories defined
@@ -214,6 +214,9 @@
         },
         //log: Set log output, drogon output logs to stdout by default
         "log": {
+            //use_spdlog: Use spdlog library to log
+            //"use_spdlog": false
+            "use_spdlog": false,
             //log_path: Log file path,empty by default,in which case,logs are output to the stdout
             //"log_path": "./",
             //logfile_base_name: Log file base name,empty by default which means drogon names logfile as
@@ -318,6 +321,22 @@
             //It can be commented out
             "config": {
                 "path": "/metrics"
+            }
+        },
+        {
+            "name": "drogon::plugin::AccessLogger",
+            "dependencies": [],
+            "config": {
+                    "use_spdlog": false,
+                    "log_path": "",
+                    "log_format": "",
+                    "log_file": "access.log",
+                    "log_size_limit": 0,
+                    "use_local_time": true,
+                    "log_index": 0,
+                    // "show_microseconds": true,
+                    // "custom_time_format": "",
+                    // "use_real_ip": false
             }
         }
     ],

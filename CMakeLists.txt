@@ -20,6 +20,7 @@ CMAKE_DEPENDENT_OPTION(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON "BUILD_POS
 CMAKE_DEPENDENT_OPTION(BUILD_MYSQL "Build with mysql support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
+CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "USE_SUBMODULE" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 9)
@@ -38,11 +39,17 @@ set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    # Force MSVC to use UTF-8 because that's what we use. Otherwise it uses
-    # the default of whatever Windows sets and causes encoding issues.
-    message(STATUS "You are using MSVC. Forceing to use UTF-8")
-    add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+  # Force MSVC to use UTF-8 because that's what we use. Otherwise it uses
+  # the default of whatever Windows sets and causes encoding issues.
+  message(STATUS "You are using MSVC. Forceing to use UTF-8")
+  add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+  add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+  if (MSVC_VERSION GREATER_EQUAL 1914)
+    # Tells Visual Studio 2017 (15.7+) and newer to correctly set the value of the standard __cplusplus macro,
+    # instead of leaving it to 199711L and settings the effective c++ version in _MSVC_LANG
+    # Dropping support for older versions of VS would allow to only rely on __cplusplus
+    add_compile_options("/Zc:__cplusplus")
+  endif()
 endif ()
 
 add_library(${PROJECT_NAME})
@@ -69,6 +76,15 @@ if (BUILD_SHARED_LIBS)
         endif ()
     endif ()
 endif (BUILD_SHARED_LIBS)
+
+if(USE_SPDLOG)
+  find_package(spdlog CONFIG)
+  if(spdlog_FOUND)
+    message(STATUS "spdlog found!")
+    target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog_header_only)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC DROGON_SPDLOG_SUPPORT SPDLOG_FMT_EXTERNAL FMT_HEADER_ONLY)
+  endif(spdlog_FOUND)
+endif(USE_SPDLOG)
 
 if (NOT ${CMAKE_PLATFORM_NAME} STREQUAL "Windows" AND CMAKE_CXX_COMPILER_ID MATCHES GNU)
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)

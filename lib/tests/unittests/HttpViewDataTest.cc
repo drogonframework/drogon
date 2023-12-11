@@ -12,7 +12,7 @@ DROGON_TEST(HttpViewData)
     data.insertFormattedString("3", "third value is %d", 3);
     data.insertAsString("4", "4");
     data.insert("5", 5);
-    data.insert("5", std::string("5!!!!!!!"));  // Overides the old value
+    data.insert("5", std::string("5!!!!!!!"));  // Overrides the old value
     char six = 6;
     data.insert("6", six);
 

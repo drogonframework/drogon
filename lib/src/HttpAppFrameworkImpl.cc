@@ -64,6 +64,19 @@
 #define W_OK 02
 #endif
 
+#ifdef DROGON_SPDLOG_SUPPORT
+#include <spdlog/spdlog.h>
+#include <spdlog/logger.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+#ifdef _WIN32
+#include <spdlog/sinks/msvc_sink.h>
+// Damn antedeluvian M$ macros
+#undef min
+#undef max
+#endif
+#endif  // DROGON_SPDLOG_SUPPORT
+
 using namespace drogon;
 using namespace std::placeholders;
 
@@ -453,8 +466,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     const std::string &logPath,
     const std::string &logfileBaseName,
     size_t logfileSize,
-    size_t maxFiles)
+    size_t maxFiles,
+    bool useSpdlog)
 {
+#ifdef DROGON_SPDLOG_SUPPORT
+    logWithSpdlog_ = trantor::Logger::hasSpdLogSupport() && useSpdlog;
+#endif
     if (logPath.empty())
         return *this;
     // std::filesystem does not provide a method to check access permissions, so
@@ -1241,6 +1258,70 @@ HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
 
 HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
 {
+#ifdef DROGON_SPDLOG_SUPPORT
+    if (logWithSpdlog_)
+    {
+        // Do nothing if already initialized...
+        if (!trantor::Logger::getSpdLogger())
+        {
+            trantor::Logger::enableSpdLog();
+            // Get the new logger & replace its sinks with the ones of the
+            // config
+            auto logger = trantor::Logger::getSpdLogger();
+            std::vector<spdlog::sink_ptr> sinks;
+            if (!logPath_.empty())
+            {
+                // 1. check existence of folder or try to create it
+                auto fsLogPath =
+                    std::filesystem::path(utils::toNativePath(logPath_));
+                std::error_code fsErr;
+                if (!std::filesystem::create_directories(fsLogPath, fsErr) &&
+                    fsErr)
+                {
+                    LOG_ERROR << "could not create log file path";
+                    abort();
+                }
+                // 2. check if we have rights to create files in the folder
+                if (os_access(fsLogPath.native().c_str(), W_OK) != 0)
+                {
+                    LOG_ERROR << "cannot create files in log folder";
+                    abort();
+                }
+                std::filesystem::path baseName(logfileBaseName_);
+                if (baseName.empty())
+                    baseName = "drogon.log";
+                else
+                    baseName.replace_extension(".log");
+                auto sizeLimit = logfileSize_;
+                if (sizeLimit == 0)  // 0 is not allowed by this sink
+                    sizeLimit = std::numeric_limits<std::size_t>::max();
+                sinks.push_back(
+                    std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                        (fsLogPath / baseName).string(),
+                        sizeLimit,
+                        // spdlog limitation
+                        std::min(logfileMaxNum_, std::size_t(20000)),
+                        false));
+            }
+            else
+                sinks.push_back(
+                    std::make_shared<spdlog::sinks::stderr_color_sink_mt>());
+#if defined(_WIN32) && defined(_DEBUG)
+            // On Windows with debug, it may be interesting to have the logs
+            // directly in the Visual Studio / WinDbg console
+            sinks.push_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
+#endif
+            // Note: the new sinks won't use the format pattern set on the
+            // logger, and there is currently not way to retrieve it.
+            // So, set the same pattern as the one set on the logger in
+            // trantor::Logger::getDefaultSpdLogger()
+            for (auto &sink : sinks)
+                sink->set_pattern("%Y%m%d %T.%f %6t %^%=8l%$ [%!] %v - %s:%#");
+            logger->sinks() = sinks;
+        }
+        return *this;
+    }
+#endif  // DROGON_SPDLOG_SUPPORT
     if (!logPath_.empty() && !asyncFileLoggerPtr_)
     {
         // std::filesystem does not provide a method to check access

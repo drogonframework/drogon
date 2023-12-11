@@ -87,7 +87,7 @@ void* mmap(void *addr, size_t len, int prot, int flags, int fildes, OffsetType o
     errno = 0;
     
     if (len == 0 
-        /* Usupported protection combinations */
+        /* Unsupported protection combinations */
         || prot == PROT_EXEC)
     {
         errno = EINVAL;

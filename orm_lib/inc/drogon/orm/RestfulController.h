@@ -72,7 +72,7 @@ class DROGON_EXPORT RestfulController : trantor::NonCopyable
     /**
      * @brief make a criteria object for searching by ORM.
      *
-     * @param pJson the json object presenting search criterias.
+     * @param pJson the json object presenting search criteria.
      * The json object must be an array of depth 3.
      * for example:
      * [

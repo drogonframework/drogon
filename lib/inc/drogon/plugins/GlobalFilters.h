@@ -11,7 +11,7 @@ namespace drogon
 namespace plugin
 {
 /**
- * @brif This plugin is used to add global filters to all HTTP requests.
+ * @brief This plugin is used to add global filters to all HTTP requests.
  * The json configuration is as follows:
  *
  * @code

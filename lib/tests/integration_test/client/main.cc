@@ -533,7 +533,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             // Only tests for serving a file, not the content
-                            // since no good way to read it on Windows witout
+                            // since no good way to read it on Windows without
                             // using the wild-char API
                         });
     /// Test custom content types
@@ -546,7 +546,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->contentType() == CT_CUSTOM);
                             CHECK(resp->contentTypeString() == "text/markdown");
                         });
-    /// Unknown files shoul be application/octet-stream
+    /// Unknown files should be application/octet-stream
     req = HttpRequest::newHttpRequest();
     req->setPath("/main.cc");
     client->sendRequest(
@@ -942,7 +942,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                         });
 
     // Same as cacheTest2. But the server has to handle this API through regex.
-    // it is intentionally made that the final part of the path can't conatin
+    // it is intentionally made that the final part of the path can't contain
     // a "z" character
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);

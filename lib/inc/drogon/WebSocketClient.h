@@ -65,7 +65,7 @@ class DROGON_EXPORT WebSocketClient
     virtual WebSocketConnectionPtr getConnection() = 0;
 
     /**
-     * @brief Set messages handler. When a message is recieved from the server,
+     * @brief Set messages handler. When a message is received from the server,
      * the callback is called.
      *
      * @param callback The function to call when a message is received.
@@ -76,8 +76,7 @@ class DROGON_EXPORT WebSocketClient
                                  const WebSocketMessageType &)> &callback) = 0;
 
     /// Set the connection closing handler. When the connection is established
-    /// or closed, the @param callback is called with a bool parameter.
-
+    /// or closed, the @p callback is called with a bool parameter.
     /**
      * @brief Set the connection closing handler. When the websocket connection
      * is closed, the  callback is called
@@ -93,7 +92,7 @@ class DROGON_EXPORT WebSocketClient
 
 #ifdef __cpp_impl_coroutine
     /**
-     * @brief Set messages handler. When a message is recieved from the server,
+     * @brief Set messages handler. When a message is received from the server,
      * the callback is called.
      *
      * @param callback The function to call when a message is received.

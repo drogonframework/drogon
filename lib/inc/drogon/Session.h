@@ -182,7 +182,7 @@ class Session
     }
 
     /**
-     * @brief Retrun true if the data identified by the key exists.
+     * @brief Return true if the data identified by the key exists.
      */
     bool find(const std::string &key)
     {

@@ -55,12 +55,12 @@ Task<> CoroTest::this_will_fail(
     HttpRequestPtr req,
     std::function<void(const HttpResponsePtr &)> callback)
 {
-    throw std::runtime_error("This is an excpected exception");
+    throw std::runtime_error("This is an expected exception");
     callback(HttpResponse::newHttpResponse());
 }
 
 Task<HttpResponsePtr> CoroTest::this_will_fail2(HttpRequestPtr req)
 {
-    throw std::runtime_error("This is an excpected exception");
+    throw std::runtime_error("This is an expected exception");
     co_return HttpResponse::newHttpResponse();
 }

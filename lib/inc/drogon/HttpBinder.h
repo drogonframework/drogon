@@ -342,7 +342,7 @@ class HttpBinder : public HttpBinderBase
             {
                 try
                 {
-                    // Explcit copy because `callFunction` moves it
+                    // Explicit copy because `callFunction` moves it
                     auto cb = callback;
                     callFunction(req, cb, std::move(values)...);
                 }
@@ -368,7 +368,7 @@ class HttpBinder : public HttpBinderBase
                                           AsyncTask,
                                           typename traits::return_type>)
                         {
-                            // Explcit copy because `callFunction` moves it
+                            // Explicit copy because `callFunction` moves it
                             auto cb = callback;
                             callFunction(req, cb, std::move(values)...);
                         }
@@ -376,7 +376,7 @@ class HttpBinder : public HttpBinderBase
                                                Task<>,
                                                typename traits::return_type>)
                         {
-                            // Explcit copy because `callFunction` moves it
+                            // Explicit copy because `callFunction` moves it
                             auto cb = callback;
                             co_await callFunction(req,
                                                   cb,
@@ -401,6 +401,7 @@ class HttpBinder : public HttpBinderBase
                         LOG_ERROR
                             << "Exception not derived from std::exception";
                     }
+                    co_return;
                 }(req, std::move(callback), std::move(values)...);
             }
 #endif

@@ -71,7 +71,7 @@ All notable changes to this project will be documented in this file.
 
 - Add isHead() method to HttpRequest, to preserve information about the original method for use in the controller.
 
-- Allow omitting template paremeter in execCommandSync.
+- Allow omitting template parameter in execCommandSync.
 
 - Add a method to HttpRequest to access the matched routing parameters.
 
@@ -637,7 +637,7 @@ All notable changes to this project will be documented in this file.
 
 - Return on redis connection errors
 
-- Fix(MutliPart): Does not respect quotes in Content-Disposition header
+- Fix(MultiPart): Does not respect quotes in Content-Disposition header
 
 - Fix(cmake): error in FindFilesystem
 
@@ -795,7 +795,7 @@ All notable changes to this project will be documented in this file.
 
 - Use two-phase construction for the DbClientImpl and the RedisClientImpl.
 
-- Add support 'select <db>' for redis.
+- Add support 'select &lt;db&gt;' for redis.
 
 ### Fixed
 
@@ -1105,7 +1105,7 @@ All notable changes to this project will be documented in this file.
 
 - Destroy DNS resolver of HttpClient in the correct thread.
 
-- Add the header <cctype> to resolve build errors in VS2017.
+- Add the header &lt;cctype&gt; to resolve build errors in VS2017.
 
 ## [1.0.0-beta18] - 2020-06-14
 

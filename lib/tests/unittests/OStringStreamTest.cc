@@ -5,7 +5,7 @@
 
 DROGON_TEST(OStringStreamTest)
 {
-    SUBSECTION(interger)
+    SUBSECTION(integer)
     {
         drogon::OStringStream ss;
         ss << 12;

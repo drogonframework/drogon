@@ -351,7 +351,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &setLogPath(const std::string &logPath,
                                  const std::string &logfileBaseName,
                                  size_t logfileSize,
-                                 size_t maxFiles) override;
+                                 size_t maxFiles,
+                                 bool useSpdlog) override;
     HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) override;
     HttpAppFramework &setLogLocalTime(bool on) override;
 
@@ -760,6 +761,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     bool runAsDaemon_{false};
     bool handleSigterm_{true};
     bool relaunchOnError_{false};
+    bool logWithSpdlog_{false};
     std::string logPath_;
     std::string logfileBaseName_;
     size_t logfileSize_{100000000};

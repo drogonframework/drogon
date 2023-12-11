@@ -1,0 +1,15 @@
+# Look for typos in the codebase using codespell.
+# https://github.com/codespell-project/codespell#readme
+name: codespell
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  codespell:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: pip install --user codespell[toml]
+    - run: codespell --ignore-words-list="coo,folx,ot,statics,xwindows" --skip="*.csp"

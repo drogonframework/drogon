@@ -44,13 +44,14 @@ if(Jsoncpp_FOUND)
     message(FATAL_ERROR "Error: jsoncpp lib is too old.....stop")
   endif()
   if(NOT WIN32)
-    exec_program(
-      cat
-      ARGS
-      "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'"
-      OUTPUT_VARIABLE
-      jsoncpp_ver)
-    message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
+    execute_process(
+      COMMAND cat ${JSONCPP_INCLUDE_DIRS}/json/version.h
+      COMMAND grep JSONCPP_VERSION_STRING
+      COMMAND sed -e "s/.*define/define/"
+      COMMAND awk "{ printf \$3 }"
+      COMMAND sed -e "s/\"//g"
+      OUTPUT_VARIABLE jsoncpp_ver)
+    message(STATUS "jsoncpp version:" ${jsoncpp_ver})
     if(jsoncpp_ver LESS 1.7)
       message(
         FATAL_ERROR

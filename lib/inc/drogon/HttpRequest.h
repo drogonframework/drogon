@@ -136,7 +136,7 @@ class DROGON_EXPORT HttpRequest
     /// Get the header string identified by the key parameter.
     /**
      * @note
-     * If there is no the header, a empty string is retured.
+     * If there is no the header, a empty string is returned.
      * The key is case insensitive
      */
     virtual const std::string &getHeader(std::string key) const = 0;
@@ -317,7 +317,7 @@ class DROGON_EXPORT HttpRequest
     virtual const std::string &getParameter(const std::string &key) const = 0;
 
     /**
-     * @brief Get the optional parameter identified by the @param key. if the
+     * @brief Get the optional parameter identified by the @p key. if the
      * parameter doesn't exist, or the original parameter can't be converted to
      * a T type object, an empty optional object is returned.
      *
@@ -457,7 +457,7 @@ class DROGON_EXPORT HttpRequest
     /**
      * @brief Set the request object to the pass-through mode or not. It's not
      * by default when a new request object is created.
-     * In pass-through mode, no addtional headers (including user-agent,
+     * In pass-through mode, no additional headers (including user-agent,
      * connection, etc.) are added to the request. This mode is useful for some
      * applications such as a proxy.
      *
