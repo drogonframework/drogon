@@ -12,4 +12,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: pip install --user codespell[toml]
-    - run: codespell --ignore-words-list="coo,folx,ot,statics,xwindows,indexS" --skip="*.csp"
+    - run: codespell --ignore-words-list="coo,folx,ot,statics,xwindows,indexs" --skip="*.csp"
