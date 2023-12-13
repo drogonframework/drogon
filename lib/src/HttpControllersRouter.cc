@@ -178,7 +178,6 @@ struct SimpleControllerProcessResult
 
 static SimpleControllerProcessResult processSimpleControllerParams(
     const std::string &pathName,
-    const std::string &ctrlName,
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     std::string path(pathName);
@@ -218,13 +217,15 @@ void HttpControllersRouter::registerHttpSimpleController(
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
-    auto [path, validMethods, filters] =
-        processSimpleControllerParams(pathName, ctrlName, filtersAndMethods);
+    // Note: some compiler version failed to handle structural bindings with
+    // lambda capture
+    auto result = processSimpleControllerParams(pathName, filtersAndMethods);
+    std::string path = std::move(result.lowerPath);
 
     auto &item = simpleCtrlMap_[path];
     auto binder = std::make_shared<HttpSimpleControllerBinder>();
     binder->handlerName_ = ctrlName;
-    binder->filterNames_ = filters;
+    binder->filterNames_ = result.filters;
     drogon::app().getLoop()->queueInLoop([this, binder, ctrlName, path]() {
         auto &object_ = DrClassMap::getSingleInstance(ctrlName);
         auto controller =
@@ -240,7 +241,7 @@ void HttpControllersRouter::registerHttpSimpleController(
         binder->responseCache_ = IOThreadStorage<HttpResponsePtr>();
     });
 
-    addCtrlBinderToRouterItem(binder, item, validMethods);
+    addCtrlBinderToRouterItem(binder, item, result.validMethods);
 }
 
 void HttpControllersRouter::registerWebSocketController(
@@ -250,13 +251,13 @@ void HttpControllersRouter::registerWebSocketController(
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
-    auto [path, validMethods, filters] =
-        processSimpleControllerParams(pathName, ctrlName, filtersAndMethods);
+    auto result = processSimpleControllerParams(pathName, filtersAndMethods);
+    std::string path = std::move(result.lowerPath);
 
     auto &item = wsCtrlMap_[path];
     auto binder = std::make_shared<WebsocketControllerBinder>();
     binder->handlerName_ = ctrlName;
-    binder->filterNames_ = filters;
+    binder->filterNames_ = result.filters;
     drogon::app().getLoop()->queueInLoop([this, binder, ctrlName, path]() {
         auto &object_ = DrClassMap::getSingleInstance(ctrlName);
         auto controller =
@@ -271,7 +272,7 @@ void HttpControllersRouter::registerWebSocketController(
         binder->controller_ = controller;
     });
 
-    addCtrlBinderToRouterItem(binder, item, validMethods);
+    addCtrlBinderToRouterItem(binder, item, result.validMethods);
 }
 
 void HttpControllersRouter::addHttpRegex(
