@@ -15,7 +15,7 @@
 #pragma once
 
 #include "impl_forwards.h"
-#include "HttpControllerBinder.h"
+#include "ControllerBinderBase.h"
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpBinder.h>
 #include <drogon/IOThreadStorage.h>
@@ -33,6 +33,7 @@ namespace drogon
 {
 class HttpControllerBinder;
 class HttpSimpleControllerBinder;
+class WebsocketControllerBinder;
 
 class HttpControllersRouter : public trantor::NonCopyable
 {
@@ -41,6 +42,10 @@ class HttpControllersRouter : public trantor::NonCopyable
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
     void registerHttpSimpleController(
+        const std::string &pathName,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods);
+    void registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods);
@@ -55,35 +60,40 @@ class HttpControllersRouter : public trantor::NonCopyable
                       const std::vector<std::string> &filters,
                       const std::string &handlerName = "");
     RouteResult route(const HttpRequestImplPtr &req);
+    RouteResult routeWs(const HttpRequestImplPtr &req);
     std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
   private:
-    using CtrlBinderPtr = std::shared_ptr<HttpControllerBinder>;
-
     struct HttpControllerRouterItem
     {
         std::string pathParameterPattern_;
         std::string pathPattern_;
         std::regex regex_;
-        CtrlBinderPtr binders_[Invalid]{
+        std::shared_ptr<HttpControllerBinder> binders_[Invalid]{
             nullptr};  // The enum value of Invalid is the http methods number
     };
 
-    void addRegexCtrlBinder(const CtrlBinderPtr &binderPtr,
-                            const std::string &pathPattern,
-                            const std::string &pathParameterPattern,
-                            const std::vector<HttpMethod> &methods);
+    void addRegexCtrlBinder(
+        const std::shared_ptr<HttpControllerBinder> &binderPtr,
+        const std::string &pathPattern,
+        const std::string &pathParameterPattern,
+        const std::vector<HttpMethod> &methods);
     std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
     std::vector<HttpControllerRouterItem> ctrlVector_;
 
-    using SimpleCtrlBinderPtr = std::shared_ptr<HttpSimpleControllerBinder>;
-
     struct SimpleControllerRouterItem
     {
-        SimpleCtrlBinderPtr binders_[Invalid];
+        std::shared_ptr<HttpSimpleControllerBinder> binders_[Invalid];
     };
 
     std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
     std::mutex simpleCtrlMutex_;
+
+    struct WebSocketControllerRouterItem
+    {
+        std::shared_ptr<WebsocketControllerBinder> binders_[Invalid];
+    };
+
+    std::unordered_map<std::string, WebSocketControllerRouterItem> wsCtrlMap_;
 };
 }  // namespace drogon

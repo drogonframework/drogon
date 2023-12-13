@@ -37,7 +37,6 @@
 #include "SessionManager.h"
 #include "SharedLibManager.h"
 #include "StaticFileRouter.h"
-#include "WebsocketControllersRouter.h"
 
 #include <iostream>
 #include <memory>
@@ -82,7 +81,6 @@ using namespace std::placeholders;
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
     : staticFileRouterPtr_(new StaticFileRouter{}),
       httpCtrlsRouterPtr_(new HttpControllersRouter()),
-      websockCtrlsRouterPtr_(new WebsocketControllersRouter()),
       listenerManagerPtr_(new ListenerManager),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
@@ -292,9 +290,9 @@ HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!routersInit_);
-    websockCtrlsRouterPtr_->registerWebSocketController(pathName,
-                                                        ctrlName,
-                                                        filtersAndMethods);
+    httpCtrlsRouterPtr_->registerWebSocketController(pathName,
+                                                     ctrlName,
+                                                     filtersAndMethods);
     return *this;
 }
 
@@ -658,7 +656,6 @@ void HttpAppFrameworkImpl::run()
     routersInit_ = true;
     httpCtrlsRouterPtr_->init(ioLoops);
     staticFileRouterPtr_->init(ioLoops);
-    websockCtrlsRouterPtr_->init();
     getLoop()->queueInLoop([this]() {
         for (auto &adv : beginningAdvices_)
         {
@@ -710,10 +707,7 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
 
 std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const
 {
-    auto ret = httpCtrlsRouterPtr_->getHandlersInfo();
-    auto v = websockCtrlsRouterPtr_->getHandlersInfo();
-    ret.insert(ret.end(), v.begin(), v.end());
-    return ret;
+    return httpCtrlsRouterPtr_->getHandlersInfo();
 }
 
 HttpResponsePtr HttpAppFrameworkImpl::handleSessionForResponse(
@@ -966,7 +960,6 @@ void HttpAppFrameworkImpl::quit()
             // Release members in the reverse order of initialization
             listenerManagerPtr_->stopListening();
             listenerManagerPtr_.reset();
-            websockCtrlsRouterPtr_.reset();
             staticFileRouterPtr_.reset();
             httpCtrlsRouterPtr_.reset();
             pluginsManagerPtr_.reset();

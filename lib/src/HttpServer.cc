@@ -22,13 +22,13 @@
 #include "FiltersFunction.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpConnectionLimit.h"
+#include "HttpControllerBinder.h"
 #include "HttpRequestImpl.h"
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
 #include "HttpControllersRouter.h"
 #include "StaticFileRouter.h"
 #include "WebSocketConnectionImpl.h"
-#include "WebsocketControllersRouter.h"
 
 #if COZ_PROFILING
 #include <coz.h>
@@ -606,7 +606,7 @@ void HttpServer::websocketRequestRouting(
     WebSocketConnectionImplPtr &&wsConnPtr)
 {
     RouteResult result =
-        HttpAppFrameworkImpl::instance().getWebsocketRouter().route(req);
+        HttpAppFrameworkImpl::instance().getHttpRouter().routeWs(req);
 
     if (result.result == RouteResult::Success)
     {

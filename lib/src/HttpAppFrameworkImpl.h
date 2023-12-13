@@ -647,11 +647,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *httpCtrlsRouterPtr_;
     }
 
-    WebsocketControllersRouter &getWebsocketRouter() const
-    {
-        return *websockCtrlsRouterPtr_;
-    }
-
     StaticFileRouter &getStatisFileRouter() const
     {
         return *staticFileRouterPtr_;
@@ -684,7 +679,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
     std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
-    std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
 
     std::unique_ptr<ListenerManager> listenerManagerPtr_;
     std::unique_ptr<PluginsManager> pluginsManagerPtr_;

@@ -20,6 +20,7 @@
 #include "HttpAppFrameworkImpl.h"
 #include "FiltersFunction.h"
 #include <drogon/HttpSimpleController.h>
+#include <drogon/WebSocketController.h>
 #include <algorithm>
 #include <cctype>
 #include <deque>
@@ -53,10 +54,15 @@ void HttpControllersRouter::init(
                 }
             }
         }
-        corsMethods->pop_back();
+        corsMethods->pop_back();  // remove last comma
     };
 
     for (auto &iter : simpleCtrlMap_)
+    {
+        initFiltersAndCorsMethods(iter.second);
+    }
+
+    for (auto &iter : wsCtrlMap_)
     {
         initFiltersAndCorsMethods(iter.second);
     }
@@ -109,6 +115,21 @@ std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
                     item.first,
                     (HttpMethod)i,
                     std::string("HttpSimpleController: ") +
+                        item.second.binders_[i]->handlerName_);
+                ret.emplace_back(std::move(info));
+            }
+        }
+    }
+    for (auto &item : wsCtrlMap_)
+    {
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            if (item.second.binders_[i])
+            {
+                auto info = std::tuple<std::string, HttpMethod, std::string>(
+                    item.first,
+                    (HttpMethod)i,
+                    std::string("WebsocketController: ") +
                         item.second.binders_[i]->handlerName_);
                 ret.emplace_back(std::move(info));
             }
@@ -196,6 +217,51 @@ void HttpControllersRouter::registerHttpSimpleController(
         binder->controller_ = controller;
         // Recreate this with the correct number of threads.
         binder->responseCache_ = IOThreadStorage<HttpResponsePtr>();
+    });
+
+    addCtrlBinderToRouterItem(binder, item, validMethods);
+}
+
+void HttpControllersRouter::registerWebSocketController(
+    const std::string &pathName,
+    const std::string &ctrlName,
+    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+{
+    assert(!pathName.empty());
+    assert(!ctrlName.empty());
+    std::string path(pathName);
+    std::transform(pathName.begin(),
+                   pathName.end(),
+                   path.begin(),
+                   [](unsigned char c) { return tolower(c); });
+    std::vector<HttpMethod> validMethods;
+    std::vector<std::string> filters;
+    for (auto const &filterOrMethod : filtersAndMethods)
+    {
+        if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
+        {
+            filters.push_back(filterOrMethod.getFilterName());
+        }
+        else if (filterOrMethod.type() == internal::ConstraintType::HttpMethod)
+        {
+            validMethods.push_back(filterOrMethod.getHttpMethod());
+        }
+        else
+        {
+            LOG_ERROR << "Invalid controller constraint type";
+            exit(1);
+        }
+    }
+    auto &item = wsCtrlMap_[path];
+    auto binder = std::make_shared<WebsocketControllerBinder>();
+    binder->handlerName_ = ctrlName;
+    binder->filterNames_ = filters;
+    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+        auto &object_ = DrClassMap::getSingleInstance(ctrlName);
+        auto controller =
+            std::dynamic_pointer_cast<WebSocketControllerBase>(object_);
+        assert(controller);
+        binder->controller_ = controller;
     });
 
     addCtrlBinderToRouterItem(binder, item, validMethods);
@@ -584,8 +650,34 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
     return {RouteResult::Success, binder};
 }
 
+RouteResult HttpControllersRouter::routeWs(const HttpRequestImplPtr &req)
+{
+    std::string wsKey = req->getHeaderBy("sec-websocket-key");
+    if (!wsKey.empty())
+    {
+        std::string pathLower(req->path().length(), 0);
+        std::transform(req->path().begin(),
+                       req->path().end(),
+                       pathLower.begin(),
+                       [](unsigned char c) { return tolower(c); });
+        auto iter = wsCtrlMap_.find(pathLower);
+        if (iter != wsCtrlMap_.end())
+        {
+            auto &ctrlInfo = iter->second;
+            req->setMatchedPathPattern(iter->first);
+            auto &binder = ctrlInfo.binders_[req->method()];
+            if (!binder)
+            {
+                return {RouteResult::MethodNotAllowed, nullptr};
+            }
+            return {RouteResult::Success, binder};
+        }
+    }
+    return {RouteResult::NotFound, nullptr};
+}
+
 void HttpControllersRouter::addRegexCtrlBinder(
-    const CtrlBinderPtr &binderPtr,
+    const std::shared_ptr<HttpControllerBinder> &binderPtr,
     const std::string &pathPattern,
     const std::string &pathParameterPattern,
     const std::vector<HttpMethod> &methods)
