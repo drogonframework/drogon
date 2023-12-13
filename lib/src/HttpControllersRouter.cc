@@ -86,62 +86,55 @@ void HttpControllersRouter::init(
 std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
 {
     std::vector<HttpHandlerInfo> ret;
-    auto gatherInfo = [&](const auto &item) {
+    auto gatherInfo = [&ret](const std::string &path, const auto &item) {
         for (size_t i = 0; i < Invalid; ++i)
         {
             if (item.binders_[i])
             {
-                auto description =
-                    item.binders_[i]->handlerName_.empty()
-                        ? std::string("Handler: ") +
-                              item.binders_[i]->binderPtr_->handlerName()
-                        : std::string("HttpController: ") +
-                              item.binders_[i]->handlerName_;
-                auto info = std::tuple<std::string, HttpMethod, std::string>(
-                    item.pathPattern_, (HttpMethod)i, std::move(description));
-                ret.emplace_back(std::move(info));
+                std::string description;
+                if constexpr (std::is_same_v<std::decay_t<decltype(item)>,
+                                             SimpleControllerRouterItem>)
+
+                {
+                    description = std::string("HttpSimpleController: ") +
+                                  item.binders_[i]->handlerName_;
+                }
+                else if constexpr (std::is_same_v<
+                                       std::decay_t<decltype(item)>,
+                                       WebSocketControllerRouterItem>)
+                {
+                    description = std::string("WebsocketController: ") +
+                                  item.binders_[i]->handlerName_;
+                }
+                else
+                {
+                    description =
+                        item.binders_[i]->handlerName_.empty()
+                            ? std::string("Handler: ") +
+                                  item.binders_[i]->binderPtr_->handlerName()
+                            : std::string("HttpController: ") +
+                                  item.binders_[i]->handlerName_;
+                }
+                ret.emplace_back(path, (HttpMethod)i, std::move(description));
             }
         }
     };
 
-    // TODO: combine
-    for (auto &item : simpleCtrlMap_)
+    for (auto &[path, item] : simpleCtrlMap_)
     {
-        for (size_t i = 0; i < Invalid; ++i)
-        {
-            if (item.second.binders_[i])
-            {
-                auto info = std::tuple<std::string, HttpMethod, std::string>(
-                    item.first,
-                    (HttpMethod)i,
-                    std::string("HttpSimpleController: ") +
-                        item.second.binders_[i]->handlerName_);
-                ret.emplace_back(std::move(info));
-            }
-        }
-    }
-    for (auto &item : wsCtrlMap_)
-    {
-        for (size_t i = 0; i < Invalid; ++i)
-        {
-            if (item.second.binders_[i])
-            {
-                auto info = std::tuple<std::string, HttpMethod, std::string>(
-                    item.first,
-                    (HttpMethod)i,
-                    std::string("WebsocketController: ") +
-                        item.second.binders_[i]->handlerName_);
-                ret.emplace_back(std::move(info));
-            }
-        }
+        gatherInfo(path, item);
     }
     for (auto &item : ctrlVector_)
     {
-        gatherInfo(item);
+        gatherInfo(item.pathPattern_, item);
     }
-    for (auto &data : ctrlMap_)
+    for (auto &[key, item] : ctrlMap_)
     {
-        gatherInfo(data.second);
+        gatherInfo(item.pathPattern_, item);
+    }
+    for (auto &[path, item] : wsCtrlMap_)
+    {
+        gatherInfo(path, item);
     }
     return ret;
 }
