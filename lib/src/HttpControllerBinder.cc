@@ -1,3 +1,17 @@
+/**
+ *
+ *  @file HttpControllerBinder.cc
+ *  @author Nitromelon
+ *
+ *  Copyright 2023, Nitromelon.  All rights reserved.
+ *  https://github.com/drogonframework/drogon
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  Drogon
+ *
+ */
+
 #include "HttpControllerBinder.h"
 #include "HttpResponseImpl.h"
 #include <drogon/HttpSimpleController.h>

@@ -1,6 +1,16 @@
-//
-// Created by wanchen.he on 2023/12/8.
-//
+/**
+ *
+ *  @file HttpConnectionLimit.cc
+ *  @author Nitromelon
+ *
+ *  Copyright 2023, Nitromelon.  All rights reserved.
+ *  https://github.com/drogonframework/drogon
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  Drogon
+ *
+ */
 
 #include "HttpConnectionLimit.h"
 #include "AOPAdvice.h"
