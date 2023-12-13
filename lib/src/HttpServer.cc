@@ -379,8 +379,7 @@ void HttpServer::httpRequestRouting(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     // How to access router here?? Make router class singleton?
-    RouteResult result =
-        HttpAppFrameworkImpl::instance().getHttpRouter().route(req);
+    RouteResult result = HttpControllersRouter::instance().route(req);
     if (result.result == RouteResult::Success)
     {
         HttpRequestParamPack pack{std::move(result.binderPtr),
@@ -401,9 +400,7 @@ void HttpServer::httpRequestRouting(
     {
         req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
     }
-    HttpAppFrameworkImpl::instance().getStatisFileRouter().route(req,
-                                                                 std::move(
-                                                                     callback));
+    StaticFileRouter::instance().route(req, std::move(callback));
 }
 
 template <typename Pack>
@@ -605,8 +602,7 @@ void HttpServer::websocketRequestRouting(
     std::function<void(const HttpResponsePtr &)> &&callback,
     WebSocketConnectionImplPtr &&wsConnPtr)
 {
-    RouteResult result =
-        HttpAppFrameworkImpl::instance().getHttpRouter().routeWs(req);
+    RouteResult result = HttpControllersRouter::instance().routeWs(req);
 
     if (result.result == RouteResult::Success)
     {

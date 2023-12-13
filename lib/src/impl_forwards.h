@@ -26,8 +26,6 @@ using HttpResponseImplPtr = std::shared_ptr<HttpResponseImpl>;
 class WebSocketConnectionImpl;
 using WebSocketConnectionImplPtr = std::shared_ptr<WebSocketConnectionImpl>;
 class HttpRequestParser;
-class StaticFileRouter;
-class HttpControllersRouter;
 class PluginsManager;
 class ListenerManager;
 class SharedLibManager;

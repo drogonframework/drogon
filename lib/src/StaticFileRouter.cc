@@ -61,6 +61,14 @@ void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
     }
 }
 
+void StaticFileRouter::reset()
+{
+    staticFilesCacheMap_.reset();
+    staticFilesCache_.reset();
+    ioLocationsPtr_.reset();
+    locations_.clear();
+}
+
 void StaticFileRouter::route(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)

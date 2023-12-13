@@ -83,6 +83,14 @@ void HttpControllersRouter::init(
     }
 }
 
+void HttpControllersRouter::reset()
+{
+    simpleCtrlMap_.clear();
+    ctrlMap_.clear();
+    ctrlVector_.clear();
+    wsCtrlMap_.clear();
+}
+
 std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
 {
     std::vector<HttpHandlerInfo> ret;

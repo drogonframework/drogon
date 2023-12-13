@@ -38,8 +38,15 @@ class WebsocketControllerBinder;
 class HttpControllersRouter : public trantor::NonCopyable
 {
   public:
-    HttpControllersRouter() = default;
+    static HttpControllersRouter &instance()
+    {
+        static HttpControllersRouter inst;
+        return inst;
+    }
+
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
+    // clean all resources
+    void reset();
 
     void registerHttpSimpleController(
         const std::string &pathName,

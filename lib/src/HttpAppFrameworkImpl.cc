@@ -79,9 +79,7 @@ using namespace drogon;
 using namespace std::placeholders;
 
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
-    : staticFileRouterPtr_(new StaticFileRouter{}),
-      httpCtrlsRouterPtr_(new HttpControllersRouter()),
-      listenerManagerPtr_(new ListenerManager),
+    : listenerManagerPtr_(new ListenerManager),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
       redisClientManagerPtr_(new nosql::RedisClientManager),
@@ -194,49 +192,49 @@ HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
 
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFilesCacheTime(int cacheTime)
 {
-    staticFileRouterPtr_->setStaticFilesCacheTime(cacheTime);
+    StaticFileRouter::instance().setStaticFilesCacheTime(cacheTime);
     return *this;
 }
 
 int HttpAppFrameworkImpl::staticFilesCacheTime() const
 {
-    return staticFileRouterPtr_->staticFilesCacheTime();
+    return StaticFileRouter::instance().staticFilesCacheTime();
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setGzipStatic(bool useGzipStatic)
 {
-    staticFileRouterPtr_->setGzipStatic(useGzipStatic);
+    StaticFileRouter::instance().setGzipStatic(useGzipStatic);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setBrStatic(bool useGzipStatic)
 {
-    staticFileRouterPtr_->setBrStatic(useGzipStatic);
+    StaticFileRouter::instance().setBrStatic(useGzipStatic);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setImplicitPageEnable(
     bool useImplicitPage)
 {
-    staticFileRouterPtr_->setImplicitPageEnable(useImplicitPage);
+    StaticFileRouter::instance().setImplicitPageEnable(useImplicitPage);
     return *this;
 }
 
 bool HttpAppFrameworkImpl::isImplicitPageEnabled() const
 {
-    return staticFileRouterPtr_->isImplicitPageEnabled();
+    return StaticFileRouter::instance().isImplicitPageEnabled();
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setImplicitPage(
     const std::string &implicitPageFile)
 {
-    staticFileRouterPtr_->setImplicitPage(implicitPageFile);
+    StaticFileRouter::instance().setImplicitPage(implicitPageFile);
     return *this;
 }
 
 const std::string &HttpAppFrameworkImpl::getImplicitPage() const
 {
-    return staticFileRouterPtr_->getImplicitPage();
+    return StaticFileRouter::instance().getImplicitPage();
 }
 #ifndef _WIN32
 HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
@@ -280,7 +278,7 @@ HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
 HttpAppFramework &HttpAppFrameworkImpl::setFileTypes(
     const std::vector<std::string> &types)
 {
-    staticFileRouterPtr_->setFileTypes(types);
+    StaticFileRouter::instance().setFileTypes(types);
     return *this;
 }
 
@@ -290,9 +288,8 @@ HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!routersInit_);
-    httpCtrlsRouterPtr_->registerWebSocketController(pathName,
-                                                     ctrlName,
-                                                     filtersAndMethods);
+    HttpControllersRouter::instance().registerWebSocketController(
+        pathName, ctrlName, filtersAndMethods);
     return *this;
 }
 
@@ -302,9 +299,8 @@ HttpAppFramework &HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!routersInit_);
-    httpCtrlsRouterPtr_->registerHttpSimpleController(pathName,
-                                                      ctrlName,
-                                                      filtersAndMethods);
+    HttpControllersRouter::instance().registerHttpSimpleController(
+        pathName, ctrlName, filtersAndMethods);
     return *this;
 }
 
@@ -318,7 +314,7 @@ void HttpAppFrameworkImpl::registerHttpController(
     assert(!pathPattern.empty());
     assert(binder);
     assert(!routersInit_);
-    httpCtrlsRouterPtr_->addHttpPath(
+    HttpControllersRouter::instance().addHttpPath(
         pathPattern, binder, validMethods, filters, handlerName);
 }
 
@@ -332,7 +328,7 @@ void HttpAppFrameworkImpl::registerHttpControllerViaRegex(
     assert(!regExp.empty());
     assert(binder);
     assert(!routersInit_);
-    httpCtrlsRouterPtr_->addHttpRegex(
+    HttpControllersRouter::instance().addHttpRegex(
         regExp, binder, validMethods, filters, handlerName);
 }
 
@@ -654,8 +650,8 @@ void HttpAppFrameworkImpl::run()
                                                  });
     }
     routersInit_ = true;
-    httpCtrlsRouterPtr_->init(ioLoops);
-    staticFileRouterPtr_->init(ioLoops);
+    HttpControllersRouter::instance().init(ioLoops);
+    StaticFileRouter::instance().init(ioLoops);
     getLoop()->queueInLoop([this]() {
         for (auto &adv : beginningAdvices_)
         {
@@ -707,7 +703,7 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
 
 std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const
 {
-    return httpCtrlsRouterPtr_->getHandlersInfo();
+    return HttpControllersRouter::instance().getHandlersInfo();
 }
 
 HttpResponsePtr HttpAppFrameworkImpl::handleSessionForResponse(
@@ -960,8 +956,8 @@ void HttpAppFrameworkImpl::quit()
             // Release members in the reverse order of initialization
             listenerManagerPtr_->stopListening();
             listenerManagerPtr_.reset();
-            staticFileRouterPtr_.reset();
-            httpCtrlsRouterPtr_.reset();
+            StaticFileRouter::instance().reset();
+            HttpControllersRouter::instance().reset();
             pluginsManagerPtr_.reset();
             redisClientManagerPtr_.reset();
             dbClientManagerPtr_.reset();
@@ -1006,7 +1002,7 @@ const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFileHeaders(
     const std::vector<std::pair<std::string, std::string>> &headers)
 {
-    staticFileRouterPtr_->setStaticFileHeaders(headers);
+    StaticFileRouter::instance().setStaticFileHeaders(headers);
     return *this;
 }
 
@@ -1019,13 +1015,13 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
     bool isRecursive,
     const std::vector<std::string> &filters)
 {
-    staticFileRouterPtr_->addALocation(uriPrefix,
-                                       defaultContentType,
-                                       alias,
-                                       isCaseSensitive,
-                                       allowAll,
-                                       isRecursive,
-                                       filters);
+    StaticFileRouter::instance().addALocation(uriPrefix,
+                                              defaultContentType,
+                                              alias,
+                                              isCaseSensitive,
+                                              allowAll,
+                                              isRecursive,
+                                              filters);
     return *this;
 }
 
@@ -1057,7 +1053,7 @@ std::vector<trantor::InetAddress> HttpAppFrameworkImpl::getListeners() const
 HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
     DefaultHandler handler)
 {
-    staticFileRouterPtr_->setDefaultHandler(std::move(handler));
+    StaticFileRouter::instance().setDefaultHandler(std::move(handler));
     return *this;
 }
 

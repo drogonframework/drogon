@@ -28,6 +28,12 @@ namespace drogon
 class StaticFileRouter
 {
   public:
+    static StaticFileRouter &instance()
+    {
+        static StaticFileRouter inst;
+        return inst;
+    }
+
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback);
     void setFileTypes(const std::vector<std::string> &types);
@@ -53,6 +59,7 @@ class StaticFileRouter
     }
 
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
+    void reset();
 
     void sendStaticFileResponse(
         const std::string &filePath,

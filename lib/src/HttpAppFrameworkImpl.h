@@ -641,17 +641,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &resp);
 
-    // temporary solution, access 3 routers
-    HttpControllersRouter &getHttpRouter() const
-    {
-        return *httpCtrlsRouterPtr_;
-    }
-
-    StaticFileRouter &getStatisFileRouter() const
-    {
-        return *staticFileRouterPtr_;
-    }
-
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
@@ -676,9 +665,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     bool useSession_{false};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
                               "\r\n"};
-
-    std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
-    std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
 
     std::unique_ptr<ListenerManager> listenerManagerPtr_;
     std::unique_ptr<PluginsManager> pluginsManagerPtr_;
