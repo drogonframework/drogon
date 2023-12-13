@@ -169,22 +169,26 @@ static void addCtrlBinderToRouterItem(const std::shared_ptr<Binder> &binderPtr,
     }
 }
 
-void HttpControllersRouter::registerHttpSimpleController(
+struct SimpleControllerProcessResult
+{
+    std::string lowerPath;
+    std::vector<HttpMethod> validMethods;
+    std::vector<std::string> filters;
+};
+
+static SimpleControllerProcessResult processSimpleControllerParams(
     const std::string &pathName,
     const std::string &ctrlName,
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
-    assert(!pathName.empty());
-    assert(!ctrlName.empty());
     std::string path(pathName);
     std::transform(pathName.begin(),
                    pathName.end(),
                    path.begin(),
                    [](unsigned char c) { return tolower(c); });
-    std::lock_guard<std::mutex> guard(simpleCtrlMutex_);
     std::vector<HttpMethod> validMethods;
     std::vector<std::string> filters;
-    for (auto const &filterOrMethod : filtersAndMethods)
+    for (const auto &filterOrMethod : filtersAndMethods)
     {
         if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
         {
@@ -197,9 +201,26 @@ void HttpControllersRouter::registerHttpSimpleController(
         else
         {
             LOG_ERROR << "Invalid controller constraint type";
-            exit(1);
+            // Used to call exit() here, but that's not very nice.
         }
     }
+    return {
+        std::move(path),
+        std::move(validMethods),
+        std::move(filters),
+    };
+}
+
+void HttpControllersRouter::registerHttpSimpleController(
+    const std::string &pathName,
+    const std::string &ctrlName,
+    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+{
+    assert(!pathName.empty());
+    assert(!ctrlName.empty());
+    auto [path, validMethods, filters] =
+        processSimpleControllerParams(pathName, ctrlName, filtersAndMethods);
+
     auto &item = simpleCtrlMap_[path];
     auto binder = std::make_shared<HttpSimpleControllerBinder>();
     binder->handlerName_ = ctrlName;
@@ -211,7 +232,6 @@ void HttpControllersRouter::registerHttpSimpleController(
         if (!controller)
         {
             LOG_ERROR << "Controller class not found: " << ctrlName;
-            std::lock_guard<std::mutex> guard(simpleCtrlMutex_);
             simpleCtrlMap_.erase(path);
             return;
         }
@@ -230,38 +250,24 @@ void HttpControllersRouter::registerWebSocketController(
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
-    std::string path(pathName);
-    std::transform(pathName.begin(),
-                   pathName.end(),
-                   path.begin(),
-                   [](unsigned char c) { return tolower(c); });
-    std::vector<HttpMethod> validMethods;
-    std::vector<std::string> filters;
-    for (auto const &filterOrMethod : filtersAndMethods)
-    {
-        if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
-        {
-            filters.push_back(filterOrMethod.getFilterName());
-        }
-        else if (filterOrMethod.type() == internal::ConstraintType::HttpMethod)
-        {
-            validMethods.push_back(filterOrMethod.getHttpMethod());
-        }
-        else
-        {
-            LOG_ERROR << "Invalid controller constraint type";
-            exit(1);
-        }
-    }
+    auto [path, validMethods, filters] =
+        processSimpleControllerParams(pathName, ctrlName, filtersAndMethods);
+
     auto &item = wsCtrlMap_[path];
     auto binder = std::make_shared<WebsocketControllerBinder>();
     binder->handlerName_ = ctrlName;
     binder->filterNames_ = filters;
-    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+    drogon::app().getLoop()->queueInLoop([this, binder, ctrlName, path]() {
         auto &object_ = DrClassMap::getSingleInstance(ctrlName);
         auto controller =
             std::dynamic_pointer_cast<WebSocketControllerBase>(object_);
-        assert(controller);
+        if (!controller)
+        {
+            LOG_ERROR << "Websocket controller class not found: " << ctrlName;
+            wsCtrlMap_.erase(path);
+            return;
+        }
+
         binder->controller_ = controller;
     });
 
