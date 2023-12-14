@@ -32,7 +32,7 @@ bool HttpConnectionLimit::tryAddConnection(
     const trantor::TcpConnectionPtr &conn)
 {
     assert(conn->connected());
-    if (connectionNum_.fetch_add(1, std::memory_order_relaxed) >=
+    if (connectionNum_.fetch_add(1, std::memory_order_relaxed) >
         maxConnectionNum_)
     {
         LOG_ERROR << "too much connections!force close!";
@@ -68,12 +68,12 @@ void HttpConnectionLimit::releaseConnection(
     connectionNum_.fetch_sub(1, std::memory_order_relaxed);
     if (maxConnectionNumPerIP_ > 0)
     {
+        std::string ip = conn->peerAddr().toIp();
         std::lock_guard<std::mutex> lock(mutex_);
-        auto iter = ipConnectionsMap_.find(conn->peerAddr().toIp());
+        auto iter = ipConnectionsMap_.find(ip);
         if (iter != ipConnectionsMap_.end())
         {
-            --iter->second;
-            if (iter->second <= 0)
+            if (--iter->second <= 0)
             {
                 ipConnectionsMap_.erase(iter);
             }
