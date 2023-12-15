@@ -1,6 +1,7 @@
 #include "Http2Transport.h"
 #include "HttpFileUploadRequest.h"
 
+#include <cstdint>
 #include <fstream>
 #include <limits>
 #include <type_traits>
@@ -298,13 +299,13 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
     }
 
     assert(payload.remaining() >= frame.padLength);
-    size_t payloadSize = payload.remaining() - frame.padLength;
-    if (payloadSize < 0)
+    if (payload.remaining() > frame.padLength)
     {
         LOG_TRACE << "data padding is larger than the payload size";
         return std::nullopt;
     }
 
+    const size_t payloadSize = payload.remaining() - frame.padLength;
     if (payloadSize > 0x7fffffff)
     {
         LOG_ERROR << "data frame payload size too large";
@@ -845,6 +846,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             }
             // TODO: Should be half-closed but trantor doesn't support it
             connPtr->shutdown();
+            return;
         }
         else if (std::holds_alternative<PingFrame>(frame))
         {
@@ -1103,7 +1105,7 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     if (!connPtr->connected())
         return;
     // Send HTTP/2 magic string
-    connPtr->send(h2_preamble.data(), h2_preamble.length());
+    batchedSendBuffer.write(h2_preamble);
     *bytesSent_ += h2_preamble.length();
 
     // RFC 9113 3.4
@@ -1112,6 +1114,7 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     settingsFrame.settings.emplace_back((uint16_t)H2SettingsKey::EnablePush,
                                         0);  // Disable push
     sendFrame(settingsFrame, 0);
+    sendBufferedData();
 }
 
 void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,

@@ -5,6 +5,7 @@
 // TODO: Write our own HPACK implementation
 #include "hpack/HPacker.h"
 
+#include <string_view>
 #include <variant>
 #include <climits>
 
@@ -152,6 +153,11 @@ struct OByteStream
     void write(const uint8_t *ptr, size_t size)
     {
         buffer.append((char *)ptr, size);
+    }
+
+    void write(const std::string_view &str)
+    {
+        buffer.append(str.data(), str.size());
     }
 
     void overwriteU24BE(size_t offset, uint32_t value)
