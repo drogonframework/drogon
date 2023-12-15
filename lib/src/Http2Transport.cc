@@ -2,6 +2,8 @@
 #include "HttpFileUploadRequest.h"
 
 #include <fstream>
+#include <limits>
+#include <type_traits>
 #include <variant>
 
 using namespace drogon;
@@ -23,6 +25,13 @@ static std::optional<size_t> stosz(const std::string &str)
     {
         return std::nullopt;
     }
+}
+
+template <typename Enum>
+constexpr size_t enumMaxValue()
+{
+    using Underlying = std::underlying_type_t<Enum>;
+    return std::numeric_limits<Underlying>::max();
 }
 
 enum class H2FrameType
@@ -1062,7 +1071,7 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
         else if (key == ":status")
         {
             auto status = stosz(value);
-            if (!status)
+            if (!status || *status > enumMaxValue<HttpStatusCode>())
             {
                 streamErrored(streamId, ReqResult::BadResponse);
                 return false;
