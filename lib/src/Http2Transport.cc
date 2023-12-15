@@ -32,7 +32,7 @@ template <typename Enum>
 constexpr size_t enumMaxValue()
 {
     using Underlying = std::underlying_type_t<Enum>;
-    return std::numeric_limits<Underlying>::max();
+    return (std::numeric_limits<Underlying>::max)();
 }
 
 enum class H2FrameType
