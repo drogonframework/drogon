@@ -15,6 +15,7 @@
 
 #include <drogon/exports.h>
 #include <trantor/net/Certificate.h>
+#include <trantor/net/callbacks.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpRequest.h>
@@ -68,6 +69,33 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
 {
     return toResponse((const Json::Value &)pJson);
 }
+
+struct Stream
+{
+  public:
+    Stream(std::function<bool(const std::string &)> sendCallback)
+        : sendCallback_(std::move(sendCallback))
+    {
+    }
+
+    bool send(const std::string &data)
+    {
+        std::ostringstream oss;
+        oss << std::hex << data.length() << "\r\n";
+        oss << data << "\r\n";
+        return sendCallback_(oss.str());
+    }
+
+    void close()
+    {
+        static std::string closeStream{"0\r\n\r\n"};
+        sendCallback_(closeStream);
+        return;
+    }
+
+  private:
+    std::function<bool(const std::string &)> sendCallback_;
+};
 
 class DROGON_EXPORT HttpResponse
 {
@@ -488,6 +516,9 @@ class DROGON_EXPORT HttpResponse
         const std::string &typeString = "",
         const HttpRequestPtr &req = HttpRequestPtr());
 
+    static HttpResponsePtr newAsyncStreamResponse(
+        const std::function<void(std::shared_ptr<Stream>)> &callback);
+
     /**
      * @brief Create a custom HTTP response object. For using this template,
      * users must specialize the toResponse template.
@@ -520,6 +551,13 @@ class DROGON_EXPORT HttpResponse
      */
     virtual const std::function<std::size_t(char *, std::size_t)>
         &streamCallback() const = 0;
+
+    /**
+     * @brief If the response is a async stream response (i.e. created by
+     * asyncStreamCallback) returns the std::shared_ptr<Stream>.
+     */
+    virtual const std::function<void(std::shared_ptr<Stream>)>
+        &asyncStreamCallback() const = 0;
 
     /**
      * @brief Returns the content type associated with the response

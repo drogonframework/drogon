@@ -17,6 +17,7 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
 #include <functional>
+#include <memory>
 #include <utility>
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
@@ -568,6 +569,27 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
+        auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
+        if (asyncStreamCallback)
+        {
+            if (!respImplPtr->ifCloseConnection())
+            {
+                std::weak_ptr<trantor::TcpConnection> conn_ptr = conn;
+                asyncStreamCallback(std::make_shared<Stream>(
+                    [conn_ptr = std::move(conn_ptr)](const std::string &data) {
+                        if (auto conn = conn_ptr.lock())
+                        {
+                            conn->send(data);
+                            return true;
+                        }
+                        return false;
+                    }));
+            }
+            else
+            {
+                LOG_INFO << "Chunking Set CloseConnection !!!";
+            }
+        }
         auto &streamCallback = respImplPtr->streamCallback();
         const std::string &sendfileName = respImplPtr->sendfileName();
         if (streamCallback || !sendfileName.empty())
@@ -575,7 +597,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
             if (streamCallback)
             {
                 auto &headers = respImplPtr->headers();
-                // When the transfer-encoding is chunked, wrap data callback in
+                // When the transfer-encoding is chunked, wrap data callback
                 // chunking callback
                 auto bChunked =
                     !respImplPtr->ifCloseConnection() &&

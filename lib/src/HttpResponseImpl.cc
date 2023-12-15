@@ -475,6 +475,22 @@ HttpResponsePtr HttpResponse::newStreamResponse(
     return resp;
 }
 
+HttpResponsePtr HttpResponse::newAsyncStreamResponse(
+    const std::function<void(std::shared_ptr<Stream>)> &callback)
+{
+    if (!callback)
+    {
+        auto resp = HttpResponse::newNotFoundResponse();
+        return resp;
+    }
+    auto resp = std::make_shared<HttpResponseImpl>();
+    resp->setAsyncStreamCallback(callback);
+    resp->setStatusCode(k200OK);
+    resp->addHeader("transfer-encoding", "chunked");
+    doResponseCreateAdvices(resp);
+    return resp;
+}
+
 void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 {
     buffer.ensureWritableBytes(128);
