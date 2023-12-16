@@ -1568,62 +1568,52 @@ for(auto &relationship : relationships)
         auto relationshipValName=nameTransform(name, false);
         auto alias=relationship.targetTableAlias();
         auto aliasValName=nameTransform(alias, false);
+        if(!alias.empty())
+        {
+            if(alias[0] <= 'z' && alias[0] >= 'a')
+            {
+                alias[0] += ('A' - 'a');
+            }
+        }
+        else
+        {
+            alias = relationshipClassName;
+        }
+		std::string alind(alias.length(), ' ');
         if(relationship.type() == Relationship::Type::HasOne)
         {
-            if(!alias.empty())
-            {
-                if(alias[0] <= 'z' && alias[0] >= 'a')
-                {
-                    alias[0] += ('A' - 'a');
-                }
-                std::string alind(alias.length(), ' ');
 %>
-
-{%relationshipClassName%} [[className]]::get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const {
-    std::shared_ptr<std::promise<{%relationshipClassName%}>> pro(new std::promise<{%relationshipClassName%}>);
-    std::future<{%relationshipClassName%}> f = pro->get_future();
-    get{%alias%}(clientPtr, [&pro] ({%relationshipClassName%} result) {
-        try {
-            pro->set_value(result);
-        }
-        catch (...) {
-            pro->set_exception(std::current_exception());
-        }
-    }, [&pro] (const DrogonDbException &err) {
-        pro->set_exception(std::make_exception_ptr(err));
-    });
-    return f.get();
-}
-void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
-     {%indentStr%}     {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
-     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
-<%c++
+{%relationshipClassName%} [[className]]::get{%alias%}(const DbClientPtr &clientPtr) const {
+    const static std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
+            if(rdbms=="postgresql")
+            {
+                $$<<"$1";
             }
             else
             {
-                std::string relationshipClassInde(relationshipClassName.length(), ' ');
-%>
-{%relationshipClassName%} [[className]]::get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const {
-    std::shared_ptr<std::promise<{%relationshipClassName%}>> pro(new std::promise<{%relationshipClassName%}>);
-    std::future<{%relationshipClassName%}> f = pro->get_future();
-    get{%relationshipClassName%}(clientPtr, [&pro] ({%relationshipClassName%} result) {
-        try {
-            pro->set_value(result);
-        }
-        catch (...) {
-            pro->set_exception(std::current_exception());
-        }
-    }, [&pro] (const DrogonDbException &err) {
-        pro->set_exception(std::make_exception_ptr(err));
-    });
-    return f.get();
+                $$<<"?";
+            }%>";
+    Result r(nullptr);
+    {
+        auto binder = *clientPtr << sql;
+        binder << *{%nameTransform(relationship.originalKey(), false)%}_ << Mode::Blocking >>
+            [&r](const Result &result) { r = result; };
+        binder.exec();
+    }
+    if (r.size() == 0)
+    {
+        throw UnexpectedRows("0 rows found");
+    }
+    else if (r.size() > 1)
+    {
+        throw UnexpectedRows("Found more than one row");
+    }
+    return {%relationshipClassName%}(r[0]);
 }
-void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
-     {%indentStr%}     {%relationshipClassInde%} const std::function<void({%relationshipClassName%})> &rcb,
-     {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
-<%c++
-            }
-%>
+
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
+     {%indentStr%}     {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
+     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
 {
     const static std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
             if(rdbms=="postgresql")
@@ -1656,59 +1646,36 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
         }
         else if(relationship.type() == Relationship::Type::HasMany)
         {
-            if(!alias.empty())
-            {
-                if(alias[0] <= 'z' && alias[0] >= 'a')
-                {
-                    alias[0] += ('A' - 'a');
-                }
-                std::string alind(alias.length(), ' ');
 %>
-std::vector<{%relationshipClassName%}> [[className]]::get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const {
-    std::shared_ptr<std::promise<std::vector<{%relationshipClassName%}>>> pro(new std::promise<std::vector<{%relationshipClassName%}>>);
-    std::future<std::vector<{%relationshipClassName%}>> f = pro->get_future();
-    get{%alias%}(clientPtr, [&pro] (std::vector<{%relationshipClassName%}> result) {
-        try {
-            pro->set_value(result);
-        }
-        catch (...) {
-            pro->set_exception(std::current_exception());
-        }
-    }, [&pro] (const DrogonDbException &err) {
-        pro->set_exception(std::make_exception_ptr(err));
-    });
-    return f.get();
-}
-void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
-     {%indentStr%}     {%alind%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
-     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
-<%c++
+std::vector<{%relationshipClassName%}> [[className]]::get{%alias%}(const DbClientPtr &clientPtr) const {
+    const static std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
+            if(rdbms=="postgresql")
+            {
+                $$<<"$1";
             }
             else
             {
-                std::string relationshipClassInde(relationshipClassName.length(), ' ');
-%>
-std::vector<{%relationshipClassName%}> [[className]]::get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const {
-    std::shared_ptr<std::promise<std::vector<{%relationshipClassName%}>>> pro(new std::promise<std::vector<{%relationshipClassName%}>>);
-    std::future<std::vector<{%relationshipClassName%}>> f = pro->get_future();
-    get{%relationshipClassName%}(clientPtr, [&pro] (std::vector<{%relationshipClassName%}> result) {
-        try {
-            pro->set_value(result);
-        }
-        catch (...) {
-            pro->set_exception(std::current_exception());
-        }
-    }, [&pro] (const DrogonDbException &err) {
-        pro->set_exception(std::make_exception_ptr(err));
-    });
-    return f.get();
+                $$<<"?";
+            }%>";
+    Result r(nullptr);
+    {
+        auto binder = *clientPtr << sql;
+        binder << *{%nameTransform(relationship.originalKey(), false)%}_ << Mode::Blocking >>
+            [&r](const Result &result) { r = result; };
+        binder.exec();
+    }
+    std::vector<{%relationshipClassName%}> ret;
+    ret.reserve(r.size());
+    for (auto const &row : r)
+    {
+        ret.emplace_back({%relationshipClassName%}(row));
+    }
+    return ret;
 }
-void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
-     {%indentStr%}     {%relationshipClassInde%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
-     {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
-<%c++
-            }
-%>
+
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
+     {%indentStr%}     {%alind%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
+     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
 {
     const static std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
             if(rdbms=="postgresql")
@@ -1740,59 +1707,37 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
             auto pivotTableClassName=nameTransform(pivotTableName, true);
             auto &pivotOriginalKey=relationship.pivotTable().originalKey();
             auto &pivotTargetKey=relationship.pivotTable().targetKey();
-            if(!alias.empty())
-            {
-                if(alias[0] <= 'z' && alias[0] >= 'a')
-                {
-                    alias[0] += ('A' - 'a');
-                }
-                std::string alind(alias.length(), ' ');
 %>
-std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> [[className]]::get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const {
-    std::shared_ptr<std::promise<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>>> pro(new std::promise<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>>);
-    std::future<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>> f = pro->get_future();
-    get{%alias%}(clientPtr, [&pro] (std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> result) {
-        try {
-            pro->set_value(result);
-        }
-        catch (...) {
-            pro->set_exception(std::current_exception());
-        }
-    }, [&pro] (const DrogonDbException &err) {
-        pro->set_exception(std::make_exception_ptr(err));
-    });
-    return f.get();
-}
-void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
-     {%indentStr%}     {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
-     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
-<%c++
+std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> [[className]]::get{%alias%}(const DbClientPtr &clientPtr) const {
+    const static std::string sql = "select * from {%name%},{%pivotTableName%} where {%pivotTableName%}.{%pivotOriginalKey%} = <%c++
+            if(rdbms=="postgresql")
+            {
+                $$<<"$1";
             }
             else
             {
-                std::string relationshipClassInde(relationshipClassName.length(), ' ');
-%>
-std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> [[className]]::get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const {
-    std::shared_ptr<std::promise<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>>> pro(new std::promise<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>>);
-    std::future<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>> f = pro->get_future();
-    get{%relationshipClassName%}(clientPtr, [&pro] (std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> result) {
-        try {
-            pro->set_value(result);
-        }
-        catch (...) {
-            pro->set_exception(std::current_exception());
-        }
-    }, [&pro] (const DrogonDbException &err) {
-        pro->set_exception(std::make_exception_ptr(err));
-    });
-    return f.get();
+                $$<<"?";
+            }%> and {%pivotTableName%}.{%pivotTargetKey%} = {%name%}.{%relationship.targetKey()%}";
+    Result r(nullptr);
+    {
+        auto binder = *clientPtr << sql;
+        binder << *{%nameTransform(relationship.originalKey(), false)%}_ << Mode::Blocking >>
+            [&r](const Result &result) { r = result; };
+        binder.exec();
+    }
+    std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> ret;
+    ret.reserve(r.size());
+    for (auto const &row : r)
+    {
+        ret.emplace_back(std::pair<{%relationshipClassName%},{%pivotTableClassName%}>(
+            {%relationshipClassName%}(row),{%pivotTableClassName%}(row,{%relationshipClassName%}::getColumnNumber())));
+    }
+    return ret;
 }
-void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
-     {%indentStr%}     {%relationshipClassInde%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
-     {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
-<%c++
-            }
-%>
+
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
+     {%indentStr%}     {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
+     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
 {
     const static std::string sql = "select * from {%name%},{%pivotTableName%} where {%pivotTableName%}.{%pivotOriginalKey%} = <%c++
             if(rdbms=="postgresql")

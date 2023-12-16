@@ -19,13 +19,12 @@
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <string>
+#include <string_view>
 #include <memory>
 #include <vector>
 #include <tuple>
 #include <stdint.h>
 #include <iostream>
-
-using namespace drogon::orm;
 
 namespace drogon
 {
@@ -40,6 +39,8 @@ namespace drogon_model
 {
 namespace postgres
 {
+class Wallets;
+
 class Users
 {
   public:
@@ -71,7 +72,8 @@ class Users
      * @note If the SQL is not a style of 'select * from table_name ...' (select
      * all columns by an asterisk), please set the offset to -1.
      */
-    explicit Users(const Row &r, const ssize_t indexOffset = 0) noexcept;
+    explicit Users(const drogon::orm::Row &r,
+                   const ssize_t indexOffset = 0) noexcept;
 
     /**
      * @brief constructor
@@ -118,7 +120,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getUserId() const noexcept;
-
     /// Set the value of the column user_id
     void setUserId(const std::string &pUserId) noexcept;
     void setUserId(std::string &&pUserId) noexcept;
@@ -131,7 +132,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getUserName() const noexcept;
-
     /// Set the value of the column user_name
     void setUserName(const std::string &pUserName) noexcept;
     void setUserName(std::string &&pUserName) noexcept;
@@ -144,7 +144,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getPassword() const noexcept;
-
     /// Set the value of the column password
     void setPassword(const std::string &pPassword) noexcept;
     void setPassword(std::string &&pPassword) noexcept;
@@ -157,7 +156,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getOrgName() const noexcept;
-
     /// Set the value of the column org_name
     void setOrgName(const std::string &pOrgName) noexcept;
     void setOrgName(std::string &&pOrgName) noexcept;
@@ -170,7 +168,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getSignature() const noexcept;
-
     /// Set the value of the column signature
     void setSignature(const std::string &pSignature) noexcept;
     void setSignature(std::string &&pSignature) noexcept;
@@ -183,7 +180,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getAvatarId() const noexcept;
-
     /// Set the value of the column avatar_id
     void setAvatarId(const std::string &pAvatarId) noexcept;
     void setAvatarId(std::string &&pAvatarId) noexcept;
@@ -196,7 +192,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<int32_t> &getId() const noexcept;
-
     /// Set the value of the column id
     void setId(const int32_t &pId) noexcept;
 
@@ -207,7 +202,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getSalt() const noexcept;
-
     /// Set the value of the column salt
     void setSalt(const std::string &pSalt) noexcept;
     void setSalt(std::string &&pSalt) noexcept;
@@ -220,7 +214,6 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<bool> &getAdmin() const noexcept;
-
     /// Set the value of the column admin
     void setAdmin(const bool &pAdmin) noexcept;
     void setAdminToNull() noexcept;
@@ -236,14 +229,19 @@ class Users
     Json::Value toMasqueradedJson(
         const std::vector<std::string> &pMasqueradingVector) const;
     /// Relationship interfaces
+    Wallets getWallet(const drogon::orm::DbClientPtr &clientPtr) const;
+    void getWallet(const drogon::orm::DbClientPtr &clientPtr,
+                   const std::function<void(Wallets)> &rcb,
+                   const drogon::orm::ExceptionCallback &ecb) const;
+
   private:
-    friend Mapper<Users>;
-    friend BaseBuilder<Users, true, true>;
-    friend BaseBuilder<Users, true, false>;
-    friend BaseBuilder<Users, false, true>;
-    friend BaseBuilder<Users, false, false>;
+    friend drogon::orm::Mapper<Users>;
+    friend drogon::orm::BaseBuilder<Users, true, true>;
+    friend drogon::orm::BaseBuilder<Users, true, false>;
+    friend drogon::orm::BaseBuilder<Users, false, true>;
+    friend drogon::orm::BaseBuilder<Users, false, false>;
 #ifdef __cpp_impl_coroutine
-    friend CoroMapper<Users>;
+    friend drogon::orm::CoroMapper<Users>;
 #endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
