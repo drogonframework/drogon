@@ -83,7 +83,7 @@ class DROGON_EXPORT Row
     Row() noexcept = delete;
     Row(const Row &r) noexcept = default;
     Row(Row &&) noexcept = default;
-    Row &operator=(const Row &) = default;
+    Row &operator=(const Row &) noexcept = default;
 
   private:
     Result result_;
