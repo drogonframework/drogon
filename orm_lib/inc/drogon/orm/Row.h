@@ -80,9 +80,9 @@ class DROGON_EXPORT Row
     ConstReverseIterator rend() const;
     ConstReverseIterator crend() const;
 
-    Row() noexcept
-    {
-    }
+#ifdef _MSC_VER
+    row() noexcept = default;
+#endif
 
     Row(const Row &r) noexcept = default;
     Row(Row &&) noexcept = default;

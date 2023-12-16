@@ -140,7 +140,7 @@ class DROGON_EXPORT Result
     unsigned long long insertId() const noexcept;
 
 #ifdef _MSC_VER
-    Result() = default;
+    Result() noexcept = default;
 #endif
 
   private:
