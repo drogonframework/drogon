@@ -6,8 +6,23 @@ endif (WIN32)
 add_executable(db_test
         db_test.cc
         postgresql/Users.cc
+		postgresql/Wallets.cc
+        postgresql/Blog.cc
+		postgresql/Category.cc
+        postgresql/BlogTag.cc
+        postgresql/Tag.cc
         mysql/Users.cc
+		mysql/Wallets.cc
+        mysql/Blog.cc
+		mysql/Category.cc
+        mysql/BlogTag.cc
+        mysql/Tag.cc
         sqlite3/Users.cc
+		sqlite3/Wallets.cc
+        sqlite3/Blog.cc
+		sqlite3/Category.cc
+        sqlite3/BlogTag.cc
+        sqlite3/Tag.cc
         )
 
 if (WIN32)
