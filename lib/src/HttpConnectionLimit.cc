@@ -13,7 +13,6 @@
  */
 
 #include "HttpConnectionLimit.h"
-#include "AOPAdvice.h"
 #include <trantor/utils/Logger.h>
 
 using namespace drogon;
@@ -35,7 +34,6 @@ bool HttpConnectionLimit::tryAddConnection(
     if (connectionNum_.fetch_add(1, std::memory_order_relaxed) >
         maxConnectionNum_)
     {
-        LOG_ERROR << "too much connections!force close!";
         return false;
     }
     if (maxConnectionNumPerIP_ > 0)
@@ -52,7 +50,7 @@ bool HttpConnectionLimit::tryAddConnection(
         }
     }
 
-    return AopAdvice::instance().passNewConnectionAdvices(conn);
+    return true;
 }
 
 void HttpConnectionLimit::releaseConnection(

@@ -21,6 +21,8 @@
 #include <mutex>
 #include <trantor/net/TcpConnection.h>
 
+namespace drogon
+{
 class HttpConnectionLimit
 {
   public:
@@ -51,3 +53,4 @@ class HttpConnectionLimit
     size_t maxConnectionNumPerIP_{0};
     std::unordered_map<std::string, size_t> ipConnectionsMap_;
 };
+}  // namespace drogon

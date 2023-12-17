@@ -103,6 +103,12 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
         conn->setContext(parser);
         if (!HttpConnectionLimit::instance().tryAddConnection(conn))
         {
+            LOG_ERROR << "too much connections!force close!";
+            conn->forceClose();
+            return;
+        }
+        if (!AopAdvice::instance().passNewConnectionAdvices(conn))
+        {
             conn->forceClose();
         }
     }
