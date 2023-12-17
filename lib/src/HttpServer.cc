@@ -644,9 +644,8 @@ void HttpServer::websocketRequestHandling(
         });
 
     // TODO: more elegant?
-    auto binder =
-        std::static_pointer_cast<WebsocketControllerBinder>(binderPtr);
-    binder->handleNewConnection(req, wsConnPtr);
+    static_cast<WebsocketControllerBinder *>(binderPtr.get())
+        ->handleNewConnection(req, wsConnPtr);
 }
 
 void HttpServer::handleResponse(
