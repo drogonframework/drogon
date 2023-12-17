@@ -45,18 +45,6 @@ class HttpServer : trantor::NonCopyable
     void start();
     void stop();
 
-    [[deprecated("Use enableSSL(SSLPolicy) instead")]] void enableSSL(
-        const std::string &certPath,
-        const std::string &keyPath,
-        bool useOldTLS,
-        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
-    {
-        auto policy =
-            trantor::TLSPolicy::defaultServerPolicy(certPath, keyPath);
-        policy->setConfCmds(sslConfCmds).setUseOldTLS(useOldTLS);
-        server_.enableSSL(std::move(policy));
-    }
-
     void enableSSL(trantor::TLSPolicyPtr policy)
     {
         server_.enableSSL(std::move(policy));

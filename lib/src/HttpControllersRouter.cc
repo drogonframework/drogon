@@ -154,18 +154,23 @@ static void addCtrlBinderToRouterItem(const std::shared_ptr<Binder> &binderPtr,
 {
     if (!methods.empty())
     {
-        for (auto const &method : methods)
+        for (const auto &method : methods)
         {
             router.binders_[method] = binderPtr;
             if (method == Options)
+            {
                 binderPtr->isCORS_ = true;
+            }
         }
     }
     else
     {
+        // All HTTP methods are valid
         binderPtr->isCORS_ = true;
         for (int i = 0; i < Invalid; ++i)
+        {
             router.binders_[i] = binderPtr;
+        }
     }
 }
 
@@ -596,7 +601,7 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
     {
         for (auto &item : ctrlVector_)
         {
-            auto const &ctrlRegex = item.regex_;
+            const auto &ctrlRegex = item.regex_;
             if (item.binders_[req->method()] &&
                 std::regex_match(req->path(), result, ctrlRegex))
             {
@@ -638,7 +643,7 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
     if (!binder->queryParametersPlaces_.empty())
     {
         auto &queryPara = req->getParameters();
-        for (auto const &paraPlace : binder->queryParametersPlaces_)
+        for (const auto &paraPlace : binder->queryParametersPlaces_)
         {
             auto place = paraPlace.second;
             if (place > params.size())
