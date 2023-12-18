@@ -16,14 +16,11 @@
 #include "HttpControllerBinder.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
-#include "StaticFileRouter.h"
 #include "HttpAppFrameworkImpl.h"
 #include "FiltersFunction.h"
 #include <drogon/HttpSimpleController.h>
 #include <drogon/WebSocketController.h>
 #include <algorithm>
-#include <cctype>
-#include <deque>
 
 using namespace drogon;
 

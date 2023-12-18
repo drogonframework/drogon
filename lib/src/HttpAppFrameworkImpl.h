@@ -18,10 +18,7 @@
 #include <drogon/config.h>
 #include <json/json.h>
 #include <functional>
-#include <limits>
 #include <memory>
-#include <mutex>
-#include <regex>
 #include <string>
 #include <vector>
 #include "SessionManager.h"

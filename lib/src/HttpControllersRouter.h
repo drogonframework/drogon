@@ -16,17 +16,11 @@
 
 #include "impl_forwards.h"
 #include "ControllerBinderBase.h"
-#include <drogon/drogon_callbacks.h>
-#include <drogon/HttpBinder.h>
-#include <drogon/IOThreadStorage.h>
 #include <trantor/utils/NonCopyable.h>
-#include <atomic>
 #include <memory>
-#include <mutex>
 #include <regex>
 #include <string>
 #include <vector>
-#include <map>
 #include <unordered_map>
 
 namespace drogon

@@ -15,7 +15,6 @@
 #pragma once
 
 #include <trantor/net/TcpServer.h>
-#include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <string>
