@@ -71,36 +71,33 @@ class HttpControllersRouter : public trantor::NonCopyable
     std::vector<HttpHandlerInfo> getHandlersInfo() const;
 
   private:
-    struct HttpControllerRouterItem
-    {
-        std::string pathParameterPattern_;
-        std::string pathPattern_;
-        std::regex regex_;
-        std::shared_ptr<HttpControllerBinder> binders_[Invalid]{
-            nullptr};  // The enum value of Invalid is the http methods number
-    };
-
     void addRegexCtrlBinder(
         const std::shared_ptr<HttpControllerBinder> &binderPtr,
         const std::string &pathPattern,
         const std::string &pathParameterPattern,
         const std::vector<HttpMethod> &methods);
-    std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
-    std::vector<HttpControllerRouterItem> ctrlVector_;
 
     struct SimpleControllerRouterItem
     {
-        std::shared_ptr<HttpSimpleControllerBinder> binders_[Invalid];
+        std::shared_ptr<HttpSimpleControllerBinder> binders_[Invalid]{nullptr};
     };
 
-    std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
-    std::mutex simpleCtrlMutex_;
+    struct HttpControllerRouterItem
+    {
+        std::string pathParameterPattern_;
+        std::string pathPattern_;
+        std::regex regex_;
+        std::shared_ptr<HttpControllerBinder> binders_[Invalid]{nullptr};
+    };
 
     struct WebSocketControllerRouterItem
     {
-        std::shared_ptr<WebsocketControllerBinder> binders_[Invalid];
+        std::shared_ptr<WebsocketControllerBinder> binders_[Invalid]{nullptr};
     };
 
+    std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
+    std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
+    std::vector<HttpControllerRouterItem> ctrlVector_;  // for regexp path
     std::unordered_map<std::string, WebSocketControllerRouterItem> wsCtrlMap_;
 };
 }  // namespace drogon
