@@ -16,7 +16,7 @@
 #include <drogon/exports.h>
 #include <trantor/net/Certificate.h>
 #include <trantor/net/callbacks.h>
-#include <trantor/net/TcpConnection.h>
+#include <trantor/net/AsyncStream.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpRequest.h>
