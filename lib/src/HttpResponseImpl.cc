@@ -486,7 +486,6 @@ HttpResponsePtr HttpResponse::newAsyncStreamResponse(
     auto resp = std::make_shared<HttpResponseImpl>();
     resp->setAsyncStreamCallback(callback);
     resp->setStatusCode(k200OK);
-    resp->addHeader("transfer-encoding", "chunked");
     doResponseCreateAdvices(resp);
     return resp;
 }
@@ -968,7 +967,7 @@ void HttpResponseImpl::parseJson() const
 
 bool HttpResponseImpl::shouldBeCompressed() const
 {
-    if (streamCallback_ || _asyncStreamCallback || !sendfileName_.empty() ||
+    if (streamCallback_ || asyncStreamCallback_ || !sendfileName_.empty() ||
         contentType() >= CT_APPLICATION_OCTET_STREAM ||
         getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
     {
