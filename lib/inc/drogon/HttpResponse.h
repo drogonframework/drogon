@@ -84,8 +84,7 @@ struct Stream
         std::ostringstream oss;
         oss << std::hex << data.length() << "\r\n";
         oss << data << "\r\n";
-        asyncStream_->send(oss.str());
-        return true;
+        return asyncStream_->send(oss.str());
     }
 
     void close()
