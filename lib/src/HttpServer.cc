@@ -574,16 +574,8 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
         {
             if (!respImplPtr->ifCloseConnection())
             {
-                std::weak_ptr<trantor::TcpConnection> conn_ptr = conn;
-                asyncStreamCallback(std::make_shared<Stream>(
-                    [conn_ptr = std::move(conn_ptr)](const std::string &data) {
-                        if (auto conn = conn_ptr.lock())
-                        {
-                            conn->send(data);
-                            return true;
-                        }
-                        return false;
-                    }));
+                asyncStreamCallback(
+                    std::make_shared<Stream>(conn->sendAsyncStream()));
             }
             else
             {

@@ -16,6 +16,7 @@
 #include <drogon/exports.h>
 #include <trantor/net/Certificate.h>
 #include <trantor/net/callbacks.h>
+#include <trantor/net/TcpConnection.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpRequest.h>
@@ -73,8 +74,8 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
 struct Stream
 {
   public:
-    Stream(std::function<bool(const std::string &)> sendCallback)
-        : sendCallback_(std::move(sendCallback))
+    Stream(trantor::AsyncStreamPtr asyncStream)
+        : asyncStream_(std::move(asyncStream))
     {
     }
 
@@ -83,18 +84,18 @@ struct Stream
         std::ostringstream oss;
         oss << std::hex << data.length() << "\r\n";
         oss << data << "\r\n";
-        return sendCallback_(oss.str());
+        return asyncStream_->send(oss.str());
     }
 
     void close()
     {
         static std::string closeStream{"0\r\n\r\n"};
-        sendCallback_(closeStream);
-        return;
+        asyncStream_->send(closeStream);
+        asyncStream_->close();
     }
 
   private:
-    std::function<bool(const std::string &)> sendCallback_;
+    trantor::AsyncStreamPtr asyncStream_;
 };
 
 class DROGON_EXPORT HttpResponse
@@ -228,14 +229,16 @@ class DROGON_EXPORT HttpResponse
     virtual void removeHeader(std::string key) = 0;
 
     /// Get all headers of the response
-    virtual const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &headers() const = 0;
+    virtual const std::unordered_map<std::string,
+                                     std::string,
+                                     utils::internal::SafeStringHash> &
+    headers() const = 0;
 
     /// Get all headers of the response
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &getHeaders() const
+    const std::unordered_map<std::string,
+                             std::string,
+                             utils::internal::SafeStringHash> &
+    getHeaders() const
     {
         return headers();
     }
@@ -264,13 +267,13 @@ class DROGON_EXPORT HttpResponse
 
     /// Get all cookies.
     virtual const std::
-        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
-            &cookies() const = 0;
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash> &
+        cookies() const = 0;
 
     /// Get all cookies.
     const std::
-        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
-            &getCookies() const
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash> &
+        getCookies() const
     {
         return cookies();
     }
@@ -549,15 +552,15 @@ class DROGON_EXPORT HttpResponse
      * newStreamResponse) returns the callback function. Otherwise a
      * null function.
      */
-    virtual const std::function<std::size_t(char *, std::size_t)>
-        &streamCallback() const = 0;
+    virtual const std::function<std::size_t(char *, std::size_t)> &
+    streamCallback() const = 0;
 
     /**
      * @brief If the response is a async stream response (i.e. created by
      * asyncStreamCallback) returns the std::shared_ptr<Stream>.
      */
-    virtual const std::function<void(std::shared_ptr<Stream>)>
-        &asyncStreamCallback() const = 0;
+    virtual const std::function<void(std::shared_ptr<Stream>)> &
+    asyncStreamCallback() const = 0;
 
     /**
      * @brief Returns the content type associated with the response
