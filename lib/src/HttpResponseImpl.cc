@@ -538,7 +538,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
     if (!passThrough_)
     {
         buffer.ensureWritableBytes(64);
-        if (streamCallback_)
+        if (streamCallback_ || asyncStreamCallback_)
         {
             // When the headers are created, it is time to set the transfer
             // encoding to chunked if the contents size is not specified
@@ -891,6 +891,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(flagForParsingJson_, that.flagForParsingJson_);
     swap(sendfileName_, that.sendfileName_);
     swap(streamCallback_, that.streamCallback_);
+    swap(asyncStreamCallback_, that.asyncStreamCallback_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);
     httpString_.swap(that.httpString_);
@@ -911,6 +912,11 @@ void HttpResponseImpl::clear()
         LOG_TRACE << "Cleanup HttpResponse stream callback";
         streamCallback_(nullptr, 0);  // callback internal cleanup
         streamCallback_ = {};
+    }
+    if (asyncStreamCallback_)
+    {
+        // asyncStreamCallback_(nullptr);
+        asyncStreamCallback_ = {};
     }
     headers_.clear();
     cookies_.clear();
@@ -962,7 +968,7 @@ void HttpResponseImpl::parseJson() const
 
 bool HttpResponseImpl::shouldBeCompressed() const
 {
-    if (streamCallback_ || !sendfileName_.empty() ||
+    if (streamCallback_ || _asyncStreamCallback || !sendfileName_.empty() ||
         contentType() >= CT_APPLICATION_OCTET_STREAM ||
         getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
     {

@@ -648,6 +648,21 @@ void HttpServer::sendResponses(
         {
             // Not HEAD method
             respImplPtr->renderToBuffer(buffer);
+            auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
+            if (asyncStreamCallback)
+            {
+                conn->send(buffer);
+                buffer.retrieveAll();
+                if (!respImplPtr->ifCloseConnection())
+                {
+                    asyncStreamCallback(
+                        std::make_unique<Stream>(conn->sendAsyncStream()));
+                }
+                else
+                {
+                    LOG_INFO << "Chunking Set CloseConnection !!!";
+                }
+            }
             auto &streamCallback = respImplPtr->streamCallback();
             const std::string &sendfileName = respImplPtr->sendfileName();
             if (streamCallback || !sendfileName.empty())
