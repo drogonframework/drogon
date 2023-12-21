@@ -546,6 +546,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
             {
                 LOG_DEBUG << "send stream with transfer-encoding chunked";
                 headers_["transfer-encoding"] = "chunked";
+                headers_["content-encoding"] = "identity";
             }
             len = 0;
         }
