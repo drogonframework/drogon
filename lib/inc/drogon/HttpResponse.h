@@ -522,7 +522,7 @@ class DROGON_EXPORT HttpResponse
         const HttpRequestPtr &req = HttpRequestPtr());
 
     static HttpResponsePtr newAsyncStreamResponse(
-        const std::function<void(std::shared_ptr<Stream>)> &callback);
+        const std::function<void(StreamPtr)> &callback);
 
     /**
      * @brief Create a custom HTTP response object. For using this template,
@@ -559,10 +559,10 @@ class DROGON_EXPORT HttpResponse
 
     /**
      * @brief If the response is a async stream response (i.e. created by
-     * asyncStreamCallback) returns the std::shared_ptr<Stream>.
+     * asyncStreamCallback) returns the stream ptr.
      */
-    virtual const std::function<void(std::shared_ptr<Stream>)> &
-    asyncStreamCallback() const = 0;
+    virtual const std::function<void(StreamPtr)> &asyncStreamCallback()
+        const = 0;
 
     /**
      * @brief Returns the content type associated with the response

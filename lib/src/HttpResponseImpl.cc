@@ -476,7 +476,7 @@ HttpResponsePtr HttpResponse::newStreamResponse(
 }
 
 HttpResponsePtr HttpResponse::newAsyncStreamResponse(
-    const std::function<void(std::shared_ptr<Stream>)> &callback)
+    const std::function<void(StreamPtr)> &callback)
 {
     if (!callback)
     {

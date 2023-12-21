@@ -133,9 +133,10 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         removeHeaderBy(key);
     }
 
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &headers() const override
+    const std::unordered_map<std::string,
+                             std::string,
+                             utils::internal::SafeStringHash> &
+    headers() const override
     {
         return headers_;
     }
@@ -206,8 +207,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     }
 
     const std::
-        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
-            &cookies() const override
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash> &
+        cookies() const override
     {
         return cookies_;
     }
@@ -363,14 +364,12 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         streamCallback_ = callback;
     }
 
-    const std::function<void(std::shared_ptr<Stream>)> &asyncStreamCallback()
-        const override
+    const std::function<void(StreamPtr)> &asyncStreamCallback() const override
     {
         return asyncStreamCallback_;
     }
 
-    void setAsyncStreamCallback(
-        const std::function<void(std::shared_ptr<Stream>)> &callback)
+    void setAsyncStreamCallback(const std::function<void(StreamPtr)> &callback)
     {
         asyncStreamCallback_ = callback;
     }
@@ -509,7 +508,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     std::string sendfileName_;
     SendfileRange sendfileRange_{0, 0};
     std::function<std::size_t(char *, std::size_t)> streamCallback_;
-    std::function<void(std::shared_ptr<Stream>)> asyncStreamCallback_;
+    std::function<void(StreamPtr)> asyncStreamCallback_;
 
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 
