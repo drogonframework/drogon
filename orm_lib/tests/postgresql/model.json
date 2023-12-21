@@ -10,5 +10,52 @@
     "user":"postgres",
     "passwd":"",
     //"tables":["group_users"]
-    "tables":["users"]
+    "tables": [
+        "users",
+        "wallets",
+        "blog",
+        "category",
+        "blog_tag",
+        "tag"
+    ],
+    "relationships": {
+        "enabled": true,
+        "items": [
+            {
+                "type": "has one",
+                "original_table_name": "users",
+                "original_table_alias": "user",
+                "original_key": "user_id",
+                "target_table_name": "wallets",
+                "target_table_alias": "wallet",
+                "target_key": "user_id",
+                "enable_reverse": true
+            },
+            {
+                "type": "has many",
+                "original_table_name": "category",
+                "original_table_alias": "category",
+                "original_key": "id",
+                "target_table_name": "blog",
+                "target_table_alias": "blogs",
+                "target_key": "category_id",
+                "enable_reverse": true
+            },
+            {
+                "type": "many to many",
+                "original_table_name": "blog",
+                "original_table_alias": "blogs",
+                "original_key": "id",
+                "pivot_table": {
+                    "table_name": "blog_tag",
+                    "original_key": "blog_id",
+                    "target_key": "tag_id"
+                },
+                "target_table_name": "tag",
+                "target_table_alias": "tags",
+                "target_key": "id",
+                "enable_reverse": true
+            }
+        ]
+    }
 }
