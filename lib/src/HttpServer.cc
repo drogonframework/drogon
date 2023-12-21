@@ -575,7 +575,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
             if (!respImplPtr->ifCloseConnection())
             {
                 asyncStreamCallback(
-                    std::make_shared<Stream>(conn->sendAsyncStream()));
+                    std::make_unique<Stream>(conn->sendAsyncStream()));
             }
             else
             {

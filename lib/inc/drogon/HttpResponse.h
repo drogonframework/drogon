@@ -98,6 +98,8 @@ struct Stream
     trantor::AsyncStreamPtr asyncStream_;
 };
 
+using StreamPtr = std::unique_ptr<Stream>;
+
 class DROGON_EXPORT HttpResponse
 {
   public:
