@@ -369,9 +369,16 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return asyncStreamCallback_;
     }
 
-    void setAsyncStreamCallback(const std::function<void(StreamPtr)> &callback)
+    void setAsyncStreamCallback(const std::function<void(StreamPtr)> &callback,
+                                bool disableKickoffTimeout)
     {
         asyncStreamCallback_ = callback;
+        asyncStreamDisableKickoff_ = disableKickoffTimeout;
+    }
+
+    bool asyncStreamKickoffDisabled() const override
+    {
+        return asyncStreamDisableKickoff_;
     }
 
     void makeHeaderString()
@@ -509,6 +516,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     SendfileRange sendfileRange_{0, 0};
     std::function<std::size_t(char *, std::size_t)> streamCallback_;
     std::function<void(StreamPtr)> asyncStreamCallback_;
+    bool asyncStreamDisableKickoff_{false};
 
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 

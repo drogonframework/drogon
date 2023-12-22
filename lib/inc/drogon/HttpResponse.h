@@ -522,7 +522,8 @@ class DROGON_EXPORT HttpResponse
         const HttpRequestPtr &req = HttpRequestPtr());
 
     static HttpResponsePtr newAsyncStreamResponse(
-        const std::function<void(StreamPtr)> &callback);
+        const std::function<void(StreamPtr)> &callback,
+        bool disableKickoffTimeout = false);
 
     /**
      * @brief Create a custom HTTP response object. For using this template,

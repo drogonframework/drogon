@@ -476,7 +476,8 @@ HttpResponsePtr HttpResponse::newStreamResponse(
 }
 
 HttpResponsePtr HttpResponse::newAsyncStreamResponse(
-    const std::function<void(StreamPtr)> &callback)
+    const std::function<void(StreamPtr)> &callback,
+    bool disableKickoffTimeout)
 {
     if (!callback)
     {
@@ -484,7 +485,7 @@ HttpResponsePtr HttpResponse::newAsyncStreamResponse(
         return resp;
     }
     auto resp = std::make_shared<HttpResponseImpl>();
-    resp->setAsyncStreamCallback(callback);
+    resp->setAsyncStreamCallback(callback, disableKickoffTimeout);
     resp->setStatusCode(k200OK);
     doResponseCreateAdvices(resp);
     return resp;
