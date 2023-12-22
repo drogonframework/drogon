@@ -575,7 +575,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
             if (!respImplPtr->ifCloseConnection())
             {
                 asyncStreamCallback(
-                    std::make_unique<Stream>(conn->sendAsyncStream()));
+                    std::make_unique<Stream>(conn->sendAsyncStream(true)));
             }
             else
             {
@@ -656,7 +656,7 @@ void HttpServer::sendResponses(
                 if (!respImplPtr->ifCloseConnection())
                 {
                     asyncStreamCallback(
-                        std::make_unique<Stream>(conn->sendAsyncStream()));
+                        std::make_unique<Stream>(conn->sendAsyncStream(true)));
                 }
                 else
                 {
