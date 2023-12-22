@@ -376,7 +376,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         asyncStreamDisableKickoff_ = disableKickoffTimeout;
     }
 
-    bool asyncStreamKickoffDisabled() const override
+    bool asyncStreamKickoffDisabled() const
     {
         return asyncStreamDisableKickoff_;
     }
