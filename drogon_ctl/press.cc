@@ -18,7 +18,7 @@
 #include <iostream>
 #include <memory>
 #include <iomanip>
-#include <stdlib.h>
+#include <cstdlib>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -178,7 +178,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
     else
     {
         auto pos = url_.find("://");
-        auto posOfPath = url_.find("/", pos + 3);
+        auto posOfPath = url_.find('/', pos + 3);
         if (posOfPath == std::string::npos)
         {
             host_ = url_;
@@ -286,7 +286,6 @@ void press::sendRequest(const HttpClientPtr &client)
 
 void press::outputResults()
 {
-    static std::mutex mtx;
     size_t totalSent = 0;
     size_t totalRecv = 0;
     for (auto &client : clients_)
@@ -298,7 +297,7 @@ void press::outputResults()
     auto microSecs = now.microSecondsSinceEpoch() -
                      statistics_.startDate_.microSecondsSinceEpoch();
     double seconds = (double)microSecs / 1000000.0;
-    size_t rps = static_cast<size_t>(statistics_.numOfGoodResponse_ / seconds);
+    auto rps = static_cast<size_t>(statistics_.numOfGoodResponse_ / seconds);
     std::cout << std::endl;
     std::cout << "TOTALS:   " << numOfConnections_ << " connect, "
               << numOfRequests_ << " requests, "
