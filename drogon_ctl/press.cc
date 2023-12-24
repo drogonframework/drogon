@@ -32,8 +32,8 @@ std::string press::detail()
            "  -n num    number of requests(default : 1)\n"
            "  -t num    number of threads(default : 1)\n"
            "  -c num    concurrent connections(default : 1)\n"
-           //  "  -k        keep alive(default: no)\n"
-           "  -q        no progress indication(default: no)\n\n"
+           "  -k        disable SSL certificate validation(default: enable)\n"
+           "  -q        no progress indication(default: show)\n\n"
            "example: drogon_ctl press -n 10000 -c 100 -t 4 -q "
            "http://localhost:8080/index.html\n";
 }
@@ -151,11 +151,11 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 continue;
             }
         }
-        // else if (param == "-k")
-        // {
-        //     keepAlive_ = true;
-        //     continue;
-        // }
+        else if (param == "-k")
+        {
+            certValidation_ = false;
+            continue;
+        }
         else if (param == "-q")
         {
             processIndication_ = false;
@@ -216,8 +216,10 @@ void press::createRequestAndClients()
     loopPool_->start();
     for (size_t i = 0; i < numOfConnections_; ++i)
     {
-        auto client =
-            HttpClient::newHttpClient(host_, loopPool_->getNextLoop());
+        auto client = HttpClient::newHttpClient(host_,
+                                                loopPool_->getNextLoop(),
+                                                false,
+                                                certValidation_);
         client->enableCookies();
         clients_.push_back(client);
     }

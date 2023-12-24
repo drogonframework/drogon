@@ -62,7 +62,7 @@ class press : public DrObject<press>, public CommandHandler
     size_t numOfThreads_{1};
     size_t numOfRequests_{1};
     size_t numOfConnections_{1};
-    // bool keepAlive_ = false;
+    bool certValidation_{true};
     bool processIndication_{true};
     std::string url_;
     std::string host_;
