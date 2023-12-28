@@ -114,18 +114,32 @@ jobs:
         run: ./test.sh -t
 
   ubuntu:
-    name: ${{ matrix.buildname }}
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
+        link: [SHARED, STATIC]
+        compiler:
+          - cxx: g++
+            ver: 11
+          - cxx: g++
+            ver: 12
+          - cxx: g++
+            ver: 13
+          - cxx: clang++
+            ver: 15
+          - cxx: clang++
+            ver: 16
+          - cxx: clang++
+            ver: 17
         include:
-          - buildname: "ubuntu-22.04/gcc"
-            link: SHARED
-          - buildname: "ubuntu-22.04/gcc"
+          - feature: coroutines
             link: STATIC
-          - buildname: "ubuntu-22.04/coroutines"
-            link: STATIC
+            compiler:
+              cxx: g++
+              ver: 13
+    env:
+      CXX: ${{ matrix.compiler.cxx }}-${{ matrix.compiler.ver }}
     steps:
       - name: Checkout Drogon source code
         uses: actions/checkout@v4
@@ -147,6 +161,13 @@ jobs:
           sudo apt-get --purge remove postgresql postgresql-doc postgresql-common postgresql-client-common
           sudo apt-get -y install postgresql-all
 
+      - name: Install Clang
+        if: startsWith(matrix.compiler.cxx, 'clang')
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x ./llvm.sh
+          sudo ./llvm.sh ${{ matrix.compiler.ver }}
+
       - name: Export `shared`
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
@@ -155,7 +176,7 @@ jobs:
       - name: Create Build Environment & Configure Cmake
         # Some projects don't allow in-source building, so create a separate build directory
         # We'll use this as our working directory for all subsequent commands
-        if: matrix.buildname != 'ubuntu-22.04/coroutines'
+        if: matrix.feature != 'coroutines'
         run: |
           cmake -B build -G Ninja          \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
@@ -165,7 +186,7 @@ jobs:
       - name: Create Build Environment & Configure Cmake (coroutines)
         # Some projects don't allow in-source building, so create a separate build directory
         # We'll use this as our working directory for all subsequent commands
-        if: matrix.buildname == 'ubuntu-22.04/coroutines'
+        if: matrix.feature == 'coroutines'
         run: |
           cmake -B build -G Ninja            \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
