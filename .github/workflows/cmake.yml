@@ -124,8 +124,6 @@ jobs:
         link: [SHARED, STATIC]
         compiler:
           - cxx: g++
-            ver: 8
-          - cxx: g++
             ver: 9
           - cxx: g++
             ver: 10
