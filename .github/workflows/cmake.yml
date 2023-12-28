@@ -191,7 +191,11 @@ jobs:
           sudo apt-get -y install postgresql-all
 
       - name: Install Clang
-        if: startsWith(matrix.compiler.cxx, 'clang')
+        if: startsWith(matrix.compiler.cxx, 'clang') && compiler.ver < 13
+        run: sudo apt-get install clang-${{ compiler.ver }}
+
+      - name: Install Clang
+        if: startsWith(matrix.compiler.cxx, 'clang') && compiler.ver >= 13
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x ./llvm.sh
