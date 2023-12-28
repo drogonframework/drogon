@@ -79,8 +79,8 @@ jobs:
           fetch-depth: 0
 
       - name: Install dependencies
-        # Already installed: brotli, zlib, postgresql@14, lz4, sqlite3
-        run: brew install ninja jsoncpp mariadb hiredis redis spdlog
+        # Already installed: brotli, zlib, lz4, sqlite3
+        run: brew install ninja jsoncpp mariadb hiredis redis spdlog postgresql@14
 
       - name: Create Build Environment & Configure Cmake
         # Some projects don't allow in-source building, so create a separate build directory
