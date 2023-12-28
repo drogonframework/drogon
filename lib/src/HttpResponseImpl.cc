@@ -13,6 +13,7 @@
  */
 
 #include "HttpResponseImpl.h"
+#include "AOPAdvice.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpUtils.h"
 #include <drogon/HttpViewData.h>
@@ -38,20 +39,6 @@ namespace drogon
 // "Fri, 23 Aug 2019 12:58:03 GMT" length = 29
 static const size_t httpFullDateStringLength = 29;
 
-static inline void doResponseCreateAdvices(
-    const HttpResponseImplPtr &responsePtr)
-{
-    auto &advices =
-        HttpAppFrameworkImpl::instance().getResponseCreationAdvices();
-    if (!advices.empty())
-    {
-        for (auto &advice : advices)
-        {
-            advice(responsePtr);
-        }
-    }
-}
-
 static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
                                               const HttpViewData &data,
                                               const HttpRequestPtr &req)
@@ -70,7 +57,7 @@ static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_TEXT_HTML);
-    doResponseCreateAdvices(res);
+    AopAdvice::instance().passResponseCreationAdvices(res);
     return res;
 }
 
@@ -78,7 +65,7 @@ HttpResponsePtr HttpResponse::newHttpResponse(HttpStatusCode code,
                                               ContentType type)
 {
     auto res = std::make_shared<HttpResponseImpl>(code, type);
-    doResponseCreateAdvices(res);
+    AopAdvice::instance().passResponseCreationAdvices(res);
     return res;
 }
 
@@ -86,7 +73,7 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
     res->setJsonObject(data);
-    doResponseCreateAdvices(res);
+    AopAdvice::instance().passResponseCreationAdvices(res);
     return res;
 }
 
@@ -94,7 +81,7 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(Json::Value &&data)
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
     res->setJsonObject(std::move(data));
-    doResponseCreateAdvices(res);
+    AopAdvice::instance().passResponseCreationAdvices(res);
     return res;
 }
 
@@ -204,7 +191,7 @@ HttpResponsePtr HttpResponse::newRedirectionResponse(
     auto res = std::make_shared<HttpResponseImpl>();
     res->setStatusCode(status);
     res->redirect(location);
-    doResponseCreateAdvices(res);
+    AopAdvice::instance().passResponseCreationAdvices(res);
     return res;
 }
 
@@ -267,7 +254,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
     }
 
     // Finalize and return response
-    doResponseCreateAdvices(resp);
+    AopAdvice::instance().passResponseCreationAdvices(resp);
     return resp;
 }
 
@@ -407,7 +394,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
                  filesize);
         resp->addHeader("Content-Range", std::string(buf));
     }
-    doResponseCreateAdvices(resp);
+    AopAdvice::instance().passResponseCreationAdvices(resp);
     return resp;
 }
 
@@ -471,7 +458,7 @@ HttpResponsePtr HttpResponse::newStreamResponse(
         resp->addHeader("Content-Disposition",
                         "attachment; filename=" + attachmentFileName);
     }
-    doResponseCreateAdvices(resp);
+    AopAdvice::instance().passResponseCreationAdvices(resp);
     return resp;
 }
 

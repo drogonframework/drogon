@@ -44,20 +44,10 @@ class ListenerManager : public trantor::NonCopyable
                          &sslConfCmds = {});
     std::vector<trantor::InetAddress> getListeners() const;
     void createListeners(
-        const HttpAsyncCallback &httpCallback,
-        const WebSocketNewAsyncCallback &webSocketCallback,
-        const trantor::ConnectionCallback &connectionCallback,
-        size_t connectionTimeout,
         const std::string &globalCertFile,
         const std::string &globalKeyFile,
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
-        const std::vector<trantor::EventLoop *> &ioLoops,
-        const std::vector<
-            std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-            &syncAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             const HttpResponsePtr &)>>
-            &preSendingAdvices);
+        const std::vector<trantor::EventLoop *> &ioLoops);
     void startListening();
     void stopListening();
 

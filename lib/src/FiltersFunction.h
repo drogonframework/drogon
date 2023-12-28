@@ -25,12 +25,9 @@ namespace filters_function
 {
 std::vector<std::shared_ptr<HttpFilterBase>> createFilters(
     const std::vector<std::string> &filterNames);
-void doFilters(
-    const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
-    const HttpRequestImplPtr &req,
-    const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
-        &callbackPtr,
-    std::function<void()> &&missCallback);
 
+void doFilters(const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
+               const HttpRequestImplPtr &req,
+               std::function<void(const HttpResponsePtr &)> &&callback);
 }  // namespace filters_function
 }  // namespace drogon

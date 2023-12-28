@@ -261,6 +261,8 @@ set(DROGON_SOURCES
     lib/src/HttpAppFrameworkImpl.cc
     lib/src/HttpBinder.cc
     lib/src/HttpClientImpl.cc
+    lib/src/HttpConnectionLimit.cc
+    lib/src/HttpControllerBinder.cc
     lib/src/HttpControllersRouter.cc
     lib/src/HttpFileImpl.cc
     lib/src/HttpFileUploadRequest.cc
@@ -269,7 +271,6 @@ set(DROGON_SOURCES
     lib/src/HttpResponseImpl.cc
     lib/src/HttpResponseParser.cc
     lib/src/HttpServer.cc
-    lib/src/HttpSimpleControllersRouter.cc
     lib/src/HttpUtils.cc
     lib/src/HttpViewData.cc
     lib/src/IntranetIpFilter.cc
@@ -294,16 +295,18 @@ set(DROGON_SOURCES
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
-    lib/src/WebsocketControllersRouter.cc
     lib/src/YamlConfigAdapter.cc
     lib/src/drogon_test.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
     lib/src/ConfigLoader.h
+    lib/src/ControllerBinderBase.h
     lib/src/FiltersFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h
+    lib/src/HttpConnectionLimit.h
+    lib/src/HttpControllerBinder.h
     lib/src/HttpControllersRouter.h
     lib/src/HttpFileImpl.h
     lib/src/HttpFileUploadRequest.h
@@ -313,7 +316,6 @@ set(private_headers
     lib/src/HttpResponseImpl.h
     lib/src/HttpResponseParser.h
     lib/src/HttpServer.h
-    lib/src/HttpSimpleControllersRouter.h
     lib/src/HttpUtils.h
     lib/src/impl_forwards.h
     lib/src/ListenerManager.h
@@ -324,7 +326,6 @@ set(private_headers
     lib/src/TaskTimeoutFlag.h
     lib/src/WebSocketClientImpl.h
     lib/src/WebSocketConnectionImpl.h
-    lib/src/WebsocketControllersRouter.h
     lib/src/FixedWindowRateLimiter.h
     lib/src/SlidingWindowRateLimiter.h
     lib/src/TokenBucketRateLimiter.h
