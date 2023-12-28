@@ -66,8 +66,11 @@ jobs:
         run: ./test.sh -w
 
   macos:
-    name: macos/clang
-    runs-on: macos-latest
+    runs-on: macos-${{ matrix.osver }}
+    strategy:
+      fail-fast: false
+      matrix:
+        osver: [11, 12, 13]
     steps:
       - name: Checkout Drogon source code
         uses: actions/checkout@v4
@@ -121,11 +124,37 @@ jobs:
         link: [SHARED, STATIC]
         compiler:
           - cxx: g++
+            ver: 8
+          - cxx: g++
+            ver: 9
+          - cxx: g++
+            ver: 10
+          - cxx: g++
             ver: 11
           - cxx: g++
             ver: 12
           - cxx: g++
             ver: 13
+          - cxx: clang++
+            ver: 5
+          - cxx: clang++
+            ver: 6
+          - cxx: clang++
+            ver: 7
+          - cxx: clang++
+            ver: 8
+          - cxx: clang++
+            ver: 9
+          - cxx: clang++
+            ver: 10
+          - cxx: clang++
+            ver: 11
+          - cxx: clang++
+            ver: 12
+          - cxx: clang++
+            ver: 13
+          - cxx: clang++
+            ver: 14
           - cxx: clang++
             ver: 15
           - cxx: clang++
