@@ -212,3 +212,37 @@ DROGON_TEST(SwitchThread)
     sync_wait(switch_thread());
     thread.wait();
 }
+
+DROGON_TEST(Cancellation)
+{
+    using namespace drogon::internal;
+
+    trantor::EventLoopThread thread;  // helper thread
+    thread.run();
+
+    auto testCancelTask = [TEST_CTX, loop = thread.getLoop()]() -> Task<> {
+        auto cancelHandle = CancelHandle::create();
+
+        // wait coro for 10 seconds, but cancel after 1 second
+        loop->runAfter(1, [cancelHandle]() { cancelHandle->cancel(); });
+
+        int64_t start = time(nullptr);
+        try
+        {
+            LOG_INFO << "Waiting for 10 seconds...";
+            co_await sleepCoro(loop, 10, cancelHandle);
+            CHECK(false);  // should not reach here
+        }
+        catch (const TaskCancelledException &ex)
+        {
+            int64_t waitTime = time(nullptr) - start;
+            CHECK(waitTime < 2);
+            LOG_INFO << "Oops... only waited for " << waitTime << " second(s)";
+        }
+
+        loop->quit();
+    };
+
+    sync_wait(testCancelTask());
+    thread.wait();
+}

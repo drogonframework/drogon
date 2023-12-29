@@ -29,6 +29,27 @@
 
 namespace drogon
 {
+struct CancelHandle;
+using CancelHandlePtr = std::shared_ptr<CancelHandle>;
+
+struct CancelHandle
+{
+    static CancelHandlePtr create();
+
+    virtual void cancel() = 0;
+    virtual bool isCancelRequested() = 0;
+    virtual void registerCancelCallback(std::function<void()> callback) = 0;
+};
+
+class TaskCancelledException final : public std::runtime_error
+{
+  public:
+    using std::runtime_error::runtime_error;
+};
+}  // namespace drogon
+
+namespace drogon
+{
 namespace internal
 {
 template <typename T>
@@ -596,6 +617,30 @@ struct [[nodiscard]] TimerAwaiter : CallbackAwaiter<void>
     double delay_;
 };
 
+struct [[nodiscard]] CancellableTimeAwaiter : CallbackAwaiter<void>
+{
+    CancellableTimeAwaiter(trantor::EventLoop *loop,
+                           const std::chrono::duration<double> &delay,
+                           CancelHandlePtr cancelHandle)
+        : CancellableTimeAwaiter(loop, delay.count(), std::move(cancelHandle))
+    {
+    }
+
+    CancellableTimeAwaiter(trantor::EventLoop *loop,
+                           double delay,
+                           CancelHandlePtr cancelHandle)
+        : loop_(loop), delay_(delay), cancelHandle_(std::move(cancelHandle))
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle);
+
+  private:
+    trantor::EventLoop *loop_;
+    double delay_;
+    CancelHandlePtr cancelHandle_;
+};
+
 struct [[nodiscard]] LoopAwaiter : CallbackAwaiter<void>
 {
     LoopAwaiter(trantor::EventLoop *workLoop,
@@ -682,6 +727,15 @@ inline internal::TimerAwaiter sleepCoro(trantor::EventLoop *loop,
 {
     assert(loop);
     return {loop, delay};
+}
+
+inline internal::CancellableTimeAwaiter sleepCoro(
+    trantor::EventLoop *loop,
+    double delay,
+    CancelHandlePtr cancelHandle) noexcept
+{
+    assert(loop);
+    return {loop, delay, std::move(cancelHandle)};
 }
 
 inline internal::LoopAwaiter queueInLoopCoro(
