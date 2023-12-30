@@ -29,10 +29,6 @@ class CancelHandleImpl : public CancelHandle
         return cancelRequested_;
     }
 
-    void registerCancelCallback(std::function<void()> callback) override
-    {
-    }
-
     void setCancelHandle(std::function<void()> handle)
     {
         bool cancelled{false};
@@ -56,8 +52,6 @@ class CancelHandleImpl : public CancelHandle
   private:
     std::mutex mutex_;
     bool cancelRequested_{false};
-
-    std::shared_ptr<std::atomic_bool> flagPtr_;
     std::function<void()> cancelHandle_;
 };
 
@@ -66,23 +60,35 @@ CancelHandlePtr CancelHandle::create()
     return std::make_shared<CancelHandleImpl>();
 }
 
+void internal::CancellableAwaiter::await_suspend(std::coroutine_handle<> handle)
+{
+    auto execFlagPtr = std::make_shared<std::atomic_bool>(false);
+    static_cast<CancelHandleImpl *>(cancelHandle_.get())
+        ->setCancelHandle([this, handle, execFlagPtr, loop = loop_]() {
+            if (!execFlagPtr->exchange(true))
+            {
+                setException(std::make_exception_ptr(
+                    TaskCancelledException("Task cancelled")));
+                loop->queueInLoop([handle]() { handle.resume(); });
+                return;
+            }
+        });
+}
+
 void internal::CancellableTimeAwaiter::await_suspend(
     std::coroutine_handle<> handle)
 {
     auto execFlagPtr = std::make_shared<std::atomic_bool>(false);
-    if (cancelHandle_)
-    {
-        static_cast<CancelHandleImpl *>(cancelHandle_.get())
-            ->setCancelHandle([this, handle, execFlagPtr, loop = loop_]() {
-                if (!execFlagPtr->exchange(true))
-                {
-                    setException(std::make_exception_ptr(
-                        TaskCancelledException("Task cancelled")));
-                    loop->queueInLoop([handle]() { handle.resume(); });
-                    return;
-                }
-            });
-    }
+    static_cast<CancelHandleImpl *>(cancelHandle_.get())
+        ->setCancelHandle([this, handle, execFlagPtr, loop = loop_]() {
+            if (!execFlagPtr->exchange(true))
+            {
+                setException(std::make_exception_ptr(
+                    TaskCancelledException("Task cancelled")));
+                loop->queueInLoop([handle]() { handle.resume(); });
+                return;
+            }
+        });
     loop_->runAfter(delay_, [handle, execFlagPtr = std::move(execFlagPtr)]() {
         if (!execFlagPtr->exchange(true))
         {

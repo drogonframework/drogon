@@ -38,7 +38,6 @@ struct CancelHandle
 
     virtual void cancel() = 0;
     virtual bool isCancelRequested() = 0;
-    virtual void registerCancelCallback(std::function<void()> callback) = 0;
 };
 
 class TaskCancelledException final : public std::runtime_error
@@ -617,6 +616,20 @@ struct [[nodiscard]] TimerAwaiter : CallbackAwaiter<void>
     double delay_;
 };
 
+struct [[nodiscard]] CancellableAwaiter : CallbackAwaiter<void>
+{
+    CancellableAwaiter(trantor::EventLoop *loop, CancelHandlePtr cancelHandle)
+        : loop_(loop), cancelHandle_(std::move(cancelHandle))
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle);
+
+  private:
+    trantor::EventLoop *loop_;
+    CancelHandlePtr cancelHandle_;
+};
+
 struct [[nodiscard]] CancellableTimeAwaiter : CallbackAwaiter<void>
 {
     CancellableTimeAwaiter(trantor::EventLoop *loop,
@@ -735,7 +748,17 @@ inline internal::CancellableTimeAwaiter sleepCoro(
     CancelHandlePtr cancelHandle) noexcept
 {
     assert(loop);
+    assert(cancelHandle);
     return {loop, delay, std::move(cancelHandle)};
+}
+
+inline internal::CancellableAwaiter sleepForeverCoro(
+    trantor::EventLoop *loop,
+    CancelHandlePtr cancelHandle) noexcept
+{
+    assert(loop);
+    assert(cancelHandle);
+    return {loop, std::move(cancelHandle)};
 }
 
 inline internal::LoopAwaiter queueInLoopCoro(

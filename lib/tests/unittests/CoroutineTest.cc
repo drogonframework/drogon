@@ -239,10 +239,9 @@ DROGON_TEST(Cancellation)
             CHECK(waitTime < 2);
             LOG_INFO << "Oops... only waited for " << waitTime << " second(s)";
         }
-
-        loop->quit();
     };
 
     sync_wait(testCancelTask());
+    thread.getLoop()->quit();
     thread.wait();
 }
