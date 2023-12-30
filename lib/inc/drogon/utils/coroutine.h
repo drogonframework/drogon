@@ -34,7 +34,8 @@ using CancelHandlePtr = std::shared_ptr<CancelHandle>;
 
 struct CancelHandle
 {
-    static CancelHandlePtr create();
+    static CancelHandlePtr newHandle();
+    static CancelHandlePtr newSharedHandle();
 
     virtual void cancel() = 0;
     virtual bool isCancelRequested() = 0;
