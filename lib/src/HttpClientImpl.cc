@@ -639,6 +639,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         }
         else
         {
+            bytesReceived_ += (msgSize - msg->readableBytes());
             break;
         }
     }

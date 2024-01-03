@@ -19,10 +19,16 @@
 #include <functional>
 #include <memory>
 #include <utility>
+#include "AOPAdvice.h"
+#include "FiltersFunction.h"
 #include "HttpAppFrameworkImpl.h"
+#include "HttpConnectionLimit.h"
+#include "HttpControllerBinder.h"
 #include "HttpRequestImpl.h"
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
+#include "HttpControllersRouter.h"
+#include "StaticFileRouter.h"
 #include "WebSocketConnectionImpl.h"
 
 #if COZ_PROFILING
@@ -38,37 +44,12 @@ using namespace std::placeholders;
 using namespace drogon;
 using namespace trantor;
 
-static void defaultHttpAsyncCallback(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &resp)> &&callback)
-{
-    auto resp = HttpResponse::newNotFoundResponse(req);
-    resp->setCloseConnection(true);
-    callback(resp);
-}
-
-static void defaultWebSockAsyncCallback(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &resp)> &&callback,
-    const WebSocketConnectionImplPtr &)
-{
-    auto resp = HttpResponse::newNotFoundResponse(req);
-    resp->setCloseConnection(true);
-    callback(resp);
-}
-
-static void defaultConnectionCallback(const trantor::TcpConnectionPtr &)
-{
-}
-
 static inline bool isWebSocket(const HttpRequestImplPtr &req);
 static inline HttpResponsePtr tryDecompressRequest(
     const HttpRequestImplPtr &req);
 static inline bool passSyncAdvices(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<HttpRequestParser> &requestParser,
-    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
     bool shouldBePipelined,
     bool isHeadMethod);
 static inline HttpResponsePtr getCompressedResponse(
@@ -76,30 +57,28 @@ static inline HttpResponsePtr getCompressedResponse(
     const HttpResponsePtr &response,
     bool isHeadMethod);
 
-HttpServer::HttpServer(
-    EventLoop *loop,
-    const InetAddress &listenAddr,
-    std::string name,
-    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
-    const std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &preSendingAdvices)
+static void handleInvalidHttpMethod(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback);
+
+static void handleHttpOptions(
+    const HttpRequestImplPtr &req,
+    const std::string &allowMethods,
+    std::function<void(const HttpResponsePtr &)> &&callback);
+
+HttpServer::HttpServer(EventLoop *loop,
+                       const InetAddress &listenAddr,
+                       std::string name)
 #ifdef __linux__
-    : server_(loop, listenAddr, std::move(name)),
+    : server_(loop, listenAddr, std::move(name))
 #else
-    : server_(loop, listenAddr, std::move(name), true, app().reusePort()),
+    : server_(loop, listenAddr, std::move(name), true, app().reusePort())
 #endif
-      httpAsyncCallback_(defaultHttpAsyncCallback),
-      newWebsocketCallback_(defaultWebSockAsyncCallback),
-      connectionCallback_(defaultConnectionCallback),
-      syncAdvices_(syncAdvices),
-      preSendingAdvices_(preSendingAdvices)
 {
-    server_.setConnectionCallback(
-        [this](const auto &conn) { this->onConnection(conn); });
-    server_.setRecvMessageCallback(
-        [this](const auto &conn, auto buff) { this->onMessage(conn, buff); });
+    server_.setConnectionCallback(onConnection);
+    server_.setRecvMessageCallback(onMessage);
+    server_.kickoffIdleConnections(
+        HttpAppFrameworkImpl::instance().getIdleConnectionTimeout());
 }
 
 HttpServer::~HttpServer() = default;
@@ -123,12 +102,21 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
         auto parser = std::make_shared<HttpRequestParser>(conn);
         parser->reset();
         conn->setContext(parser);
-        connectionCallback_(conn);
+        if (!HttpConnectionLimit::instance().tryAddConnection(conn))
+        {
+            LOG_ERROR << "too much connections!force close!";
+            conn->forceClose();
+            return;
+        }
+        if (!AopAdvice::instance().passNewConnectionAdvices(conn))
+        {
+            conn->forceClose();
+        }
     }
     else if (conn->disconnected())
     {
         LOG_TRACE << "conn disconnected!";
-        connectionCallback_(conn);
+        HttpConnectionLimit::instance().releaseConnection(conn);
         auto requestParser = conn->getContext<HttpRequestParser>();
         if (requestParser)
         {
@@ -228,22 +216,20 @@ void HttpServer::onRequests(
         auto &req = requests[0];
         if (passSyncAdvices(req,
                             requestParser,
-                            syncAdvices_,
                             false /* Not pipelined */,
                             false /* Not HEAD */))
         {
             auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
             wsConn->setPingMessage("", std::chrono::seconds{30});
-            newWebsocketCallback_(
+            onWebsocketRequest(
                 req,
-                [conn, wsConn, requestParser, this, req](
-                    const HttpResponsePtr &resp) mutable {
+                [conn, wsConn, requestParser, req](
+                    const HttpResponsePtr &resp0) mutable {
                     if (conn->connected())
                     {
-                        for (auto &advice : preSendingAdvices_)
-                        {
-                            advice(req, resp);
-                        }
+                        auto resp = HttpAppFrameworkImpl::instance()
+                                        .handleSessionForResponse(req, resp0);
+                        AopAdvice::instance().passPreSendingAdvices(req, resp);
                         if (resp->statusCode() == k101SwitchingProtocols)
                         {
                             requestParser->setWebsockConnection(wsConn);
@@ -254,7 +240,7 @@ void HttpServer::onRequests(
                         COZ_PROGRESS
                     }
                 },
-                wsConn);
+                std::move(wsConn));
             return;
         }
 
@@ -304,8 +290,7 @@ void HttpServer::onRequests(
             requestParser->pushRequestToPipelining(req, isHeadMethod);
             reqPipelined = true;
         }
-        if (!passSyncAdvices(
-                req, requestParser, syncAdvices_, reqPipelined, isHeadMethod))
+        if (!passSyncAdvices(req, requestParser, reqPipelined, isHeadMethod))
         {
             continue;
         }
@@ -323,8 +308,7 @@ void HttpServer::onRequests(
         }
         else
         {
-            // Although the function has 'async' in its name, the
-            // handleResponse() callback may be called synchronously. In this
+            // `handleResponse()` callback may be called synchronously. In this
             // case, the generated response should not be sent right away, but
             // be queued in buffer instead. Those ready responses will be sent
             // together after the end of the for loop.
@@ -332,15 +316,12 @@ void HttpServer::onRequests(
             // By doing this, we could reduce some system calls when sending
             // through socket. In order to achieve this, we create a
             // `respReady` variable.
-            httpAsyncCallback_(req,
-                               [this,
-                                respReadyPtr = &respReady,
-                                paramPack = std::move(paramPack)](
-                                   const HttpResponsePtr &response) {
-                                   handleResponse(response,
-                                                  paramPack,
-                                                  respReadyPtr);
-                               });
+            onHttpRequest(req,
+                          [respReadyPtr = &respReady,
+                           paramPack = std::move(paramPack)](
+                              const HttpResponsePtr &response) {
+                              handleResponse(response, paramPack, respReadyPtr);
+                          });
         }
         if (!reqPipelined && !respReady)
         {
@@ -355,6 +336,317 @@ void HttpServer::onRequests(
                       requestParser->getBuffer());
         requestParser->getResponseBuffer().clear();
     }
+}
+
+void HttpServer::onHttpRequest(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    LOG_TRACE << "new request:" << req->peerAddr().toIpPort() << "->"
+              << req->localAddr().toIpPort();
+    LOG_TRACE << "Headers " << req->methodString() << " " << req->path();
+    LOG_TRACE << "http path=" << req->path();
+    if (req->method() == Options && (req->path() == "*" || req->path() == "/*"))
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+        resp->addHeader("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
+        resp->setExpiredTime(0);
+        callback(resp);
+        return;
+    }
+
+    // TODO: move session related codes to its own singleton class
+    HttpAppFrameworkImpl::instance().findSessionForRequest(req);
+    // pre-routing aop
+    auto &aop = AopAdvice::instance();
+    aop.passPreRoutingObservers(req);
+    if (!aop.hasPreRoutingAdvices())
+    {
+        httpRequestRouting(req, std::move(callback));
+        return;
+    }
+    aop.passPreRoutingAdvices(req,
+                              [req, callback = std::move(callback)](
+                                  const HttpResponsePtr &resp) mutable {
+                                  if (resp)
+                                  {
+                                      callback(resp);
+                                  }
+                                  else
+                                  {
+                                      httpRequestRouting(req,
+                                                         std::move(callback));
+                                  }
+                              });
+}
+
+void HttpServer::httpRequestRouting(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    // How to access router here?? Make router class singleton?
+    RouteResult result = HttpControllersRouter::instance().route(req);
+    if (result.result == RouteResult::Success)
+    {
+        HttpRequestParamPack pack{std::move(result.binderPtr),
+                                  std::move(callback)};
+        requestPostRouting(req, std::move(pack));
+        return;
+    }
+    if (result.result == RouteResult::MethodNotAllowed)
+    {
+        handleInvalidHttpMethod(req, std::move(callback));
+        return;
+    }
+
+    // Fallback to static file router
+    // TODO: make this router a plugin
+    if (req->path() == "/" &&
+        !HttpAppFrameworkImpl::instance().getHomePage().empty())
+    {
+        req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
+    }
+    StaticFileRouter::instance().route(req, std::move(callback));
+}
+
+template <typename Pack>
+void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
+{
+    // post-routing aop
+    auto &aop = AopAdvice::instance();
+    aop.passPostRoutingObservers(req);
+    if (!aop.hasPostRoutingAdvices())
+    {
+        requestPassFilters(req, std::forward<Pack>(pack));
+        return;
+    }
+    aop.passPostRoutingAdvices(req,
+                               [req, pack = std::forward<Pack>(pack)](
+                                   const HttpResponsePtr &resp) mutable {
+                                   if (resp)
+                                   {
+                                       pack.callback(resp);
+                                   }
+                                   else
+                                   {
+                                       requestPassFilters(req, std::move(pack));
+                                   }
+                               });
+}
+
+template <typename Pack>
+void HttpServer::requestPassFilters(const HttpRequestImplPtr &req, Pack &&pack)
+{
+    // pass filters
+    auto &filters = pack.binderPtr->filters_;
+    if (filters.empty())
+    {
+        requestPreHandling(req, std::forward<Pack>(pack));
+        return;
+    }
+    filters_function::doFilters(filters,
+                                req,
+                                [req, pack = std::forward<Pack>(pack)](
+                                    const HttpResponsePtr &resp) mutable {
+                                    if (resp)
+                                    {
+                                        pack.callback(resp);
+                                    }
+                                    else
+                                    {
+                                        requestPreHandling(req,
+                                                           std::move(pack));
+                                    }
+                                });
+}
+
+template <typename Pack>
+void HttpServer::requestPreHandling(const HttpRequestImplPtr &req, Pack &&pack)
+{
+    if (req->method() == Options)
+    {
+        handleHttpOptions(req,
+                          *pack.binderPtr->corsMethods_,
+                          std::move(pack.callback));
+        return;
+    }
+
+    // pre-handling aop
+    auto &aop = AopAdvice::instance();
+    aop.passPreHandlingObservers(req);
+    if (!aop.hasPreHandlingAdvices())
+    {
+        if constexpr (std::is_same_v<std::decay_t<Pack>, HttpRequestParamPack>)
+        {
+            httpRequestHandling(req,
+                                std::move(pack.binderPtr),
+                                std::move(pack.callback));
+        }
+        else
+        {
+            websocketRequestHandling(req,
+                                     std::move(pack.binderPtr),
+                                     std::move(pack.callback),
+                                     std::move(pack.wsConnPtr));
+        }
+        return;
+    }
+    aop.passPreHandlingAdvices(
+        req,
+        [req,
+         pack = std::forward<Pack>(pack)](const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                pack.callback(resp);
+                return;
+            }
+            if constexpr (std::is_same_v<std::decay_t<Pack>,
+                                         HttpRequestParamPack>)
+            {
+                httpRequestHandling(req,
+                                    std::move(pack.binderPtr),
+                                    std::move(pack.callback));
+            }
+            else
+            {
+                websocketRequestHandling(req,
+                                         std::move(pack.binderPtr),
+                                         std::move(pack.callback),
+                                         std::move(pack.wsConnPtr));
+            }
+        });
+}
+
+void HttpServer::httpRequestHandling(
+    const HttpRequestImplPtr &req,
+    std::shared_ptr<ControllerBinderBase> &&binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    // Check cached response
+    auto &cachedResp = *(binderPtr->responseCache_);
+    if (cachedResp)
+    {
+        if (cachedResp->expiredTime() == 0 ||
+            (trantor::Date::now() <
+             cachedResp->creationDate().after(
+                 static_cast<double>(cachedResp->expiredTime()))))
+        {
+            // use cached response!
+            LOG_TRACE << "Use cached response";
+
+            // post-handling aop
+            AopAdvice::instance().passPostHandlingAdvices(req, cachedResp);
+            callback(cachedResp);
+            return;
+        }
+        else
+        {
+            cachedResp.reset();
+        }
+    }
+
+    binderPtr->handleRequest(
+        req,
+        // This is the actual callback being passed to controller
+        [req, binderPtr, callback = std::move(callback)](
+            const HttpResponsePtr &resp) {
+            // Check if we need to cache the response
+            if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
+            {
+                static_cast<HttpResponseImpl *>(resp.get())->makeHeaderString();
+                auto loop = req->getLoop();
+                if (loop->isInLoopThread())
+                {
+                    binderPtr->responseCache_.setThreadData(resp);
+                }
+                else
+                {
+                    loop->queueInLoop([binderPtr, resp]() {
+                        binderPtr->responseCache_.setThreadData(resp);
+                    });
+                }
+            }
+            // post-handling aop
+            AopAdvice::instance().passPostHandlingAdvices(req, resp);
+            callback(resp);
+        });
+}
+
+void HttpServer::onWebsocketRequest(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    WebSocketConnectionImplPtr &&wsConnPtr)
+{
+    HttpAppFrameworkImpl::instance().findSessionForRequest(req);
+    // pre-routing aop
+    auto &aop = AopAdvice::instance();
+    aop.passPreRoutingObservers(req);
+    if (!aop.hasPreRoutingAdvices())
+    {
+        websocketRequestRouting(req, std::move(callback), std::move(wsConnPtr));
+        return;
+    }
+    aop.passPreRoutingAdvices(
+        req,
+        [req, wsConnPtr = std::move(wsConnPtr), callback = std::move(callback)](
+            const HttpResponsePtr &resp) mutable {
+            if (resp)
+            {
+                callback(resp);
+            }
+            else
+            {
+                websocketRequestRouting(req,
+                                        std::move(callback),
+                                        std::move(wsConnPtr));
+            }
+        });
+}
+
+void HttpServer::websocketRequestRouting(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    WebSocketConnectionImplPtr &&wsConnPtr)
+{
+    RouteResult result = HttpControllersRouter::instance().routeWs(req);
+
+    if (result.result == RouteResult::Success)
+    {
+        WsRequestParamPack pack{std::move(result.binderPtr),
+                                std::move(callback),
+                                std::move(wsConnPtr)};
+        requestPostRouting(req, std::move(pack));
+        return;
+    }
+    if (result.result == RouteResult::MethodNotAllowed)
+    {
+        handleInvalidHttpMethod(req, std::move(callback));
+        return;
+    }
+
+    // Not found
+    auto resp = drogon::HttpResponse::newNotFoundResponse(req);
+    resp->setCloseConnection(true);
+    callback(resp);
+}
+
+void HttpServer::websocketRequestHandling(
+    const HttpRequestImplPtr &req,
+    std::shared_ptr<ControllerBinderBase> &&binderPtr,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    WebSocketConnectionImplPtr &&wsConnPtr)
+{
+    binderPtr->handleRequest(
+        req,
+        [req, callback = std::move(callback)](const HttpResponsePtr &resp) {
+            AopAdvice::instance().passPostHandlingAdvices(req, resp);
+            callback(resp);
+        });
+
+    // TODO: more elegant?
+    static_cast<WebsocketControllerBinder *>(binderPtr.get())
+        ->handleNewConnection(req, wsConnPtr);
 }
 
 void HttpServer::handleResponse(
@@ -380,13 +672,14 @@ void HttpServer::handleResponse(
         return;
     }
 
-    response->setVersion(req->getVersion());
-    response->setCloseConnection(!req->keepAlive());
-    for (auto &advice : preSendingAdvices_)
-    {
-        advice(req, response);
-    }
-    auto newResp = getCompressedResponse(req, response, isHeadMethod);
+    auto resp =
+        HttpAppFrameworkImpl::instance().handleSessionForResponse(req,
+                                                                  response);
+    resp->setVersion(req->getVersion());
+    resp->setCloseConnection(!req->keepAlive());
+    AopAdvice::instance().passPreSendingAdvices(req, resp);
+
+    auto newResp = getCompressedResponse(req, resp, isHeadMethod);
     if (conn->getLoop()->isInLoopThread())
     {
         /*
@@ -422,23 +715,20 @@ void HttpServer::handleResponse(
     }
     else
     {
-        conn->getLoop()->queueInLoop([this,
-                                      conn,
-                                      req,
-                                      requestParser,
-                                      newResp = std::move(newResp)]() mutable {
-            if (!conn->connected())
-            {
-                return;
-            }
-            if (requestParser->pushResponseToPipelining(req,
-                                                        std::move(newResp)))
-            {
-                std::vector<std::pair<HttpResponsePtr, bool>> responses;
-                requestParser->popReadyResponses(responses);
-                sendResponses(conn, responses, requestParser->getBuffer());
-            }
-        });
+        conn->getLoop()->queueInLoop(
+            [conn, req, requestParser, newResp = std::move(newResp)]() mutable {
+                if (!conn->connected())
+                {
+                    return;
+                }
+                if (requestParser->pushResponseToPipelining(req,
+                                                            std::move(newResp)))
+                {
+                    std::vector<std::pair<HttpResponsePtr, bool>> responses;
+                    requestParser->popReadyResponses(responses);
+                    sendResponses(conn, responses, requestParser->getBuffer());
+                }
+            });
     }
 }
 
@@ -800,32 +1090,25 @@ static inline HttpResponsePtr tryDecompressRequest(
 static inline bool passSyncAdvices(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<HttpRequestParser> &requestParser,
-    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
     bool shouldBePipelined,
     bool isHeadMethod)
 {
-    for (auto &advice : syncAdvices)
+    if (auto resp = AopAdvice::instance().passSyncAdvices(req))
     {
-        auto resp = advice(req);
-        if (resp)
+        // Rejected by sync advice
+        resp->setVersion(req->getVersion());
+        resp->setCloseConnection(!req->keepAlive());
+        if (!shouldBePipelined)
         {
-            // Rejected by sync advice
-            resp->setVersion(req->getVersion());
-            resp->setCloseConnection(!req->keepAlive());
-            if (!shouldBePipelined)
-            {
-                requestParser->getResponseBuffer().emplace_back(
-                    getCompressedResponse(req, resp, isHeadMethod),
-                    isHeadMethod);
-            }
-            else
-            {
-                requestParser->pushResponseToPipelining(
-                    req, getCompressedResponse(req, resp, isHeadMethod));
-            }
-            return false;
+            requestParser->getResponseBuffer().emplace_back(
+                getCompressedResponse(req, resp, isHeadMethod), isHeadMethod);
         }
+        else
+        {
+            requestParser->pushResponseToPipelining(
+                req, getCompressedResponse(req, resp, isHeadMethod));
+        }
+        return false;
     }
     return true;
 }
@@ -893,4 +1176,38 @@ static inline HttpResponsePtr getCompressedResponse(
         return newResp;
     }
     return response;
+}
+
+static void handleInvalidHttpMethod(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    if (req->method() != Options)
+    {
+        callback(app().getCustomErrorHandler()(k405MethodNotAllowed, req));
+    }
+    else
+    {
+        callback(app().getCustomErrorHandler()(k403Forbidden, req));
+    }
+}
+
+static void handleHttpOptions(
+    const HttpRequestImplPtr &req,
+    const std::string &allowMethods,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+    resp->addHeader("Allow", allowMethods);
+
+    auto &orig = req->getHeaderBy("origin");
+    resp->addHeader("Access-Control-Allow-Origin", orig.empty() ? "*" : orig);
+    resp->addHeader("Access-Control-Allow-Methods", allowMethods);
+    auto &headers = req->getHeaderBy("access-control-request-headers");
+    if (!headers.empty())
+    {
+        resp->addHeader("Access-Control-Allow-Headers", headers);
+    }
+    callback(resp);
 }

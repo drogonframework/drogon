@@ -76,19 +76,10 @@ std::vector<trantor::InetAddress> ListenerManager::getListeners() const
 }
 
 void ListenerManager::createListeners(
-    const HttpAsyncCallback &httpCallback,
-    const WebSocketNewAsyncCallback &webSocketCallback,
-    const ConnectionCallback &connectionCallback,
-    size_t connectionTimeout,
     const std::string &globalCertFile,
     const std::string &globalKeyFile,
     const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
-    const std::vector<trantor::EventLoop *> &ioLoops,
-    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
-    const std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &preSendingAdvices)
+    const std::vector<trantor::EventLoop *> &ioLoops)
 {
     LOG_TRACE << "thread num=" << ioLoops.size();
 #ifdef __linux__
@@ -119,9 +110,7 @@ void ListenerManager::createListeners(
             std::shared_ptr<HttpServer> serverPtr =
                 std::make_shared<HttpServer>(ioLoops[i],
                                              listenAddress,
-                                             "drogon",
-                                             syncAdvices,
-                                             preSendingAdvices);
+                                             "drogon");
 
             if (listener.useSSL_ && utils::supportsTls())
             {
@@ -147,10 +136,6 @@ void ListenerManager::createListeners(
                 policy->setConfCmds(cmds).setUseOldTLS(listener.useOldTLS_);
                 serverPtr->enableSSL(std::move(policy));
             }
-            serverPtr->setHttpAsyncCallback(httpCallback);
-            serverPtr->setNewWebsocketCallback(webSocketCallback);
-            serverPtr->setConnectionCallback(connectionCallback);
-            serverPtr->kickoffIdleConnections(connectionTimeout);
             servers_.push_back(serverPtr);
         }
     }
@@ -168,9 +153,7 @@ void ListenerManager::createListeners(
             auto serverPtr = std::make_shared<HttpServer>(
                 listeningThread_->getLoop(),
                 InetAddress(ip, listener.port_, isIpv6),
-                "drogon",
-                syncAdvices,
-                preSendingAdvices);
+                "drogon");
             if (listener.useSSL_ && utils::supportsTls())
             {
                 auto cert = listener.certFile_;
@@ -193,10 +176,6 @@ void ListenerManager::createListeners(
                 serverPtr->enableSSL(std::move(policy));
             }
             serverPtr->setIoLoops(ioLoops);
-            serverPtr->setHttpAsyncCallback(httpCallback);
-            serverPtr->setNewWebsocketCallback(webSocketCallback);
-            serverPtr->setConnectionCallback(connectionCallback);
-            serverPtr->kickoffIdleConnections(connectionTimeout);
             servers_.push_back(serverPtr);
         }
     }

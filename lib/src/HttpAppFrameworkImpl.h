@@ -18,10 +18,7 @@
 #include <drogon/config.h>
 #include <json/json.h>
 #include <functional>
-#include <limits>
 #include <memory>
-#include <mutex>
-#include <regex>
 #include <string>
 #include <vector>
 #include "SessionManager.h"
@@ -137,96 +134,46 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &registerNewConnectionAdvice(
         const std::function<bool(const trantor::InetAddress &,
                                  const trantor::InetAddress &)> &advice)
-        override
-    {
-        newConnectionAdvices_.emplace_back(advice);
-        return *this;
-    }
+        override;
 
     HttpAppFramework &registerHttpResponseCreationAdvice(
-        const std::function<void(const HttpResponsePtr &)> &advice) override
-    {
-        responseCreationAdvices_.emplace_back(advice);
-        return *this;
-    }
-
-    const std::vector<std::function<void(const HttpResponsePtr &)>>
-        &getResponseCreationAdvices() const
-    {
-        return responseCreationAdvices_;
-    }
+        const std::function<void(const HttpResponsePtr &)> &advice) override;
 
     HttpAppFramework &registerSyncAdvice(
         const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
-        override
-    {
-        syncAdvices_.emplace_back(advice);
-        return *this;
-    }
+        override;
 
     HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice) override
-    {
-        preRoutingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 AdviceChainCallback &&)> &advice) override;
 
     HttpAppFramework &registerPostRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice) override
-    {
-        postRoutingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 AdviceChainCallback &&)> &advice) override;
 
     HttpAppFramework &registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
-                                 AdviceChainCallback &&)> &advice) override
-    {
-        preHandlingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 AdviceChainCallback &&)> &advice) override;
 
     HttpAppFramework &registerPreRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &)> &advice) override
-    {
-        preRoutingObservers_.emplace_back(advice);
-        return *this;
-    }
+        const std::function<void(const HttpRequestPtr &)> &advice) override;
 
     HttpAppFramework &registerPostRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &)> &advice) override
-    {
-        postRoutingObservers_.emplace_back(advice);
-        return *this;
-    }
+        const std::function<void(const HttpRequestPtr &)> &advice) override;
 
     HttpAppFramework &registerPreHandlingAdvice(
-        const std::function<void(const HttpRequestPtr &)> &advice) override
-    {
-        preHandlingObservers_.emplace_back(advice);
-        return *this;
-    }
+        const std::function<void(const HttpRequestPtr &)> &advice) override;
 
     HttpAppFramework &registerPostHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
-                                 const HttpResponsePtr &)> &advice) override
-    {
-        postHandlingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 const HttpResponsePtr &)> &advice) override;
 
     HttpAppFramework &registerPreSendingAdvice(
         const std::function<void(const HttpRequestPtr &,
-                                 const HttpResponsePtr &)> &advice) override
-    {
-        preSendingAdvices_.emplace_back(advice);
-        return *this;
-    }
+                                 const HttpResponsePtr &)> &advice) override;
 
     HttpAppFramework &setDefaultHandler(DefaultHandler handler) override;
 
@@ -393,6 +340,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
+    size_t getIdleConnectionTimeout() const  // could expose in base class
+    {
+        return idleConnectionTimeout_;
+    }
+
     HttpAppFramework &setKeepaliveRequestsNumber(const size_t number) override
     {
         keepaliveRequestsNumber_ = number;
@@ -482,8 +434,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return clientMaxWebSocketMessageSize_;
     }
 
-    std::vector<std::tuple<std::string, HttpMethod, std::string>>
-    getHandlersInfo() const override;
+    std::vector<HttpHandlerInfo> getHandlersInfo() const override;
 
     size_t keepaliveRequestsNumber() const
     {
@@ -618,11 +569,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return useSendfile_;
     }
 
-    void callCallback(
-        const HttpRequestImplPtr &req,
-        const HttpResponsePtr &resp,
-        const std::function<void(const HttpResponsePtr &)> &callback);
-
     bool supportSSL() const override
     {
         return trantor::utils::tlsBackend() != "None";
@@ -684,10 +630,13 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const std::string &ext,
         const std::string &mime) override;
 
-    int64_t getConnectionCount() const override
-    {
-        return connectionNum_.load(std::memory_order_relaxed);
-    }
+    // should return unsigned type!
+    int64_t getConnectionCount() const override;
+
+    // TODO: move session related codes to its own singleton class
+    void findSessionForRequest(const HttpRequestImplPtr &req);
+    HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
+                                             const HttpResponsePtr &resp);
 
   private:
     void registerHttpController(const std::string &pathPattern,
@@ -701,18 +650,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         const std::vector<HttpMethod> &validMethods,
         const std::vector<std::string> &filters,
         const std::string &handlerName) override;
-    void onAsyncRequest(
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback);
-    void onNewWebsockRequest(
-        const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        const WebSocketConnectionImplPtr &wsConnPtr);
-    void onConnection(const trantor::TcpConnectionPtr &conn);
 
-    void findSessionForRequest(const HttpRequestImplPtr &req);
-
-    // We use a uuid string as session id;
+    // We use an uuid string as session id;
     // set sessionTimeout_=0 to make location session valid forever based on
     // cookies;
     size_t sessionTimeout_{0};
@@ -723,11 +662,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     bool useSession_{false};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
                               "\r\n"};
-
-    std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
-    std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
-    std::unique_ptr<HttpSimpleControllersRouter> httpSimpleCtrlsRouterPtr_;
-    std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
 
     std::unique_ptr<ListenerManager> listenerManagerPtr_;
     std::unique_ptr<PluginsManager> pluginsManagerPtr_;
@@ -751,12 +685,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     std::string sslCertPath_;
     std::string sslKeyPath_;
-
-    size_t maxConnectionNumPerIP_{0};
-    std::unordered_map<std::string, size_t> connectionsNumMap_;
-
-    int64_t maxConnectionNum_{100000};
-    std::atomic<int64_t> connectionNum_{0};
 
     bool runAsDaemon_{false};
     bool handleSigterm_{true};
@@ -797,37 +725,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     bool enableDateHeader_{true};
     bool reusePort_{false};
     std::vector<std::function<void()>> beginningAdvices_;
-    std::vector<std::function<bool(const trantor::InetAddress &,
-                                   const trantor::InetAddress &)>>
-        newConnectionAdvices_;
-    std::vector<std::function<void(const HttpResponsePtr &)>>
-        responseCreationAdvices_;
-    std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        syncAdvices_;
-    std::vector<std::function<void(const HttpRequestPtr &,
-                                   AdviceCallback &&,
-                                   AdviceChainCallback &&)>>
-        preRoutingAdvices_;
-    std::vector<std::function<void(const HttpRequestPtr &,
-                                   AdviceCallback &&,
-                                   AdviceChainCallback &&)>>
-        postRoutingAdvices_;
-    std::vector<std::function<void(const HttpRequestPtr &,
-                                   AdviceCallback &&,
-                                   AdviceChainCallback &&)>>
-        preHandlingAdvices_;
-    std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        postHandlingAdvices_;
-    std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        preSendingAdvices_;
-    std::vector<std::function<void(const HttpRequestPtr &)>>
-        preRoutingObservers_;
-    std::vector<std::function<void(const HttpRequestPtr &)>>
-        postRoutingObservers_;
-    std::vector<std::function<void(const HttpRequestPtr &)>>
-        preHandlingObservers_;
+
     ExceptionHandler exceptionHandler_{defaultExceptionHandler};
     bool enableCompressedRequest_{false};
 };
