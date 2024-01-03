@@ -299,7 +299,7 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
     }
 
     assert(payload.remaining() >= frame.padLength);
-    if (payload.remaining() > frame.padLength)
+    if (payload.remaining() < frame.padLength)
     {
         LOG_TRACE << "data padding is larger than the payload size";
         return std::nullopt;
