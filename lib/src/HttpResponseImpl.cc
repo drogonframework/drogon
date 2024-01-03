@@ -474,7 +474,7 @@ HttpResponsePtr HttpResponse::newAsyncStreamResponse(
     auto resp = std::make_shared<HttpResponseImpl>();
     resp->setAsyncStreamCallback(callback, disableKickoffTimeout);
     resp->setStatusCode(k200OK);
-    doResponseCreateAdvices(resp);
+    AopAdvice::instance().passResponseCreationAdvices(resp);
     return resp;
 }
 
