@@ -71,6 +71,7 @@ constexpr T htonT(T value) noexcept
 #endif
 }
 
+#ifndef _WIN32
 inline uint64_t htonll(uint64_t value)
 {
     return htonT<uint64_t>(value);
@@ -80,6 +81,7 @@ inline uint64_t ntohll(uint64_t value)
 {
     return htonll(value);
 }
+#endif
 #endif
 
 namespace drogon
