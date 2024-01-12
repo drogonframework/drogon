@@ -74,9 +74,14 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
 struct Stream
 {
   public:
-    Stream(trantor::AsyncStreamPtr asyncStream)
+    explicit Stream(trantor::AsyncStreamPtr asyncStream)
         : asyncStream_(std::move(asyncStream))
     {
+    }
+
+    ~Stream()
+    {
+        close();
     }
 
     bool send(const std::string &data)
@@ -89,9 +94,13 @@ struct Stream
 
     void close()
     {
-        static std::string closeStream{"0\r\n\r\n"};
-        asyncStream_->send(closeStream);
-        asyncStream_->close();
+        if (asyncStream_)
+        {
+            static std::string closeStream{"0\r\n\r\n"};
+            asyncStream_->send(closeStream);
+            asyncStream_->close();
+            asyncStream_.reset();
+        }
     }
 
   private:
@@ -519,6 +528,20 @@ class DROGON_EXPORT HttpResponse
         const std::string &typeString = "",
         const HttpRequestPtr &req = HttpRequestPtr());
 
+    /// Create a response that allows sending asynchronous data from a callback
+    /// function
+    /**
+     * @note Async streams are always sent with Transfer-Encoding: chunked.
+     * @param callback function that receives the asynchronous HTTP stream. You
+     *                 may call the stream->send() method to transmit new data.
+     *                 The send method will return true as long as the stream is
+     *                 still open. Once you have finished sending data, or the
+     *                 stream->send() function returned false, you should call
+     *                 stream->close() to gracefully close the chunked transfer.
+     * @param disableKickoffTimeout set this to true to disable trantors default
+     *                              kickoff timeout. This is useful if you need
+     *                              long running asynchronous streams.
+     */
     static HttpResponsePtr newAsyncStreamResponse(
         const std::function<void(StreamPtr)> &callback,
         bool disableKickoffTimeout = false);
