@@ -86,6 +86,10 @@ struct Stream
 
     bool send(const std::string &data)
     {
+        if (!asyncStream_)
+        {
+            return false;
+        }
         std::ostringstream oss;
         oss << std::hex << data.length() << "\r\n";
         oss << data << "\r\n";
