@@ -493,6 +493,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     trantor::EventLoop *getIOLoop(size_t id) const override;
 
+    bool isInIOLoop() const override;
     void quit() override;
 
     HttpAppFramework &setServerHeaderField(const std::string &server) override
@@ -586,8 +587,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     bool areAllDbClientsAvailable() const noexcept override;
     const std::function<HttpResponsePtr(HttpStatusCode,
-                                        const HttpRequestPtr &req)>
-        &getCustomErrorHandler() const override;
+                                        const HttpRequestPtr &req)> &
+    getCustomErrorHandler() const override;
 
     bool isUsingCustomErrorHandler() const
     {

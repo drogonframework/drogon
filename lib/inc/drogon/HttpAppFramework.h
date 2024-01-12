@@ -156,6 +156,11 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual trantor::EventLoop *getIOLoop(size_t id) const = 0;
 
+    /**
+     * @brief Check if the current thread is the IO loop thread.
+     * */
+    virtual bool isInIOLoop() const = 0;
+
     /// Set custom 404 page
     /**
      * @param resp is the object set to 404 response
