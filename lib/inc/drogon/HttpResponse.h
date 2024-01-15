@@ -71,15 +71,15 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
     return toResponse((const Json::Value &)pJson);
 }
 
-struct Stream
+class DROGON_EXPORT ResponseStream
 {
   public:
-    explicit Stream(trantor::AsyncStreamPtr asyncStream)
+    explicit ResponseStream(trantor::AsyncStreamPtr asyncStream)
         : asyncStream_(std::move(asyncStream))
     {
     }
 
-    ~Stream()
+    ~ResponseStream()
     {
         close();
     }
@@ -111,7 +111,7 @@ struct Stream
     trantor::AsyncStreamPtr asyncStream_;
 };
 
-using StreamPtr = std::unique_ptr<Stream>;
+using ResponseStreamPtr = std::unique_ptr<ResponseStream>;
 
 class DROGON_EXPORT HttpResponse
 {
@@ -547,7 +547,7 @@ class DROGON_EXPORT HttpResponse
      *                              long running asynchronous streams.
      */
     static HttpResponsePtr newAsyncStreamResponse(
-        const std::function<void(StreamPtr)> &callback,
+        const std::function<void(ResponseStreamPtr)> &callback,
         bool disableKickoffTimeout = false);
 
     /**
@@ -587,7 +587,7 @@ class DROGON_EXPORT HttpResponse
      * @brief If the response is a async stream response (i.e. created by
      * asyncStreamCallback) returns the stream ptr.
      */
-    virtual const std::function<void(StreamPtr)> &asyncStreamCallback()
+    virtual const std::function<void(ResponseStreamPtr)> &asyncStreamCallback()
         const = 0;
 
     /**

@@ -11,9 +11,10 @@ int main()
         [](const HttpRequestPtr &,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             auto resp = drogon::HttpResponse::newAsyncStreamResponse(
-                [](drogon::StreamPtr stream) {
-                    std::thread([stream = std::shared_ptr<drogon::Stream>{
-                                     std::move(stream)}]() mutable {
+                [](drogon::ResponseStreamPtr stream) {
+                    std::thread([stream =
+                                     std::shared_ptr<drogon::ResponseStream>{
+                                         std::move(stream)}]() mutable {
                         std::cout << std::boolalpha << stream->send("hello ")
                                   << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));

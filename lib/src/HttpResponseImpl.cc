@@ -463,7 +463,7 @@ HttpResponsePtr HttpResponse::newStreamResponse(
 }
 
 HttpResponsePtr HttpResponse::newAsyncStreamResponse(
-    const std::function<void(StreamPtr)> &callback,
+    const std::function<void(ResponseStreamPtr)> &callback,
     bool disableKickoffTimeout)
 {
     if (!callback)
