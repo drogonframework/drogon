@@ -17,6 +17,7 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
 #include <functional>
+#include <memory>
 #include <utility>
 #include "AOPAdvice.h"
 #include "FiltersFunction.h"
@@ -858,6 +859,20 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
+        auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
+        if (asyncStreamCallback)
+        {
+            if (!respImplPtr->ifCloseConnection())
+            {
+                asyncStreamCallback(
+                    std::make_unique<ResponseStream>(conn->sendAsyncStream(
+                        respImplPtr->asyncStreamKickoffDisabled())));
+            }
+            else
+            {
+                LOG_INFO << "Chunking Set CloseConnection !!!";
+            }
+        }
         auto &streamCallback = respImplPtr->streamCallback();
         const std::string &sendfileName = respImplPtr->sendfileName();
         if (streamCallback || !sendfileName.empty())
@@ -865,7 +880,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
             if (streamCallback)
             {
                 auto &headers = respImplPtr->headers();
-                // When the transfer-encoding is chunked, wrap data callback in
+                // When the transfer-encoding is chunked, wrap data callback
                 // chunking callback
                 auto bChunked =
                     !respImplPtr->ifCloseConnection() &&
@@ -924,6 +939,22 @@ void HttpServer::sendResponses(
         {
             // Not HEAD method
             respImplPtr->renderToBuffer(buffer);
+            auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
+            if (asyncStreamCallback)
+            {
+                conn->send(buffer);
+                buffer.retrieveAll();
+                if (!respImplPtr->ifCloseConnection())
+                {
+                    asyncStreamCallback(
+                        std::make_unique<ResponseStream>(conn->sendAsyncStream(
+                            respImplPtr->asyncStreamKickoffDisabled())));
+                }
+                else
+                {
+                    LOG_INFO << "Chunking Set CloseConnection !!!";
+                }
+            }
             auto &streamCallback = respImplPtr->streamCallback();
             const std::string &sendfileName = respImplPtr->sendfileName();
             if (streamCallback || !sendfileName.empty())

@@ -15,6 +15,8 @@
 
 #include <drogon/exports.h>
 #include <trantor/net/Certificate.h>
+#include <trantor/net/callbacks.h>
+#include <trantor/net/AsyncStream.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpRequest.h>
@@ -68,6 +70,48 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
 {
     return toResponse((const Json::Value &)pJson);
 }
+
+class DROGON_EXPORT ResponseStream
+{
+  public:
+    explicit ResponseStream(trantor::AsyncStreamPtr asyncStream)
+        : asyncStream_(std::move(asyncStream))
+    {
+    }
+
+    ~ResponseStream()
+    {
+        close();
+    }
+
+    bool send(const std::string &data)
+    {
+        if (!asyncStream_)
+        {
+            return false;
+        }
+        std::ostringstream oss;
+        oss << std::hex << data.length() << "\r\n";
+        oss << data << "\r\n";
+        return asyncStream_->send(oss.str());
+    }
+
+    void close()
+    {
+        if (asyncStream_)
+        {
+            static std::string closeStream{"0\r\n\r\n"};
+            asyncStream_->send(closeStream);
+            asyncStream_->close();
+            asyncStream_.reset();
+        }
+    }
+
+  private:
+    trantor::AsyncStreamPtr asyncStream_;
+};
+
+using ResponseStreamPtr = std::unique_ptr<ResponseStream>;
 
 class DROGON_EXPORT HttpResponse
 {
@@ -488,6 +532,24 @@ class DROGON_EXPORT HttpResponse
         const std::string &typeString = "",
         const HttpRequestPtr &req = HttpRequestPtr());
 
+    /// Create a response that allows sending asynchronous data from a callback
+    /// function
+    /**
+     * @note Async streams are always sent with Transfer-Encoding: chunked.
+     * @param callback function that receives the asynchronous HTTP stream. You
+     *                 may call the stream->send() method to transmit new data.
+     *                 The send method will return true as long as the stream is
+     *                 still open. Once you have finished sending data, or the
+     *                 stream->send() function returned false, you should call
+     *                 stream->close() to gracefully close the chunked transfer.
+     * @param disableKickoffTimeout set this to true to disable trantors default
+     *                              kickoff timeout. This is useful if you need
+     *                              long running asynchronous streams.
+     */
+    static HttpResponsePtr newAsyncStreamResponse(
+        const std::function<void(ResponseStreamPtr)> &callback,
+        bool disableKickoffTimeout = false);
+
     /**
      * @brief Create a custom HTTP response object. For using this template,
      * users must specialize the toResponse template.
@@ -520,6 +582,13 @@ class DROGON_EXPORT HttpResponse
      */
     virtual const std::function<std::size_t(char *, std::size_t)>
         &streamCallback() const = 0;
+
+    /**
+     * @brief If the response is a async stream response (i.e. created by
+     * asyncStreamCallback) returns the stream ptr.
+     */
+    virtual const std::function<void(ResponseStreamPtr)> &asyncStreamCallback()
+        const = 0;
 
     /**
      * @brief Returns the content type associated with the response
