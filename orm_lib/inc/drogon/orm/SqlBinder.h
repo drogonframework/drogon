@@ -71,7 +71,7 @@ constexpr T htonT(T value) noexcept
 #endif
 }
 
-#ifndef _WIN32
+#if (!defined _WIN32) || (defined _WIN32 && _WIN32_WINNT < _WIN32_WINNT_WIN8)
 inline uint64_t htonll(uint64_t value)
 {
     return htonT<uint64_t>(value);
