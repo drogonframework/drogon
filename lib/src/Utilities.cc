@@ -21,7 +21,7 @@
 #include <brotli/encode.h>
 #endif
 #ifdef _WIN32
-#include <Rpc.h>
+#include <rpc.h>
 #include <direct.h>
 #include <io.h>
 #include <iomanip>
