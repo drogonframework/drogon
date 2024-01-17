@@ -141,7 +141,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
 elseif (NOT WIN32 AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
     target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 elseif (WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
+    target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi ws2_32 iphlpapi)
 endif ()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
