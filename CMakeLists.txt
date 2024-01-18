@@ -66,7 +66,7 @@ if (BUILD_SHARED_LIBS)
         SOVERSION ${DROGON_MAJOR_VERSION})
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
     if (WIN32)
-        target_link_libraries(${PROJECT_NAME} PUBLIC Rpcrt4 ws2_32 crypt32 Advapi32)
+        target_link_libraries(${PROJECT_NAME} PUBLIC rpcrt4 crypt32 advapi32 ws2_32)
         if (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
             # Ignore MSVC C4251 and C4275 warning of exporting std objects with no dll export
             # We export class to facilitate maintenance, thus if you compile
@@ -141,7 +141,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
 elseif (NOT WIN32 AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
     target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 elseif (WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
+    target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi ws2_32 iphlpapi)
 endif ()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
@@ -263,6 +263,8 @@ set(DROGON_SOURCES
     lib/src/Http2Transport.cc
     lib/src/Http1xTransport.cc
     lib/src/HttpClientImpl.cc
+    lib/src/HttpConnectionLimit.cc
+    lib/src/HttpControllerBinder.cc
     lib/src/HttpControllersRouter.cc
     lib/src/HttpFileImpl.cc
     lib/src/HttpFileUploadRequest.cc
@@ -271,7 +273,6 @@ set(DROGON_SOURCES
     lib/src/HttpResponseImpl.cc
     lib/src/HttpResponseParser.cc
     lib/src/HttpServer.cc
-    lib/src/HttpSimpleControllersRouter.cc
     lib/src/HttpUtils.cc
     lib/src/HttpViewData.cc
     lib/src/IntranetIpFilter.cc
@@ -296,7 +297,6 @@ set(DROGON_SOURCES
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
-    lib/src/WebsocketControllersRouter.cc
     lib/src/YamlConfigAdapter.cc
     lib/src/drogon_test.cc
     lib/src/hpack/HPacker.cpp
@@ -305,11 +305,14 @@ set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
     lib/src/ConfigLoader.h
+    lib/src/ControllerBinderBase.h
     lib/src/FiltersFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h
     lib/src/Http2Transport.h
     lib/src/Http1xTransport.h
+    lib/src/HttpConnectionLimit.h
+    lib/src/HttpControllerBinder.h
     lib/src/HttpControllersRouter.h
     lib/src/HttpFileImpl.h
     lib/src/HttpFileUploadRequest.h
@@ -319,7 +322,6 @@ set(private_headers
     lib/src/HttpResponseImpl.h
     lib/src/HttpResponseParser.h
     lib/src/HttpServer.h
-    lib/src/HttpSimpleControllersRouter.h
     lib/src/HttpUtils.h
     lib/src/impl_forwards.h
     lib/src/ListenerManager.h
@@ -330,7 +332,6 @@ set(private_headers
     lib/src/TaskTimeoutFlag.h
     lib/src/WebSocketClientImpl.h
     lib/src/WebSocketConnectionImpl.h
-    lib/src/WebsocketControllersRouter.h
     lib/src/FixedWindowRateLimiter.h
     lib/src/SlidingWindowRateLimiter.h
     lib/src/TokenBucketRateLimiter.h

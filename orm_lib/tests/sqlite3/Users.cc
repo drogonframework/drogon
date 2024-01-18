@@ -6,6 +6,7 @@
  */
 
 #include "Users.h"
+#include "Wallets.h"
 #include <drogon/utils/Utilities.h>
 #include <string>
 
@@ -28,7 +29,7 @@ const bool Users::hasPrimaryKey = true;
 const std::string Users::tableName = "users";
 
 const std::vector<typename Users::MetaData> Users::metaData_ = {
-    {"id", "uint64_t", "integer", 8, 1, 1, 0},
+    {"id", "int64_t", "integer", 8, 1, 1, 0},
     {"user_id", "std::string", "varchar(32)", 0, 0, 0, 0},
     {"user_name", "std::string", "varchar(64)", 0, 0, 0, 0},
     {"password", "std::string", "varchar(64)", 0, 0, 0, 0},
@@ -51,7 +52,7 @@ Users::Users(const Row &r, const ssize_t indexOffset) noexcept
     {
         if (!r["id"].isNull())
         {
-            id_ = std::make_shared<uint64_t>(r["id"].as<uint64_t>());
+            id_ = std::make_shared<int64_t>(r["id"].as<int64_t>());
         }
         if (!r["user_id"].isNull())
         {
@@ -128,7 +129,7 @@ Users::Users(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 0;
         if (!r[index].isNull())
         {
-            id_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            id_ = std::make_shared<int64_t>(r[index].as<int64_t>());
         }
         index = offset + 1;
         if (!r[index].isNull())
@@ -217,8 +218,8 @@ Users::Users(
         dirtyFlag_[0] = true;
         if (!pJson[pMasqueradingVector[0]].isNull())
         {
-            id_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
+            id_ = std::make_shared<int64_t>(
+                (int64_t)pJson[pMasqueradingVector[0]].asInt64());
         }
     }
     if (!pMasqueradingVector[1].empty() &&
@@ -338,7 +339,7 @@ Users::Users(const Json::Value &pJson) noexcept(false)
         dirtyFlag_[0] = true;
         if (!pJson["id"].isNull())
         {
-            id_ = std::make_shared<uint64_t>((uint64_t)pJson["id"].asUInt64());
+            id_ = std::make_shared<int64_t>((int64_t)pJson["id"].asInt64());
         }
     }
     if (pJson.isMember("user_id"))
@@ -454,8 +455,8 @@ void Users::updateByMasqueradedJson(
     {
         if (!pJson[pMasqueradingVector[0]].isNull())
         {
-            id_ = std::make_shared<uint64_t>(
-                (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
+            id_ = std::make_shared<int64_t>(
+                (int64_t)pJson[pMasqueradingVector[0]].asInt64());
         }
     }
     if (!pMasqueradingVector[1].empty() &&
@@ -574,7 +575,7 @@ void Users::updateByJson(const Json::Value &pJson) noexcept(false)
     {
         if (!pJson["id"].isNull())
         {
-            id_ = std::make_shared<uint64_t>((uint64_t)pJson["id"].asUInt64());
+            id_ = std::make_shared<int64_t>((int64_t)pJson["id"].asInt64());
         }
     }
     if (pJson.isMember("user_id"))
@@ -676,22 +677,22 @@ void Users::updateByJson(const Json::Value &pJson) noexcept(false)
     }
 }
 
-const uint64_t &Users::getValueOfId() const noexcept
+const int64_t &Users::getValueOfId() const noexcept
 {
-    const static uint64_t defaultValue = uint64_t();
+    const static int64_t defaultValue = int64_t();
     if (id_)
         return *id_;
     return defaultValue;
 }
 
-const std::shared_ptr<uint64_t> &Users::getId() const noexcept
+const std::shared_ptr<int64_t> &Users::getId() const noexcept
 {
     return id_;
 }
 
-void Users::setId(const uint64_t &pId) noexcept
+void Users::setId(const int64_t &pId) noexcept
 {
-    id_ = std::make_shared<uint64_t>(pId);
+    id_ = std::make_shared<int64_t>(pId);
     dirtyFlag_[0] = true;
 }
 
@@ -982,7 +983,7 @@ void Users::setCreateTimeToNull() noexcept
 
 void Users::updateId(const uint64_t id)
 {
-    id_ = std::make_shared<uint64_t>(id);
+    id_ = std::make_shared<int64_t>(static_cast<int64_t>(id));
 }
 
 const std::vector<std::string> &Users::insertColumns() noexcept
@@ -1252,7 +1253,7 @@ Json::Value Users::toJson() const
     Json::Value ret;
     if (getId())
     {
-        ret["id"] = (Json::UInt64)getValueOfId();
+        ret["id"] = (Json::Int64)getValueOfId();
     }
     else
     {
@@ -1343,7 +1344,7 @@ Json::Value Users::toMasqueradedJson(
         {
             if (getId())
             {
-                ret[pMasqueradingVector[0]] = (Json::UInt64)getValueOfId();
+                ret[pMasqueradingVector[0]] = (Json::Int64)getValueOfId();
             }
             else
             {
@@ -1455,7 +1456,7 @@ Json::Value Users::toMasqueradedJson(
     LOG_ERROR << "Masquerade failed";
     if (getId())
     {
-        ret["id"] = (Json::UInt64)getValueOfId();
+        ret["id"] = (Json::Int64)getValueOfId();
     }
     else
     {
@@ -1942,7 +1943,7 @@ bool Users::validJsonOfField(size_t index,
             {
                 return true;
             }
-            if (!pJson.isUInt64())
+            if (!pJson.isInt64())
             {
                 err = "Type error in the " + fieldName + " field";
                 return false;
@@ -2052,4 +2053,47 @@ bool Users::validJsonOfField(size_t index,
             return false;
     }
     return true;
+}
+
+Wallets Users::getWallet(const DbClientPtr &clientPtr) const
+{
+    const static std::string sql = "select * from wallets where user_id = ?";
+    Result r(nullptr);
+    {
+        auto binder = *clientPtr << sql;
+        binder << *userId_ << Mode::Blocking >>
+            [&r](const Result &result) { r = result; };
+        binder.exec();
+    }
+    if (r.size() == 0)
+    {
+        throw UnexpectedRows("0 rows found");
+    }
+    else if (r.size() > 1)
+    {
+        throw UnexpectedRows("Found more than one row");
+    }
+    return Wallets(r[0]);
+}
+
+void Users::getWallet(const DbClientPtr &clientPtr,
+                      const std::function<void(Wallets)> &rcb,
+                      const ExceptionCallback &ecb) const
+{
+    const static std::string sql = "select * from wallets where user_id = ?";
+    *clientPtr << sql << *userId_ >> [rcb = std::move(rcb),
+                                      ecb](const Result &r) {
+        if (r.size() == 0)
+        {
+            ecb(UnexpectedRows("0 rows found"));
+        }
+        else if (r.size() > 1)
+        {
+            ecb(UnexpectedRows("Found more than one row"));
+        }
+        else
+        {
+            rcb(Wallets(r[0]));
+        }
+    } >> ecb;
 }

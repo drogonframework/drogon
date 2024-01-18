@@ -19,6 +19,7 @@
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <string>
+#include <string_view>
 #include <memory>
 #include <vector>
 #include <tuple>
@@ -38,6 +39,8 @@ namespace drogon_model
 {
 namespace sqlite3
 {
+class Wallets;
+
 class Users
 {
   public:
@@ -59,7 +62,7 @@ class Users
     const static std::string tableName;
     const static bool hasPrimaryKey;
     const static std::string primaryKeyName;
-    using PrimaryKeyType = uint64_t;
+    using PrimaryKeyType = int64_t;
     const PrimaryKeyType &getPrimaryKey() const;
 
     /**
@@ -114,12 +117,12 @@ class Users
     /**  For column id  */
     /// Get the value of the column id, returns the default value if the column
     /// is null
-    const uint64_t &getValueOfId() const noexcept;
+    const int64_t &getValueOfId() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    const std::shared_ptr<uint64_t> &getId() const noexcept;
+    const std::shared_ptr<int64_t> &getId() const noexcept;
     /// Set the value of the column id
-    void setId(const uint64_t &pId) noexcept;
+    void setId(const int64_t &pId) noexcept;
     void setIdToNull() noexcept;
 
     /**  For column user_id  */
@@ -240,6 +243,11 @@ class Users
     Json::Value toMasqueradedJson(
         const std::vector<std::string> &pMasqueradingVector) const;
     /// Relationship interfaces
+    Wallets getWallet(const drogon::orm::DbClientPtr &clientPtr) const;
+    void getWallet(const drogon::orm::DbClientPtr &clientPtr,
+                   const std::function<void(Wallets)> &rcb,
+                   const drogon::orm::ExceptionCallback &ecb) const;
+
   private:
     friend drogon::orm::Mapper<Users>;
     friend drogon::orm::BaseBuilder<Users, true, true>;
@@ -255,7 +263,7 @@ class Users
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
     /// For mysql or sqlite3
     void updateId(const uint64_t id);
-    std::shared_ptr<uint64_t> id_;
+    std::shared_ptr<int64_t> id_;
     std::shared_ptr<std::string> userId_;
     std::shared_ptr<std::string> userName_;
     std::shared_ptr<std::string> password_;

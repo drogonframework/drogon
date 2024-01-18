@@ -62,6 +62,7 @@ void Http1xTransport::onRecvMessage(const trantor::TcpConnectionPtr &conn,
         }
         else
         {
+            *bytesReceived_ += (msgSize - msg->readableBytes());
             break;
         }
     }

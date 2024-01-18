@@ -18,7 +18,7 @@
 #include <iostream>
 #include <memory>
 #include <iomanip>
-#include <stdlib.h>
+#include <cstdlib>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -32,8 +32,8 @@ std::string press::detail()
            "  -n num    number of requests(default : 1)\n"
            "  -t num    number of threads(default : 1)\n"
            "  -c num    concurrent connections(default : 1)\n"
-           //  "  -k        keep alive(default: no)\n"
-           "  -q        no progress indication(default: no)\n\n"
+           "  -k        disable SSL certificate validation(default: enable)\n"
+           "  -q        no progress indication(default: show)\n\n"
            "example: drogon_ctl press -n 10000 -c 100 -t 4 -q "
            "http://localhost:8080/index.html\n";
 }
@@ -151,11 +151,11 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 continue;
             }
         }
-        // else if (param == "-k")
-        // {
-        //     keepAlive_ = true;
-        //     continue;
-        // }
+        else if (param == "-k")
+        {
+            certValidation_ = false;
+            continue;
+        }
         else if (param == "-q")
         {
             processIndication_ = false;
@@ -178,7 +178,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
     else
     {
         auto pos = url_.find("://");
-        auto posOfPath = url_.find("/", pos + 3);
+        auto posOfPath = url_.find('/', pos + 3);
         if (posOfPath == std::string::npos)
         {
             host_ = url_;
@@ -216,8 +216,10 @@ void press::createRequestAndClients()
     loopPool_->start();
     for (size_t i = 0; i < numOfConnections_; ++i)
     {
-        auto client =
-            HttpClient::newHttpClient(host_, loopPool_->getNextLoop());
+        auto client = HttpClient::newHttpClient(host_,
+                                                loopPool_->getNextLoop(),
+                                                false,
+                                                certValidation_);
         client->enableCookies();
         clients_.push_back(client);
     }
@@ -284,7 +286,6 @@ void press::sendRequest(const HttpClientPtr &client)
 
 void press::outputResults()
 {
-    static std::mutex mtx;
     size_t totalSent = 0;
     size_t totalRecv = 0;
     for (auto &client : clients_)
@@ -296,7 +297,7 @@ void press::outputResults()
     auto microSecs = now.microSecondsSinceEpoch() -
                      statistics_.startDate_.microSecondsSinceEpoch();
     double seconds = (double)microSecs / 1000000.0;
-    size_t rps = static_cast<size_t>(statistics_.numOfGoodResponse_ / seconds);
+    auto rps = static_cast<size_t>(statistics_.numOfGoodResponse_ / seconds);
     std::cout << std::endl;
     std::cout << "TOTALS:   " << numOfConnections_ << " connect, "
               << numOfRequests_ << " requests, "

@@ -1,4 +1,4 @@
 [submodule "trantor"]
 	path = trantor
-	url = https://github.com/Greisby/trantor.git
-	branch = feature/allow_using_spdlog
+	url = https://github.com/an-tao/trantor.git
+	branch = master

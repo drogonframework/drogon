@@ -6,10 +6,12 @@
  */
 
 #include "Users.h"
+#include "Wallets.h"
 #include <drogon/utils/Utilities.h>
 #include <string>
 
 using namespace drogon;
+using namespace drogon::orm;
 using namespace drogon_model::drogonTestMysql;
 
 const std::string Users::Cols::_id = "id";
@@ -1343,113 +1345,121 @@ bool Users::validateMasqueradedJsonForCreation(
         err = "Bad masquerading vector";
         return false;
     }
-    if (!pMasqueradingVector[0].empty())
+    try
     {
-        if (pJson.isMember(pMasqueradingVector[0]))
+        if (!pMasqueradingVector[0].empty())
         {
-            if (!validJsonOfField(0,
-                                  pMasqueradingVector[0],
-                                  pJson[pMasqueradingVector[0]],
-                                  err,
-                                  true))
-                return false;
+            if (pJson.isMember(pMasqueradingVector[0]))
+            {
+                if (!validJsonOfField(0,
+                                      pMasqueradingVector[0],
+                                      pJson[pMasqueradingVector[0]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[1].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[1]))
+            {
+                if (!validJsonOfField(1,
+                                      pMasqueradingVector[1],
+                                      pJson[pMasqueradingVector[1]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[2].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[2]))
+            {
+                if (!validJsonOfField(2,
+                                      pMasqueradingVector[2],
+                                      pJson[pMasqueradingVector[2]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[3].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[3]))
+            {
+                if (!validJsonOfField(3,
+                                      pMasqueradingVector[3],
+                                      pJson[pMasqueradingVector[3]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[4].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[4]))
+            {
+                if (!validJsonOfField(4,
+                                      pMasqueradingVector[4],
+                                      pJson[pMasqueradingVector[4]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[5].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[5]))
+            {
+                if (!validJsonOfField(5,
+                                      pMasqueradingVector[5],
+                                      pJson[pMasqueradingVector[5]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[6].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[6]))
+            {
+                if (!validJsonOfField(6,
+                                      pMasqueradingVector[6],
+                                      pJson[pMasqueradingVector[6]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[7].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[7]))
+            {
+                if (!validJsonOfField(7,
+                                      pMasqueradingVector[7],
+                                      pJson[pMasqueradingVector[7]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[8].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[8]))
+            {
+                if (!validJsonOfField(8,
+                                      pMasqueradingVector[8],
+                                      pJson[pMasqueradingVector[8]],
+                                      err,
+                                      true))
+                    return false;
+            }
         }
     }
-    if (!pMasqueradingVector[1].empty())
+    catch (const Json::LogicError &e)
     {
-        if (pJson.isMember(pMasqueradingVector[1]))
-        {
-            if (!validJsonOfField(1,
-                                  pMasqueradingVector[1],
-                                  pJson[pMasqueradingVector[1]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[2].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[2]))
-        {
-            if (!validJsonOfField(2,
-                                  pMasqueradingVector[2],
-                                  pJson[pMasqueradingVector[2]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[3].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[3]))
-        {
-            if (!validJsonOfField(3,
-                                  pMasqueradingVector[3],
-                                  pJson[pMasqueradingVector[3]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[4].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[4]))
-        {
-            if (!validJsonOfField(4,
-                                  pMasqueradingVector[4],
-                                  pJson[pMasqueradingVector[4]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[5].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[5]))
-        {
-            if (!validJsonOfField(5,
-                                  pMasqueradingVector[5],
-                                  pJson[pMasqueradingVector[5]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[6].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[6]))
-        {
-            if (!validJsonOfField(6,
-                                  pMasqueradingVector[6],
-                                  pJson[pMasqueradingVector[6]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[7].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[7]))
-        {
-            if (!validJsonOfField(7,
-                                  pMasqueradingVector[7],
-                                  pJson[pMasqueradingVector[7]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[8].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[8]))
-        {
-            if (!validJsonOfField(8,
-                                  pMasqueradingVector[8],
-                                  pJson[pMasqueradingVector[8]],
-                                  err,
-                                  true))
-                return false;
-        }
+        err = e.what();
+        return false;
     }
     return true;
 }
@@ -1521,102 +1531,110 @@ bool Users::validateMasqueradedJsonForUpdate(
         err = "Bad masquerading vector";
         return false;
     }
-    if (!pMasqueradingVector[0].empty() &&
-        pJson.isMember(pMasqueradingVector[0]))
+    try
     {
-        if (!validJsonOfField(0,
-                              pMasqueradingVector[0],
-                              pJson[pMasqueradingVector[0]],
-                              err,
-                              false))
+        if (!pMasqueradingVector[0].empty() &&
+            pJson.isMember(pMasqueradingVector[0]))
+        {
+            if (!validJsonOfField(0,
+                                  pMasqueradingVector[0],
+                                  pJson[pMasqueradingVector[0]],
+                                  err,
+                                  false))
+                return false;
+        }
+        else
+        {
+            err =
+                "The value of primary key must be set in the json object for "
+                "update";
             return false;
+        }
+        if (!pMasqueradingVector[1].empty() &&
+            pJson.isMember(pMasqueradingVector[1]))
+        {
+            if (!validJsonOfField(1,
+                                  pMasqueradingVector[1],
+                                  pJson[pMasqueradingVector[1]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[2].empty() &&
+            pJson.isMember(pMasqueradingVector[2]))
+        {
+            if (!validJsonOfField(2,
+                                  pMasqueradingVector[2],
+                                  pJson[pMasqueradingVector[2]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[3].empty() &&
+            pJson.isMember(pMasqueradingVector[3]))
+        {
+            if (!validJsonOfField(3,
+                                  pMasqueradingVector[3],
+                                  pJson[pMasqueradingVector[3]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[4].empty() &&
+            pJson.isMember(pMasqueradingVector[4]))
+        {
+            if (!validJsonOfField(4,
+                                  pMasqueradingVector[4],
+                                  pJson[pMasqueradingVector[4]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[5].empty() &&
+            pJson.isMember(pMasqueradingVector[5]))
+        {
+            if (!validJsonOfField(5,
+                                  pMasqueradingVector[5],
+                                  pJson[pMasqueradingVector[5]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[6].empty() &&
+            pJson.isMember(pMasqueradingVector[6]))
+        {
+            if (!validJsonOfField(6,
+                                  pMasqueradingVector[6],
+                                  pJson[pMasqueradingVector[6]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[7].empty() &&
+            pJson.isMember(pMasqueradingVector[7]))
+        {
+            if (!validJsonOfField(7,
+                                  pMasqueradingVector[7],
+                                  pJson[pMasqueradingVector[7]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[8].empty() &&
+            pJson.isMember(pMasqueradingVector[8]))
+        {
+            if (!validJsonOfField(8,
+                                  pMasqueradingVector[8],
+                                  pJson[pMasqueradingVector[8]],
+                                  err,
+                                  false))
+                return false;
+        }
     }
-    else
+    catch (const Json::LogicError &e)
     {
-        err =
-            "The value of primary key must be set in the json object for "
-            "update";
+        err = e.what();
         return false;
-    }
-    if (!pMasqueradingVector[1].empty() &&
-        pJson.isMember(pMasqueradingVector[1]))
-    {
-        if (!validJsonOfField(1,
-                              pMasqueradingVector[1],
-                              pJson[pMasqueradingVector[1]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[2].empty() &&
-        pJson.isMember(pMasqueradingVector[2]))
-    {
-        if (!validJsonOfField(2,
-                              pMasqueradingVector[2],
-                              pJson[pMasqueradingVector[2]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[3].empty() &&
-        pJson.isMember(pMasqueradingVector[3]))
-    {
-        if (!validJsonOfField(3,
-                              pMasqueradingVector[3],
-                              pJson[pMasqueradingVector[3]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[4].empty() &&
-        pJson.isMember(pMasqueradingVector[4]))
-    {
-        if (!validJsonOfField(4,
-                              pMasqueradingVector[4],
-                              pJson[pMasqueradingVector[4]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[5].empty() &&
-        pJson.isMember(pMasqueradingVector[5]))
-    {
-        if (!validJsonOfField(5,
-                              pMasqueradingVector[5],
-                              pJson[pMasqueradingVector[5]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[6].empty() &&
-        pJson.isMember(pMasqueradingVector[6]))
-    {
-        if (!validJsonOfField(6,
-                              pMasqueradingVector[6],
-                              pJson[pMasqueradingVector[6]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[7].empty() &&
-        pJson.isMember(pMasqueradingVector[7]))
-    {
-        if (!validJsonOfField(7,
-                              pMasqueradingVector[7],
-                              pJson[pMasqueradingVector[7]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[8].empty() &&
-        pJson.isMember(pMasqueradingVector[8]))
-    {
-        if (!validJsonOfField(8,
-                              pMasqueradingVector[8],
-                              pJson[pMasqueradingVector[8]],
-                              err,
-                              false))
-            return false;
     }
     return true;
 }
@@ -1797,11 +1815,52 @@ bool Users::validJsonOfField(size_t index,
                 return false;
             }
             break;
-
         default:
             err = "Internal error in the server";
             return false;
-            break;
     }
     return true;
+}
+
+Wallets Users::getWallet(const DbClientPtr &clientPtr) const
+{
+    const static std::string sql = "select * from wallets where user_id = ?";
+    Result r(nullptr);
+    {
+        auto binder = *clientPtr << sql;
+        binder << *userId_ << Mode::Blocking >>
+            [&r](const Result &result) { r = result; };
+        binder.exec();
+    }
+    if (r.size() == 0)
+    {
+        throw UnexpectedRows("0 rows found");
+    }
+    else if (r.size() > 1)
+    {
+        throw UnexpectedRows("Found more than one row");
+    }
+    return Wallets(r[0]);
+}
+
+void Users::getWallet(const DbClientPtr &clientPtr,
+                      const std::function<void(Wallets)> &rcb,
+                      const ExceptionCallback &ecb) const
+{
+    const static std::string sql = "select * from wallets where user_id = ?";
+    *clientPtr << sql << *userId_ >> [rcb = std::move(rcb),
+                                      ecb](const Result &r) {
+        if (r.size() == 0)
+        {
+            ecb(UnexpectedRows("0 rows found"));
+        }
+        else if (r.size() > 1)
+        {
+            ecb(UnexpectedRows("Found more than one row"));
+        }
+        else
+        {
+            rcb(Wallets(r[0]));
+        }
+    } >> ecb;
 }

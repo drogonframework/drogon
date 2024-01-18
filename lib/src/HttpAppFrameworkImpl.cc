@@ -25,11 +25,11 @@
 #include "ConfigLoader.h"
 #include "DbClientManager.h"
 #include "HttpClientImpl.h"
+#include "HttpConnectionLimit.h"
 #include "HttpControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpServer.h"
-#include "HttpSimpleControllersRouter.h"
 #include "HttpUtils.h"
 #include "ListenerManager.h"
 #include "PluginsManager.h"
@@ -37,8 +37,6 @@
 #include "SessionManager.h"
 #include "SharedLibManager.h"
 #include "StaticFileRouter.h"
-#include "WebSocketConnectionImpl.h"
-#include "WebsocketControllersRouter.h"
 
 #include <iostream>
 #include <memory>
@@ -81,27 +79,7 @@ using namespace drogon;
 using namespace std::placeholders;
 
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
-    : staticFileRouterPtr_(new StaticFileRouter{}),
-      httpCtrlsRouterPtr_(new HttpControllersRouter(*staticFileRouterPtr_,
-                                                    postRoutingAdvices_,
-                                                    postRoutingObservers_,
-                                                    preHandlingAdvices_,
-                                                    preHandlingObservers_,
-                                                    postHandlingAdvices_)),
-      httpSimpleCtrlsRouterPtr_(
-          new HttpSimpleControllersRouter(*httpCtrlsRouterPtr_,
-                                          postRoutingAdvices_,
-                                          postRoutingObservers_,
-                                          preHandlingAdvices_,
-                                          preHandlingObservers_,
-                                          postHandlingAdvices_)),
-      websockCtrlsRouterPtr_(
-          new WebsocketControllersRouter(postRoutingAdvices_,
-                                         postRoutingObservers_,
-                                         preHandlingAdvices_,
-                                         preHandlingObservers_,
-                                         postHandlingAdvices_)),
-      listenerManagerPtr_(new ListenerManager),
+    : listenerManagerPtr_(new ListenerManager),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
       redisClientManagerPtr_(new nosql::RedisClientManager),
@@ -214,49 +192,49 @@ HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
 
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFilesCacheTime(int cacheTime)
 {
-    staticFileRouterPtr_->setStaticFilesCacheTime(cacheTime);
+    StaticFileRouter::instance().setStaticFilesCacheTime(cacheTime);
     return *this;
 }
 
 int HttpAppFrameworkImpl::staticFilesCacheTime() const
 {
-    return staticFileRouterPtr_->staticFilesCacheTime();
+    return StaticFileRouter::instance().staticFilesCacheTime();
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setGzipStatic(bool useGzipStatic)
 {
-    staticFileRouterPtr_->setGzipStatic(useGzipStatic);
+    StaticFileRouter::instance().setGzipStatic(useGzipStatic);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setBrStatic(bool useGzipStatic)
 {
-    staticFileRouterPtr_->setBrStatic(useGzipStatic);
+    StaticFileRouter::instance().setBrStatic(useGzipStatic);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setImplicitPageEnable(
     bool useImplicitPage)
 {
-    staticFileRouterPtr_->setImplicitPageEnable(useImplicitPage);
+    StaticFileRouter::instance().setImplicitPageEnable(useImplicitPage);
     return *this;
 }
 
 bool HttpAppFrameworkImpl::isImplicitPageEnabled() const
 {
-    return staticFileRouterPtr_->isImplicitPageEnabled();
+    return StaticFileRouter::instance().isImplicitPageEnabled();
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setImplicitPage(
     const std::string &implicitPageFile)
 {
-    staticFileRouterPtr_->setImplicitPage(implicitPageFile);
+    StaticFileRouter::instance().setImplicitPage(implicitPageFile);
     return *this;
 }
 
 const std::string &HttpAppFrameworkImpl::getImplicitPage() const
 {
-    return staticFileRouterPtr_->getImplicitPage();
+    return StaticFileRouter::instance().getImplicitPage();
 }
 #ifndef _WIN32
 HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
@@ -300,7 +278,7 @@ HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
 HttpAppFramework &HttpAppFrameworkImpl::setFileTypes(
     const std::vector<std::string> &types)
 {
-    staticFileRouterPtr_->setFileTypes(types);
+    StaticFileRouter::instance().setFileTypes(types);
     return *this;
 }
 
@@ -310,9 +288,8 @@ HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!routersInit_);
-    websockCtrlsRouterPtr_->registerWebSocketController(pathName,
-                                                        ctrlName,
-                                                        filtersAndMethods);
+    HttpControllersRouter::instance().registerWebSocketController(
+        pathName, ctrlName, filtersAndMethods);
     return *this;
 }
 
@@ -322,9 +299,8 @@ HttpAppFramework &HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!routersInit_);
-    httpSimpleCtrlsRouterPtr_->registerHttpSimpleController(pathName,
-                                                            ctrlName,
-                                                            filtersAndMethods);
+    HttpControllersRouter::instance().registerHttpSimpleController(
+        pathName, ctrlName, filtersAndMethods);
     return *this;
 }
 
@@ -338,7 +314,7 @@ void HttpAppFrameworkImpl::registerHttpController(
     assert(!pathPattern.empty());
     assert(binder);
     assert(!routersInit_);
-    httpCtrlsRouterPtr_->addHttpPath(
+    HttpControllersRouter::instance().addHttpPath(
         pathPattern, binder, validMethods, filters, handlerName);
 }
 
@@ -352,7 +328,7 @@ void HttpAppFrameworkImpl::registerHttpControllerViaRegex(
     assert(!regExp.empty());
     assert(binder);
     assert(!routersInit_);
-    httpCtrlsRouterPtr_->addHttpRegex(
+    HttpControllersRouter::instance().addHttpRegex(
         regExp, binder, validMethods, filters, handlerName);
 }
 
@@ -426,14 +402,15 @@ HttpAppFramework &HttpAppFrameworkImpl::addListener(
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNum(
     size_t maxConnections)
 {
-    maxConnectionNum_ = maxConnections;
+    HttpConnectionLimit::instance().setMaxConnectionNum(maxConnections);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNumPerIP(
     size_t maxConnectionsPerIP)
 {
-    maxConnectionNumPerIP_ = maxConnectionsPerIP;
+    HttpConnectionLimit::instance().setMaxConnectionNumPerIP(
+        maxConnectionsPerIP);
     return *this;
 }
 
@@ -624,24 +601,10 @@ void HttpAppFrameworkImpl::run()
     getLoop()->setIndex(threadNum_);
 
     // Create all listeners.
-    listenerManagerPtr_->createListeners(
-        [this](const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback) {
-            onAsyncRequest(req, std::move(callback));
-        },
-        [this](const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback,
-               const WebSocketConnectionImplPtr &wsConnPtr) {
-            onNewWebsockRequest(req, std::move(callback), wsConnPtr);
-        },
-        [this](const trantor::TcpConnectionPtr &conn) { onConnection(conn); },
-        idleConnectionTimeout_,
-        sslCertPath_,
-        sslKeyPath_,
-        sslConfCmds_,
-        ioLoops,
-        syncAdvices_,
-        preSendingAdvices_);
+    listenerManagerPtr_->createListeners(sslCertPath_,
+                                         sslKeyPath_,
+                                         sslConfCmds_,
+                                         ioLoops);
 
     // A fast database client instance should be created in the main event
     // loop, so put the main loop into ioLoops.
@@ -687,10 +650,8 @@ void HttpAppFrameworkImpl::run()
                                                  });
     }
     routersInit_ = true;
-    httpCtrlsRouterPtr_->init(ioLoops);
-    httpSimpleCtrlsRouterPtr_->init(ioLoops);
-    staticFileRouterPtr_->init(ioLoops);
-    websockCtrlsRouterPtr_->init();
+    HttpControllersRouter::instance().init(ioLoops);
+    StaticFileRouter::instance().init(ioLoops);
     getLoop()->queueInLoop([this]() {
         for (auto &adv : beginningAdvices_)
         {
@@ -707,71 +668,6 @@ void HttpAppFrameworkImpl::run()
     // However, we should consider other components.
     ioLoopThreadPool_->start();
     getLoop()->loop();
-}
-
-void HttpAppFrameworkImpl::onConnection(const trantor::TcpConnectionPtr &conn)
-{
-    static std::mutex mtx;
-    LOG_TRACE << "connect!!!" << maxConnectionNum_
-              << " num=" << connectionNum_.load();
-    if (conn->connected())
-    {
-        if (connectionNum_.fetch_add(1, std::memory_order_relaxed) >=
-            maxConnectionNum_)
-        {
-            LOG_ERROR << "too much connections!force close!";
-            conn->forceClose();
-            return;
-        }
-        else if (maxConnectionNumPerIP_ > 0)
-        {
-            {
-                std::lock_guard<std::mutex> lock(mtx);
-                auto iter = connectionsNumMap_.find(conn->peerAddr().toIp());
-                if (iter == connectionsNumMap_.end())
-                {
-                    connectionsNumMap_[conn->peerAddr().toIp()] = 1;
-                }
-                else if (iter->second++ > maxConnectionNumPerIP_)
-                {
-                    conn->getLoop()->queueInLoop(
-                        [conn]() { conn->forceClose(); });
-                    return;
-                }
-            }
-        }
-        for (auto &advice : newConnectionAdvices_)
-        {
-            if (!advice(conn->peerAddr(), conn->localAddr()))
-            {
-                conn->forceClose();
-                return;
-            }
-        }
-    }
-    else
-    {
-        if (!conn->hasContext())
-        {
-            // If the connection is connected to the SSL port and then
-            // disconnected before the SSL handshake.
-            return;
-        }
-        connectionNum_.fetch_sub(1, std::memory_order_relaxed);
-        if (maxConnectionNumPerIP_ > 0)
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            auto iter = connectionsNumMap_.find(conn->peerAddr().toIp());
-            if (iter != connectionsNumMap_.end())
-            {
-                --iter->second;
-                if (iter->second <= 0)
-                {
-                    connectionsNumMap_.erase(iter);
-                }
-            }
-        }
-    }
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(
@@ -805,65 +701,22 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
     }
 }
 
-void HttpAppFrameworkImpl::onNewWebsockRequest(
-    const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback,
-    const WebSocketConnectionImplPtr &wsConnPtr)
+std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const
 {
-    findSessionForRequest(req);
-    // Route to controller
-    if (!preRoutingObservers_.empty())
-    {
-        for (auto &observer : preRoutingObservers_)
-        {
-            observer(req);
-        }
-    }
-    if (preRoutingAdvices_.empty())
-    {
-        websockCtrlsRouterPtr_->route(req, std::move(callback), wsConnPtr);
-    }
-    else
-    {
-        auto callbackPtr =
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                std::move(callback));
-        doAdvicesChain(
-            preRoutingAdvices_,
-            0,
-            req,
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                [req, callbackPtr, this](const HttpResponsePtr &resp) {
-                    callCallback(req, resp, *callbackPtr);
-                }),
-            [this, callbackPtr, req, wsConnPtr]() {
-                websockCtrlsRouterPtr_->route(req,
-                                              std::move(*callbackPtr),
-                                              wsConnPtr);
-            });
-    }
+    return HttpControllersRouter::instance().getHandlersInfo();
 }
 
-std::vector<std::tuple<std::string, HttpMethod, std::string>>
-HttpAppFrameworkImpl::getHandlersInfo() const
-{
-    auto ret = httpSimpleCtrlsRouterPtr_->getHandlersInfo();
-    auto v = httpCtrlsRouterPtr_->getHandlersInfo();
-    ret.insert(ret.end(), v.begin(), v.end());
-    v = websockCtrlsRouterPtr_->getHandlersInfo();
-    ret.insert(ret.end(), v.begin(), v.end());
-    return ret;
-}
-
-void HttpAppFrameworkImpl::callCallback(
+HttpResponsePtr HttpAppFrameworkImpl::handleSessionForResponse(
     const HttpRequestImplPtr &req,
-    const HttpResponsePtr &resp,
-    const std::function<void(const HttpResponsePtr &)> &callback)
+    const HttpResponsePtr &resp)
 {
     if (useSession_)
     {
         auto &sessionPtr = req->getSession();
-        assert(sessionPtr);
+        if (!sessionPtr)
+        {
+            return resp;
+        }
         if (sessionPtr->needToChangeSessionId())
         {
             sessionManagerPtr_->changeSessionId(sessionPtr);
@@ -883,8 +736,8 @@ void HttpAppFrameworkImpl::callCallback(
                     sessionid.setMaxAge(sessionMaxAge_);
                 newResp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
-                callback(newResp);
-                return;
+
+                return newResp;
             }
             else
             {
@@ -896,8 +749,8 @@ void HttpAppFrameworkImpl::callCallback(
                     sessionid.setMaxAge(sessionMaxAge_);
                 resp->addCookie(std::move(sessionid));
                 sessionPtr->hasSet();
-                callback(resp);
-                return;
+
+                return resp;
             }
         }
         else if (resp->version() != req->version())
@@ -906,13 +759,12 @@ void HttpAppFrameworkImpl::callCallback(
                 *static_cast<HttpResponseImpl *>(resp.get()));
             newResp->setVersion(req->version());
             newResp->setExpiredTime(-1);  // make it temporary
-            callback(newResp);
-            return;
+
+            return newResp;
         }
         else
         {
-            callback(resp);
-            return;
+            return resp;
         }
     }
     else
@@ -923,62 +775,13 @@ void HttpAppFrameworkImpl::callCallback(
                 *static_cast<HttpResponseImpl *>(resp.get()));
             newResp->setVersion(req->version());
             newResp->setExpiredTime(-1);  // make it temporary
-            callback(newResp);
-            return;
+
+            return newResp;
         }
         else
         {
-            callback(resp);
+            return resp;
         }
-    }
-}
-
-void HttpAppFrameworkImpl::onAsyncRequest(
-    const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
-    LOG_TRACE << "new request:" << req->peerAddr().toIpPort() << "->"
-              << req->localAddr().toIpPort();
-    LOG_TRACE << "Headers " << req->methodString() << " " << req->path();
-    LOG_TRACE << "http path=" << req->path();
-    if (req->method() == Options && (req->path() == "*" || req->path() == "/*"))
-    {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-        resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
-        resp->setExpiredTime(0);
-        callback(resp);
-        return;
-    }
-    findSessionForRequest(req);
-    // Route to controller
-    if (!preRoutingObservers_.empty())
-    {
-        for (auto &observer : preRoutingObservers_)
-        {
-            observer(req);
-        }
-    }
-    if (preRoutingAdvices_.empty())
-    {
-        httpSimpleCtrlsRouterPtr_->route(req, std::move(callback));
-    }
-    else
-    {
-        auto callbackPtr =
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                std::move(callback));
-        doAdvicesChain(
-            preRoutingAdvices_,
-            0,
-            req,
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                [req, callbackPtr, this](const HttpResponsePtr &resp) {
-                    callCallback(req, resp, *callbackPtr);
-                }),
-            [this, callbackPtr, req]() {
-                httpSimpleCtrlsRouterPtr_->route(req, std::move(*callbackPtr));
-            });
     }
 }
 
@@ -1030,7 +833,7 @@ void HttpAppFrameworkImpl::forward(
 {
     if (hostString.empty())
     {
-        onAsyncRequest(req, std::move(callback));
+        HttpInternalForwardHelper::forward(req, std::move(callback));
     }
     else
     {
@@ -1153,10 +956,8 @@ void HttpAppFrameworkImpl::quit()
             // Release members in the reverse order of initialization
             listenerManagerPtr_->stopListening();
             listenerManagerPtr_.reset();
-            websockCtrlsRouterPtr_.reset();
-            staticFileRouterPtr_.reset();
-            httpSimpleCtrlsRouterPtr_.reset();
-            httpCtrlsRouterPtr_.reset();
+            StaticFileRouter::instance().reset();
+            HttpControllersRouter::instance().reset();
             pluginsManagerPtr_.reset();
             redisClientManagerPtr_.reset();
             dbClientManagerPtr_.reset();
@@ -1201,7 +1002,7 @@ const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFileHeaders(
     const std::vector<std::pair<std::string, std::string>> &headers)
 {
-    staticFileRouterPtr_->setStaticFileHeaders(headers);
+    StaticFileRouter::instance().setStaticFileHeaders(headers);
     return *this;
 }
 
@@ -1214,13 +1015,13 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
     bool isRecursive,
     const std::vector<std::string> &filters)
 {
-    staticFileRouterPtr_->addALocation(uriPrefix,
-                                       defaultContentType,
-                                       alias,
-                                       isCaseSensitive,
-                                       allowAll,
-                                       isRecursive,
-                                       filters);
+    StaticFileRouter::instance().addALocation(uriPrefix,
+                                              defaultContentType,
+                                              alias,
+                                              isCaseSensitive,
+                                              allowAll,
+                                              isRecursive,
+                                              filters);
     return *this;
 }
 
@@ -1252,7 +1053,7 @@ std::vector<trantor::InetAddress> HttpAppFrameworkImpl::getListeners() const
 HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
     DefaultHandler handler)
 {
-    staticFileRouterPtr_->setDefaultHandler(std::move(handler));
+    StaticFileRouter::instance().setDefaultHandler(std::move(handler));
     return *this;
 }
 
@@ -1359,5 +1160,101 @@ HttpAppFramework &HttpAppFrameworkImpl::registerCustomExtensionMime(
     const std::string &mime)
 {
     drogon::registerCustomExtensionMime(ext, mime);
+    return *this;
+}
+
+int64_t HttpAppFrameworkImpl::getConnectionCount() const
+{
+    return HttpConnectionLimit::instance().getConnectionNum();
+}
+
+// AOP registration methods
+
+HttpAppFramework &HttpAppFrameworkImpl::registerNewConnectionAdvice(
+    const std::function<bool(const trantor::InetAddress &,
+                             const trantor::InetAddress &)> &advice)
+{
+    AopAdvice::instance().registerNewConnectionAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerHttpResponseCreationAdvice(
+    const std::function<void(const HttpResponsePtr &)> &advice)
+{
+    // Is this callback really an AOP?
+    // Maybe we should store them in HttpResponseImpl class as static member
+    AopAdvice::instance().registerHttpResponseCreationAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerSyncAdvice(
+    const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
+
+{
+    AopAdvice::instance().registerSyncAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreRoutingAdvice(
+    const std::function<void(const HttpRequestPtr &)> &advice)
+{
+    AopAdvice::instance().registerPreRoutingObserver(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreRoutingAdvice(
+    const std::function<void(const HttpRequestPtr &,
+                             AdviceCallback &&,
+                             AdviceChainCallback &&)> &advice)
+{
+    AopAdvice::instance().registerPreRoutingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPostRoutingAdvice(
+    const std::function<void(const HttpRequestPtr &)> &advice)
+{
+    AopAdvice::instance().registerPostRoutingObserver(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPostRoutingAdvice(
+    const std::function<void(const HttpRequestPtr &,
+                             AdviceCallback &&,
+                             AdviceChainCallback &&)> &advice)
+{
+    AopAdvice::instance().registerPostRoutingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreHandlingAdvice(
+    const std::function<void(const HttpRequestPtr &)> &advice)
+{
+    AopAdvice::instance().registerPreHandlingObserver(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreHandlingAdvice(
+    const std::function<void(const HttpRequestPtr &,
+                             AdviceCallback &&,
+                             AdviceChainCallback &&)> &advice)
+{
+    AopAdvice::instance().registerPreHandlingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPostHandlingAdvice(
+    const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>
+        &advice)
+{
+    AopAdvice::instance().registerPostHandlingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerPreSendingAdvice(
+    const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>
+        &advice)
+{
+    AopAdvice::instance().registerPreSendingAdvice(advice);
     return *this;
 }
