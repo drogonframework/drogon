@@ -1,5 +1,6 @@
 #include "Http2Transport.h"
 #include "HttpFileUploadRequest.h"
+#include "drogon/utils/Utilities.h"
 
 #include <cstdint>
 #include <fstream>
@@ -689,7 +690,20 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     hpack::HPacker::KeyValueVector vec;
     vec.reserve(headers.size() + 5);
     vec.emplace_back(":method", req->methodString());
-    vec.emplace_back(":path", req->path());
+    const auto &params = req->parameters();
+    if (params.empty())
+        vec.emplace_back(":path", req->path());
+    else
+    {
+        std::string path = req->path() + "?";
+        for (auto const &[key, value] : params)
+        {
+            path += utils::urlEncodeComponent(key) + "=" +
+                    utils::urlEncodeComponent(value) + "&";
+        }
+        path.pop_back();
+        vec.emplace_back(":path", path);
+    }
     std::string scheme = connPtr->isSSLConnection() ? "https" : "http";
     if (!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
         scheme = (req->isOnSecureConnection()) ? "https" : "http";
