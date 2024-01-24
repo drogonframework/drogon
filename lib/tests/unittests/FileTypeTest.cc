@@ -50,11 +50,21 @@ DROGON_TEST(ContentTypeTest)
                 CHECK(getContentType(dummyFile) == contentType);
                 CHECK(parseFileType(dummyFile) != FT_UNKNOWN);
             }
+            if (!shouldBeEmpty)
+            {
+                CHECK(getFileType(contentType) != FT_UNKNOWN);
+                CHECK(getFileType(contentType) != FT_CUSTOM);
+            }
         }
     }
 
     SUBSECTION(negative)
     {
+        CHECK(getFileType(CT_NONE) == FT_UNKNOWN);
+        CHECK(getFileType(CT_CUSTOM) == FT_CUSTOM);
+        CHECK(getFileType(CT_APPLICATION_X_FORM) == FT_UNKNOWN);
+        CHECK(getFileType(CT_APPLICATION_OCTET_STREAM) == FT_UNKNOWN);
+        CHECK(getFileType(CT_MULTIPART_FORM_DATA) == FT_UNKNOWN);
         CHECK(contentTypeToMime(CT_NONE).empty());
         CHECK(contentTypeToMime(CT_CUSTOM) ==
               contentTypeToMime(CT_APPLICATION_OCTET_STREAM));

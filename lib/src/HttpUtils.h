@@ -27,6 +27,7 @@ const std::string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
 ContentType parseContentType(const std::string_view &contentType);
 FileType parseFileType(const std::string_view &fileExtension);
+FileType getFileType(ContentType contentType);
 void registerCustomExtensionMime(const std::string &ext,
                                  const std::string &mime);
 const std::string_view fileNameToMime(const std::string &fileName);

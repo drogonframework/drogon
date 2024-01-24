@@ -604,15 +604,17 @@ ContentType parseContentType(const std::string_view &contentType)
         return CT_APPLICATION_X_FORM;
     if (contentType == "multipart/form-data")
         return CT_MULTIPART_FORM_DATA;
-    auto it =
-        std::find_if(mimeTypeDatabase_.begin(),
-                     mimeTypeDatabase_.end(),
-                     [&contentType](const auto &e) {
-                         return std::find(e.second.first.begin(),
-                                          e.second.first.end(),
-                                          contentType) != e.second.first.end();
-                     });
-    return (it == mimeTypeDatabase_.end()) ? CT_CUSTOM : it->first;
+    auto it = contentTypeMap_.find(contentType);
+    return (it == contentTypeMap_.end()) ? CT_CUSTOM : it->second;
+//    auto it =
+//        std::find_if(mimeTypeDatabase_.begin(),
+//                     mimeTypeDatabase_.end(),
+//                     [&contentType](const auto &e) {
+//                         return std::find(e.second.first.begin(),
+//                                          e.second.first.end(),
+//                                          contentType) != e.second.first.end();
+//                     });
+//    return (it == mimeTypeDatabase_.end()) ? CT_CUSTOM : it->first;
 }
 
 FileType parseFileType(const std::string_view &fileExtension)
@@ -625,6 +627,22 @@ FileType parseFileType(const std::string_view &fileExtension)
     auto it = fileTypeDatabase_.find(extName);
     return (it == fileTypeDatabase_.end()) ? FT_CUSTOM
                                            : it->second.first;
+}
+
+FileType getFileType(ContentType contentType)
+{
+    // Generate map from database for faster query
+    static std::map<ContentType, FileType> fileTypeMap_;
+    // Thread safe initialization
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        for (const auto &e : fileTypeDatabase_)
+            fileTypeMap_[e.second.second] = e.second.first;
+        fileTypeMap_[CT_NONE] = FT_UNKNOWN;
+        fileTypeMap_[CT_CUSTOM] = FT_CUSTOM;
+    });
+    auto it = fileTypeMap_.find(contentType);
+    return (it == fileTypeMap_.end()) ? FT_UNKNOWN : it->second;
 }
 
 const std::string_view &contentTypeToMime(ContentType contentType)

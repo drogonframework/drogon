@@ -117,6 +117,9 @@ class HttpFileImpl
     /// Return the type of file.
     FileType getFileType() const noexcept
     {
+        auto ft = drogon::getFileType(contentType_);
+        if ((ft != FT_UNKNOWN) && (ft != FT_CUSTOM))
+            return ft;
         return parseFileType(getFileExtension());
     }
 
