@@ -48,7 +48,7 @@ inline std::list<std::string_view> getFileExtensions(
     return getFileExtensions(parseContentType(contentType));
 }
 
-    template <typename T>
+template <typename T>
 inline constexpr const char *contentLengthFormatString()
 {
     return "content-length: %d\r\n";
