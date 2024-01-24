@@ -587,16 +587,6 @@ ContentType parseContentType(const std::string_view &contentType)
                 contentTypeMap_[type] = e.first;
         }
     });
-//    static const auto contentTypeMap_ =
-//        []() {
-//            std::map<std::string_view, ContentType> result;
-//        for (const auto &e : mimeTypeDatabase_)
-//        {
-//            for (const auto &type : e.second.first)
-//                result[type] = e.first;
-//        }
-//        return std::move(result);
-//    }();
     auto ext = contentType.find(';');
     if (ext != std::string_view::npos)
         return parseContentType(contentType.substr(0, ext));
@@ -606,15 +596,6 @@ ContentType parseContentType(const std::string_view &contentType)
         return CT_MULTIPART_FORM_DATA;
     auto it = contentTypeMap_.find(contentType);
     return (it == contentTypeMap_.end()) ? CT_CUSTOM : it->second;
-//    auto it =
-//        std::find_if(mimeTypeDatabase_.begin(),
-//                     mimeTypeDatabase_.end(),
-//                     [&contentType](const auto &e) {
-//                         return std::find(e.second.first.begin(),
-//                                          e.second.first.end(),
-//                                          contentType) != e.second.first.end();
-//                     });
-//    return (it == mimeTypeDatabase_.end()) ? CT_CUSTOM : it->first;
 }
 
 FileType parseFileType(const std::string_view &fileExtension)
