@@ -16,7 +16,7 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
 #include <map>
-#include <unordered_map>
+#include <mutex>
 
 namespace drogon
 {
@@ -34,6 +34,8 @@ static const std::map<ContentType,
     mimeTypeDatabase_{
         {CT_NONE, {{""}, ""}},
         {CT_APPLICATION_OCTET_STREAM, {{"application/octet-stream"}, ""}},
+        {CT_APPLICATION_X_FORM, {{"application/x-www-form-urlencoded"}, ""}},
+        {CT_MULTIPART_FORM_DATA, {{"multipart/form-data"}, ""}},
         {CT_APPLICATION_GZIP, {{"application/gzip"}, ""}},
         {CT_APPLICATION_JSON,
          {{"application/json"}, "application/json; charset=utf-8"}},
@@ -645,10 +647,6 @@ FileType getFileType(ContentType contentType)
 
 const std::string_view &contentTypeToMime(ContentType contentType)
 {
-    if (contentType == CT_APPLICATION_X_FORM)
-        return "application/x-www-form-urlencoded";
-    if (contentType == CT_MULTIPART_FORM_DATA)
-        return "multipart/form-data";
     auto it = mimeTypeDatabase_.find(contentType);
     return (it == mimeTypeDatabase_.end())
                ? mimeTypeDatabase_.at(CT_APPLICATION_OCTET_STREAM).first.front()
