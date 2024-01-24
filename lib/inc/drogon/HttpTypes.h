@@ -107,8 +107,8 @@ enum ContentType
     CT_TEXT_JAVASCRIPT,
     CT_TEXT_CSS,
     CT_TEXT_CSV,
-    CT_TEXT_XML,    // suggests human readable xml
-    CT_APPLICATION_XML, // suggest machine-to-machine xml
+    CT_TEXT_XML,         // suggests human readable xml
+    CT_APPLICATION_XML,  // suggest machine-to-machine xml
     CT_TEXT_XSL,
     CT_APPLICATION_WASM,
     CT_APPLICATION_OCTET_STREAM,
