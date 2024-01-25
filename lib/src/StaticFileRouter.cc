@@ -237,8 +237,8 @@ void StaticFileRouter::route(
                                                    contentType);
                         }
                     });
-                return;
             }
+            return;
         }
     }
     std::string directoryPath =
