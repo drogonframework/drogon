@@ -135,6 +135,40 @@ class DROGON_EXPORT MultiPartParser
     /// method.
     const std::map<std::string, std::string> &getParameters() const;
 
+    /// Get the value of an optional parameter
+    /// This method should be called after calling the parse() method.
+    template <typename T>
+    std::optional<T> getOptionalParameter(const std::string &key)
+    {
+        auto &params = getParameters();
+        auto it = params.find(key);
+        if (it != params.end())
+        {
+            try
+            {
+                return std::optional<T>(utils::fromString<T>(it->second));
+            }
+            catch (const std::exception &e)
+            {
+                LOG_ERROR << e.what();
+                return std::optional<T>{};
+            }
+        }
+        else
+        {
+            return std::optional<T>{};
+        }
+    }
+
+    /// Get the value of a parameter
+    /// This method should be called after calling the parse() method.
+    /// Note: returns a default T object if the parameter is missing
+    template <typename T>
+    T getParameter(const std::string &key)
+    {
+        return getOptionalParameter<T>(key).value_or(T{});
+    }
+
     /// Parse the http request stream to get files and parameters.
     int parse(const HttpRequestPtr &req);
 
