@@ -443,10 +443,6 @@ DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
  */
 DROGON_EXPORT std::string secureRandomString(size_t size);
 
-// Grrrr M$ macros
-#undef min
-#undef max
-
 template <typename T>
 T fromString(const std::string &p) noexcept(false)
 {
@@ -458,8 +454,8 @@ T fromString(const std::string &p) noexcept(false)
         // ("1a" should not return 1)
         if (pos != p.size())
             throw std::invalid_argument("Invalid value");
-        if ((v < static_cast<long long>(std::numeric_limits<T>::min())) ||
-            (v > static_cast<long long>(std::numeric_limits<T>::max())))
+        if ((v < static_cast<long long>((std::numeric_limits<T>::min)())) ||
+            (v > static_cast<long long>((std::numeric_limits<T>::max)())))
             throw std::out_of_range("Value out of range");
         return static_cast<T>(v);
     }
@@ -472,7 +468,7 @@ T fromString(const std::string &p) noexcept(false)
         // ("1a" should not return 1)
         if (pos != p.size())
             throw std::invalid_argument("Invalid value");
-        if (v > static_cast<unsigned long long>(std::numeric_limits<T>::max()))
+        if (v > static_cast<unsigned long long>((std::numeric_limits<T>::max)()))
             throw std::out_of_range("Value out of range");
         return static_cast<T>(v);
     }
@@ -484,8 +480,8 @@ T fromString(const std::string &p) noexcept(false)
         // ("1a" should not return 1)
         if (pos != p.size())
             throw std::invalid_argument("Invalid value");
-        if ((v < static_cast<long double>(std::numeric_limits<T>::min())) ||
-            (v > static_cast<long double>(std::numeric_limits<T>::max())))
+        if ((v < static_cast<long double>((std::numeric_limits<T>::min)())) ||
+            (v > static_cast<long double>((std::numeric_limits<T>::max)())))
             throw std::out_of_range("Value out of range");
         return static_cast<T>(v);
     }
