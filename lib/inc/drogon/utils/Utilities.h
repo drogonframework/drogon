@@ -454,7 +454,8 @@ T fromString(const std::string &p) noexcept(false)
     {
         std::size_t pos;
         auto v = std::stoll(p, &pos);
-        // throw if the whole string could not be parsed ("1a" should not return 1)
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
         if (pos != p.size())
             throw std::invalid_argument("Invalid value");
         if ((v < static_cast<long long>(std::numeric_limits<T>::min())) ||
@@ -467,7 +468,8 @@ T fromString(const std::string &p) noexcept(false)
     {
         std::size_t pos;
         auto v = std::stoull(p, &pos);
-        // throw if the whole string could not be parsed ("1a" should not return 1)
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
         if (pos != p.size())
             throw std::invalid_argument("Invalid value");
         if (v > static_cast<unsigned long long>(std::numeric_limits<T>::max()))
@@ -478,7 +480,8 @@ T fromString(const std::string &p) noexcept(false)
     {
         std::size_t pos;
         auto v = std::stold(p, &pos);
-        // throw if the whole string could not be parsed ("1a" should not return 1)
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
         if (pos != p.size())
             throw std::invalid_argument("Invalid value");
         if ((v < static_cast<long double>(std::numeric_limits<T>::min())) ||
@@ -493,10 +496,12 @@ T fromString(const std::string &p) noexcept(false)
         {
             std::stringstream ss(p);
             // must except in case of invalid value, not return a default value
-            // (else it returns 0 for integers if the string is empty or non-numeric)
-            ss.exceptions(std::ios::exceptions::failbit);
+            // (else it returns 0 for integers if the string is empty or
+            // non-numeric)
+            ss.exceptions(std::ios::iostate::failbit);
             ss >> value;
-            // throw if the whole string could not be parsed ("1a" should not return 1)
+            // throw if the whole string could not be parsed
+            // ("1a" should not return 1)
             if (!ss.eof())
                 std::runtime_error("Bad type conversion");
         }
