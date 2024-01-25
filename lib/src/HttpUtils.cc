@@ -172,8 +172,8 @@ static const std::map<std::string_view, std::pair<FileType, ContentType>>
         {"m2v", {FT_MEDIA, CT_VIDEO_MPEG}},
         {"m4a", {FT_AUDIO, CT_AUDIO_MPEG4}},
         {"m4v", {FT_MEDIA, CT_VIDEO_X_M4V}},
-        {"mka", {FT_AUDIO, CT_AUDIO_MATROSKA}},
         {"mjs", {FT_DOCUMENT, CT_TEXT_JAVASCRIPT}},
+        {"mka", {FT_AUDIO, CT_AUDIO_MATROSKA}},
         {"mkv", {FT_MEDIA, CT_VIDEO_MATROSKA}},
         {"mng", {FT_MEDIA, CT_IMAGE_X_MNG}},
         {"mov", {FT_MEDIA, CT_VIDEO_QUICKTIME}},
@@ -591,7 +591,8 @@ ContentType getContentType(const std::string &fileName)
                   [](unsigned char c) { return tolower(c); });
     }
     auto it = fileTypeDatabase_.find(extName);
-    return (it == fileTypeDatabase_.end()) ? CT_CUSTOM : it->second.second;
+    return (it == fileTypeDatabase_.end()) ? CT_APPLICATION_OCTET_STREAM
+                                           : it->second.second;
 }
 
 ContentType parseContentType(const std::string_view &contentType)

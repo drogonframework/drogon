@@ -74,7 +74,7 @@ DROGON_TEST(ContentTypeTest)
         CHECK(parseContentType("multipart/form-data") ==
               CT_MULTIPART_FORM_DATA);
         CHECK(parseFileType("any.thing") == FT_CUSTOM);
-        CHECK(getContentType("any.thing") == CT_CUSTOM);
+        CHECK(getContentType("any.thing") == CT_APPLICATION_OCTET_STREAM);
         CHECK(getFileExtensions(CT_NONE).empty());
         CHECK(getFileExtensions(CT_APPLICATION_X_FORM).empty());
         CHECK(getFileExtensions(CT_APPLICATION_OCTET_STREAM).empty());
