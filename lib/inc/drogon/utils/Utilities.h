@@ -498,7 +498,7 @@ T fromString(const std::string &p) noexcept(false)
             // must except in case of invalid value, not return a default value
             // (else it returns 0 for integers if the string is empty or
             // non-numeric)
-            ss.exceptions(std::ios::iostate::failbit);
+            ss.exceptions(std::ios_base::failbit);
             ss >> value;
             // throw if the whole string could not be parsed
             // ("1a" should not return 1)
