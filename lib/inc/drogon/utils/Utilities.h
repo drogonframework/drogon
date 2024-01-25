@@ -514,56 +514,6 @@ inline std::string fromString<std::string>(const std::string &p) noexcept(false)
     return p;
 }
 
-//template <>
-//inline int fromString<int>(const std::string &p) noexcept(false)
-//{
-//    return std::stoi(p);
-//}
-//
-//template <>
-//inline long fromString<long>(const std::string &p) noexcept(false)
-//{
-//    return std::stol(p);
-//}
-//
-//template <>
-//inline long long fromString<long long>(const std::string &p) noexcept(false)
-//{
-//    return std::stoll(p);
-//}
-//
-//template <>
-//inline unsigned long fromString<unsigned long>(const std::string &p) noexcept(
-//    false)
-//{
-//    return std::stoul(p);
-//}
-//
-//template <>
-//inline unsigned long long fromString<unsigned long long>(
-//    const std::string &p) noexcept(false)
-//{
-//    return std::stoull(p);
-//}
-//
-//template <>
-//inline float fromString<float>(const std::string &p) noexcept(false)
-//{
-//    return std::stof(p);
-//}
-//
-//template <>
-//inline double fromString<double>(const std::string &p) noexcept(false)
-//{
-//    return std::stod(p);
-//}
-//
-//template <>
-//inline long double fromString<long double>(const std::string &p) noexcept(false)
-//{
-//    return std::stold(p);
-//}
-
 template <>
 inline bool fromString<bool>(const std::string &p) noexcept(false)
 {
@@ -571,14 +521,6 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
             return std::isdigit(c);
         }))
         return (std::stoll(p) != 0);
-//    if (p == "1")
-//    {
-//        return true;
-//    }
-//    if (p == "0")
-//    {
-//        return false;
-//    }
     std::string l{p};
     std::transform(p.begin(), p.end(), l.begin(), [](unsigned char c) {
         return (char)tolower(c);
