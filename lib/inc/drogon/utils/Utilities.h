@@ -468,7 +468,8 @@ T fromString(const std::string &p) noexcept(false)
         // ("1a" should not return 1)
         if (pos != p.size())
             throw std::invalid_argument("Invalid value");
-        if (v > static_cast<unsigned long long>((std::numeric_limits<T>::max)()))
+        if (v >
+            static_cast<unsigned long long>((std::numeric_limits<T>::max)()))
             throw std::out_of_range("Value out of range");
         return static_cast<T>(v);
     }
