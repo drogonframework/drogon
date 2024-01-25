@@ -16,6 +16,7 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
 #include <map>
+#include <unordered_map>
 #include <mutex>
 
 namespace drogon
