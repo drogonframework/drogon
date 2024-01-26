@@ -92,6 +92,15 @@ struct CanConvertFromString
 
 }  // namespace internal
 
+/**
+ * @brief Get the HTTP messages corresponding to the HTTP status codes
+ *
+ * @param code HTTP status code
+ *
+ * @return the corresponding message
+ */
+DROGON_EXPORT const std::string_view &statusCodeToString(int code);
+
 namespace utils
 {
 /// Determine if the string is an integer
@@ -437,13 +446,61 @@ DROGON_EXPORT std::string secureRandomString(size_t size);
 template <typename T>
 T fromString(const std::string &p) noexcept(false)
 {
-    if constexpr (internal::CanConvertFromStringStream<T>::value)
+    if constexpr (std::is_integral<T>::value && std::is_signed<T>::value)
+    {
+        std::size_t pos;
+        auto v = std::stoll(p, &pos);
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
+        if (pos != p.size())
+            throw std::invalid_argument("Invalid value");
+        if ((v < static_cast<long long>((std::numeric_limits<T>::min)())) ||
+            (v > static_cast<long long>((std::numeric_limits<T>::max)())))
+            throw std::out_of_range("Value out of range");
+        return static_cast<T>(v);
+    }
+    else if constexpr (std::is_integral<T>::value &&
+                       (!std::is_signed<T>::value))
+    {
+        std::size_t pos;
+        auto v = std::stoull(p, &pos);
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
+        if (pos != p.size())
+            throw std::invalid_argument("Invalid value");
+        if (v >
+            static_cast<unsigned long long>((std::numeric_limits<T>::max)()))
+            throw std::out_of_range("Value out of range");
+        return static_cast<T>(v);
+    }
+    else if constexpr (std::is_floating_point<T>::value)
+    {
+        std::size_t pos;
+        auto v = std::stold(p, &pos);
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
+        if (pos != p.size())
+            throw std::invalid_argument("Invalid value");
+        if ((v < static_cast<long double>((std::numeric_limits<T>::min)())) ||
+            (v > static_cast<long double>((std::numeric_limits<T>::max)())))
+            throw std::out_of_range("Value out of range");
+        return static_cast<T>(v);
+    }
+    else if constexpr (internal::CanConvertFromStringStream<T>::value)
     {
         T value{};
         if (!p.empty())
         {
             std::stringstream ss(p);
+            // must except in case of invalid value, not return a default value
+            // (else it returns 0 for integers if the string is empty or
+            // non-numeric)
+            ss.exceptions(std::ios_base::failbit);
             ss >> value;
+            // throw if the whole string could not be parsed
+            // ("1a" should not return 1)
+            if (!ss.eof())
+                std::runtime_error("Bad type conversion");
         }
         return value;
     }
@@ -460,66 +517,12 @@ inline std::string fromString<std::string>(const std::string &p) noexcept(false)
 }
 
 template <>
-inline int fromString<int>(const std::string &p) noexcept(false)
-{
-    return std::stoi(p);
-}
-
-template <>
-inline long fromString<long>(const std::string &p) noexcept(false)
-{
-    return std::stol(p);
-}
-
-template <>
-inline long long fromString<long long>(const std::string &p) noexcept(false)
-{
-    return std::stoll(p);
-}
-
-template <>
-inline unsigned long fromString<unsigned long>(const std::string &p) noexcept(
-    false)
-{
-    return std::stoul(p);
-}
-
-template <>
-inline unsigned long long fromString<unsigned long long>(
-    const std::string &p) noexcept(false)
-{
-    return std::stoull(p);
-}
-
-template <>
-inline float fromString<float>(const std::string &p) noexcept(false)
-{
-    return std::stof(p);
-}
-
-template <>
-inline double fromString<double>(const std::string &p) noexcept(false)
-{
-    return std::stod(p);
-}
-
-template <>
-inline long double fromString<long double>(const std::string &p) noexcept(false)
-{
-    return std::stold(p);
-}
-
-template <>
 inline bool fromString<bool>(const std::string &p) noexcept(false)
 {
-    if (p == "1")
-    {
-        return true;
-    }
-    if (p == "0")
-    {
-        return false;
-    }
+    if (!p.empty() && std::all_of(p.begin(), p.end(), [](unsigned char c) {
+            return std::isdigit(c);
+        }))
+        return (std::stoll(p) != 0);
     std::string l{p};
     std::transform(p.begin(), p.end(), l.begin(), [](unsigned char c) {
         return (char)tolower(c);
