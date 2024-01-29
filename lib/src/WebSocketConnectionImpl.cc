@@ -88,7 +88,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
     {
         bytesFormatted[1] = 126;
         bytesFormatted[2] = ((len >> 8) & 255);
-        bytesFormatted[3] = ((len)&255);
+        bytesFormatted[3] = ((len) & 255);
         LOG_TRACE << "bytes[2]=" << (size_t)bytesFormatted[2];
         LOG_TRACE << "bytes[3]=" << (size_t)bytesFormatted[3];
         indexStartRawData = 4;
@@ -103,7 +103,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
         bytesFormatted[6] = ((len >> 24) & 255);
         bytesFormatted[7] = ((len >> 16) & 255);
         bytesFormatted[8] = ((len >> 8) & 255);
-        bytesFormatted[9] = ((len)&255);
+        bytesFormatted[9] = ((len) & 255);
 
         indexStartRawData = 10;
     }

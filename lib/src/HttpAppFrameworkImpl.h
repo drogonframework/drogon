@@ -586,8 +586,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     bool areAllDbClientsAvailable() const noexcept override;
     const std::function<HttpResponsePtr(HttpStatusCode,
-                                        const HttpRequestPtr &req)>
-        &getCustomErrorHandler() const override;
+                                        const HttpRequestPtr &req)> &
+    getCustomErrorHandler() const override;
 
     bool isUsingCustomErrorHandler() const
     {
