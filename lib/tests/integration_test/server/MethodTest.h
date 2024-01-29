@@ -1,6 +1,7 @@
 #pragma once
 #include <drogon/HttpController.h>
 using namespace drogon;
+
 class MethodTest : public drogon::HttpController<MethodTest>
 {
   public:

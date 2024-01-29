@@ -40,10 +40,12 @@ static std::mutex &getMapMutex()
 }  // namespace drogon
 
 void DrClassMap::registerClass(const std::string &className,
-                               const DrAllocFunc &func)
+                               const DrAllocFunc &func,
+                               const DrSharedAllocFunc &sharedFunc)
 {
     LOG_TRACE << "Register class:" << className;
-    getMap().insert(std::make_pair(className, func));
+    getMap().insert(
+        std::make_pair(className, std::make_pair(func, sharedFunc)));
 }
 
 DrObjectBase *DrClassMap::newObject(const std::string &className)
@@ -51,7 +53,22 @@ DrObjectBase *DrClassMap::newObject(const std::string &className)
     auto iter = getMap().find(className);
     if (iter != getMap().end())
     {
-        return iter->second();
+        return iter->second.first();
+    }
+    else
+        return nullptr;
+}
+
+std::shared_ptr<DrObjectBase> DrClassMap::newSharedObject(
+    const std::string &className)
+{
+    auto iter = getMap().find(className);
+    if (iter != getMap().end())
+    {
+        if (iter->second.second)
+            return iter->second.second();
+        else
+            return std::shared_ptr<DrObjectBase>(iter->second.first());
     }
     else
         return nullptr;
@@ -68,7 +85,7 @@ const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(
         if (iter != singleInstanceMap.end())
             return iter->second;
     }
-    auto newObj = std::shared_ptr<DrObjectBase>(newObject(className));
+    auto newObj = newSharedObject(className);
     {
         std::lock_guard<std::mutex> lock(mtx);
         auto ret = singleInstanceMap.insert(
@@ -95,8 +112,11 @@ std::vector<std::string> DrClassMap::getAllClassName()
     return ret;
 }
 
-std::unordered_map<std::string, DrAllocFunc> &DrClassMap::getMap()
+std::unordered_map<std::string, std::pair<DrAllocFunc, DrSharedAllocFunc>>
+    &DrClassMap::getMap()
 {
-    static std::unordered_map<std::string, DrAllocFunc> map;
+    static std::unordered_map<std::string,
+                              std::pair<DrAllocFunc, DrSharedAllocFunc>>
+        map;
     return map;
 }

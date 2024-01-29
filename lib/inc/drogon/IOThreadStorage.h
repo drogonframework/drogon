@@ -90,7 +90,7 @@ class IOThreadStorage : public trantor::NonCopyable
     }
 
     /**
-     * @brief Get the thread storage asociate with the current thread
+     * @brief Get the thread storage associate with the current thread
      *
      * This function may only be called in a request handler
      */
@@ -155,4 +155,14 @@ class IOThreadStorage : public trantor::NonCopyable
     std::vector<ValueType> storage_;
 };
 
+inline trantor::EventLoop *getIOThreadStorageLoop(size_t index) noexcept(false)
+{
+    if (index > drogon::app().getThreadNum())
+    {
+        throw std::out_of_range("Event loop index is out of range");
+    }
+    if (index == drogon::app().getThreadNum())
+        return drogon::app().getLoop();
+    return drogon::app().getIOLoop(index);
+}
 }  // namespace drogon

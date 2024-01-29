@@ -4,6 +4,563 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.2] - 2024-01-18
+
+### API changes list
+
+- Feature: Integrate spdlog as logging backend.
+
+- Support asynchronous sending of chunked responses.
+
+### Changed
+
+- Modify the configuration file templates in drogon_ctl.
+
+- Use execute_process instead of exec_program in FindJsoncpp.cmake.
+
+- GitHub Action to find typos in the codebase using codespell.
+
+- add discord link to readme.
+
+- Add -k option to the drogon_ctl when running the press command.
+
+- Refine request routing process.
+
+- Add CI tests with more compilers.
+
+- Avoid a race condition in database listener tests.
+
+- Remove macos-11 CI; not supported by Homebrew.
+
+- Bump github/codeql-action from 2 to 3.
+
+- Move the RealIpResolver plugin to the PreRouting join point.
+
+### Fixed
+
+- Fix: typo on Mapper method.
+
+- Fix a error of coroutines on Windows.
+
+- Fix ORM: The original way did not handle exceptions correctly.
+
+- Remove the default ctor of the Row class in ORM.
+
+- Set the url of trantor to the official repository.
+
+- Fix htonll/ntohll redefinition.
+
+- Fix building with MSYS2.
+
+- Fix name issue when cross-compiling.
+
+## [1.9.1] - 2023-11-27
+
+### API changes list
+
+- Pass HttpRequestPtr to custom error handlers.
+
+- Provide some functions for incrementing the value of given columns.
+
+- Return HttpAppFramework by setExceptionHandler.
+
+### Changed
+
+- Custom sessions.
+
+- Use the constexpr if instead of std::enable_if.
+
+- Make id generator consistent.
+
+- Update test_cmake.csp.
+
+- Simplify drogon test with c++17.
+
+- Remove unused and undefined overloads of isBase64.
+
+### Fixed
+
+- Fix build due to trantor commit out of date and address warnings.
+
+- Fix a bug of the GlobalFilters plugin.
+
+- Fix: uuid formatting.
+
+## [1.9.0] - 2023-10-29
+
+### API changes list
+
+- Added isTopicEmpty function;
+
+### Changed
+
+- Update the ubuntu Dockerfile;
+
+- Add optional Criteria && || operator support;
+
+- Bump actions/checkout from 3 to 4;
+
+- Make & and * directly adjacent to variable names;
+
+- Use wss://echo.websocket.events/.ws in WebSocket client example;
+
+- Change logs in the AccessLogger plugin to TRACE level;
+
+### Fixed
+
+- Fix an error in the secureRandomString function;
+
+- FIX int mapping to int64_t instead of uint64_t;
+
+
+## [1.9.0-rc.1] - 2023-09-23
+
+### API changes list
+
+- Drop cpp14 build support.
+
+- Add isHead() method to HttpRequest, to preserve information about the original method for use in the controller.
+
+- Allow omitting template parameter in execCommandSync.
+
+- Add a method to HttpRequest to access the matched routing parameters.
+
+### Changed
+
+- Update readme files.
+
+- Allow sync advice to be callable on websocket requests.
+
+- Set concurrency to prevent blocking CI queue.
+
+- Validate clang-format version & Customize clang-format path.
+
+- Extract format action into distinct job.
+
+- Split macOS and Ubuntu CIs for readability.
+
+- Set concurrency for CodeQL.
+
+- Add dependabot.yml for GH actions.
+
+- Replace sprintf with snprintf.
+
+- Use ninja to build faster.
+
+- Avoid using well-known ports for demoMain.
+
+- Simplify coroutine implementation.
+
+- Add a plugin for prometheus.
+
+- Optimize plugins with redirection functions.
+
+- Optimize regex generator.
+
+- Add override keyword to setSockOptCallback.
+
+- SlashRemover optimization.
+
+### Fixed
+
+- Fix race condition when setting the secure flag during test.
+
+## [1.8.6] - 2023-08-23
+
+### Changed
+
+- Show outputs of try_compile for UUID libs.
+
+- Update Trantor to fix a serious bug when sending files.
+
+## [1.8.5] - 2023-08-19
+
+### API changes list
+
+- Add the forwardCoro method to HttpAppFramework.
+
+- Possibility to add plugins without config file.
+
+- Implement QueryBuilder.
+
+- Add getOriginalPath function.
+
+- Add setsockopt to HttpClient.
+
+- Add overload function of newHttpResponse.
+
+- Add getConnectionCount method.
+
+### Changed
+
+- Add synchronization interface to model's associated query.
+
+- Use syncAdvices.empty() to check.
+
+- Remove the deprecated Json::Reader.
+
+- Adapt Drogon to take advitange of Trantor TLS refactor.
+
+- Add avatars of all contributors to the readme file.
+
+- Remove docsforge from readme.
+
+- Adapt to gcc13.
+
+- Modify the HttpMessageBody class.
+
+- Add the GlobalFilters plugin.
+
+- Add filters and plugins to the drogon.h header file.
+
+- Add webp and svg to the default file_types.
+
+- Update SqlBinder.h.
+
+- Remove path from COMPILER_COMMAND.
+
+- Hodor plugin - Use IP bytes for user IP identification.
+
+- Add SlashRemover plugin.
+
+- Support setting max_files in loggers.
+
+- Use shared_ptr to store plugins.
+
+- Throw custom exception in HttpClient.
+
+- Base64 improvements.
+
+- Add CT_TEXT_JAVASCRIPT.
+
+- Fix typo in newHttpJsonResponse documentation.
+
+- Add CodeQL workflow.
+
+- constexpr base64 length calculators.
+
+- Make isBase64() and isInteger() take string_view.
+
+- Chore: add package.xml.
+
+- Add an example of yaml config file.
+
+- Remove some unused functions.
+
+- Use unsigned char to call the std::isspace function.
+
+- Change options BUILD_CTL and BUILD_EXAMPLES and update readme with Building options.
+
+- Remove unused CI files and Jekyll config.
+
+- Ensure that all filters, AOP advices, and handlers are executed within the IO threads.
+
+- Update test.sh and build.sh by appending prefix "X" to string variable comparisons.
+
+- Recognize URI in request lines.
+
+- Address warnings on macOS CI.
+
+- Perform insensitive string compare of cookie SameSite attribute.
+
+### Fixed
+
+- Temporary fix dead HttpClient.
+
+- Fix a configuration error when building drogon_ctl.
+
+- Fix generation of JSON field validation for short type.
+
+- Fix bug on Mac M1 with redis chat example code.
+
+- Fix error: conversion from ‘long int’ to ‘Json::Value’ is ambiguous.
+
+- Bugfix: PgBatchConnection did not report error message.
+
+- Fix typo in config file.
+
+- Fix a hanging bug when writing large string to text field.
+
+- Fixed logic error of limiterExpireTime_.
+
+- Fix Missing Header BaseBuilder.h in CMakeLists.
+
+- Fix: Coroutine handle should be captured by value.
+
+- Fix issues in the ListParaView and content types.
+
+- Fix target link libraries of yaml-cpp to comaptiable with vcpkg.
+
+- Fix build error on win32/mingw.
+
+- Fix CI in MacOS.
+
+- Fix broken link in CONTRIBUTING.md.
+
+## [1.8.4] - 2023-03-19
+
+### API Changes list
+
+- Add a configuration option to display local time in logs.
+
+- Add the stackLimit option for jsoncpp.
+
+- Add coroutine to wait until event loop ends.
+
+- Add switchThreadCoro().
+
+- Add queueInLoopCoro function.
+
+### Changed
+
+- Reduce overhead of constructing string from request status.
+
+- Add coroutine parameter binding test and make tests not blocking.
+
+- Use weakptr instead of shared_ptr in HttpClient.
+
+- Refactor HttpServer codes.
+
+- Add an option in CMakeLists.txt to set how to use trantor.
+
+- Add support to yaml config file.
+
+- Changes to free http client if no request is pending.
+
+- Trigger error message in drogon test when faced with bad parameter.
+
+### Fixed
+
+- Make the token bucket full when it is initialized
+
+- Fix file r/w race condition in integration test.
+
+- Postgresql: don't handle events anymore after connection closing.
+
+- Fix multipart boundary with charset.
+
+- Fix a conan issue in github actions.
+
+- Hold shared pointer from the very beginning in WebSocketConnectionImpl.
+
+## [1.8.3] - 2023-01-23
+
+### API changes list
+
+- Add onSessionStart() and onSessionDestroy() events
+
+- Support postgresql asynchronous notification (LISTEN/NOTIFY).
+
+### Changed
+
+- Update Utilities.cc
+
+- Drogon test refactor
+
+- Enable json entry as string
+
+- Mark awaiters as non-copyable
+
+### Fixed
+
+- Fix HttpController regex path matching
+
+- Fix a memory leak in the redis example
+
+- Partial fix for MSYS2 compat
+
+## [1.8.2] - 2022-11-11
+
+### API changes list
+
+- Add the queueInLoopCoro function.
+
+- Avoid HashDoS attacks via random per-session hash initial state.
+
+### Changed
+
+- Support the mediumint column when generate the mysql model.
+
+- Set Hiredis_FOUND to true when finding Hiredis library.
+
+- Add rate limiter.
+
+- Add some test cases for the sqlite datetime type.
+
+### Fixed
+
+- Fix typo in drogon_test.h.
+
+- Fix a date race in drogon_test.
+
+- Fix a deadlock bug when closing all database connections.
+
+## [1.8.1] - 2022-09-25
+
+### API changes list
+
+- Support redis subscription.
+
+### Changed
+
+- Remove redundant member functions of drogon::Task.
+
+- Small patches on orm_lib.
+
+- Add support for the string_view type to SqlBinder in orm.
+
+### Fixed
+
+- Fix a conflict of ssize_t type with hiredis.
+
+- Fix a test bug when clients start before servers.
+
+- Fix model template file Unreachable code.
+
+- Use the mysql_library_end() function to avoid memory leaks.
+
+## [1.8.0] - 2022-09-01
+
+### API changes list
+
+- Add ‘not like‘ criteria.
+
+- Add HttpResponse::newStreamResponse().
+
+- Add the same site option for session cookie.
+
+- Add support for custom SQL query.
+
+### Changed
+
+- Update issue templates.
+
+- Enable automatic reconnect in mysql.
+
+- Add typename for clang-14.
+
+- A workaround for redis sync exec.
+
+- Resolve redis server hostname from config file.
+
+- Add username option to redis databases.
+
+- Return nullptr if a plugin is not loaded when getting it.
+
+- Support controller registration in plugin.
+
+- Check mysql-optionsv support in cmake.
+
+- Check if host header is set before setting.
+
+- Clear all database connections before quitting.
+
+- Add namespace to views when using drogon_ctl.
+
+- Support pipeline mode on PostgreSQL 14+.
+
+- Add content type to multipart file upload.
+
+- Make orm::Result compatible with C++ STL container concepts.
+
+- Throw exceptions instead of exiting when loading configuration fails.
+
+- Rename BUILD_TRANTOR_SHARED to BUILD_SHARED_LIBS.
+
+- Support compressed request.
+
+- Prevent sending multiple responses for a single request.
+
+- Remove the virtual specifier from functions marked with override.
+
+- Remove redundancies from the CMake action.
+
+- Ensure requiring a semi-colon after macros.
+
+- Omit redundant virtual specifiers.
+
+- Refactor orm::SqlBinder.
+
+- Implement toJson to convert std::vector to Json::Value.
+
+- Resolve real ip from HttpRequest.
+
+- Delete the unmaintained test script.
+
+- Change the listener port of the cookie test.
+
+- Use a raw string literal for the drogon banner.
+
+- Change timeout of pipeline test for the CI environment.
+
+- Accept "postgres" for DbClient type as well.
+
+- Log remote real address in AccessLogger.
+
+- Support coroutine filter.
+
+- Refactor db_test.cc.
+
+- Use nullopt instead of the no-argument constructor.
+
+- Set the running flag to false after calling the quit() method.
+
+- Fix doc link in README files.
+
+### Fixed
+
+- Fix XXXControllers created on MSVC even if specified not to do so.
+
+- To avoid accessing a null point, make sure `result == OK` before accessing the response ptr.
+
+- Fix a bug when stopping redis service.
+
+- Fix mutex lock missing.
+
+- Fix tolower with cfi sanitizer.
+
+- Add move constructor to fix clang-14 compile error.
+
+- Fix HttpClient dns cache.
+
+- Fix bug when resolving redis server hostname.
+
+- Reset timer afters relaunching on Linux.
+
+- Fix some configuration file issues.
+
+- Fix HttpFile unittest error on Windows.
+
+- Fix core dump causing by logging in destructor.
+
+- Fixing link error when linking with static c-ares.
+
+- Remove redundant resource release.
+
+- Install missing header file apply.h.
+
+- Fix deleteFutureByPrimaryKey compile fail.
+
+- Fix compilation failure without database support.
+
+- Fix Mapper::updateBy() async api.
+
+- Fix no BUILD_CTL with tests.
+
+- Fix some bugs in RedisClient.
+
+- Fix a misuse of std::move.
+
+- Fix a bug when creating models with composite keys in sqlite3.
+
+- Fix a bug when converting the content-length string to size_t.
+
+- Fix a bug when parsing multipart/form-data.
+
+- Export the getVersion method for Windows.
+
+- Add a pre-compilation macro in the pg pipeline test code.
+
 ## [1.7.5] - 2022-02-19
 
 ### API changes list
@@ -12,7 +569,7 @@ All notable changes to this project will be documented in this file.
 
 - Add max-age, samesite options to Cookie.
 
-- Enable setup output of logs to files at any time. 
+- Enable setup output of logs to files at any time.
 
 ### Changed
 
@@ -130,7 +687,7 @@ All notable changes to this project will be documented in this file.
 
 - Return on redis connection errors
 
-- Fix(MutliPart): Does not respect quotes in Content-Disposition header
+- Fix(MultiPart): Does not respect quotes in Content-Disposition header
 
 - Fix(cmake): error in FindFilesystem
 
@@ -288,7 +845,7 @@ All notable changes to this project will be documented in this file.
 
 - Use two-phase construction for the DbClientImpl and the RedisClientImpl.
 
-- Add support 'select <db>' for redis.
+- Add support 'select &lt;db&gt;' for redis.
 
 ### Fixed
 
@@ -598,7 +1155,7 @@ All notable changes to this project will be documented in this file.
 
 - Destroy DNS resolver of HttpClient in the correct thread.
 
-- Add the header <cctype> to resolve build errors in VS2017.
+- Add the header &lt;cctype&gt; to resolve build errors in VS2017.
 
 ## [1.0.0-beta18] - 2020-06-14
 
@@ -818,7 +1375,6 @@ All notable changes to this project will be documented in this file.
 
 - Fix(compilation on alpine): Replace u_short alias.
 
-
 ## [1.0.0-beta9] - 2019-10-28
 
 ### API changes list
@@ -847,7 +1403,6 @@ All notable changes to this project will be documented in this file.
 
 - Fix a busy loop bug when connections to MySQL server are timeout.
 
-
 ## [1.0.0-beta8] - 2019-10-03
 
 ### API changes list
@@ -861,7 +1416,6 @@ All notable changes to this project will be documented in this file.
 - Add the setCustomContentTypeString() method to the HttpRequest class.
 
 - Add thread storage.
-
 
 ### Changed
 
@@ -906,7 +1460,7 @@ All notable changes to this project will be documented in this file.
 - Reduce size of docker image.
 
 - Make the framework API support chained calls.
-  
+
 - Add a synchronous join point for AOP.
 
 - Modify the CMakeLists to modern cmake style.
@@ -918,7 +1472,6 @@ All notable changes to this project will be documented in this file.
 - Fix a bug in the cmake configuration file when there's '+' in the building path.
 
 - Fix a bug in drogon_ctl (when creating orm models)
-
 
 ## [1.0.0-beta6] - 2019-08-08
 
@@ -943,8 +1496,8 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Add two methods to control if the Server header or the Date header is sent to clients with HTTP responses.
-  * void HttpAppFramework::enableServerHeader(bool);
-  * void HttpAppFramework::enableDateHeader(bool);
+    * void HttpAppFramework::enableServerHeader(bool);
+    * void HttpAppFramework::enableDateHeader(bool);
 
 ### Changed
 
@@ -1022,7 +1575,29 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.5...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.2...HEAD
+
+[1.9.2]: https://github.com/an-tao/drogon/compare/v1.9.1...v1.9.2
+
+[1.9.1]: https://github.com/an-tao/drogon/compare/v1.9.0...v1.9.1
+
+[1.9.0]: https://github.com/an-tao/drogon/compare/v1.9.0-rc.1...v1.9.0
+
+[1.9.0-rc.1]: https://github.com/an-tao/drogon/compare/v1.8.6...v1.9.0-rc.1
+
+[1.8.6]: https://github.com/an-tao/drogon/compare/v1.8.5...v1.8.6
+
+[1.8.5]: https://github.com/an-tao/drogon/compare/v1.8.4...v1.8.5
+
+[1.8.4]: https://github.com/an-tao/drogon/compare/v1.8.3...v1.8.4
+
+[1.8.3]: https://github.com/an-tao/drogon/compare/v1.8.2...v1.8.3
+
+[1.8.2]: https://github.com/an-tao/drogon/compare/v1.8.1...v1.8.2
+
+[1.8.1]: https://github.com/an-tao/drogon/compare/v1.8.0...v1.8.1
+
+[1.8.0]: https://github.com/an-tao/drogon/compare/v1.7.5...v1.8.0
 
 [1.7.5]: https://github.com/an-tao/drogon/compare/v1.7.4...v1.7.5
 

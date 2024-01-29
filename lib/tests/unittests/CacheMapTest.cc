@@ -13,7 +13,7 @@ DROGON_TEST(CacheMapTest)
     trantor::EventLoopThread loopThread;
     loopThread.run();
     drogon::CacheMap<std::string, std::string> cache(loopThread.getLoop(),
-                                                     0.1,
+                                                     0.1f,
                                                      4,
                                                      30);
 
@@ -30,7 +30,7 @@ DROGON_TEST(CacheMapTest)
     cache.erase("30");
     CHECK(cache.find("30") == false);
 
-    cache.modify("bla", [](std::string& s) { s = "asd"; });
+    cache.modify("bla", [](std::string &s) { s = "asd"; });
     CHECK(cache["bla"] == "asd");
 
     std::string content;

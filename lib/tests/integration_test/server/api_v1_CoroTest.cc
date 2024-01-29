@@ -15,6 +15,35 @@ Task<> CoroTest::get(HttpRequestPtr req,
     co_return;
 }
 
+Task<> CoroTest::get_with_param(
+    HttpRequestPtr req,
+    std::function<void(const HttpResponsePtr &)> callback,
+    std::string param)
+{
+    // Force co_await to test awaiting works
+    co_await drogon::sleepCoro(
+        trantor::EventLoop::getEventLoopOfCurrentThread(),
+        std::chrono::milliseconds(100));
+
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setBody(param);
+    callback(resp);
+    co_return;
+}
+
+Task<HttpResponsePtr> CoroTest::get_with_param2(HttpRequestPtr req,
+                                                std::string param)
+{
+    // Force co_await to test awaiting works
+    co_await drogon::sleepCoro(
+        trantor::EventLoop::getEventLoopOfCurrentThread(),
+        std::chrono::milliseconds(100));
+
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setBody(param);
+    co_return resp;
+}
+
 Task<HttpResponsePtr> CoroTest::get2(HttpRequestPtr req)
 {
     auto resp = HttpResponse::newHttpResponse();
@@ -26,12 +55,12 @@ Task<> CoroTest::this_will_fail(
     HttpRequestPtr req,
     std::function<void(const HttpResponsePtr &)> callback)
 {
-    throw std::runtime_error("This is an excpected exception");
+    throw std::runtime_error("This is an expected exception");
     callback(HttpResponse::newHttpResponse());
 }
 
 Task<HttpResponsePtr> CoroTest::this_will_fail2(HttpRequestPtr req)
 {
-    throw std::runtime_error("This is an excpected exception");
+    throw std::runtime_error("This is an expected exception");
     co_return HttpResponse::newHttpResponse();
 }

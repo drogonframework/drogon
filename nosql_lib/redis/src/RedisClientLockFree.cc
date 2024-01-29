@@ -12,7 +12,9 @@
  *
  */
 
+#include "RedisConnection.h"
 #include "RedisClientLockFree.h"
+#include "RedisSubscriberImpl.h"
 #include "RedisTransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
 using namespace drogon::nosql;
@@ -21,10 +23,12 @@ RedisClientLockFree::RedisClientLockFree(
     const trantor::InetAddress &serverAddress,
     size_t numberOfConnections,
     trantor::EventLoop *loop,
+    std::string username,
     std::string password,
     unsigned int db)
     : loop_(loop),
       serverAddr_(serverAddress),
+      username_(std::move(username)),
       password_(std::move(password)),
       db_(db),
       numberOfConnections_(numberOfConnections)
@@ -39,8 +43,8 @@ RedisClientLockFree::RedisClientLockFree(
 RedisConnectionPtr RedisClientLockFree::newConnection()
 {
     loop_->assertInLoopThread();
-    auto conn =
-        std::make_shared<RedisConnection>(serverAddr_, password_, db_, loop_);
+    auto conn = std::make_shared<RedisConnection>(
+        serverAddr_, username_, password_, db_, loop_);
     std::weak_ptr<RedisClientLockFree> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();
@@ -81,10 +85,64 @@ RedisConnectionPtr RedisClientLockFree::newConnection()
     return conn;
 }
 
+RedisConnectionPtr RedisClientLockFree::newSubscribeConnection(
+    const std::shared_ptr<RedisSubscriberImpl> &subscriber)
+{
+    loop_->assertInLoopThread();
+    auto conn = std::make_shared<RedisConnection>(
+        serverAddr_, username_, password_, db_, loop_);
+    std::weak_ptr<RedisClientLockFree> weakThis = shared_from_this();
+    std::weak_ptr<RedisSubscriberImpl> weakSub(subscriber);
+    conn->setConnectCallback([weakThis, weakSub](RedisConnectionPtr &&conn) {
+        conn->getLoop()->assertInLoopThread();  // TODO: remove
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
+        thisPtr->loop_->assertInLoopThread();  // TODO: remove
+        auto subPtr = weakSub.lock();
+        if (subPtr)
+        {
+            subPtr->setConnection(conn);
+            subPtr->subscribeAll();
+        }
+        else
+        {
+            thisPtr->connections_.erase(conn);
+        }
+    });
+    conn->setDisconnectCallback([weakThis, weakSub](RedisConnectionPtr &&conn) {
+        // assert(status == REDIS_CONNECTED);
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
+        thisPtr->connections_.erase(conn);
+        auto subPtr = weakSub.lock();
+        if (!subPtr)
+            return;
+        subPtr->clearConnection();
+
+        thisPtr->loop_->runAfter(2.0, [thisPtr, subPtr]() {
+            thisPtr->connections_.insert(
+                thisPtr->newSubscribeConnection(subPtr));
+        });
+    });
+    conn->setIdleCallback(
+        [weakThis, weakSub](const RedisConnectionPtr &connPtr) {
+            auto thisPtr = weakThis.lock();
+            if (!thisPtr)
+                return;
+            auto subPtr = weakSub.lock();
+            if (!subPtr)
+                return;
+            subPtr->subscribeNext();
+        });
+    return conn;
+}
+
 void RedisClientLockFree::execCommandAsync(
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
-    string_view command,
+    std::string_view command,
     ...) noexcept
 {
     loop_->assertInLoopThread();
@@ -147,6 +205,11 @@ void RedisClientLockFree::execCommandAsync(
 }
 
 RedisClientLockFree::~RedisClientLockFree()
+{
+    closeAll();
+}
+
+void RedisClientLockFree::closeAll()
 {
     for (auto &conn : connections_)
     {
@@ -276,7 +339,7 @@ void RedisClientLockFree::handleNextTask(const RedisConnectionPtr &connPtr)
 }
 
 void RedisClientLockFree::execCommandAsyncWithTimeout(
-    string_view command,
+    std::string_view command,
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
     va_list ap)
@@ -369,4 +432,14 @@ void RedisClientLockFree::execCommandAsyncWithTimeout(
         tasks_.emplace_back(bfCbPtr);
     }
     timeoutFlagPtr->runTimer();
+}
+
+std::shared_ptr<RedisSubscriber> RedisClientLockFree::newSubscriber() noexcept
+{
+    auto subscriber = std::make_shared<RedisSubscriberImpl>();
+    loop_->runInLoop([this, subscriber]() {
+        connections_.insert(newSubscribeConnection(subscriber));
+    });
+
+    return subscriber;
 }

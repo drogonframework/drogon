@@ -26,10 +26,6 @@ using HttpResponseImplPtr = std::shared_ptr<HttpResponseImpl>;
 class WebSocketConnectionImpl;
 using WebSocketConnectionImplPtr = std::shared_ptr<WebSocketConnectionImpl>;
 class HttpRequestParser;
-class StaticFileRouter;
-class HttpControllersRouter;
-class WebsocketControllersRouter;
-class HttpSimpleControllersRouter;
 class PluginsManager;
 class ListenerManager;
 class SharedLibManager;
@@ -42,6 +38,7 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 class DbClientManager;
 }  // namespace orm
+
 namespace nosql
 {
 class RedisClient;

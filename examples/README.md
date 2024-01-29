@@ -14,6 +14,7 @@ proxy with a simple round robin.
 9. [redis](https://github.com/an-tao/drogon/tree/master/examples/redis) - A simple example of Redis
 10. [websocket_server](https://github.com/drogonframework/drogon/tree/master/examples/websocket_server) - Example WebSocker chat room server
 11. [redis_cache](https://github.com/an-tao/drogon/tree/master/examples/redis_cache) - An example for using coroutines of redis clients
+12. [redis_chat](https://github.com/an-tao/drogon/tree/master/examples/redis_chat) - A chatroom server built with websocket and redis pub/sub service.
 
 ### [TechEmpower Framework Benchmarks](https://github.com/TechEmpower/FrameworkBenchmarks) test suite
 

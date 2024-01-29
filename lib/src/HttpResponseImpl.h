@@ -38,6 +38,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     HttpResponseImpl() : creationDate_(trantor::Date::now())
     {
     }
+
     HttpResponseImpl(HttpStatusCode code, ContentType type)
         : statusCode_(code),
           statusMessage_(statusCodeToString(code)),
@@ -47,10 +48,12 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
           contentTypeString_(contentTypeToMime(type))
     {
     }
+
     void setPassThrough(bool flag) override
     {
         passThrough_ = flag;
     }
+
     HttpStatusCode statusCode() const override
     {
         return statusCode_;
@@ -81,7 +84,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return version_;
     }
 
-    virtual const char *versionString() const override;
+    const char *versionString() const override;
 
     void setCloseConnection(bool on) override
     {
@@ -130,7 +133,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         removeHeaderBy(key);
     }
 
-    const std::unordered_map<std::string, std::string> &headers() const override
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &headers() const override
     {
         return headers_;
     }
@@ -200,7 +205,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return defaultCookie;
     }
 
-    const std::unordered_map<std::string, Cookie> &cookies() const override
+    const std::
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
+            &cookies() const override
     {
         return cookies_;
     }
@@ -218,6 +225,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
+
     void setBody(std::string &&body) override
     {
         bodyPtr_ = std::make_shared<HttpMessageStringBody>(std::move(body));
@@ -231,6 +239,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         headers_["location"] = url;
     }
+
     std::shared_ptr<trantor::MsgBuffer> renderToBuffer();
     void renderToBuffer(trantor::MsgBuffer &buffer);
     std::shared_ptr<trantor::MsgBuffer> renderHeaderForHeadMethod();
@@ -263,6 +272,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
         return bodyPtr_->data();
     }
+
     size_t getBodyLength() const override
     {
         if (bodyPtr_)
@@ -272,6 +282,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void swap(HttpResponseImpl &that) noexcept;
     void parseJson() const;
+
     const std::shared_ptr<Json::Value> &jsonObject() const override
     {
         // Not multi-thread safe but good, because we basically call this
@@ -283,6 +294,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
         return jsonPtr_;
     }
+
     const std::string &getJsonError() const override
     {
         const static std::string none;
@@ -290,37 +302,86 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             return *jsonParsingErrorPtr_;
         return none;
     }
+
     void setJsonObject(const Json::Value &pJson)
     {
         flagForParsingJson_ = true;
         flagForSerializingJson_ = false;
         jsonPtr_ = std::make_shared<Json::Value>(pJson);
     }
+
     void setJsonObject(Json::Value &&pJson)
     {
         flagForParsingJson_ = true;
         flagForSerializingJson_ = false;
         jsonPtr_ = std::make_shared<Json::Value>(std::move(pJson));
     }
+
     bool shouldBeCompressed() const;
     void generateBodyFromJson() const;
+
     const std::string &sendfileName() const override
     {
         return sendfileName_;
     }
+
     const SendfileRange &sendfileRange() const override
     {
         return sendfileRange_;
     }
+
+    const trantor::CertificatePtr &peerCertificate() const override
+    {
+        return peerCertificate_;
+    }
+
+    void setPeerCertificate(const trantor::CertificatePtr &cert)
+    {
+        peerCertificate_ = cert;
+    }
+
     void setSendfile(const std::string &filename)
     {
         sendfileName_ = filename;
     }
+
     void setSendfileRange(size_t offset, size_t len)
     {
         sendfileRange_.first = offset;
         sendfileRange_.second = len;
     }
+
+    const std::function<std::size_t(char *, std::size_t)> &streamCallback()
+        const override
+    {
+        return streamCallback_;
+    }
+
+    void setStreamCallback(
+        const std::function<std::size_t(char *, std::size_t)> &callback)
+    {
+        streamCallback_ = callback;
+    }
+
+    const std::function<void(ResponseStreamPtr)> &asyncStreamCallback()
+        const override
+    {
+        return asyncStreamCallback_;
+    }
+
+    void setAsyncStreamCallback(
+        const std::function<void(ResponseStreamPtr)> &callback,
+        bool disableKickoffTimeout)
+    {
+        asyncStreamCallback_ = callback;
+        asyncStreamDisableKickoff_ = disableKickoffTimeout;
+    }
+
+    bool asyncStreamKickoffDisabled() const
+    {
+        return asyncStreamDisableKickoff_;
+    }
+
     void makeHeaderString()
     {
         fullHeaderString_ = std::make_shared<trantor::MsgBuffer>(128);
@@ -341,7 +402,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                 utils::gzipDecompress(bodyPtr_->data(), bodyPtr_->length());
             removeHeaderBy("content-encoding");
             bodyPtr_ =
-                std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+                std::make_shared<HttpMessageStringBody>(std::move(gunzipBody));
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
@@ -354,7 +415,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                 utils::brotliDecompress(bodyPtr_->data(), bodyPtr_->length());
             removeHeaderBy("content-encoding");
             bodyPtr_ =
-                std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+                std::make_shared<HttpMessageStringBody>(std::move(gunzipBody));
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
@@ -380,12 +441,12 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                 if (pos != std::string::npos)
                 {
                     contentType_ = parseContentType(
-                        string_view(contentTypeString.data(), pos));
+                        std::string_view(contentTypeString.data(), pos));
                 }
                 else
                 {
                     contentType_ =
-                        parseContentType(string_view(contentTypeString));
+                        parseContentType(std::string_view(contentTypeString));
                 }
 
                 if (contentType_ == CT_NONE)
@@ -404,6 +465,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
+
     void setContentTypeCodeAndCustomString(ContentType type,
                                            const char *typeString,
                                            size_t typeStringLength) override
@@ -411,7 +473,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         contentType_ = type;
         flagForParsingContentType_ = true;
 
-        string_view sv(typeString, typeStringLength);
+        std::string_view sv(typeString, typeStringLength);
         bool haveHeader = sv.find("content-type: ") == 0;
         bool haveCRLF = sv.rfind("\r\n") == sv.size() - 2;
 
@@ -420,8 +482,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             endOffset += 14;
         if (haveCRLF)
             endOffset += 2;
-        setContentType(string_view{typeString + (haveHeader ? 14 : 0),
-                                   typeStringLength - endOffset});
+        setContentType(std::string_view{typeString + (haveHeader ? 14 : 0),
+                                        typeStringLength - endOffset});
     }
 
     void setContentTypeString(const char *typeString,
@@ -433,15 +495,18 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         assert(code >= 0);
         customStatusCode_ = code;
-        statusMessage_ = string_view{message, messageLength};
+        statusMessage_ = std::string_view{message, messageLength};
     }
 
-    std::unordered_map<std::string, std::string> headers_;
-    std::unordered_map<std::string, Cookie> cookies_;
+    std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            headers_;
+    std::unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
+        cookies_;
 
     int customStatusCode_{-1};
     HttpStatusCode statusCode_{kUnknown};
-    string_view statusMessage_;
+    std::string_view statusMessage_;
 
     trantor::Date creationDate_;
     Version version_{Version::kHttp11};
@@ -450,10 +515,14 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     ssize_t expriedTime_{-1};
     std::string sendfileName_;
     SendfileRange sendfileRange_{0, 0};
+    std::function<std::size_t(char *, std::size_t)> streamCallback_;
+    std::function<void(ResponseStreamPtr)> asyncStreamCallback_;
+    bool asyncStreamDisableKickoff_{false};
 
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 
     std::shared_ptr<trantor::MsgBuffer> fullHeaderString_;
+    trantor::CertificatePtr peerCertificate_;
     mutable std::shared_ptr<trantor::MsgBuffer> httpString_;
     mutable size_t datePos_{static_cast<size_t>(-1)};
     mutable int64_t httpStringDate_{-1};
@@ -464,16 +533,19 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<std::string> jsonParsingErrorPtr_;
     mutable std::string contentTypeString_{"text/html; charset=utf-8"};
     bool passThrough_{false};
-    void setContentType(const string_view &contentType)
+
+    void setContentType(const std::string_view &contentType)
     {
         contentTypeString_ =
             std::string(contentType.data(), contentType.size());
     }
-    void setStatusMessage(const string_view &message)
+
+    void setStatusMessage(const std::string_view &message)
     {
         statusMessage_ = message;
     }
 };
+
 using HttpResponseImplPtr = std::shared_ptr<HttpResponseImpl>;
 
 inline void swap(HttpResponseImpl &one, HttpResponseImpl &two) noexcept

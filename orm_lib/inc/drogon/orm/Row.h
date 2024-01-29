@@ -20,6 +20,7 @@
 #include <drogon/exports.h>
 #include <drogon/orm/Result.h>
 #include <string>
+
 namespace drogon
 {
 namespace orm
@@ -63,10 +64,12 @@ class DROGON_EXPORT Row
     Reference at(const std::string &columnName) const;
 
     SizeType size() const;
+
     SizeType capacity() const noexcept
     {
         return size();
     }
+
     ConstIterator begin() const noexcept;
     ConstIterator cbegin() const noexcept;
     ConstIterator end() const noexcept;
@@ -77,11 +80,16 @@ class DROGON_EXPORT Row
     ConstReverseIterator rend() const;
     ConstReverseIterator crend() const;
 
+#ifdef _MSC_VER
+    Row() noexcept = default;
+#endif
+
     Row(const Row &r) noexcept = default;
     Row(Row &&) noexcept = default;
+    Row &operator=(const Row &) noexcept = default;
 
   private:
-    const Result result_;
+    Result result_;
 
   protected:
     friend class Field;

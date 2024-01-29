@@ -9,6 +9,7 @@
 
 using namespace std::chrono_literals;
 using namespace drogon::orm;
+
 class User
 {
   public:
@@ -17,13 +18,16 @@ class User
     const static std::string tableName;
 
     using PrimaryKeyType = int;
+
     explicit User(const Row &r)
         : userId_(r["user_id"].as<std::string>()),
           userName_(r["user_name"].as<std::string>())
     {
     }
+
     std::string userId_;
     std::string userName_;
+
     static const std::string &sqlForFindingByPrimaryKey()
     {
         const static std::string sql =
@@ -31,6 +35,7 @@ class User
         return sql;
     }
 };
+
 const std::string User::primaryKeyName = "user_uuid";
 const bool User::hasPrimaryKey = true;
 const std::string User::tableName = "users";

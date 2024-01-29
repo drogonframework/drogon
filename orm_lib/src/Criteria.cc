@@ -21,8 +21,16 @@ namespace orm
 {
 const Criteria operator&&(Criteria cond1, Criteria cond2)
 {
-    assert(cond1);
-    assert(cond2);
+    bool cond1valid = (bool)cond1, cond2valid = (bool)cond2;
+    assert(cond1valid || cond2valid);
+    if (cond1valid && !cond2valid)
+    {
+        return cond1;
+    }
+    if (!cond1valid && cond2valid)
+    {
+        return cond2;
+    }
     Criteria cond;
     cond.conditionString_ = "( ";
     cond.conditionString_ += cond1.conditionString_;
@@ -44,10 +52,19 @@ const Criteria operator&&(Criteria cond1, Criteria cond2)
     };
     return cond;
 }
+
 const Criteria operator||(Criteria cond1, Criteria cond2)
 {
-    assert(cond1);
-    assert(cond2);
+    bool cond1valid = (bool)cond1, cond2valid = (bool)cond2;
+    assert(cond1valid || cond2valid);
+    if (cond1valid && !cond2valid)
+    {
+        return cond1;
+    }
+    if (!cond1valid && cond2valid)
+    {
+        return cond2;
+    }
     Criteria cond;
     cond.conditionString_ = "( ";
     cond.conditionString_ += cond1.conditionString_;

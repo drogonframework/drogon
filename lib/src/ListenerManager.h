@@ -14,22 +14,26 @@
 
 #pragma once
 
-#include "impl_forwards.h"
-#include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoopThreadPool.h>
 #include <trantor/net/callbacks.h>
-#include <string>
-#include <vector>
+#include <trantor/utils/NonCopyable.h>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+#include "impl_forwards.h"
+
 namespace trantor
 {
 class InetAddress;
 }
+
 namespace drogon
 {
 class ListenerManager : public trantor::NonCopyable
 {
   public:
+    ~ListenerManager() = default;
     void addListener(const std::string &ip,
                      uint16_t port,
                      bool useSSL = false,
@@ -38,49 +42,36 @@ class ListenerManager : public trantor::NonCopyable
                      bool useOldTLS = false,
                      const std::vector<std::pair<std::string, std::string>>
                          &sslConfCmds = {});
-    std::vector<trantor::EventLoop *> createListeners(
-        const HttpAsyncCallback &httpCallback,
-        const WebSocketNewAsyncCallback &webSocketCallback,
-        const trantor::ConnectionCallback &connectionCallback,
-        size_t connectionTimeout,
+    std::vector<trantor::InetAddress> getListeners() const;
+    void createListeners(
         const std::string &globalCertFile,
         const std::string &globalKeyFile,
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
-        size_t threadNum,
-        const std::vector<
-            std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-            &syncAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             const HttpResponsePtr &)>>
-            &preSendingAdvices);
+        const std::vector<trantor::EventLoop *> &ioLoops);
     void startListening();
-    std::vector<trantor::InetAddress> getListeners() const;
-    ~ListenerManager() = default;
-
-    trantor::EventLoop *getIOLoop(size_t id) const;
     void stopListening();
-    std::vector<trantor::EventLoop *> ioLoops_;
 
   private:
     struct ListenerInfo
     {
         ListenerInfo(
-            const std::string &ip,
+            std::string ip,
             uint16_t port,
             bool useSSL,
-            const std::string &certFile,
-            const std::string &keyFile,
+            std::string certFile,
+            std::string keyFile,
             bool useOldTLS,
-            const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
-            : ip_(ip),
+            std::vector<std::pair<std::string, std::string>> sslConfCmds)
+            : ip_(std::move(ip)),
               port_(port),
               useSSL_(useSSL),
-              certFile_(certFile),
-              keyFile_(keyFile),
+              certFile_(std::move(certFile)),
+              keyFile_(std::move(keyFile)),
               useOldTLS_(useOldTLS),
-              sslConfCmds_(sslConfCmds)
+              sslConfCmds_(std::move(sslConfCmds))
         {
         }
+
         std::string ip_;
         uint16_t port_;
         bool useSSL_;
@@ -89,11 +80,13 @@ class ListenerManager : public trantor::NonCopyable
         bool useOldTLS_;
         std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     };
+
     std::vector<ListenerInfo> listeners_;
     std::vector<std::shared_ptr<HttpServer>> servers_;
-    std::vector<std::shared_ptr<trantor::EventLoopThread>>
-        listeningloopThreads_;
-    std::shared_ptr<trantor::EventLoopThreadPool> ioLoopThreadPoolPtr_;
+
+    // should have value when and only when on OS that one port can only be
+    // listened by one thread
+    std::unique_ptr<trantor::EventLoopThread> listeningThread_;
 };
 
 }  // namespace drogon

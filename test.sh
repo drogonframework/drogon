@@ -4,7 +4,7 @@ echo "First arg:"
 echo $1
 
 os='linux'
-if [ "$1" = "-w" ]; then
+if [ "X$1" = "X-w" ]; then
   os='windows'
 fi
 
@@ -12,7 +12,7 @@ src_dir=$(pwd)
 
 echo "OS:" $os
 
-if [ $os = "linux" ]; then
+if [ "X$os" = "Xlinux" ]; then
   drogon_ctl_exec=$(pwd)/build/drogon_ctl/drogon_ctl
 else
   drogon_ctl_exec=$(pwd)/build/drogon_ctl/Debug/drogon_ctl.exe
@@ -21,7 +21,7 @@ fi
 echo ${drogon_ctl_exec}
 cd build/lib/tests/
 
-if [ $os = "windows" ]; then
+if [ "X$os" = "Xwindows" ]; then
   cd Debug
 fi
 
@@ -42,7 +42,7 @@ case $(nproc) in
     ;;
 esac
 
-if [ $os = "linux" ]; then
+if [ "X$os" = "Xlinux" ]; then
   if [ -f /bin/ninja ]; then
       cmake_gen='-G Ninja'
   else
@@ -51,7 +51,7 @@ if [ $os = "linux" ]; then
 fi
 
 #Make integration_test_server run as a daemon
-if [ $os = "linux" ]; then
+if [ "X$os" = "Xlinux" ]; then
   sed -i -e "s/\"run_as_daemon.*$/\"run_as_daemon\": true\,/" config.example.json
 fi
 sed -i -e "s/\"relaunch_on_error.*$/\"relaunch_on_error\": true\,/" config.example.json
@@ -131,9 +131,11 @@ cd ../views
 echo "Hello, world!" >>hello.csp
 
 cd ../build
-if [ $os = "windows" ]; then
-  conan install $src_dir -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
-  cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=conan_paths.cmake -DCMAKE_INSTALL_PREFIX=$src_dir/install"
+if [ "X$os" = "Xwindows" ]; then
+  cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=$src_dir/conan_toolchain.cmake \
+                        -DCMAKE_PREFIX_PATH=$src_dir/install \
+                        -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
+                        -DCMAKE_CXX_STANDARD=17"
 fi
 cmake .. $cmake_gen
 
@@ -149,7 +151,7 @@ if [ $? -ne 0 ]; then
     exit -1
 fi
 
-if [ $os = "linux" ]; then
+if [ "X$os" = "Xlinux" ]; then
   if [ ! -f "drogon_test" ]; then
       echo "Failed to build drogon_test"
       exit -1
@@ -164,11 +166,11 @@ fi
 cd ../../
 rm -rf drogon_test
 
-if [ "$1" = "-t" ]; then
+if [ "X$1" = "X-t" ]; then
     #unit testing
     cd ../../
     echo "Unit testing"
-    cmake --build . --target test -- $make_flags
+    ctest . --output-on-failure
     if [ $? -ne 0 ]; then
         echo "Error in unit testing"
         exit -1
@@ -176,6 +178,22 @@ if [ "$1" = "-t" ]; then
     if [ -f "./orm_lib/tests/db_test" ]; then
         echo "Test database"
         ./orm_lib/tests/db_test -s
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
+        fi
+    fi
+    if [ -f "./orm_lib/tests/pipeline_test" ]; then
+        echo "Test pipeline mode"
+        ./orm_lib/tests/pipeline_test -s
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
+        fi
+    fi
+    if [ -f "./orm_lib/tests/db_listener_test" ]; then
+        echo "Test DbListener"
+        ./orm_lib/tests/db_listener_test -s
         if [ $? -ne 0 ]; then
             echo "Error in testing"
             exit -1

@@ -16,7 +16,7 @@
 #include "PostgreSQLResultImpl.h"
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <trantor/utils/Logger.h>
 #include <memory>
 #include <stdio.h>
@@ -28,15 +28,14 @@ namespace drogon
 {
 namespace orm
 {
-Result makeResult(
-    const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr))
+Result makeResult(std::shared_ptr<PGresult> &&r = nullptr)
 {
-    return Result(
-        std::shared_ptr<PostgreSQLResultImpl>(new PostgreSQLResultImpl(r)));
+    return Result(std::make_shared<PostgreSQLResultImpl>(std::move(r)));
 }
 
 }  // namespace orm
 }  // namespace drogon
+
 int PgConnection::flush()
 {
     auto ret = PQflush(connectionPtr_.get());
@@ -56,8 +55,10 @@ int PgConnection::flush()
     }
     return ret;
 }
+
 PgConnection::PgConnection(trantor::EventLoop *loop,
-                           const std::string &connInfo)
+                           const std::string &connInfo,
+                           bool)
     : DbConnection(loop),
       connectionPtr_(
           std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()),
@@ -73,6 +74,10 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
         exit(1);
     }
     channel_.setReadCallback([this]() {
+        if (status_ == ConnectStatus::Bad)
+        {
+            return;
+        }
         if (status_ != ConnectStatus::Ok)
         {
             pgPoll();
@@ -185,7 +190,7 @@ void PgConnection::pgPoll()
 }
 
 void PgConnection::execSqlInLoop(
-    string_view &&sql,
+    std::string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -207,7 +212,7 @@ void PgConnection::execSqlInLoop(
     exceptionCallback_ = std::move(exceptCallback);
     if (paraNum == 0)
     {
-        isRreparingStatement_ = false;
+        isPreparingStatement_ = false;
         if (PQsendQuery(connectionPtr_.get(), sql_.data()) == 0)
         {
             LOG_ERROR << "send query error: "
@@ -215,7 +220,7 @@ void PgConnection::execSqlInLoop(
             if (isWorking_)
             {
                 isWorking_ = false;
-                isRreparingStatement_ = false;
+                isPreparingStatement_ = false;
                 handleFatalError();
                 callback_ = nullptr;
                 idleCb_();
@@ -229,7 +234,7 @@ void PgConnection::execSqlInLoop(
         auto iter = preparedStatementsMap_.find(sql_);
         if (iter != preparedStatementsMap_.end())
         {
-            isRreparingStatement_ = false;
+            isPreparingStatement_ = false;
             if (PQsendQueryPrepared(connectionPtr_.get(),
                                     iter->second.c_str(),
                                     static_cast<int>(paraNum),
@@ -243,7 +248,7 @@ void PgConnection::execSqlInLoop(
                 if (isWorking_)
                 {
                     isWorking_ = false;
-                    isRreparingStatement_ = false;
+                    isPreparingStatement_ = false;
                     handleFatalError();
                     callback_ = nullptr;
                     idleCb_();
@@ -253,7 +258,7 @@ void PgConnection::execSqlInLoop(
         }
         else
         {
-            isRreparingStatement_ = true;
+            isPreparingStatement_ = true;
             statementName_ = newStmtName();
             if (PQsendPrepare(connectionPtr_.get(),
                               statementName_.c_str(),
@@ -321,9 +326,9 @@ void PgConnection::handleRead()
         {
             if (isWorking_)
             {
-                if (!isRreparingStatement_)
+                if (!isPreparingStatement_)
                 {
-                    auto r = makeResult(res);
+                    auto r = makeResult(std::move(res));
                     callback_(r);
                     callback_ = nullptr;
                     exceptionCallback_ = nullptr;
@@ -333,24 +338,34 @@ void PgConnection::handleRead()
     }
     if (isWorking_)
     {
-        if (isRreparingStatement_ && callback_)
+        if (isPreparingStatement_ && callback_)
         {
             doAfterPreparing();
         }
         else
         {
             isWorking_ = false;
-            isRreparingStatement_ = false;
+            isPreparingStatement_ = false;
             idleCb_();
         }
+    }
+
+    // Check notification
+    std::shared_ptr<PGnotify> notify;
+    while (
+        (notify = std::shared_ptr<PGnotify>(PQnotifies(connectionPtr_.get()),
+                                            [](PGnotify *p) { PQfreemem(p); })))
+    {
+        messageCallback_({notify->relname}, {notify->extra});
     }
 }
 
 void PgConnection::doAfterPreparing()
 {
-    isRreparingStatement_ = false;
+    isPreparingStatement_ = false;
     auto r = preparedStatements_.insert(std::string{sql_});
-    preparedStatementsMap_[string_view{r.first->data(), r.first->length()}] =
+    preparedStatementsMap_[std::string_view{r.first->data(),
+                                            r.first->length()}] =
         statementName_;
     if (PQsendQueryPrepared(connectionPtr_.get(),
                             statementName_.c_str(),

@@ -46,14 +46,17 @@ class HttpClientImpl final : public HttpClient,
     void sendRequest(const HttpRequestPtr &req,
                      HttpReqCallback &&callback,
                      double timeout = 0) override;
+
     trantor::EventLoop *getLoop() override
     {
         return loop_;
     }
+
     void setPipeliningDepth(size_t depth) override
     {
         pipeliningDepth_ = depth;
     }
+
     ~HttpClientImpl();
 
     void enableCookies(bool flag = true) override
@@ -75,10 +78,12 @@ class HttpClientImpl final : public HttpClient,
     {
         return bytesSent_;
     }
+
     size_t bytesReceived() const override
     {
         return bytesReceived_;
     }
+
     void setUserAgent(const std::string &userAgent) override
     {
         userAgent_ = userAgent;
@@ -104,6 +109,11 @@ class HttpClientImpl final : public HttpClient,
     void setCertPath(const std::string &cert, const std::string &key) override;
     void addSSLConfigs(const std::vector<std::pair<std::string, std::string>>
                            &sslConfCmds) override;
+
+    void setSockOptCallback(std::function<void(int)> cb) override
+    {
+        sockOptCallback_ = std::move(cb);
+    }
 
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
@@ -141,6 +151,8 @@ class HttpClientImpl final : public HttpClient,
     std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     std::string clientCertPath_;
     std::string clientKeyPath_;
+    std::function<void(int)> sockOptCallback_;
 };
+
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
 }  // namespace drogon

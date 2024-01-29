@@ -11,6 +11,7 @@
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
+#include <drogon/orm/BaseBuilder.h>
 #ifdef __cpp_impl_coroutine
 #include <drogon/orm/CoroMapper.h>
 #endif
@@ -18,13 +19,13 @@
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <string>
+#include <string_view>
 #include <memory>
 #include <vector>
 #include <tuple>
 #include <stdint.h>
 #include <iostream>
 
-using namespace drogon::orm;
 namespace drogon
 {
 namespace orm
@@ -33,10 +34,13 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 }  // namespace orm
 }  // namespace drogon
+
 namespace drogon_model
 {
 namespace sqlite3
 {
+class Wallets;
+
 class Users
 {
   public:
@@ -51,13 +55,14 @@ class Users
         static const std::string _avatar_id;
         static const std::string _salt;
         static const std::string _admin;
+        static const std::string _create_time;
     };
 
     const static int primaryKeyNumber;
     const static std::string tableName;
     const static bool hasPrimaryKey;
     const static std::string primaryKeyName;
-    using PrimaryKeyType = uint64_t;
+    using PrimaryKeyType = int64_t;
     const PrimaryKeyType &getPrimaryKey() const;
 
     /**
@@ -68,7 +73,8 @@ class Users
      * @note If the SQL is not a style of 'select * from table_name ...' (select
      * all columns by an asterisk), please set the offset to -1.
      */
-    explicit Users(const Row &r, const ssize_t indexOffset = 0) noexcept;
+    explicit Users(const drogon::orm::Row &r,
+                   const ssize_t indexOffset = 0) noexcept;
 
     /**
      * @brief constructor
@@ -111,10 +117,13 @@ class Users
     /**  For column id  */
     /// Get the value of the column id, returns the default value if the column
     /// is null
-    const uint64_t &getValueOfId() const noexcept;
+    const int64_t &getValueOfId() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    const std::shared_ptr<uint64_t> &getId() const noexcept;
+    const std::shared_ptr<int64_t> &getId() const noexcept;
+    /// Set the value of the column id
+    void setId(const int64_t &pId) noexcept;
+    void setIdToNull() noexcept;
 
     /**  For column user_id  */
     /// Get the value of the column user_id, returns the default value if the
@@ -212,20 +221,41 @@ class Users
     void setAdmin(std::string &&pAdmin) noexcept;
     void setAdminToNull() noexcept;
 
+    /**  For column create_time  */
+    /// Get the value of the column create_time, returns the default value if
+    /// the column is null
+    const ::trantor::Date &getValueOfCreateTime() const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
+    const std::shared_ptr<::trantor::Date> &getCreateTime() const noexcept;
+    /// Set the value of the column create_time
+    void setCreateTime(const ::trantor::Date &pCreateTime) noexcept;
+    void setCreateTimeToNull() noexcept;
+
     static size_t getColumnNumber() noexcept
     {
-        return 9;
+        return 10;
     }
+
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
     Json::Value toMasqueradedJson(
         const std::vector<std::string> &pMasqueradingVector) const;
     /// Relationship interfaces
+    Wallets getWallet(const drogon::orm::DbClientPtr &clientPtr) const;
+    void getWallet(const drogon::orm::DbClientPtr &clientPtr,
+                   const std::function<void(Wallets)> &rcb,
+                   const drogon::orm::ExceptionCallback &ecb) const;
+
   private:
-    friend Mapper<Users>;
+    friend drogon::orm::Mapper<Users>;
+    friend drogon::orm::BaseBuilder<Users, true, true>;
+    friend drogon::orm::BaseBuilder<Users, true, false>;
+    friend drogon::orm::BaseBuilder<Users, false, true>;
+    friend drogon::orm::BaseBuilder<Users, false, false>;
 #ifdef __cpp_impl_coroutine
-    friend CoroMapper<Users>;
+    friend drogon::orm::CoroMapper<Users>;
 #endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
@@ -233,7 +263,7 @@ class Users
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
     /// For mysql or sqlite3
     void updateId(const uint64_t id);
-    std::shared_ptr<uint64_t> id_;
+    std::shared_ptr<int64_t> id_;
     std::shared_ptr<std::string> userId_;
     std::shared_ptr<std::string> userName_;
     std::shared_ptr<std::string> password_;
@@ -242,6 +272,8 @@ class Users
     std::shared_ptr<std::string> avatarId_;
     std::shared_ptr<std::string> salt_;
     std::shared_ptr<std::string> admin_;
+    std::shared_ptr<::trantor::Date> createTime_;
+
     struct MetaData
     {
         const std::string colName_;
@@ -252,8 +284,9 @@ class Users
         const bool isPrimaryKey_;
         const bool notNull_;
     };
+
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[9] = {false};
+    bool dirtyFlag_[10] = {false};
 
   public:
     static const std::string &sqlForFindingByPrimaryKey()
@@ -269,6 +302,7 @@ class Users
             "delete from " + tableName + " where id = ?";
         return sql;
     }
+
     std::string sqlForInserting(bool &needSelection) const
     {
         std::string sql = "insert into " + tableName + " (";
@@ -314,6 +348,15 @@ class Users
             sql += "admin,";
             ++parametersCount;
         }
+        if (!dirtyFlag_[8])
+        {
+            needSelection = true;
+        }
+        if (dirtyFlag_[9])
+        {
+            sql += "create_time,";
+            ++parametersCount;
+        }
         if (parametersCount > 0)
         {
             sql[sql.length() - 1] = ')';
@@ -351,6 +394,10 @@ class Users
             sql.append("?,");
         }
         if (dirtyFlag_[8])
+        {
+            sql.append("?,");
+        }
+        if (dirtyFlag_[9])
         {
             sql.append("?,");
         }

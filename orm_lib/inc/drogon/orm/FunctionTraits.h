@@ -24,10 +24,12 @@ namespace orm
 {
 class Result;
 class DrogonDbException;
+
 namespace internal
 {
 template <typename>
 struct FunctionTraits;
+
 template <>
 struct FunctionTraits<void (*)()>
 {
@@ -39,10 +41,12 @@ struct FunctionTraits<void (*)()>
     static const bool isSqlCallback = false;
     static const bool isExceptCallback = false;
 };
+
 // functor,lambda
 template <typename Function>
-struct FunctionTraits : public FunctionTraits<decltype(
-                            &std::remove_reference<Function>::type::operator())>
+struct FunctionTraits
+    : public FunctionTraits<
+          decltype(&std::remove_reference<Function>::type::operator())>
 {
 };
 
@@ -106,9 +110,10 @@ struct FunctionTraits<ReturnType (*)(Arguments...)>
 
     static const std::size_t arity = sizeof...(Arguments);
 
-    // static const bool isSqlCallback = false;
     static const bool isSqlCallback = true;
     static const bool isStepResultCallback = true;
+    static const bool isExceptCallback = false;
+    static const bool isPtr = false;
 };
 }  // namespace internal
 }  // namespace orm

@@ -1,6 +1,7 @@
 #include <drogon/drogon_test.h>
 #include <drogon/utils/coroutine.h>
 #include <drogon/HttpAppFramework.h>
+#include <trantor/net/EventLoopThread.h>
 #include <type_traits>
 
 using namespace drogon;
@@ -13,6 +14,7 @@ struct SomeStruct
     {
         beenDestructed = true;
     }
+
     static bool beenDestructed;
 };
 
@@ -29,7 +31,7 @@ struct StructAwaiter : public CallbackAwaiter<std::shared_ptr<SomeStruct>>
 
 }  // namespace drogon::internal
 
-// Workarround limitation of macros
+// Workaround limitation of macros
 template <typename T>
 using is_int = std::is_same<T, int>;
 template <typename T>
@@ -67,7 +69,7 @@ DROGON_TEST(CroutineBasics)
     }());
     CHECK(n == 1);
 
-    // Testing that exceptions can propergate through coroutines
+    // Testing that exceptions can propagate through coroutines
     auto throw_in_task = [TEST_CTX]() -> Task<> {
         auto f = []() -> Task<> { throw std::runtime_error("test error"); };
 
@@ -75,7 +77,7 @@ DROGON_TEST(CroutineBasics)
     };
     sync_wait(throw_in_task());
 
-    // Test sync_wait propergrates exception
+    // Test sync_wait propagates exception
     auto throws = []() -> Task<> {
         throw std::runtime_error("bla");
         co_return;
@@ -98,7 +100,7 @@ DROGON_TEST(CroutineBasics)
     };
     sync_wait(await_non_copyable());
 
-    // This only works because async_run tries to run the corouine as soon as
+    // This only works because async_run tries to run the coroutine as soon as
     // possible and the coroutine does not wait
     int testVar = 0;
     async_run([&testVar]() -> Task<void> {
@@ -106,6 +108,14 @@ DROGON_TEST(CroutineBasics)
         co_return;
     });
     CHECK(testVar == 1);
+    async_run([TEST_CTX]() -> Task<void> {
+        auto val =
+            co_await queueInLoopCoro<int>(app().getLoop(), []() { return 42; });
+        CHECK(val == 42);
+    });
+    async_run([TEST_CTX]() -> Task<void> {
+        co_await queueInLoopCoro<void>(app().getLoop(), []() { LOG_DEBUG; });
+    });
 }
 
 DROGON_TEST(CompilcatedCoroutineLifetime)
@@ -184,4 +194,21 @@ DROGON_TEST(AsyncWaitLifetime)
         co_await sleepCoro(drogon::app().getLoop(), 0.01);
         CHECK(ptr2.use_count() == 1);
     }));
+}
+
+DROGON_TEST(SwitchThread)
+{
+    thread_local int num{0};
+    trantor::EventLoopThread thread;
+    thread.run();
+    thread.getLoop()->queueInLoop([]() { num = 100; });
+
+    auto switch_thread = [TEST_CTX, &thread]() -> Task<> {
+        CHECK(num == 0);
+        co_await switchThreadCoro(thread.getLoop());
+        CHECK(num == 100);
+        thread.getLoop()->quit();
+    };
+    sync_wait(switch_thread());
+    thread.wait();
 }

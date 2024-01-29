@@ -1,15 +1,14 @@
-![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
+![](https://github.com/an-tao/drogon/wiki/images/drogon-white17.jpg)
 
-[![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
-![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
+[![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)](https://github.com/drogonframework/drogon/actions)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
+[![Join our Discord](https://dcbadge.vercel.app/api/server/3DvHY6Ewuj?style=flat)](https://discord.gg/3DvHY6Ewuj)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
 [English](./README.md) | 简体中文 | [繁體中文](./README.zh-TW.md)
 
-**Drogon**是一个基于C++14/17的Http应用框架，使用Drogon可以方便的使用C++构建各种类型的Web应用服务端程序。
+**Drogon**是一个基于C++17/20的Http应用框架，使用Drogon可以方便的使用C++构建各种类型的Web应用服务端程序。
 本版本库是github上[Drogon工程](https://github.com/an-tao/drogon)的镜像库。**Drogon**是作者非常喜欢的美剧《权力的游戏》中的一条龙的名字(汉译作卓耿)，和龙有关但并不是dragon的误写，为了不至于引起不必要的误会这里说明一下。
 
 Drogon是一个跨平台框架，它支持Linux，也支持macOS、FreeBSD，OpenBSD，HaikuOS，和Windows。它的主要特点如下：
@@ -99,7 +98,7 @@ using namespace drogon;
 class TestCtrl:public drogon::HttpSimpleController<TestCtrl>
 {
 public:
-    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) override;
+    void asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
     PATH_ADD("/test",Get);
     PATH_LIST_END
@@ -130,7 +129,7 @@ using namespace drogon;
 class JsonCtrl : public drogon::HttpSimpleController<JsonCtrl>
 {
   public:
-    virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) override;
+    void asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
     //list path definitions here;
     PATH_ADD("/json", Get);
@@ -187,11 +186,13 @@ class User : public drogon::HttpController<User>
 
 另外，你可以发现前面所有的处理函数接口都是异步的，处理器的响应是通过回调对象返回的。这种设计是出于对高性能的考虑，因为在异步模式下，可以使用少量的线程（比如和处理器核心数相等的线程）处理大量的并发请求。
 
-编译上述的所有源文件后，我们得到了一个非常简单的web应用程序，这是一个不错的开始。**请访问[wiki](https://github.com/an-tao/drogon/wiki/CHN-01-概述)或者[doxiz](https://doxiz.com/drogon/master/overview/)以获取更多的信息**
+编译上述的所有源文件后，我们得到了一个非常简单的web应用程序，这是一个不错的开始。**请访问[wiki](https://github.com/an-tao/drogon/wiki/CHN-01-概述)**
 
 ## 贡献方式
 
 欢迎您的贡献。 请阅读[贡献指南](CONTRIBUTING.md)以获取更多的信息。
+
+<a href="https://github.com/drogonframework/drogon/graphs/contributors"><img src="https://contributors-svg.opencollective.com/drogon/contributors.svg?width=890&button=false" alt="Code contributors" /></a>
 
 ## QQ交流群：1137909452
 

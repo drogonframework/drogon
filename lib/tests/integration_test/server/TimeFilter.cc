@@ -4,6 +4,7 @@
 
 #include "TimeFilter.h"
 #define VDate "visitDate"
+
 void TimeFilter::doFilter(const HttpRequestPtr &req,
                           FilterCallback &&cb,
                           FilterChainCallback &&ccb)

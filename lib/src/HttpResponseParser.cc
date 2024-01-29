@@ -72,6 +72,7 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
     }
     return false;
 }
+
 bool HttpResponseParser::parseResponseOnClose()
 {
     if (status_ == HttpResponseParseStatus::kExpectClose)
@@ -81,6 +82,7 @@ bool HttpResponseParser::parseResponseOnClose()
     }
     return false;
 }
+
 // return false if any error
 bool HttpResponseParser::parseResponse(MsgBuffer *buf)
 {
@@ -127,7 +129,7 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     // LOG_INFO << "content len=" << len;
                     if (!len.empty())
                     {
-                        leftBodyLength_ = atoi(len.c_str());
+                        leftBodyLength_ = static_cast<size_t>(std::stoull(len));
                         status_ = HttpResponseParseStatus::kExpectBody;
                     }
                     else

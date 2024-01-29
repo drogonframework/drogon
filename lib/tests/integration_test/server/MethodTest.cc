@@ -1,4 +1,5 @@
 #include "MethodTest.h"
+
 static void makeGetRespose(
     const std::function<void(const HttpResponsePtr &)> &callback)
 {
@@ -17,6 +18,7 @@ void MethodTest::get(const HttpRequestPtr &req,
     LOG_DEBUG;
     makeGetRespose(callback);
 }
+
 void MethodTest::post(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback,
                       std::string str)
@@ -32,6 +34,7 @@ void MethodTest::getReg(const HttpRequestPtr &req,
     LOG_DEBUG << regStr;
     makeGetRespose(callback);
 }
+
 void MethodTest::postReg(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,

@@ -1,6 +1,6 @@
 /**
  *
- *  @file Cookis.h
+ *  @file Cookie.h
  *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -14,10 +14,14 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/optional.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
+#include <drogon/utils/Utilities.h>
+#include <cctype>
 #include <string>
 #include <limits>
+#include <optional>
+#include <string_view>
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4251)
@@ -40,10 +44,12 @@ class DROGON_EXPORT Cookie
         : key_(key), value_(value)
     {
     }
+
     Cookie(std::string &&key, std::string &&value)
         : key_(std::move(key)), value_(std::move(value))
     {
     }
+
     Cookie() = default;
     enum class SameSite
     {
@@ -52,6 +58,7 @@ class DROGON_EXPORT Cookie
         kStrict,
         kNone
     };
+
     /**
      * @brief Set the Expires Date
      *
@@ -85,6 +92,7 @@ class DROGON_EXPORT Cookie
     {
         domain_ = domain;
     }
+
     void setDomain(std::string &&domain)
     {
         domain_ = std::move(domain);
@@ -97,6 +105,7 @@ class DROGON_EXPORT Cookie
     {
         path_ = path;
     }
+
     void setPath(std::string &&path)
     {
         path_ = std::move(path);
@@ -109,10 +118,12 @@ class DROGON_EXPORT Cookie
     {
         key_ = key;
     }
+
     void setKey(std::string &&key)
     {
         key_ = std::move(key);
     }
+
     /**
      * @brief Set the value of the cookie.
      */
@@ -120,10 +131,12 @@ class DROGON_EXPORT Cookie
     {
         value_ = value;
     }
+
     void setValue(std::string &&value)
     {
         value_ = std::move(value);
     }
+
     /**
      * @brief Set the max-age of the cookie.
      */
@@ -131,6 +144,7 @@ class DROGON_EXPORT Cookie
     {
         maxAge_ = value;
     }
+
     /**
      * @brief Set the same site of the cookie.
      */
@@ -268,7 +282,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the max-age of the cookie
      */
-    optional<int> maxAge() const
+    std::optional<int> maxAge() const
     {
         return maxAge_;
     }
@@ -276,7 +290,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the max-age of the cookie
      */
-    optional<int> getMaxAge() const
+    std::optional<int> getMaxAge() const
     {
         return maxAge_;
     }
@@ -297,6 +311,102 @@ class DROGON_EXPORT Cookie
         return sameSite_;
     }
 
+    /**
+     * @brief Compare two strings ignoring the their cases
+     *
+     * @param str1 string to check its value
+     * @param str2 string to check against, written in lower case
+     *
+     * @note the function is optimized to check for cookie's samesite value
+     * where we check if the value equals to a specific value we already know in
+     * str2. so the function doesn't apply tolower to the second argument
+     * str2 as it's always in lower case.
+     *
+     * @return true if both strings are equal ignoring case
+     */
+    static bool stricmp(const std::string_view str1,
+                        const std::string_view str2)
+    {
+        auto str1Len{str1.length()};
+        auto str2Len{str2.length()};
+        if (str1Len != str2Len)
+            return false;
+        for (size_t idx{0}; idx < str1Len; ++idx)
+        {
+            auto lowerChar{tolower(str1[idx])};
+
+            if (lowerChar != str2[idx])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Converts a string value to its associated enum class SameSite
+     * value
+     */
+    static SameSite convertString2SameSite(const std::string_view &sameSite)
+    {
+        if (stricmp(sameSite, "lax"))
+        {
+            return Cookie::SameSite::kLax;
+        }
+        else if (stricmp(sameSite, "strict"))
+        {
+            return Cookie::SameSite::kStrict;
+        }
+        else if (stricmp(sameSite, "none"))
+        {
+            return Cookie::SameSite::kNone;
+        }
+        else if (!stricmp(sameSite, "null"))
+        {
+            LOG_WARN
+                << "'" << sameSite
+                << "' is not a valid SameSite policy. 'Null', 'Lax', 'Strict' "
+                   "or "
+                   "'None' are proper values. Return value is SameSite::kNull.";
+        }
+        return Cookie::SameSite::kNull;
+    }
+
+    /**
+     * @brief Converts an enum class SameSite value to its associated string
+     * value
+     */
+    static const std::string_view &convertSameSite2String(SameSite sameSite)
+    {
+        switch (sameSite)
+        {
+            case SameSite::kLax:
+            {
+                static std::string_view sv{"Lax"};
+                return sv;
+            }
+            case SameSite::kStrict:
+            {
+                static std::string_view sv{"Strict"};
+                return sv;
+            }
+            case SameSite::kNone:
+            {
+                static std::string_view sv{"None"};
+                return sv;
+            }
+            case SameSite::kNull:
+            {
+                static std::string_view sv{"Null"};
+                return sv;
+            }
+        }
+        {
+            static std::string_view sv{"UNDEFINED"};
+            return sv;
+        }
+    }
+
   private:
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
     bool httpOnly_{true};
@@ -305,7 +415,7 @@ class DROGON_EXPORT Cookie
     std::string path_;
     std::string key_;
     std::string value_;
-    optional<int> maxAge_;
+    std::optional<int> maxAge_;
     SameSite sameSite_{SameSite::kNull};
 };
 

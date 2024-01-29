@@ -53,6 +53,7 @@ static std::string &replace_all(std::string &str,
     }
     return str;
 }
+
 static void parseCxxLine(std::ofstream &oSrcFile,
                          const std::string &line,
                          const std::string &streamName,
@@ -66,6 +67,7 @@ static void parseCxxLine(std::ofstream &oSrcFile,
         oSrcFile << tmp << "\n";
     }
 }
+
 static void outputVal(std::ofstream &oSrcFile,
                       const std::string &streamName,
                       const std::string &viewDataName,
@@ -76,12 +78,12 @@ static void outputVal(std::ofstream &oSrcFile,
              << "\"];\n";
     oSrcFile << "    if(val.type()==typeid(const char *)){\n";
     oSrcFile << "        " << streamName
-             << "<<*any_cast<const char *>(&val);\n";
+             << "<<*(std::any_cast<const char *>(&val));\n";
     oSrcFile << "    }else "
                 "if(val.type()==typeid(std::string)||val.type()==typeid(const "
                 "std::string)){\n";
     oSrcFile << "        " << streamName
-             << "<<*any_cast<const std::string>(&val);\n";
+             << "<<*(std::any_cast<const std::string>(&val));\n";
     oSrcFile << "    }\n";
     oSrcFile << "}\n";
 }
@@ -286,6 +288,7 @@ void create_view::handleCommand(std::vector<std::string> &parameters)
     }
     createViewFiles(parameters);
 }
+
 void create_view::createViewFiles(std::vector<std::string> &cspFileNames)
 {
     for (auto const &file : cspFileNames)
@@ -295,6 +298,7 @@ void create_view::createViewFiles(std::vector<std::string> &cspFileNames)
             exit(1);
     }
 }
+
 int create_view::createViewFile(const std::string &script_filename)
 {
     std::cout << "create HttpView Class file by " << script_filename
@@ -374,6 +378,7 @@ int create_view::createViewFile(const std::string &script_filename)
     }
     return 0;
 }
+
 void create_view::newViewHeaderFile(std::ofstream &file,
                                     const std::string &className)
 {

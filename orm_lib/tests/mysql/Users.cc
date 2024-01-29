@@ -6,10 +6,12 @@
  */
 
 #include "Users.h"
+#include "Wallets.h"
 #include <drogon/utils/Utilities.h>
 #include <string>
 
 using namespace drogon;
+using namespace drogon::orm;
 using namespace drogon_model::drogonTestMysql;
 
 const std::string Users::Cols::_id = "id";
@@ -35,11 +37,13 @@ const std::vector<typename Users::MetaData> Users::metaData_ = {
     {"avatar_id", "std::string", "varchar(32)", 32, 0, 0, 0},
     {"salt", "std::string", "varchar(20)", 20, 0, 0, 0},
     {"admin", "int8_t", "tinyint(1)", 1, 0, 0, 0}};
+
 const std::string &Users::getColumnName(size_t index) noexcept(false)
 {
     assert(index < metaData_.size());
     return metaData_[index].colName_;
 }
+
 Users::Users(const Row &r, const ssize_t indexOffset) noexcept
 {
     if (indexOffset < 0)
@@ -520,10 +524,12 @@ const int32_t &Users::getValueOfId() const noexcept
         return *id_;
     return defaultValue;
 }
+
 const std::shared_ptr<int32_t> &Users::getId() const noexcept
 {
     return id_;
 }
+
 void Users::setId(const int32_t &pId) noexcept
 {
     id_ = std::make_shared<int32_t>(pId);
@@ -543,15 +549,18 @@ const std::string &Users::getValueOfUserId() const noexcept
         return *userId_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getUserId() const noexcept
 {
     return userId_;
 }
+
 void Users::setUserId(const std::string &pUserId) noexcept
 {
     userId_ = std::make_shared<std::string>(pUserId);
     dirtyFlag_[1] = true;
 }
+
 void Users::setUserId(std::string &&pUserId) noexcept
 {
     userId_ = std::make_shared<std::string>(std::move(pUserId));
@@ -571,15 +580,18 @@ const std::string &Users::getValueOfUserName() const noexcept
         return *userName_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getUserName() const noexcept
 {
     return userName_;
 }
+
 void Users::setUserName(const std::string &pUserName) noexcept
 {
     userName_ = std::make_shared<std::string>(pUserName);
     dirtyFlag_[2] = true;
 }
+
 void Users::setUserName(std::string &&pUserName) noexcept
 {
     userName_ = std::make_shared<std::string>(std::move(pUserName));
@@ -599,15 +611,18 @@ const std::string &Users::getValueOfPassword() const noexcept
         return *password_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getPassword() const noexcept
 {
     return password_;
 }
+
 void Users::setPassword(const std::string &pPassword) noexcept
 {
     password_ = std::make_shared<std::string>(pPassword);
     dirtyFlag_[3] = true;
 }
+
 void Users::setPassword(std::string &&pPassword) noexcept
 {
     password_ = std::make_shared<std::string>(std::move(pPassword));
@@ -627,15 +642,18 @@ const std::string &Users::getValueOfOrgName() const noexcept
         return *orgName_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getOrgName() const noexcept
 {
     return orgName_;
 }
+
 void Users::setOrgName(const std::string &pOrgName) noexcept
 {
     orgName_ = std::make_shared<std::string>(pOrgName);
     dirtyFlag_[4] = true;
 }
+
 void Users::setOrgName(std::string &&pOrgName) noexcept
 {
     orgName_ = std::make_shared<std::string>(std::move(pOrgName));
@@ -655,15 +673,18 @@ const std::string &Users::getValueOfSignature() const noexcept
         return *signature_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getSignature() const noexcept
 {
     return signature_;
 }
+
 void Users::setSignature(const std::string &pSignature) noexcept
 {
     signature_ = std::make_shared<std::string>(pSignature);
     dirtyFlag_[5] = true;
 }
+
 void Users::setSignature(std::string &&pSignature) noexcept
 {
     signature_ = std::make_shared<std::string>(std::move(pSignature));
@@ -683,15 +704,18 @@ const std::string &Users::getValueOfAvatarId() const noexcept
         return *avatarId_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getAvatarId() const noexcept
 {
     return avatarId_;
 }
+
 void Users::setAvatarId(const std::string &pAvatarId) noexcept
 {
     avatarId_ = std::make_shared<std::string>(pAvatarId);
     dirtyFlag_[6] = true;
 }
+
 void Users::setAvatarId(std::string &&pAvatarId) noexcept
 {
     avatarId_ = std::make_shared<std::string>(std::move(pAvatarId));
@@ -711,15 +735,18 @@ const std::string &Users::getValueOfSalt() const noexcept
         return *salt_;
     return defaultValue;
 }
+
 const std::shared_ptr<std::string> &Users::getSalt() const noexcept
 {
     return salt_;
 }
+
 void Users::setSalt(const std::string &pSalt) noexcept
 {
     salt_ = std::make_shared<std::string>(pSalt);
     dirtyFlag_[7] = true;
 }
+
 void Users::setSalt(std::string &&pSalt) noexcept
 {
     salt_ = std::make_shared<std::string>(std::move(pSalt));
@@ -739,10 +766,12 @@ const int8_t &Users::getValueOfAdmin() const noexcept
         return *admin_;
     return defaultValue;
 }
+
 const std::shared_ptr<int8_t> &Users::getAdmin() const noexcept
 {
     return admin_;
 }
+
 void Users::setAdmin(const int8_t &pAdmin) noexcept
 {
     admin_ = std::make_shared<int8_t>(pAdmin);
@@ -994,6 +1023,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
         }
     }
 }
+
 Json::Value Users::toJson() const
 {
     Json::Value ret;
@@ -1304,6 +1334,7 @@ bool Users::validateJsonForCreation(const Json::Value &pJson, std::string &err)
     }
     return true;
 }
+
 bool Users::validateMasqueradedJsonForCreation(
     const Json::Value &pJson,
     const std::vector<std::string> &pMasqueradingVector,
@@ -1314,116 +1345,125 @@ bool Users::validateMasqueradedJsonForCreation(
         err = "Bad masquerading vector";
         return false;
     }
-    if (!pMasqueradingVector[0].empty())
+    try
     {
-        if (pJson.isMember(pMasqueradingVector[0]))
+        if (!pMasqueradingVector[0].empty())
         {
-            if (!validJsonOfField(0,
-                                  pMasqueradingVector[0],
-                                  pJson[pMasqueradingVector[0]],
-                                  err,
-                                  true))
-                return false;
+            if (pJson.isMember(pMasqueradingVector[0]))
+            {
+                if (!validJsonOfField(0,
+                                      pMasqueradingVector[0],
+                                      pJson[pMasqueradingVector[0]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[1].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[1]))
+            {
+                if (!validJsonOfField(1,
+                                      pMasqueradingVector[1],
+                                      pJson[pMasqueradingVector[1]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[2].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[2]))
+            {
+                if (!validJsonOfField(2,
+                                      pMasqueradingVector[2],
+                                      pJson[pMasqueradingVector[2]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[3].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[3]))
+            {
+                if (!validJsonOfField(3,
+                                      pMasqueradingVector[3],
+                                      pJson[pMasqueradingVector[3]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[4].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[4]))
+            {
+                if (!validJsonOfField(4,
+                                      pMasqueradingVector[4],
+                                      pJson[pMasqueradingVector[4]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[5].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[5]))
+            {
+                if (!validJsonOfField(5,
+                                      pMasqueradingVector[5],
+                                      pJson[pMasqueradingVector[5]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[6].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[6]))
+            {
+                if (!validJsonOfField(6,
+                                      pMasqueradingVector[6],
+                                      pJson[pMasqueradingVector[6]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[7].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[7]))
+            {
+                if (!validJsonOfField(7,
+                                      pMasqueradingVector[7],
+                                      pJson[pMasqueradingVector[7]],
+                                      err,
+                                      true))
+                    return false;
+            }
+        }
+        if (!pMasqueradingVector[8].empty())
+        {
+            if (pJson.isMember(pMasqueradingVector[8]))
+            {
+                if (!validJsonOfField(8,
+                                      pMasqueradingVector[8],
+                                      pJson[pMasqueradingVector[8]],
+                                      err,
+                                      true))
+                    return false;
+            }
         }
     }
-    if (!pMasqueradingVector[1].empty())
+    catch (const Json::LogicError &e)
     {
-        if (pJson.isMember(pMasqueradingVector[1]))
-        {
-            if (!validJsonOfField(1,
-                                  pMasqueradingVector[1],
-                                  pJson[pMasqueradingVector[1]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[2].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[2]))
-        {
-            if (!validJsonOfField(2,
-                                  pMasqueradingVector[2],
-                                  pJson[pMasqueradingVector[2]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[3].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[3]))
-        {
-            if (!validJsonOfField(3,
-                                  pMasqueradingVector[3],
-                                  pJson[pMasqueradingVector[3]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[4].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[4]))
-        {
-            if (!validJsonOfField(4,
-                                  pMasqueradingVector[4],
-                                  pJson[pMasqueradingVector[4]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[5].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[5]))
-        {
-            if (!validJsonOfField(5,
-                                  pMasqueradingVector[5],
-                                  pJson[pMasqueradingVector[5]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[6].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[6]))
-        {
-            if (!validJsonOfField(6,
-                                  pMasqueradingVector[6],
-                                  pJson[pMasqueradingVector[6]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[7].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[7]))
-        {
-            if (!validJsonOfField(7,
-                                  pMasqueradingVector[7],
-                                  pJson[pMasqueradingVector[7]],
-                                  err,
-                                  true))
-                return false;
-        }
-    }
-    if (!pMasqueradingVector[8].empty())
-    {
-        if (pJson.isMember(pMasqueradingVector[8]))
-        {
-            if (!validJsonOfField(8,
-                                  pMasqueradingVector[8],
-                                  pJson[pMasqueradingVector[8]],
-                                  err,
-                                  true))
-                return false;
-        }
+        err = e.what();
+        return false;
     }
     return true;
 }
+
 bool Users::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
 {
     if (pJson.isMember("id"))
@@ -1480,6 +1520,7 @@ bool Users::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
     }
     return true;
 }
+
 bool Users::validateMasqueradedJsonForUpdate(
     const Json::Value &pJson,
     const std::vector<std::string> &pMasqueradingVector,
@@ -1490,105 +1531,114 @@ bool Users::validateMasqueradedJsonForUpdate(
         err = "Bad masquerading vector";
         return false;
     }
-    if (!pMasqueradingVector[0].empty() &&
-        pJson.isMember(pMasqueradingVector[0]))
+    try
     {
-        if (!validJsonOfField(0,
-                              pMasqueradingVector[0],
-                              pJson[pMasqueradingVector[0]],
-                              err,
-                              false))
+        if (!pMasqueradingVector[0].empty() &&
+            pJson.isMember(pMasqueradingVector[0]))
+        {
+            if (!validJsonOfField(0,
+                                  pMasqueradingVector[0],
+                                  pJson[pMasqueradingVector[0]],
+                                  err,
+                                  false))
+                return false;
+        }
+        else
+        {
+            err =
+                "The value of primary key must be set in the json object for "
+                "update";
             return false;
+        }
+        if (!pMasqueradingVector[1].empty() &&
+            pJson.isMember(pMasqueradingVector[1]))
+        {
+            if (!validJsonOfField(1,
+                                  pMasqueradingVector[1],
+                                  pJson[pMasqueradingVector[1]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[2].empty() &&
+            pJson.isMember(pMasqueradingVector[2]))
+        {
+            if (!validJsonOfField(2,
+                                  pMasqueradingVector[2],
+                                  pJson[pMasqueradingVector[2]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[3].empty() &&
+            pJson.isMember(pMasqueradingVector[3]))
+        {
+            if (!validJsonOfField(3,
+                                  pMasqueradingVector[3],
+                                  pJson[pMasqueradingVector[3]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[4].empty() &&
+            pJson.isMember(pMasqueradingVector[4]))
+        {
+            if (!validJsonOfField(4,
+                                  pMasqueradingVector[4],
+                                  pJson[pMasqueradingVector[4]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[5].empty() &&
+            pJson.isMember(pMasqueradingVector[5]))
+        {
+            if (!validJsonOfField(5,
+                                  pMasqueradingVector[5],
+                                  pJson[pMasqueradingVector[5]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[6].empty() &&
+            pJson.isMember(pMasqueradingVector[6]))
+        {
+            if (!validJsonOfField(6,
+                                  pMasqueradingVector[6],
+                                  pJson[pMasqueradingVector[6]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[7].empty() &&
+            pJson.isMember(pMasqueradingVector[7]))
+        {
+            if (!validJsonOfField(7,
+                                  pMasqueradingVector[7],
+                                  pJson[pMasqueradingVector[7]],
+                                  err,
+                                  false))
+                return false;
+        }
+        if (!pMasqueradingVector[8].empty() &&
+            pJson.isMember(pMasqueradingVector[8]))
+        {
+            if (!validJsonOfField(8,
+                                  pMasqueradingVector[8],
+                                  pJson[pMasqueradingVector[8]],
+                                  err,
+                                  false))
+                return false;
+        }
     }
-    else
+    catch (const Json::LogicError &e)
     {
-        err =
-            "The value of primary key must be set in the json object for "
-            "update";
+        err = e.what();
         return false;
-    }
-    if (!pMasqueradingVector[1].empty() &&
-        pJson.isMember(pMasqueradingVector[1]))
-    {
-        if (!validJsonOfField(1,
-                              pMasqueradingVector[1],
-                              pJson[pMasqueradingVector[1]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[2].empty() &&
-        pJson.isMember(pMasqueradingVector[2]))
-    {
-        if (!validJsonOfField(2,
-                              pMasqueradingVector[2],
-                              pJson[pMasqueradingVector[2]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[3].empty() &&
-        pJson.isMember(pMasqueradingVector[3]))
-    {
-        if (!validJsonOfField(3,
-                              pMasqueradingVector[3],
-                              pJson[pMasqueradingVector[3]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[4].empty() &&
-        pJson.isMember(pMasqueradingVector[4]))
-    {
-        if (!validJsonOfField(4,
-                              pMasqueradingVector[4],
-                              pJson[pMasqueradingVector[4]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[5].empty() &&
-        pJson.isMember(pMasqueradingVector[5]))
-    {
-        if (!validJsonOfField(5,
-                              pMasqueradingVector[5],
-                              pJson[pMasqueradingVector[5]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[6].empty() &&
-        pJson.isMember(pMasqueradingVector[6]))
-    {
-        if (!validJsonOfField(6,
-                              pMasqueradingVector[6],
-                              pJson[pMasqueradingVector[6]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[7].empty() &&
-        pJson.isMember(pMasqueradingVector[7]))
-    {
-        if (!validJsonOfField(7,
-                              pMasqueradingVector[7],
-                              pJson[pMasqueradingVector[7]],
-                              err,
-                              false))
-            return false;
-    }
-    if (!pMasqueradingVector[8].empty() &&
-        pJson.isMember(pMasqueradingVector[8]))
-    {
-        if (!validJsonOfField(8,
-                              pMasqueradingVector[8],
-                              pJson[pMasqueradingVector[8]],
-                              err,
-                              false))
-            return false;
     }
     return true;
 }
+
 bool Users::validJsonOfField(size_t index,
                              const std::string &fieldName,
                              const Json::Value &pJson,
@@ -1765,11 +1815,52 @@ bool Users::validJsonOfField(size_t index,
                 return false;
             }
             break;
-
         default:
             err = "Internal error in the server";
             return false;
-            break;
     }
     return true;
+}
+
+Wallets Users::getWallet(const DbClientPtr &clientPtr) const
+{
+    const static std::string sql = "select * from wallets where user_id = ?";
+    Result r(nullptr);
+    {
+        auto binder = *clientPtr << sql;
+        binder << *userId_ << Mode::Blocking >>
+            [&r](const Result &result) { r = result; };
+        binder.exec();
+    }
+    if (r.size() == 0)
+    {
+        throw UnexpectedRows("0 rows found");
+    }
+    else if (r.size() > 1)
+    {
+        throw UnexpectedRows("Found more than one row");
+    }
+    return Wallets(r[0]);
+}
+
+void Users::getWallet(const DbClientPtr &clientPtr,
+                      const std::function<void(Wallets)> &rcb,
+                      const ExceptionCallback &ecb) const
+{
+    const static std::string sql = "select * from wallets where user_id = ?";
+    *clientPtr << sql << *userId_ >> [rcb = std::move(rcb),
+                                      ecb](const Result &r) {
+        if (r.size() == 0)
+        {
+            ecb(UnexpectedRows("0 rows found"));
+        }
+        else if (r.size() > 1)
+        {
+            ecb(UnexpectedRows("Found more than one row"));
+        }
+        else
+        {
+            rcb(Wallets(r[0]));
+        }
+    } >> ecb;
 }

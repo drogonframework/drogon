@@ -4,7 +4,7 @@
 
 struct SameContent
 {
-    SameContent(const std::vector<std::string>& container)
+    SameContent(const std::vector<std::string> &container)
         : container_(container.begin(), container.end())
     {
     }
@@ -13,9 +13,9 @@ struct SameContent
 };
 
 template <typename Container1>
-inline bool operator==(const Container1& a, const SameContent& wrapper)
+inline bool operator==(const Container1 &a, const SameContent &wrapper)
 {
-    const auto& b = wrapper.container_;
+    const auto &b = wrapper.container_;
     if (a.size() != b.size())
         return false;
 
@@ -33,6 +33,7 @@ inline bool operator==(const Container1& a, const SameContent& wrapper)
 }
 
 using namespace drogon;
+
 DROGON_TEST(StringOpsTest)
 {
     SUBSECTION(SplitString)

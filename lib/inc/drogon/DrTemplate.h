@@ -16,6 +16,7 @@
 
 #include <drogon/DrObject.h>
 #include <drogon/DrTemplateBase.h>
+
 namespace drogon
 {
 template <typename T>

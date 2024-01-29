@@ -19,7 +19,7 @@ using namespace drogon;
 
 PluginsManager::~PluginsManager()
 {
-    // Shut down all plugins in reverse order of initializaiton.
+    // Shut down all plugins in reverse order of initialization.
     for (auto iter = initializedPlugins_.rbegin();
          iter != initializedPlugins_.rend();
          iter++)
@@ -39,10 +39,18 @@ void PluginsManager::initializeAllPlugins(
         auto name = config.get("name", "").asString();
         if (name.empty())
             continue;
-        auto pluginPtr = getPlugin(name);
-        assert(pluginPtr);
-        if (!pluginPtr)
+        createPlugin(name);
+    }
+    for (auto &config : configs)
+    {
+        auto name = config.get("name", "").asString();
+        if (name.empty())
             continue;
+        auto pluginPtr = getPlugin(name);
+        if (!pluginPtr)
+        {
+            continue;
+        }
         auto configuration = config["config"];
         auto dependencies = config["dependencies"];
         pluginPtr->setConfig(configuration);
@@ -59,8 +67,8 @@ void PluginsManager::initializeAllPlugins(
                 }
                 else
                 {
-                    LOG_FATAL << "Plugin " << depName.asString()
-                              << " not defined";
+                    LOG_FATAL << "Dependent plugin " << depName.asString()
+                              << " is not loaded";
                     abort();
                 }
             }
@@ -79,26 +87,35 @@ void PluginsManager::initializeAllPlugins(
     }
 }
 
+void PluginsManager::createPlugin(const std::string &pluginName)
+{
+    auto pluginPtr = std::dynamic_pointer_cast<PluginBase>(
+        DrClassMap::newSharedObject(pluginName));
+    if (!pluginPtr)
+    {
+        LOG_ERROR << "Plugin " << pluginName << " undefined!";
+        return;
+    }
+    pluginsMap_[pluginName] = pluginPtr;
+}
+
 PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
 {
     auto iter = pluginsMap_.find(pluginName);
-    if (iter == pluginsMap_.end())
-    {
-        auto *p = DrClassMap::newObject(pluginName);
-        auto *pluginPtr = dynamic_cast<PluginBase *>(p);
-        if (!pluginPtr)
-        {
-            if (p)
-                delete p;
-            LOG_ERROR << "Plugin " << pluginName << " undefined!";
-            return nullptr;
-        }
-        pluginsMap_[pluginName].reset(pluginPtr);
-        return pluginPtr;
-    }
-    else
+    if (iter != pluginsMap_.end())
     {
         return iter->second.get();
+    }
+    return nullptr;
+}
+
+std::shared_ptr<PluginBase> PluginsManager::getSharedPlugin(
+    const std::string &pluginName)
+{
+    auto iter = pluginsMap_.find(pluginName);
+    if (iter != pluginsMap_.end())
+    {
+        return iter->second;
     }
     return nullptr;
 }

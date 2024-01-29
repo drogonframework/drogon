@@ -17,6 +17,7 @@
 #include <thread>
 
 using namespace drogon;
+
 WebSocketConnectionImpl::WebSocketConnectionImpl(
     const trantor::TcpConnectionPtr &conn,
     bool isServer)
@@ -27,10 +28,12 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(
       usingMask_(false)
 {
 }
+
 WebSocketConnectionImpl::~WebSocketConnectionImpl()
 {
     shutdown();
 }
+
 void WebSocketConnectionImpl::send(const char *msg,
                                    uint64_t len,
                                    const WebSocketMessageType type)
@@ -109,7 +112,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
         int random;
         // Use the cached randomness if no one else is also using it. Otherwise
         // generate one from scratch.
-        if (!usingMask_.exchange(true))
+        if (!usingMask_.exchange(true, std::memory_order_acq_rel))
         {
             if (masks_.empty())
             {
@@ -126,7 +129,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
             }
             random = masks_.back();
             masks_.pop_back();
-            usingMask_ = false;
+            usingMask_.store(false, std::memory_order_release);
         }
         else
         {
@@ -155,15 +158,18 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
     }
     tcpConnectionPtr_->send(std::move(bytesFormatted));
 }
+
 void WebSocketConnectionImpl::send(const std::string &msg,
                                    const WebSocketMessageType type)
 {
     send(msg.data(), msg.length(), type);
 }
+
 const trantor::InetAddress &WebSocketConnectionImpl::localAddr() const
 {
     return localAddr_;
 }
+
 const trantor::InetAddress &WebSocketConnectionImpl::peerAddr() const
 {
     return peerAddr_;
@@ -173,10 +179,12 @@ bool WebSocketConnectionImpl::connected() const
 {
     return tcpConnectionPtr_->connected();
 }
+
 bool WebSocketConnectionImpl::disconnected() const
 {
     return tcpConnectionPtr_->disconnected();
 }
+
 void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown(
     const CloseCode code,
     const std::string &reason)
@@ -193,6 +201,7 @@ void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown(
     send(message, WebSocketMessageType::Close);
     tcpConnectionPtr_->shutdown();
 }
+
 void WebSocketConnectionImpl::WebSocketConnectionImpl::forceClose()
 {
     tcpConnectionPtr_->forceClose();
@@ -372,6 +381,7 @@ void WebSocketConnectionImpl::onNewMessage(
     const trantor::TcpConnectionPtr &connPtr,
     trantor::MsgBuffer *buffer)
 {
+    auto self = shared_from_this();
     while (buffer->readableBytes() > 0)
     {
         auto success = parser_.parse(buffer);
@@ -397,7 +407,7 @@ void WebSocketConnectionImpl::onNewMessage(
                 }
                 // LOG_TRACE << "new message received: " << message
                 //           << "\n(type=" << (int)type << ")";
-                messageCallback_(std::move(message), shared_from_this(), type);
+                messageCallback_(std::move(message), self, type);
             }
             else
             {

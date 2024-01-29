@@ -18,7 +18,7 @@
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Funcs.h>
 #include <trantor/utils/Utilities.h>
-#include <drogon/utils/string_view.h>
+#include <trantor/utils/LogStream.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -26,6 +26,8 @@
 #include <limits>
 #include <sstream>
 #include <algorithm>
+#include <filesystem>
+#include <string_view>
 #ifdef _WIN32
 #include <time.h>
 DROGON_EXPORT char *strptime(const char *s, const char *f, struct tm *tm);
@@ -51,14 +53,61 @@ struct CanConvertFromStringStream
 
   public:
     static constexpr bool value =
-        std::is_same<decltype(test<T>(nullptr, std::stringstream())),
-                     yes>::value;
+        std::is_same_v<decltype(test<T>(nullptr, std::stringstream())), yes>;
 };
+
+template <typename T>
+struct CanConstructFromString
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+
+    template <typename U>
+    static auto test(U *p) -> decltype(U(std::string{}), yes());
+
+    template <typename>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+};
+
+template <typename T>
+struct CanConvertFromString
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+    template <class U>
+    static auto test(U *p) -> decltype(*p = std::string(), yes());
+    template <class>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+};
+
 }  // namespace internal
+
+/**
+ * @brief Get the HTTP messages corresponding to the HTTP status codes
+ *
+ * @param code HTTP status code
+ *
+ * @return the corresponding message
+ */
+DROGON_EXPORT const std::string_view &statusCodeToString(int code);
+
 namespace utils
 {
 /// Determine if the string is an integer
-DROGON_EXPORT bool isInteger(const std::string &str);
+DROGON_EXPORT bool isInteger(std::string_view str);
+
+/// Determine if the string is base64 encoded
+DROGON_EXPORT bool isBase64(std::string_view str);
 
 /// Generate random a string
 /**
@@ -69,7 +118,8 @@ DROGON_EXPORT std::string genRandomString(int length);
 
 /// Convert a binary string to hex format
 DROGON_EXPORT std::string binaryStringToHex(const unsigned char *ptr,
-                                            size_t length);
+                                            size_t length,
+                                            bool lowerCase = false);
 
 /// Get a binary string from hexadecimal format
 DROGON_EXPORT std::string hexToBinaryString(const char *ptr, size_t length);
@@ -78,8 +128,15 @@ DROGON_EXPORT std::string hexToBinaryString(const char *ptr, size_t length);
 DROGON_EXPORT std::vector<char> hexToBinaryVector(const char *ptr,
                                                   size_t length);
 
+DROGON_EXPORT void binaryStringToHex(const char *ptr,
+                                     size_t length,
+                                     char *out,
+                                     bool lowerCase = false);
+
 /// Split the string into multiple separated strings.
 /**
+ * @param str string to split
+ * @param separator element separator
  * @param acceptEmptyString if true, empty strings are accepted in the
  * result, for example, splitting the ",1,2,,3," by "," produces
  * ["","1","2","","3",""]
@@ -96,29 +153,70 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
     const std::string &separator);
 
 /// Get UUID string.
-DROGON_EXPORT std::string getUuid();
+DROGON_EXPORT std::string getUuid(bool lowercase = true);
+
+/// Get the encoded length of base64.
+constexpr size_t base64EncodedLength(size_t in_len, bool padded = true)
+{
+    return padded ? ((in_len + 3 - 1) / 3) * 4 : (in_len * 8 + 6 - 1) / 6;
+}
 
 /// Encode the string to base64 format.
 DROGON_EXPORT std::string base64Encode(const unsigned char *bytes_to_encode,
-                                       unsigned int in_len,
-                                       bool url_safe = false);
+                                       size_t in_len,
+                                       bool url_safe = false,
+                                       bool padded = true);
+
+/// Encode the string to base64 format.
+inline std::string base64Encode(std::string_view data,
+                                bool url_safe = false,
+                                bool padded = true)
+{
+    return base64Encode((unsigned char *)data.data(),
+                        data.size(),
+                        url_safe,
+                        padded);
+}
+
+/// Encode the string to base64 format with no padding.
+inline std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
+                                        size_t in_len,
+                                        bool url_safe = false)
+{
+    return base64Encode(bytes_to_encode, in_len, url_safe, false);
+}
+
+/// Encode the string to base64 format with no padding.
+inline std::string base64EncodeUnpadded(std::string_view data,
+                                        bool url_safe = false)
+{
+    return base64Encode(data, url_safe, false);
+}
+
+/// Get the decoded length of base64.
+constexpr size_t base64DecodedLength(size_t in_len)
+{
+    return (in_len * 3) / 4;
+}
 
 /// Decode the base64 format string.
-DROGON_EXPORT std::string base64Decode(const std::string &encoded_string);
+DROGON_EXPORT std::string base64Decode(std::string_view encoded_string);
 DROGON_EXPORT std::vector<char> base64DecodeToVector(
-    const std::string &encoded_string);
+    std::string_view encoded_string);
 
 /// Check if the string need decoding
 DROGON_EXPORT bool needUrlDecoding(const char *begin, const char *end);
 
 /// Decode from or encode to the URL format string
 DROGON_EXPORT std::string urlDecode(const char *begin, const char *end);
+
 inline std::string urlDecode(const std::string &szToDecode)
 {
     auto begin = szToDecode.data();
     return urlDecode(begin, begin + szToDecode.length());
 }
-inline std::string urlDecode(const string_view &szToDecode)
+
+inline std::string urlDecode(const std::string_view &szToDecode)
 {
     auto begin = szToDecode.data();
     return urlDecode(begin, begin + szToDecode.length());
@@ -129,12 +227,41 @@ DROGON_EXPORT std::string urlEncodeComponent(const std::string &);
 
 /// Get the MD5 digest of a string.
 DROGON_EXPORT std::string getMd5(const char *data, const size_t dataLen);
+
 inline std::string getMd5(const std::string &originalString)
 {
     return getMd5(originalString.data(), originalString.length());
 }
 
-/// Commpress or decompress data using gzip lib.
+DROGON_EXPORT std::string getSha1(const char *data, const size_t dataLen);
+
+inline std::string getSha1(const std::string &originalString)
+{
+    return getSha1(originalString.data(), originalString.length());
+}
+
+DROGON_EXPORT std::string getSha256(const char *data, const size_t dataLen);
+
+inline std::string getSha256(const std::string &originalString)
+{
+    return getSha256(originalString.data(), originalString.length());
+}
+
+DROGON_EXPORT std::string getSha3(const char *data, const size_t dataLen);
+
+inline std::string getSha3(const std::string &originalString)
+{
+    return getSha3(originalString.data(), originalString.length());
+}
+
+DROGON_EXPORT std::string getBlake2b(const char *data, const size_t dataLen);
+
+inline std::string getBlake2b(const std::string &originalString)
+{
+    return getBlake2b(originalString.data(), originalString.length());
+}
+
+/// Compress or decompress data using gzip lib.
 /**
  * @param data the input data
  * @param ndata the input data length
@@ -142,7 +269,7 @@ inline std::string getMd5(const std::string &originalString)
 DROGON_EXPORT std::string gzipCompress(const char *data, const size_t ndata);
 DROGON_EXPORT std::string gzipDecompress(const char *data, const size_t ndata);
 
-/// Commpress or decompress data using brotli lib.
+/// Compress or decompress data using brotli lib.
 /**
  * @param data the input data
  * @param ndata the input data length
@@ -243,6 +370,7 @@ inline std::wstring toNativePath(const std::string &strPath)
 {
     return trantor::utils::toNativePath(strPath);
 }
+
 inline const std::wstring &toNativePath(const std::wstring &strPath)
 {
     return trantor::utils::toNativePath(strPath);
@@ -252,6 +380,7 @@ inline const std::string &toNativePath(const std::string &strPath)
 {
     return trantor::utils::toNativePath(strPath);
 }
+
 inline std::string toNativePath(const std::wstring &strPath)
 {
     return trantor::utils::toNativePath(strPath);
@@ -278,14 +407,16 @@ inline const std::string &fromNativePath(const std::string &strPath)
 {
     return trantor::utils::fromNativePath(strPath);
 }
+
 // Convert on all systems
 inline std::string fromNativePath(const std::wstring &strPath)
 {
     return trantor::utils::fromNativePath(strPath);
 }
 
-/// Replace all occurances of from to to inplace
+/// Replace all occurrences of from to to inplace
 /**
+ * @param s string to alter
  * @param from string to replace
  * @param to string to replace with
  */
@@ -299,32 +430,84 @@ DROGON_EXPORT void replaceAll(std::string &s,
  * @param ptr the pointer which the random bytes are stored to
  * @param size number of bytes to generate
  *
- * @return true if generation is successfull. False otherwise
- *
- * @note DO NOT abuse this function. Especially if Drogon is built without
- * OpenSSL. Entropy running low is a real issue.
+ * @return true if generation is successful. False otherwise
  */
 DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
 
-template <typename T>
-typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
-fromString(const std::string &p) noexcept(false)
-{
-    T value{};
-    if (!p.empty())
-    {
-        std::stringstream ss(p);
-        ss >> value;
-    }
-    return value;
-}
+/**
+ * @brief Generates cryptographically secure random string.
+ *
+ * @param size number of characters to generate
+ *
+ * @return the random string
+ */
+DROGON_EXPORT std::string secureRandomString(size_t size);
 
 template <typename T>
-typename std::enable_if<!(internal::CanConvertFromStringStream<T>::value),
-                        T>::type
-fromString(const std::string &) noexcept(false)
+T fromString(const std::string &p) noexcept(false)
 {
-    throw std::runtime_error("Bad type conversion");
+    if constexpr (std::is_integral<T>::value && std::is_signed<T>::value)
+    {
+        std::size_t pos;
+        auto v = std::stoll(p, &pos);
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
+        if (pos != p.size())
+            throw std::invalid_argument("Invalid value");
+        if ((v < static_cast<long long>((std::numeric_limits<T>::min)())) ||
+            (v > static_cast<long long>((std::numeric_limits<T>::max)())))
+            throw std::out_of_range("Value out of range");
+        return static_cast<T>(v);
+    }
+    else if constexpr (std::is_integral<T>::value &&
+                       (!std::is_signed<T>::value))
+    {
+        std::size_t pos;
+        auto v = std::stoull(p, &pos);
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
+        if (pos != p.size())
+            throw std::invalid_argument("Invalid value");
+        if (v >
+            static_cast<unsigned long long>((std::numeric_limits<T>::max)()))
+            throw std::out_of_range("Value out of range");
+        return static_cast<T>(v);
+    }
+    else if constexpr (std::is_floating_point<T>::value)
+    {
+        std::size_t pos;
+        auto v = std::stold(p, &pos);
+        // throw if the whole string could not be parsed
+        // ("1a" should not return 1)
+        if (pos != p.size())
+            throw std::invalid_argument("Invalid value");
+        if ((v < static_cast<long double>((std::numeric_limits<T>::min)())) ||
+            (v > static_cast<long double>((std::numeric_limits<T>::max)())))
+            throw std::out_of_range("Value out of range");
+        return static_cast<T>(v);
+    }
+    else if constexpr (internal::CanConvertFromStringStream<T>::value)
+    {
+        T value{};
+        if (!p.empty())
+        {
+            std::stringstream ss(p);
+            // must except in case of invalid value, not return a default value
+            // (else it returns 0 for integers if the string is empty or
+            // non-numeric)
+            ss.exceptions(std::ios_base::failbit);
+            ss >> value;
+            // throw if the whole string could not be parsed
+            // ("1a" should not return 1)
+            if (!ss.eof())
+                std::runtime_error("Bad type conversion");
+        }
+        return value;
+    }
+    else
+    {
+        throw std::runtime_error("Bad type conversion");
+    }
 }
 
 template <>
@@ -334,69 +517,15 @@ inline std::string fromString<std::string>(const std::string &p) noexcept(false)
 }
 
 template <>
-inline int fromString<int>(const std::string &p) noexcept(false)
-{
-    return std::stoi(p);
-}
-
-template <>
-inline long fromString<long>(const std::string &p) noexcept(false)
-{
-    return std::stol(p);
-}
-
-template <>
-inline long long fromString<long long>(const std::string &p) noexcept(false)
-{
-    return std::stoll(p);
-}
-
-template <>
-inline unsigned long fromString<unsigned long>(const std::string &p) noexcept(
-    false)
-{
-    return std::stoul(p);
-}
-
-template <>
-inline unsigned long long fromString<unsigned long long>(
-    const std::string &p) noexcept(false)
-{
-    return std::stoull(p);
-}
-
-template <>
-inline float fromString<float>(const std::string &p) noexcept(false)
-{
-    return std::stof(p);
-}
-
-template <>
-inline double fromString<double>(const std::string &p) noexcept(false)
-{
-    return std::stod(p);
-}
-
-template <>
-inline long double fromString<long double>(const std::string &p) noexcept(false)
-{
-    return std::stold(p);
-}
-
-template <>
 inline bool fromString<bool>(const std::string &p) noexcept(false)
 {
-    if (p == "1")
-    {
-        return true;
-    }
-    if (p == "0")
-    {
-        return false;
-    }
+    if (!p.empty() && std::all_of(p.begin(), p.end(), [](unsigned char c) {
+            return std::isdigit(c);
+        }))
+        return (std::stoll(p) != 0);
     std::string l{p};
     std::transform(p.begin(), p.end(), l.begin(), [](unsigned char c) {
-        return tolower(c);
+        return (char)tolower(c);
     });
     if (l == "true")
     {
@@ -408,5 +537,39 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
     }
     throw std::runtime_error("Can't convert from string '" + p + "' to bool");
 }
+
+DROGON_EXPORT bool supportsTls() noexcept;
+
+namespace internal
+{
+DROGON_EXPORT extern const size_t fixedRandomNumber;
+
+struct SafeStringHash
+{
+    size_t operator()(const std::string &str) const
+    {
+        const size_t A = 6665339;
+        const size_t B = 2534641;
+        size_t h = fixedRandomNumber;
+        for (char ch : str)
+            h = (h * A) ^ (ch * B);
+        return h;
+    }
+};
+}  // namespace internal
 }  // namespace utils
 }  // namespace drogon
+
+namespace trantor
+{
+inline LogStream &operator<<(LogStream &ls, const std::string_view &v)
+{
+    ls.append(v.data(), v.length());
+    return ls;
+}
+
+inline LogStream &operator<<(LogStream &ls, const std::filesystem::path &p)
+{
+    return ls << p.string();
+}
+}  // namespace trantor

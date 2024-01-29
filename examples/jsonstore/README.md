@@ -24,7 +24,7 @@ Create a new JSON object associated with the token
 
 * **method**: POST
 * **URL params**: None
-* **Body**: The inital JSON object to store
+* **Body**: The initial JSON object to store
 * **Success response**
   * **Code**: 200
   * **Content**: `{"ok":true}`
@@ -121,7 +121,7 @@ Creating new data
 > {"ok":true}
 Retrieving value of data["foo"]["bar"] 
 > 42
-Modifing data 
+Modifying data 
 > {"ok":true}
 Now data["foo"]["bar"] no longer exists 
 > {"ok":false}

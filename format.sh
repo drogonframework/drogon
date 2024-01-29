@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
-clang-format --version
+# You can customize the clang-format path by setting the CLANG_FORMAT environment variable
+CLANG_FORMAT=${CLANG_FORMAT:-clang-format}
+
+# Check if clang-format version is 14 to avoid inconsistent formatting
+$CLANG_FORMAT --version
+if [[ ! $($CLANG_FORMAT --version) =~ "version 14" ]]; then
+    echo "Error: clang-format version must be 14"
+    exit 1
+fi
+
 find lib orm_lib nosql_lib examples drogon_ctl -name *.h -o -name *.cc -exec dos2unix {} \;
-find lib orm_lib nosql_lib examples drogon_ctl -name *.h -o -name *.cc|xargs clang-format -i -style=file
+find lib orm_lib nosql_lib examples drogon_ctl -name *.h -o -name *.cc|xargs $CLANG_FORMAT -i -style=file

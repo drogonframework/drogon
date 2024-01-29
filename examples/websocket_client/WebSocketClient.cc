@@ -10,11 +10,11 @@ int main(int argc, char *argv[])
 {
     std::string server;
     std::string path;
-    optional<uint16_t> port;
+    std::optional<uint16_t> port;
     // Connect to a public echo server
     if (argc > 1 && std::string(argv[1]) == "-p")
     {
-        server = "wss://echo.websocket.org";
+        server = "wss://echo.websocket.events/.ws";
         path = "/";
     }
     else

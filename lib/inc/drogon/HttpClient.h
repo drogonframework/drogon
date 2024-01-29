@@ -63,7 +63,7 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
  * If the connection is broken, the client attempts to reconnect
  * when calling the sendRequest method.
  *
- * Using the static mathod newHttpClient(...) to get shared_ptr of the object
+ * Using the static method newHttpClient(...) to get shared_ptr of the object
  * implementing the class, the shared_ptr is retained in the framework until all
  * response callbacks are invoked without fear of accidental deconstruction.
  *
@@ -151,7 +151,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      *
      * @param req
      * @param timeout In seconds. If the response is not received within the
-     * timeout, A `std::runtime_error` with the message "Timeout" is thrown.
+     * timeout, A `drogon::HttpException` with `ReqResult::Timeout` is thrown.
      * The zero value by default disables the timeout.
      *
      * @return internal::HttpRespAwaiter. Await on it to get the response
@@ -162,6 +162,21 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
         return internal::HttpRespAwaiter(this, std::move(req), timeout);
     }
 #endif
+
+    /// Set socket options(before connecting)
+    /**
+     * @brief Set the callback which is called before connecting to the
+     * server. The callback is used to set socket options on the socket fd.
+     *
+     * @code
+       auto client = HttpClient::newHttpClient("http://www.baidu.com");
+       client->setSockOptCallback([](int fd) {});
+       auto req = HttpRequest::newHttpRequest();
+       client->sendRequest(req, [](ReqResult result, const HttpResponsePtr&
+       response) {});
+       @endcode
+     */
+    virtual void setSockOptCallback(std::function<void(int)> cb) = 0;
 
     /// Set the pipelining depth, which is the number of requests that are not
     /// responding.
@@ -209,7 +224,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual void setUserAgent(const std::string &userAgent) = 0;
 
     /**
-     * @brief Creaet a new HTTP client which use ip and port to connect to
+     * @brief Create a new HTTP client which use ip and port to connect to
      * server
      *
      * @param ip The ip address of the HTTP server
@@ -220,7 +235,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * HttpAppFramework's event loop, otherwise it runs in the loop identified
      * by the parameter.
      * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
-     * eanbled for HTTPS.
+     * enabled for HTTPS.
      * @param validateCert If the parameter is set to true, the client validates
      * the server certificate when SSL handshaking.
      * @return HttpClientPtr The smart pointer to the new client object.
@@ -241,12 +256,14 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual size_t bytesReceived() const = 0;
 
     virtual std::string host() const = 0;
+
     std::string getHost() const
     {
         return host();
     }
 
     virtual uint16_t port() const = 0;
+
     uint16_t getPort() const
     {
         return port();
@@ -279,7 +296,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * @note this method has no effect if the HTTP client is communicating via
      * unencrypted HTTP
      * @code
-     * addSSLConfigs({{"-dhparam", "/path/to/dhparam"}, {"-strict", ""}});
+       addSSLConfigs({{"-dhparam", "/path/to/dhparam"}, {"-strict", ""}});
      * @endcode
      */
     virtual void addSSLConfigs(
@@ -331,6 +348,32 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 };
 
 #ifdef __cpp_impl_coroutine
+
+class HttpException : public std::exception
+{
+  public:
+    HttpException() = delete;
+
+    explicit HttpException(ReqResult res)
+        : resultCode_(res), message_(to_string_view(res))
+    {
+    }
+
+    const char *what() const noexcept override
+    {
+        return message_.data();
+    }
+
+    ReqResult code() const
+    {
+        return resultCode_;
+    }
+
+  private:
+    ReqResult resultCode_;
+    std::string_view message_;
+};
+
 inline void internal::HttpRespAwaiter::await_suspend(
     std::coroutine_handle<> handle)
 {
@@ -338,17 +381,11 @@ inline void internal::HttpRespAwaiter::await_suspend(
     assert(req_ != nullptr);
     client_->sendRequest(
         req_,
-        [handle = std::move(handle), this](ReqResult result,
-                                           const HttpResponsePtr &resp) {
+        [handle, this](ReqResult result, const HttpResponsePtr &resp) {
             if (result == ReqResult::Ok)
                 setValue(resp);
             else
-            {
-                std::stringstream ss;
-                ss << result;
-                setException(
-                    std::make_exception_ptr(std::runtime_error(ss.str())));
-            }
+                setException(std::make_exception_ptr(HttpException(result)));
             handle.resume();
         },
         timeout_);

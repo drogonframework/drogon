@@ -2,6 +2,7 @@
 #include <drogon/WebSocketController.h>
 #include <drogon/PubSubService.h>
 using namespace drogon;
+
 namespace example
 {
 class WebSocketTest : public drogon::WebSocketController<WebSocketTest>
@@ -15,7 +16,7 @@ class WebSocketTest : public drogon::WebSocketController<WebSocketTest>
     virtual void handleNewConnection(const HttpRequestPtr &,
                                      const WebSocketConnectionPtr &) override;
     WS_PATH_LIST_BEGIN
-    // list path definations here;
+    // list path definitions here;
     WS_PATH_ADD("/chat", "drogon::LocalHostFilter", Get);
     WS_PATH_LIST_END
   private:

@@ -27,7 +27,7 @@
 #define WS_PATH_LIST_BEGIN        \
     static void initPathRouting() \
     {
-#define WS_PATH_ADD(path, ...) registerSelf__(path, {__VA_ARGS__});
+#define WS_PATH_ADD(path, ...) registerSelf__(path, {__VA_ARGS__})
 #define WS_PATH_LIST_END }
 
 namespace drogon
@@ -71,6 +71,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
 {
   public:
     static const bool isAutoCreation = AutoCreation;
+
     virtual ~WebSocketController()
     {
     }
@@ -79,6 +80,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
     WebSocketController()
     {
     }
+
     static void registerSelf__(
         const std::string &path,
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
@@ -104,13 +106,16 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
             }
         }
     };
+
     friend pathRegistrator;
     static pathRegistrator registrator_;
+
     virtual void *touch()
     {
         return &registrator_;
     }
 };
+
 template <typename T, bool AutoCreation>
 typename WebSocketController<T, AutoCreation>::pathRegistrator
     WebSocketController<T, AutoCreation>::registrator_;

@@ -17,14 +17,14 @@
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/utils/Utilities.h>
 #include <future>
-#include <iostream>
 #include <regex>
-#include <stdio.h>
 #if USE_MYSQL
 #include <mysql.h>
 #endif
+
 using namespace drogon::orm;
 using namespace drogon::orm::internal;
+
 void SqlBinder::exec()
 {
     execed_ = true;
@@ -124,6 +124,7 @@ void SqlBinder::exec()
         }
     }
 }
+
 SqlBinder::~SqlBinder()
 {
     destructed_ = true;
@@ -133,12 +134,34 @@ SqlBinder::~SqlBinder()
     }
 }
 
-SqlBinder &SqlBinder::operator<<(const std::string &str)
+SqlBinder &SqlBinder::operator<<(const std::string_view &str)
 {
-    std::shared_ptr<std::string> obj = std::make_shared<std::string>(str);
+    auto obj = std::make_shared<std::string>(str.data(), str.length());
+    parameters_.push_back(obj->data());
+    lengths_.push_back(static_cast<int>(obj->length()));
     objs_.push_back(obj);
     ++parametersNumber_;
-    parameters_.push_back((char *)obj->c_str());
+    if (type_ == ClientType::PostgreSQL)
+    {
+        formats_.push_back(0);
+    }
+    else if (type_ == ClientType::Mysql)
+    {
+        formats_.push_back(MySqlString);
+    }
+    else if (type_ == ClientType::Sqlite3)
+    {
+        formats_.push_back(Sqlite3TypeText);
+    }
+    return *this;
+}
+
+SqlBinder &SqlBinder::operator<<(const std::string &str)
+{
+    auto obj = std::make_shared<std::string>(str);
+    objs_.push_back(obj);
+    ++parametersNumber_;
+    parameters_.push_back(obj->data());
     lengths_.push_back(static_cast<int>(obj->length()));
     if (type_ == ClientType::PostgreSQL)
     {
@@ -239,11 +262,10 @@ SqlBinder &SqlBinder::operator<<(double f)
     return operator<<(std::to_string(f));
 }
 
-SqlBinder &SqlBinder::operator<<(std::nullptr_t nullp)
+SqlBinder &SqlBinder::operator<<(std::nullptr_t)
 {
-    (void)nullp;
     ++parametersNumber_;
-    parameters_.push_back(NULL);
+    parameters_.push_back(nullptr);
     lengths_.push_back(0);
     if (type_ == ClientType::PostgreSQL)
     {
@@ -291,7 +313,7 @@ SqlBinder &SqlBinder::operator<<(DefaultValue dv)
     else if (type_ == ClientType::Mysql)
     {
         ++parametersNumber_;
-        parameters_.push_back(NULL);
+        parameters_.push_back(nullptr);
         lengths_.push_back(0);
         formats_.push_back(DrogonDefaultValue);
     }
@@ -324,9 +346,8 @@ int SqlBinder::getMysqlTypeBySize(size_t size)
             return 0;
     }
 #else
+    static_cast<void>(size);
     LOG_FATAL << "Mysql is not supported!";
     exit(1);
-    return 0;
-    (void)(size);
 #endif
 }

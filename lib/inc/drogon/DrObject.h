@@ -51,9 +51,30 @@ class DROGON_EXPORT DrObjectBase
     {
         return (className() == class_name);
     }
+
     virtual ~DrObjectBase()
     {
     }
+};
+
+template <typename T>
+struct isAutoCreationClass
+{
+    template <class C>
+    static constexpr auto check(C *)
+        -> std::enable_if_t<std::is_same_v<decltype(C::isAutoCreation), bool>,
+                            bool>
+    {
+        return C::isAutoCreation;
+    }
+
+    template <typename>
+    static constexpr bool check(...)
+    {
+        return false;
+    }
+
+    static constexpr bool value = check<T>(nullptr);
 };
 
 /**
@@ -64,16 +85,17 @@ template <typename T>
 class DrObject : public virtual DrObjectBase
 {
   public:
-    virtual const std::string &className() const override
+    const std::string &className() const override
     {
         return alloc_.className();
     }
+
     static const std::string &classTypeName()
     {
         return alloc_.className();
     }
 
-    virtual bool isClass(const std::string &class_name) const override
+    bool isClass(const std::string &class_name) const override
     {
         return (className() == class_name);
     }
@@ -91,31 +113,38 @@ class DrObject : public virtual DrObjectBase
         {
             registerClass<T>();
         }
+
         const std::string &className() const
         {
             static std::string className =
                 DrClassMap::demangle(typeid(T).name());
             return className;
         }
+
         template <typename D>
-        typename std::enable_if<std::is_default_constructible<D>::value,
-                                void>::type
-        registerClass()
+        void registerClass()
         {
-            DrClassMap::registerClass(className(),
-                                      []() -> DrObjectBase * { return new T; });
-        }
-        template <typename D>
-        typename std::enable_if<!std::is_default_constructible<D>::value,
-                                void>::type
-        registerClass()
-        {
+            if constexpr (std::is_default_constructible<D>::value)
+            {
+                DrClassMap::registerClass(
+                    className(),
+                    []() -> DrObjectBase * { return new T; },
+                    []() -> std::shared_ptr<DrObjectBase> {
+                        return std::make_shared<T>();
+                    });
+            }
+            else if constexpr (isAutoCreationClass<D>::value)
+            {
+                static_assert(std::is_default_constructible<D>::value,
+                              "Class is not default constructable!");
+            }
         }
     };
 
     // use static val to register allocator function for class T;
     static DrAllocator alloc_;
 };
+
 template <typename T>
 typename DrObject<T>::DrAllocator DrObject<T>::alloc_;
 

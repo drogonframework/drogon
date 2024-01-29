@@ -15,6 +15,7 @@
 #include "HttpResponseImpl.h"
 #include <drogon/LocalHostFilter.h>
 using namespace drogon;
+
 void LocalHostFilter::doFilter(const HttpRequestPtr &req,
                                FilterCallback &&fcb,
                                FilterChainCallback &&fccb)
@@ -24,6 +25,6 @@ void LocalHostFilter::doFilter(const HttpRequestPtr &req,
         fccb();
         return;
     }
-    auto res = drogon::HttpResponse::newNotFoundResponse();
+    auto res = drogon::HttpResponse::newNotFoundResponse(req);
     fcb(res);
 }

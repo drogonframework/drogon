@@ -17,9 +17,13 @@ add_executable(_drogon_ctl
                create.cc
                create_view.cc)
 target_link_libraries(_drogon_ctl ${PROJECT_NAME})
-if (WIN32 AND BUILD_DROGON_SHARED)
+if (WIN32 AND BUILD_SHARED_LIBS)
   set(DROGON_FILE $<TARGET_FILE:drogon>)
-  set(TRANTOR_FILE $<TARGET_FILE:trantor>)
+  if (USE_SUBMODULE)
+    set(TRANTOR_FILE $<TARGET_FILE:trantor>)
+  else()
+    set(TRANTOR_FILE $<TARGET_FILE:Trantor::Trantor>)
+  endif()
   add_custom_command(TARGET _drogon_ctl POST_BUILD
           COMMAND ${CMAKE_COMMAND}
           -DCTL_FILE=${DROGON_FILE}
@@ -53,7 +57,7 @@ target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
 target_include_directories(drogon_ctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(drogon_ctl _drogon_ctl)
 if(WIN32)
-  target_link_libraries(drogon_ctl PRIVATE ws2_32 Rpcrt4)
+  target_link_libraries(drogon_ctl PRIVATE ws2_32 rpcrt4 iphlpapi)
 endif(WIN32)
 if(APPLE)
   target_link_libraries(drogon_ctl PRIVATE resolv)

@@ -15,20 +15,25 @@
 #include "version.h"
 #include <drogon/config.h>
 #include <drogon/version.h>
+#include <drogon/utils/Utilities.h>
 #include <trantor/net/Resolver.h>
+#include <trantor/utils/Utilities.h>
 #include <iostream>
 
 using namespace drogon_ctl;
 static const char banner[] =
-    "     _                             \n"
-    "  __| |_ __ ___   __ _  ___  _ __  \n"
-    " / _` | '__/ _ \\ / _` |/ _ \\| '_ \\ \n"
-    "| (_| | | | (_) | (_| | (_) | | | |\n"
-    " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
-    "                 |___/             \n";
+    R"(     _
+  __| |_ __ ___   __ _  ___  _ __
+ / _` | '__/ _ \ / _` |/ _ \| '_ \
+| (_| | | | (_) | (_| | (_) | | | |
+ \__,_|_|  \___/ \__, |\___/|_| |_|
+                 |___/
+)";
 
 void version::handleCommand(std::vector<std::string> &parameters)
 {
+    const auto tlsBackend = trantor::utils::tlsBackend();
+    const bool tlsSupported = drogon::utils::supportsTls();
     std::cout << banner << std::endl;
     std::cout << "A utility for drogon" << std::endl;
     std::cout << "Version: " << DROGON_VERSION << std::endl;
@@ -38,24 +43,15 @@ void version::handleCommand(std::vector<std::string> &parameters)
               << "\n  Compilation flags: " << COMPILATION_FLAGS
               << INCLUDING_DIRS << std::endl;
     std::cout << "Libraries: \n  postgresql: "
-              << (USE_POSTGRESQL ? "yes" : "no") << "  (batch mode: "
+              << (USE_POSTGRESQL ? "yes" : "no") << "  (pipeline mode: "
               << (LIBPQ_SUPPORTS_BATCH_MODE ? "yes)\n" : "no)\n")
               << "  mariadb: " << (USE_MYSQL ? "yes\n" : "no\n")
               << "  sqlite3: " << (USE_SQLITE3 ? "yes\n" : "no\n");
-#ifdef OpenSSL_FOUND
-    std::cout << "  openssl: yes\n";
-#else
-    std::cout << "  openssl: no\n";
-#endif
+    std::cout << "  ssl/tls backend: " << tlsBackend << "\n";
 #ifdef USE_BROTLI
     std::cout << "  brotli: yes\n";
 #else
     std::cout << "  brotli: no\n";
-#endif
-#ifdef Boost_FOUND
-    std::cout << "  boost: yes\n";
-#else
-    std::cout << "  boost: no\n";
 #endif
 #ifdef USE_REDIS
     std::cout << "  hiredis: yes\n";
@@ -64,4 +60,9 @@ void version::handleCommand(std::vector<std::string> &parameters)
 #endif
     std::cout << "  c-ares: "
               << (trantor::Resolver::isCAresUsed() ? "yes\n" : "no\n");
+#ifdef HAS_YAML_CPP
+    std::cout << "  yaml-cpp: yes\n";
+#else
+    std::cout << "  yaml-cpp: no\n";
+#endif
 }

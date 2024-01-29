@@ -14,13 +14,14 @@
 
 #pragma once
 
-#include "impl_forwards.h"
 #include <drogon/HttpTypes.h>
-#include <trantor/utils/NonCopyable.h>
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
-#include <mutex>
+#include <trantor/utils/NonCopyable.h>
 #include <deque>
+#include <memory>
+#include <mutex>
+#include "impl_forwards.h"
 
 namespace drogon
 {
@@ -43,7 +44,7 @@ class HttpRequestParser : public trantor::NonCopyable,
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
 
     // return false if any error
-    bool parseRequest(trantor::MsgBuffer *buf);
+    int parseRequest(trantor::MsgBuffer *buf);
 
     bool gotAll() const
     {
@@ -66,46 +67,52 @@ class HttpRequestParser : public trantor::NonCopyable,
         }
         return false;
     }
+
     const WebSocketConnectionImplPtr &webSocketConn() const
     {
         return websockConnPtr_;
     }
+
     void setWebsockConnection(const WebSocketConnectionImplPtr &conn)
     {
         websockConnPtr_ = conn;
     }
+
     // to support request pipelining(rfc2616-8.1.2.2)
-    void pushRequestToPipelining(const HttpRequestPtr &req);
-    HttpRequestPtr getFirstRequest() const;
-    std::pair<HttpResponsePtr, bool> getFirstResponse() const;
-    void popFirstRequest();
-    void pushResponseToPipelining(const HttpRequestPtr &req,
-                                  const HttpResponsePtr &resp,
-                                  bool isHeadMethod);
+    void pushRequestToPipelining(const HttpRequestPtr &, bool isHeadMethod);
+    bool pushResponseToPipelining(const HttpRequestPtr &, HttpResponsePtr);
+    void popReadyResponses(std::vector<std::pair<HttpResponsePtr, bool>> &);
+
     size_t numberOfRequestsInPipelining() const
     {
         return requestPipelining_.size();
     }
+
     bool emptyPipelining()
     {
         return requestPipelining_.empty();
     }
+
     bool isStop() const
     {
         return stopWorking_;
     }
+
     void stop()
     {
         stopWorking_ = true;
     }
+
     size_t numberOfRequestsParsed() const
     {
         return requestsCounter_;
     }
+
     trantor::MsgBuffer &getBuffer()
     {
         return sendBuffer_;
     }
+
     std::vector<std::pair<HttpResponsePtr, bool>> &getResponseBuffer()
     {
         assert(loop_->isInLoopThread());
@@ -117,6 +124,7 @@ class HttpRequestParser : public trantor::NonCopyable,
         }
         return *responseBuffer_;
     }
+
     std::vector<HttpRequestImplPtr> &getRequestBuffer()
     {
         assert(loop_->isInLoopThread());
@@ -147,7 +155,7 @@ class HttpRequestParser : public trantor::NonCopyable,
         responseBuffer_;
     std::unique_ptr<std::vector<HttpRequestImplPtr>> requestBuffer_;
     std::vector<HttpRequestImplPtr> requestsPool_;
-    size_t currentChunkLength_;
+    size_t currentChunkLength_{0};
     size_t currentContentLength_{0};
 };
 

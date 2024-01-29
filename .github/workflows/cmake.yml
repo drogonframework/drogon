@@ -1,4 +1,4 @@
-name: Build Drogon
+name: Build & Test
 
 on:
   push:
@@ -6,206 +6,226 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
   windows:
-    name: 'windows/msvc - ${{matrix.link}}'
-    runs-on: windows-latest
+    name: windows/msvc - ${{ matrix.link }}
+    runs-on: windows-2019
     strategy:
       fail-fast: false
       matrix:
-        link: [ 'STATIC', 'SHARED' ]
+        link: ["STATIC", "SHARED"]
     steps:
       - name: Checkout Drogon source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
 
       - name: Install dependencies
-        run: |
-          pip install conan
+        run: pip install conan
 
       - name: Create build directory
-        run: |
-          mkdir build
+        run: mkdir build
 
       - name: Install conan packages
-        shell: pwsh
         working-directory: ./build
         run: |
-          conan install .. -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
+          conan profile detect
+          conan install .. -s compiler="msvc" -sbuild_type=Debug --build=missing -s compiler.cppstd=17
 
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=on -DBUILD_DROGON_SHARED=$shared -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" -DBUILD_CTL=ON -DBUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=../install
+          cmake ..                                         \
+            -DCMAKE_BUILD_TYPE=Debug                       \
+            -DBUILD_TESTING=on                             \
+            -DBUILD_SHARED_LIBS=$shared                    \
+            -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
+            -DBUILD_CTL=ON                                 \
+            -DBUILD_EXAMPLES=ON                            \
+            -DUSE_SPDLOG=ON                                \
+            -DCMAKE_INSTALL_PREFIX=../install              \
+            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             \
+            -DCMAKE_CXX_STANDARD=17
 
       - name: Build
-        working-directory: ${{env.GITHUB_WORKSPACE}}
-        shell: bash
-        run: |
-          cd build
-          cmake --build . --target install --parallel
+        run: cmake --build build --target install --parallel
 
       - name: Test
-        working-directory: ${{env.GITHUB_WORKSPACE}}
         shell: bash
         run: ./test.sh -w
 
-  unix:
-    name: ${{matrix.buildname}}
-    runs-on: ${{matrix.os}}
+  macos:
+    runs-on: macos-${{ matrix.osver }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc'
-            link: SHARED
-            triplet: x64-linux
-            compiler: gcc_64
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc'
-            link: STATIC
-            triplet: x64-linux
-            compiler: gcc_64
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc-10'
-            link: STATIC
-            triplet: x64-linux
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/c++14'
-            link: STATIC
-            triplet: x64-linux
-            compiler: gcc_64
-          - os: macos-latest
-            buildname: 'macos/clang'
-            link: STATIC
-            triplet: x64-osx
-            compiler: clang_64
+        osver: [12, 13]
     steps:
-    - name: Checkout Drogon source code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-        fetch-depth: 0
+      - name: Checkout Drogon source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
 
-    - name: (macOS) Install dependencies
-      if: runner.os == 'macOS'
-      run: |
-        brew install jsoncpp brotli zlib
-        brew install openssl lz4 mariadb sqlite3 postgresql hiredis
-        brew install redis
+      - name: Install dependencies
+        # Already installed: brotli, zlib, lz4, sqlite3
+        run: brew install ninja jsoncpp mariadb hiredis redis spdlog postgresql@14
 
-    - name: (Linux) Install dependencies
-      if: runner.os == 'Linux'
-      run: |
-        # Installing packages might fail as the github image becomes outdated
-        sudo apt update
-        # These aren't available or don't work well in vcpkg
-        sudo apt install libjsoncpp-dev uuid-dev openssl libssl-dev zlib1g-dev libsqlite3-dev
-        sudo apt install libbrotli-dev
-    - name: (Linux) Install gcc-10
-      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
-      run: |
-        sudo apt install gcc-10 g++-10
-    - name: (Linux) Install boost
-      if: matrix.buildname == 'ubuntu-20.04/c++14'
-      run: |
-        sudo apt update
-        sudo apt install libboost-all-dev
+      - name: Create Build Environment & Configure Cmake
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        run: |
+          cmake -B build -G Ninja          \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DBUILD_TESTING=on             \
+            -DUSE_SPDLOG=ON                \
+            -DBUILD_SHARED_LIBS=OFF
 
-    - name: (Linux) Install postgresql
-      if: matrix.os == 'ubuntu-20.04'
-      run: |
-        sudo apt install postgresql-all
+      - name: Build
+        working-directory: ./build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: ninja && sudo ninja install
 
-    - name: Create build directory
-      run: |
-        mkdir build
+      - name: Prepare for testing
+        run: |
+          brew tap homebrew/services
+          brew services restart postgresql@14
+          brew services start mariadb
+          brew services start redis
+          sleep 4
+          mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')"
+          mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'"
+          mariadb -e "FLUSH PRIVILEGES"
+          brew services restart mariadb
+          sleep 4
+          psql -c 'create user postgres superuser;' postgres
 
-    - name: Create Build Environment & Configure Cmake
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      shell: bash
-      working-directory: ./build
-      if: matrix.buildname != 'ubuntu-20.04/gcc-10' && matrix.buildname != 'ubuntu-20.04/c++14'
-      run: |
-        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DBUILD_DROGON_SHARED=$shared
+      - name: Test
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ./test.sh -t
 
-    - name: Create Build Environment & Configure Cmake (gcc-10)
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      shell: bash
-      working-directory: ./build
-      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
-      run: |
-        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_FLAGS="-fcoroutines" -DBUILD_DROGON_SHARED=$shared
-      env:
-        CC: gcc-10
-        CXX: g++-10
+  ubuntu:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        link: [SHARED, STATIC]
+        compiler:
+          - cxx: g++
+            ver: 9
+          - cxx: g++
+            ver: 10
+          - cxx: g++
+            ver: 11
+          - cxx: g++
+            ver: 12
+          - cxx: g++
+            ver: 13
+          - cxx: clang++
+            ver: 11
+          - cxx: clang++
+            ver: 12
+          - cxx: clang++
+            ver: 13
+          - cxx: clang++
+            ver: 14
+          - cxx: clang++
+            ver: 15
+          - cxx: clang++
+            ver: 16
+          - cxx: clang++
+            ver: 17
+        include:
+          - link: STATIC
+            compiler:
+              cxx: g++
+              ver: 13
+              feature: coroutines
+    env:
+      CXX: ${{ matrix.compiler.cxx }}-${{ matrix.compiler.ver }}
+    steps:
+      - name: Checkout Drogon source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
 
-    - name: Create Build Environment & Configure Cmake (C++14)
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      shell: bash
-      working-directory: ./build
-      if: matrix.buildname == 'ubuntu-20.04/C++14'
-      run: |
-        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_STANDARD=14 -DBUILD_DROGON_SHARED=$shared
+      - name: Install dependencies
+        run: |
+          # Installing packages might fail as the github image becomes outdated
+          sudo apt update
+          # These aren't available or don't work well in vcpkg
+          sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
+          sudo apt-get install -y ninja-build libbrotli-dev
+          sudo apt-get install -y libspdlog-dev
 
-    - name: (Linux) Build
-      working-directory: ./build
-      shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: |
-        sudo make -j $(nproc) && sudo make install
+      - name: Install postgresql
+        run: |
+          sudo apt-get --purge remove postgresql postgresql-doc postgresql-common postgresql-client-common
+          sudo apt-get -y install postgresql-all
 
-    - name: Prepare for testing (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        cd $(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-services
-        git reset --hard 5f2fe01
-        cd ~
-        brew tap homebrew/services;
-        brew services restart postgresql;
-        brew services start mariadb;
-        brew services start redis;
-        sleep 4;
-        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
-        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
-        mariadb -e "FLUSH PRIVILEGES";
-        brew services restart mariadb;
-        sleep 4;
-        psql -c 'create user postgres superuser;' postgres;
+      - name: Install Clang
+        if: startsWith(matrix.compiler.cxx, 'clang') && matrix.compiler.ver < 13
+        run: sudo apt-get install clang-${{ matrix.compiler.ver }}
 
-    - name: Prepare for testing (Linux)
-      if: runner.os == 'Linux'
-      run: |
-        sudo systemctl start postgresql
-        sleep 1
-        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
+      - name: Install Clang
+        if: startsWith(matrix.compiler.cxx, 'clang') && matrix.compiler.ver >= 13
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x ./llvm.sh
+          sudo ./llvm.sh ${{ matrix.compiler.ver }}
 
-    - name: Test
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      shell: bash
-      # Execute tests defined by the CMake configuration.
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ./test.sh -t
+      - name: Export `shared`
+        run: |
+          [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
+          echo "shared=$shared" >> $GITHUB_ENV
 
-    - name: Lint
-      if: matrix.os == 'ubuntu-20.04'
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      shell: bash
-      run: |
-        sudo apt install -y dos2unix
-        ./format.sh && git diff --exit-code
+      - name: Create Build Environment & Configure Cmake
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        if: matrix.compiler.feature != 'coroutines'
+        run: |
+          cmake -B build -G Ninja          \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DBUILD_TESTING=on             \
+            -DUSE_SPDLOG=ON                \
+            -DBUILD_SHARED_LIBS=$shared
+      - name: Create Build Environment & Configure Cmake (coroutines)
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        if: matrix.compiler.feature == 'coroutines'
+        run: |
+          cmake -B build -G Ninja            \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
+            -DBUILD_TESTING=on               \
+            -DUSE_SPDLOG=ON                  \
+            -DCMAKE_CXX_FLAGS="-fcoroutines" \
+            -DBUILD_SHARED_LIBS=$shared      \
+
+      - name: Build
+        working-directory: ./build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: ninja && sudo ninja install
+
+      - name: Prepare for testing
+        run: |
+          sudo systemctl start postgresql
+          sleep 1
+          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
+
+      - name: Test
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ./test.sh -t

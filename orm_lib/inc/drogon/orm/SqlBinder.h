@@ -21,8 +21,8 @@
 #include <drogon/orm/ResultIterator.h>
 #include <drogon/orm/Row.h>
 #include <drogon/orm/RowIterator.h>
-#include <drogon/utils/string_view.h>
-#include <drogon/utils/optional.h>
+#include <string_view>
+#include <json/writer.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 #include <json/json.h>
@@ -30,10 +30,12 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <string.h>
 #include <string>
 #include <vector>
+#include <optional>
 #ifdef _WIN32
 #include <winsock2.h>
 #else  // some Unix-like OS
@@ -61,19 +63,25 @@ template <typename T>
 constexpr T htonT(T value) noexcept
 {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-    char *ptr = reinterpret_cast<char *>(&value);
-    std::reverse(ptr, ptr + sizeof(T));
-#endif
+    return (std::reverse(reinterpret_cast<char *>(&value),
+                         reinterpret_cast<char *>(&value) + sizeof(T)),
+            value);
+#else
     return value;
+#endif
 }
+
+#if (!defined _WIN32) || (defined _WIN32 && _WIN32_WINNT < _WIN32_WINNT_WIN8)
 inline uint64_t htonll(uint64_t value)
 {
     return htonT<uint64_t>(value);
 }
+
 inline uint64_t ntohll(uint64_t value)
 {
     return htonll(value);
 }
+#endif
 #endif
 
 namespace drogon
@@ -107,6 +115,7 @@ enum class Mode
     NonBlocking,
     Blocking
 };
+
 namespace internal
 {
 template <typename T>
@@ -116,6 +125,7 @@ struct VectorTypeTraits
     static const bool isPtrVector = false;
     using ItemsType = T;
 };
+
 template <typename T>
 struct VectorTypeTraits<std::vector<std::shared_ptr<T>>>
 {
@@ -123,6 +133,7 @@ struct VectorTypeTraits<std::vector<std::shared_ptr<T>>>
     static const bool isPtrVector = true;
     using ItemsType = T;
 };
+
 template <>
 struct VectorTypeTraits<std::string>
 {
@@ -138,21 +149,25 @@ struct CallbackArgTypeTraits
 {
     static const bool isValid = true;
 };
+
 template <typename T>
 struct CallbackArgTypeTraits<T *>
 {
     static const bool isValid = false;
 };
+
 template <typename T>
 struct CallbackArgTypeTraits<T &>
 {
     static const bool isValid = false;
 };
+
 template <typename T>
 struct CallbackArgTypeTraits<T &&>
 {
     static const bool isValid = true;
 };
+
 template <typename T>
 struct CallbackArgTypeTraits<const T &>
 {
@@ -162,22 +177,21 @@ struct CallbackArgTypeTraits<const T &>
 class CallbackHolderBase
 {
   public:
-    virtual ~CallbackHolderBase()
-    {
-    }
+    virtual ~CallbackHolderBase() = default;
     virtual void execCallback(const Result &result) = 0;
 };
+
 template <typename Function>
 class CallbackHolder : public CallbackHolderBase
 {
   public:
-    virtual void execCallback(const Result &result)
+    void execCallback(const Result &result) override
     {
         run(result);
     }
 
     template <typename T>
-    CallbackHolder(T &&function) : function_(std::forward<T>(function))
+    explicit CallbackHolder(T &&function) : function_(std::forward<T>(function))
     {
         static_assert(traits::isSqlCallback,
                       "Your sql callback function type is wrong!");
@@ -191,87 +205,86 @@ class CallbackHolder : public CallbackHolderBase
     static const size_t argumentCount = traits::arity;
 
     template <bool isStep = traits::isStepResultCallback>
-    typename std::enable_if<isStep, void>::type run(const Result &result)
+    void run(const Result &result)
     {
-        if (result.size() == 0)
+        if constexpr (isStep)
         {
+            if (result.empty())
+            {
+                run(nullptr, true);
+                return;
+            }
+            for (auto const &row : result)
+            {
+                run(&row, false);
+            }
             run(nullptr, true);
-            return;
         }
-        for (auto const &row : result)
+        else
         {
-            run(&row, false);
+            static_assert(argumentCount == 0,
+                          "Your sql callback function type is wrong!");
+            function_(result);
         }
-        run(nullptr, true);
     }
-    template <bool isStep = traits::isStepResultCallback>
-    typename std::enable_if<!isStep, void>::type run(const Result &result)
-    {
-        static_assert(argumentCount == 0,
-                      "Your sql callback function type is wrong!");
-        function_(result);
-    }
-    template <typename... Values, std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
-        const Row *const row,
-        bool isNull,
-        Values &&...values)
-    {
-        // call this function recursively until parameter's count equals to the
-        // count of target function parameters
-        static_assert(
-            CallbackArgTypeTraits<NthArgumentType<sizeof...(Values)>>::isValid,
-            "your sql callback function argument type must be value "
-            "type or "
-            "const "
-            "left-reference type");
-        using ValueType =
-            typename std::remove_cv<typename std::remove_reference<
-                NthArgumentType<sizeof...(Values)>>::type>::type;
-        ValueType value = ValueType();
-        if (row && row->size() > sizeof...(Values))
-        {
-            // if(!VectorTypeTraits<ValueType>::isVector)
-            //     value = (*row)[sizeof...(Values)].as<ValueType>();
-            // else
-            //     ; // value =
-            //     (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
-            value =
-                makeValue<ValueType>((*row)[(Row::SizeType)sizeof...(Values)]);
-        }
 
-        run(row, isNull, std::forward<Values>(values)..., std::move(value));
-    }
     template <typename... Values, std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
-        const Row *const,
-        bool isNull,
-        Values &&...values)
+    void run(const Row *const row, bool isNull, Values &&...values)
     {
-        function_(isNull, std::move(values)...);
+        if constexpr (sizeof...(Values) < Boundary)
+        {
+            // call this function recursively until parameter's count equals to
+            // the count of target function parameters
+            static_assert(
+                CallbackArgTypeTraits<
+                    NthArgumentType<sizeof...(Values)>>::isValid,
+                "your sql callback function argument type must be value "
+                "type or "
+                "const "
+                "left-reference type");
+            using ValueType =
+                typename std::remove_cv<typename std::remove_reference<
+                    NthArgumentType<sizeof...(Values)>>::type>::type;
+            ValueType value = ValueType();
+            if (row && row->size() > sizeof...(Values))
+            {
+                // if(!VectorTypeTraits<ValueType>::isVector)
+                //     value = (*row)[sizeof...(Values)].as<ValueType>();
+                // else
+                //     ; // value =
+                //     (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
+                value = makeValue<ValueType>(
+                    (*row)[(Row::SizeType)sizeof...(Values)]);
+            }
+
+            run(row, isNull, std::forward<Values>(values)..., std::move(value));
+        }
+        else if constexpr (sizeof...(Values) == Boundary)
+        {
+            function_(isNull, std::move(values)...);
+        }
     }
+
     template <typename ValueType>
-    typename std::enable_if<VectorTypeTraits<ValueType>::isVector,
-                            ValueType>::type
-    makeValue(const Field &field)
+    ValueType makeValue(const Field &field)
     {
-        return field.asArray<typename VectorTypeTraits<ValueType>::ItemsType>();
-    }
-    template <typename ValueType>
-    typename std::enable_if<!VectorTypeTraits<ValueType>::isVector,
-                            ValueType>::type
-    makeValue(const Field &field)
-    {
-        return field.as<ValueType>();
+        if constexpr (VectorTypeTraits<ValueType>::isVector)
+        {
+            return field
+                .asArray<typename VectorTypeTraits<ValueType>::ItemsType>();
+        }
+        else
+        {
+            return field.as<ValueType>();
+        }
     }
 };
+
 class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
 {
     using self = SqlBinder;
 
   public:
-    friend class Dbclient;
-
     SqlBinder(const std::string &sql, DbClient &client, ClientType type)
         : sqlPtr_(std::make_shared<std::string>(sql)),
           sqlViewPtr_(sqlPtr_->data()),
@@ -280,6 +293,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           type_(type)
     {
     }
+
     SqlBinder(std::string &&sql, DbClient &client, ClientType type)
         : sqlPtr_(std::make_shared<std::string>(std::move(sql))),
           sqlViewPtr_(sqlPtr_->data()),
@@ -288,6 +302,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           type_(type)
     {
     }
+
     SqlBinder(const char *sql,
               size_t sqlLength,
               DbClient &client,
@@ -298,7 +313,8 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           type_(type)
     {
     }
-    SqlBinder(SqlBinder &&that)
+
+    SqlBinder(SqlBinder &&that) noexcept
         : sqlPtr_(std::move(that.sqlPtr_)),
           sqlViewPtr_(that.sqlViewPtr_),
           sqlViewLength_(that.sqlViewLength_),
@@ -320,92 +336,66 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         // set the execed_ to true to avoid the same sql being executed twice.
         that.execed_ = true;
     }
+
     SqlBinder &operator=(SqlBinder &&that) = delete;
     ~SqlBinder();
-    template <typename CallbackType,
-              typename traits =
-                  FunctionTraits<typename std::decay<CallbackType>::type>>
-    typename std::enable_if<traits::isExceptCallback && traits::isPtr,
-                            self>::type &
-    operator>>(CallbackType &&callback)
-    {
-        // LOG_DEBUG << "ptr callback";
-        isExceptionPtr_ = true;
-        exceptionPtrCallback_ = std::forward<CallbackType>(callback);
-        return *this;
-    }
 
     template <typename CallbackType,
               typename traits =
                   FunctionTraits<typename std::decay<CallbackType>::type>>
-    typename std::enable_if<traits::isExceptCallback && !traits::isPtr,
-                            self>::type &
-    operator>>(CallbackType &&callback)
+    self &operator>>(CallbackType &&callback)
     {
-        isExceptionPtr_ = false;
-        exceptionCallback_ = std::forward<CallbackType>(callback);
-        return *this;
-    }
-
-    template <typename CallbackType,
-              typename traits =
-                  FunctionTraits<typename std::decay<CallbackType>::type>>
-    typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(
-        CallbackType &&callback)
-    {
-        callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
-            new CallbackHolder<typename std::decay<CallbackType>::type>(
-                std::forward<CallbackType>(callback)));
-        return *this;
+        if constexpr (traits::isExceptCallback)
+        {
+            if constexpr (traits::isPtr)
+            {
+                // LOG_DEBUG << "ptr callback";
+                isExceptionPtr_ = true;
+                exceptionPtrCallback_ = std::forward<CallbackType>(callback);
+                return *this;
+            }
+            else
+            {
+                isExceptionPtr_ = false;
+                exceptionCallback_ = std::forward<CallbackType>(callback);
+                return *this;
+            }
+        }
+        else if constexpr (traits::isSqlCallback)
+        {
+            callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
+                new CallbackHolder<typename std::decay<CallbackType>::type>(
+                    std::forward<CallbackType>(callback)));
+            return *this;
+        }
     }
 
     template <typename T>
-    typename std::enable_if<
-        !std::is_same<typename std::remove_cv<
-                          typename std::remove_reference<T>::type>::type,
-                      trantor::Date>::value,
-        self &>::type
-    operator<<(T &&parameter)
+    self &operator<<(T &&parameter)
     {
+        using ParaType = std::remove_cv_t<std::remove_reference_t<T>>;
         ++parametersNumber_;
-        using ParaType = typename std::remove_cv<
-            typename std::remove_reference<T>::type>::type;
         std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
         if (type_ == ClientType::PostgreSQL)
         {
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
-            const size_t size = sizeof(T);
-            if constexpr (size == 2)
-            {
-                *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
-            }
-            else if constexpr (size == 4)
-            {
-                *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
-            }
-            else if constexpr (size == 8)
-            {
-                *std::static_pointer_cast<uint64_t>(obj) = htonll(parameter);
-            }
-#else
             switch (sizeof(T))
             {
                 case 2:
-                    *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
+                    *std::static_pointer_cast<uint16_t>(obj) =
+                        htons((uint16_t)parameter);
                     break;
                 case 4:
-                    *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
+                    *std::static_pointer_cast<uint32_t>(obj) =
+                        htonl((uint32_t)parameter);
                     break;
                 case 8:
                     *std::static_pointer_cast<uint64_t>(obj) =
-                        htonll(parameter);
+                        htonll((uint64_t)parameter);
                     break;
                 case 1:
                 default:
-
                     break;
             }
-#endif
             objs_.push_back(obj);
             parameters_.push_back((char *)obj.get());
             lengths_.push_back(sizeof(T));
@@ -443,35 +433,53 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         // LOG_TRACE << "Bind parameter:" << parameter;
         return *this;
     }
+
     // template <>
     self &operator<<(const char str[])
     {
         return operator<<(std::string(str));
     }
+
     self &operator<<(char str[])
     {
         return operator<<(std::string(str));
     }
+
+    self &operator<<(const std::string_view &str);
+
+    self &operator<<(std::string_view &&str)
+    {
+        return operator<<((const std::string_view &)str);
+    }
+
+    self &operator<<(std::string_view &str)
+    {
+        return operator<<((const std::string_view &)str);
+    }
+
     self &operator<<(const std::string &str);
+
     self &operator<<(std::string &str)
     {
         return operator<<((const std::string &)str);
     }
+
     self &operator<<(std::string &&str);
-    self &operator<<(trantor::Date &&date)
+
+    self &operator<<(trantor::Date date)
     {
         return operator<<(date.toDbStringLocal());
     }
-    self &operator<<(const trantor::Date &date)
-    {
-        return operator<<(date.toDbStringLocal());
-    }
+
     self &operator<<(const std::vector<char> &v);
+
     self &operator<<(std::vector<char> &v)
     {
         return operator<<((const std::vector<char> &)v);
     }
+
     self &operator<<(std::vector<char> &&v);
+
     self &operator<<(float f)
     {
         if (type_ == ClientType::Sqlite3)
@@ -480,26 +488,31 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return operator<<(std::to_string(f));
     }
+
     self &operator<<(double f);
-    self &operator<<(std::nullptr_t nullp);
+    self &operator<<(std::nullptr_t);
     self &operator<<(DefaultValue dv);
+
     self &operator<<(const Mode &mode)
     {
         mode_ = mode;
         return *this;
     }
+
     self &operator<<(Mode &mode)
     {
         mode_ = mode;
         return *this;
     }
+
     self &operator<<(Mode &&mode)
     {
         mode_ = mode;
         return *this;
     }
+
     template <typename T>
-    self &operator<<(const optional<T> &parameter)
+    self &operator<<(const std::optional<T> &parameter)
     {
         if (parameter)
         {
@@ -507,8 +520,9 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return *this << nullptr;
     }
+
     template <typename T>
-    self &operator<<(optional<T> &parameter)
+    self &operator<<(std::optional<T> &parameter)
     {
         if (parameter)
         {
@@ -516,8 +530,9 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return *this << nullptr;
     }
+
     template <typename T>
-    self &operator<<(optional<T> &&parameter)
+    self &operator<<(std::optional<T> &&parameter)
     {
         if (parameter)
         {
@@ -525,48 +540,48 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return *this << nullptr;
     }
+
     self &operator<<(const Json::Value &j) noexcept(true)
     {
         switch (j.type())
         {
             case Json::nullValue:
                 return *this << nullptr;
-                break;
             case Json::intValue:
                 return *this << j.asInt64();
-                break;
             case Json::uintValue:
                 return *this << j.asUInt64();
-                break;
             case Json::realValue:
                 return *this << j.asDouble();
-                break;
             case Json::stringValue:
                 return *this << j.asString();
-                break;
             case Json::booleanValue:
                 return *this << j.asBool();
-                break;
             case Json::arrayValue:
             case Json::objectValue:
             default:
-                LOG_ERROR << "Bad Json type";
-                return *this << nullptr;
-                break;
+                static Json::StreamWriterBuilder jsonBuilder;
+                std::once_flag once_json;
+                std::call_once(once_json,
+                               []() { jsonBuilder["indentation"] = ""; });
+                return *this << Json::writeString(jsonBuilder, j);
         }
     }
+
     self &operator<<(Json::Value &j) noexcept(true)
     {
         return *this << static_cast<const Json::Value &>(j);
     }
+
     self &operator<<(Json::Value &&j) noexcept(true)
     {
         return *this << static_cast<const Json::Value &>(j);
     }
+
     void exec() noexcept(false);
 
   private:
-    int getMysqlTypeBySize(size_t size);
+    static int getMysqlTypeBySize(size_t size);
     std::shared_ptr<std::string> sqlPtr_;
     const char *sqlViewPtr_;
     size_t sqlViewLength_;

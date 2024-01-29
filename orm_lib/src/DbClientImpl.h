@@ -33,8 +33,13 @@ class DbClientImpl : public DbClient,
 {
   public:
     DbClientImpl(const std::string &connInfo,
-                 const size_t connNum,
+                 size_t connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                 ClientType type,
+                 bool autoBatch);
+#else
                  ClientType type);
+#endif
     ~DbClientImpl() noexcept override;
     void execSql(const char *sql,
                  size_t sqlLength,
@@ -52,27 +57,23 @@ class DbClientImpl : public DbClient,
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
     bool hasAvailableConnections() const noexcept override;
+
     void setTimeout(double timeout) override
     {
         timeout_ = timeout;
     }
+
     void init();
+    void closeAll() override;
 
   private:
     size_t numberOfConnections_;
     trantor::EventLoopThreadPool loops_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
     double timeout_{-1.0};
-    void execSql(
-        const DbConnectionPtr &conn,
-        string_view &&sql,
-        size_t paraNum,
-        std::vector<const char *> &&parameters,
-        std::vector<int> &&length,
-        std::vector<int> &&format,
-        ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback);
-
+#if LIBPQ_SUPPORTS_BATCH_MODE
+    bool autoBatch_{false};
+#endif
     DbConnectionPtr newConnection(trantor::EventLoop *loop);
 
     void makeTrans(

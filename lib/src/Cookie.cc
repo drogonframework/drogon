@@ -14,7 +14,9 @@
 
 #include <drogon/Cookie.h>
 #include <drogon/utils/Utilities.h>
+#include <trantor/utils/Logger.h>
 using namespace drogon;
+
 std::string Cookie::cookieString() const
 {
     std::string ret = "Set-Cookie: ";

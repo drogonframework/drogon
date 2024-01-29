@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 using namespace drogon::utils;
+
 DROGON_TEST(BrotliTest)
 {
     SUBSECTION(shortText)

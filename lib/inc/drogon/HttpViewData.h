@@ -15,8 +15,6 @@
 #pragma once
 
 #include <drogon/exports.h>
-#include <drogon/utils/string_view.h>
-#include <drogon/utils/any.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <sstream>
@@ -25,6 +23,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <type_traits>
+#include <any>
+#include <string_view>
 
 namespace drogon
 {
@@ -43,7 +43,7 @@ class DROGON_EXPORT HttpViewData
         {
             if (typeid(T) == it->second.type())
             {
-                return *(any_cast<T>(&(it->second)));
+                return *(std::any_cast<T>(&(it->second)));
             }
             else
             {
@@ -54,11 +54,12 @@ class DROGON_EXPORT HttpViewData
     }
 
     /// Insert an item identified by the key parameter into the data set;
-    void insert(const std::string &key, any &&obj)
+    void insert(const std::string &key, std::any &&obj)
     {
         viewData_[key] = std::move(obj);
     }
-    void insert(const std::string &key, const any &obj)
+
+    void insert(const std::string &key, const std::any &obj)
     {
         viewData_[key] = obj;
     }
@@ -73,7 +74,7 @@ class DROGON_EXPORT HttpViewData
         viewData_[key] = ss.str();
     }
 
-    /// Insert a formated string identified by the key parameter.
+    /// Insert a formatted string identified by the key parameter.
     void insertFormattedString(const std::string &key, const char *format, ...)
     {
         std::string strBuffer;
@@ -126,7 +127,7 @@ class DROGON_EXPORT HttpViewData
     }
 
     /// Get the 'any' object by the key parameter.
-    any &operator[](const std::string &key) const
+    std::any &operator[](const std::string &key) const
     {
         return viewData_[key];
     }
@@ -142,12 +143,13 @@ class DROGON_EXPORT HttpViewData
        @endcode
      */
     static std::string htmlTranslate(const char *str, size_t length);
-    static std::string htmlTranslate(const string_view &str)
+
+    static std::string htmlTranslate(const std::string_view &str)
     {
         return htmlTranslate(str.data(), str.length());
     }
 
-    static bool needTranslation(const string_view &str)
+    static bool needTranslation(const std::string_view &str)
     {
         for (auto const &c : str)
         {
@@ -166,7 +168,7 @@ class DROGON_EXPORT HttpViewData
     }
 
   protected:
-    using ViewDataMap = std::unordered_map<std::string, any>;
+    using ViewDataMap = std::unordered_map<std::string, std::any>;
     mutable ViewDataMap viewData_;
 };
 

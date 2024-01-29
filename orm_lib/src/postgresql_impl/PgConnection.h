@@ -34,20 +34,25 @@ namespace orm
 {
 class PgConnection;
 using PgConnectionPtr = std::shared_ptr<PgConnection>;
+
 class PgConnection : public DbConnection,
                      public std::enable_shared_from_this<PgConnection>
 {
   public:
-    PgConnection(trantor::EventLoop *loop, const std::string &connInfo);
+    using MessageCallback =
+        std::function<void(const std::string &, const std::string &)>;
+    PgConnection(trantor::EventLoop *loop,
+                 const std::string &connInfo,
+                 bool autoBatch);
 
-    virtual void execSql(string_view &&sql,
-                         size_t paraNum,
-                         std::vector<const char *> &&parameters,
-                         std::vector<int> &&length,
-                         std::vector<int> &&format,
-                         ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)>
-                             &&exceptCallback) override
+    void execSql(std::string_view &&sql,
+                 size_t paraNum,
+                 std::vector<const char *> &&parameters,
+                 std::vector<int> &&length,
+                 std::vector<int> &&format,
+                 ResultCallback &&rcb,
+                 std::function<void(const std::exception_ptr &)>
+                     &&exceptCallback) override
     {
         if (loop_->isInLoopThread())
         {
@@ -82,27 +87,38 @@ class PgConnection : public DbConnection,
         }
     }
 
-    virtual void batchSql(
-        std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) override;
+    void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) override;
 
-    virtual void disconnect() override;
+    void disconnect() override;
+
+    const std::shared_ptr<PGconn> &pgConn() const
+    {
+        return connectionPtr_;
+    }
+
+    void setMessageCallback(MessageCallback cb)
+    {
+        messageCallback_ = std::move(cb);
+    }
 
   private:
     std::shared_ptr<PGconn> connectionPtr_;
     trantor::Channel channel_;
-    bool isRreparingStatement_{false};
+    bool isPreparingStatement_{false};
     size_t preparedStatementsID_{0};
+
     std::string newStmtName()
     {
         loop_->assertInLoopThread();
         return std::to_string(++preparedStatementsID_);
     }
+
     void handleRead();
     void pgPoll();
     void handleClosed();
 
     void execSqlInLoop(
-        string_view &&sql,
+        std::string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
@@ -111,27 +127,30 @@ class PgConnection : public DbConnection,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
     void doAfterPreparing();
     std::string statementName_;
-    int parametersNumber_;
+    int parametersNumber_{0};
     std::vector<const char *> parameters_;
     std::vector<int> lengths_;
     std::vector<int> formats_;
     int flush();
     void handleFatalError();
     std::set<std::string> preparedStatements_;
-    string_view sql_;
+    std::string_view sql_;
 #if LIBPQ_SUPPORTS_BATCH_MODE
-    void handleFatalError(bool clearAll);
+    void handleFatalError(bool clearAll, bool isAbortPipeline = false);
     std::list<std::shared_ptr<SqlCmd>> batchCommandsForWaitingResults_;
     std::deque<std::shared_ptr<SqlCmd>> batchSqlCommands_;
     void sendBatchedSql();
     int sendBatchEnd();
     bool sendBatchEnd_{false};
+    bool autoBatch_{false};
     unsigned int batchCount_{0};
-    std::unordered_map<string_view, std::pair<std::string, bool>>
+    std::unordered_map<std::string_view, std::pair<std::string, bool>>
         preparedStatementsMap_;
 #else
-    std::unordered_map<string_view, std::string> preparedStatementsMap_;
+    std::unordered_map<std::string_view, std::string> preparedStatementsMap_;
 #endif
+
+    MessageCallback messageCallback_;
 };
 
 }  // namespace orm

@@ -33,11 +33,13 @@ class SharedLibManager : public trantor::NonCopyable
     void managerLibs();
     std::vector<std::string> libPaths_;
     std::string outputPath_;
+
     struct DLStat
     {
         void *handle{nullptr};
         struct timespec mTime = {0, 0};
     };
+
     std::unordered_map<std::string, DLStat> dlMap_;
     void *compileAndLoadLib(const std::string &sourceFile, void *oldHld);
     void *loadLib(const std::string &soFile, void *oldHld);

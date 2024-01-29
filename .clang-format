@@ -53,7 +53,7 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
-DerivePointerAlignment: true
+DerivePointerAlignment: false 
 DisableFormat:   false
 FixNamespaceComments: true
 ForEachMacros:   
@@ -94,7 +94,8 @@ PenaltyBreakString: 1000
 PenaltyBreakTemplateDeclaration: 10
 PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 2000
-PointerAlignment: Left
+PointerAlignment: Right 
+ReferenceAlignment: Right 
 RawStringFormats: 
   - Language:        Cpp
     Delimiters:      
@@ -124,7 +125,8 @@ RawStringFormats:
     CanonicalDelimiter: ''
     BasedOnStyle:    google
 ReflowComments:  true
-SortIncludes:    false
+SeparateDefinitionBlocks: Always
+SortIncludes:    Never
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: true

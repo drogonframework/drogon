@@ -1,6 +1,7 @@
 #pragma once
 #include <drogon/HttpController.h>
 using namespace drogon;
+
 namespace api
 {
 namespace v1
@@ -42,6 +43,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     ADD_METHOD_VIA_REGEX(ApiTest::cacheTestRegex,
                          "/cacheTestRegex/[a-y]+",
                          Get);
+    METHOD_ADD(ApiTest::echoBody, "/echoBody", Post);
     METHOD_LIST_END
 
     void get(const HttpRequestPtr &req,
@@ -73,11 +75,13 @@ class ApiTest : public drogon::HttpController<ApiTest>
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    int p1,
                    std::string &&p2);
+
     void shutdown(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback)
     {
         app().quit();
     }
+
     void cacheTest(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
     void cacheTest2(const HttpRequestPtr &req,
@@ -85,6 +89,8 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void cacheTestRegex(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback);
+    void echoBody(const HttpRequestPtr &req,
+                  std::function<void(const HttpResponsePtr &)> &&callback);
 
   public:
     ApiTest()

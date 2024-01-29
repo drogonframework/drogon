@@ -48,7 +48,8 @@ namespace internal
 #ifdef __cpp_impl_coroutine
 struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 {
-    SqlAwaiter(internal::SqlBinder &&binder) : binder_(std::move(binder))
+    explicit SqlAwaiter(internal::SqlBinder &&binder)
+        : binder_(std::move(binder))
     {
     }
 
@@ -72,7 +73,7 @@ struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 struct [[nodiscard]] TransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
-    TransactionAwaiter(DbClient *client) : client_(client)
+    explicit TransactionAwaiter(DbClient *client) : client_(client)
     {
     }
 
@@ -90,7 +91,7 @@ struct [[nodiscard]] TransactionAwaiter
 class DROGON_EXPORT DbClient : public trantor::NonCopyable
 {
   public:
-    virtual ~DbClient(){};
+    virtual ~DbClient();
     /// Create a new database client with multiple connections;
     /**
      * @param connInfo: Connection string with some parameters,
@@ -118,18 +119,21 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * @param connNum: The number of connections to database server;
      */
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
-                                                 const size_t connNum);
+                                                 size_t connNum,
+                                                 bool autoBatch = false);
     static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo,
-                                                    const size_t connNum);
+                                                    size_t connNum);
     static std::shared_ptr<DbClient> newSqlite3Client(
         const std::string &connInfo,
-        const size_t connNum);
+        size_t connNum);
 
     /// Async and nonblocking method
     /**
      * @param sql is the SQL statement to be executed;
-     * @param FUNCTION1 is usually the ResultCallback type;
-     * @param FUNCTION2 is usually the ExceptionCallback type;
+     * @tparam FUNCTION1 is usually the ResultCallback type;
+     * @tparam FUNCTION2 is usually the ExceptionCallback type;
+     * @param rCallback callback function;
+     * @param exceptCallback callback function on exception;
      * @param args are parameters that are bound to placeholders in the sql
      * parameter;
      *
@@ -183,8 +187,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
 
     // Sync and blocking method
     template <typename... Arguments>
-    const Result execSqlSync(const std::string &sql,
-                             Arguments &&...args) noexcept(false)
+    Result execSqlSync(const std::string &sql,
+                       Arguments &&...args) noexcept(false)
     {
         Result r(nullptr);
         {
@@ -216,12 +220,14 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     /// wiki page.
     internal::SqlBinder operator<<(const std::string &sql);
     internal::SqlBinder operator<<(std::string &&sql);
+
     template <int N>
     internal::SqlBinder operator<<(const char (&sql)[N])
     {
         return internal::SqlBinder(sql, N - 1, *this, type_);
     }
-    internal::SqlBinder operator<<(const string_view &sql)
+
+    internal::SqlBinder operator<<(const std::string_view &sql)
     {
         return internal::SqlBinder(sql.data(), sql.length(), *this, type_);
     }
@@ -271,7 +277,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     {
         return type_;
     }
-    const std::string &connectionInfo()
+
+    const std::string &connectionInfo() const
     {
         return connectionInfo_;
     }
@@ -287,6 +294,52 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * is not called.
      */
     virtual void setTimeout(double timeout) = 0;
+    /**
+     * @brief Close all connections in the client. usually used by Drogon in the
+     * quit() method.
+     * */
+    virtual void closeAll() = 0;
+
+    /**
+     * @brief Enable auto-batch mode.
+     * This feature is available only for PostgreSQL 14+ version and the
+     * LIBPQ_BATCH_MODE option is CMakeLists.txt is ON.
+     * When auto-batch mode is disabled (by default), every SQL query
+     * pipelined in a connection is automatically executed in an individual
+     * implicit transaction, this behavior ensures that SQL queries cannot make
+     * side-effects to each other. Most databases client drivers execute SQL
+     * queries in this way.
+     * When auto-batch mode is enabled, SQL queries are batched automatically to
+     * an implicit transaction, the synchronization point as the end of the
+     * transaction is inserted when:
+     * 1. The number of queries in the transaction has reached the upper limit;
+     * 2. The last SQL query in the transaction contains some key words shows
+     * that the query make some changes on the database server;
+     * 3. All SQL queries that are in the same call stack of the current
+     * event-loop are sent to the server;
+     * @note the auto-batch mode is unsafe for general purpose scenarios.
+     * While the framework is doing its best to reduce the side effects of this
+     * implicit transaction, there are some risks that cannot be avoided, for
+     * example:
+     * if a command is executed which happens to SELECT from a function (it
+     * makes some changes but don't cause a synchronization point), and around
+     * the same time another unrelated command is executed which produces an
+     * error (e.g. unique constraint violation), then any side-effects from the
+     * function may get rolled back, without any indication to the program that
+     * this happened. That is, the user code executing the function will
+     * continue as if the function completed successfully and its side effects
+     * were committed, when in fact they were silently rolled back.
+     *
+     * So, users should ensure that all SQL requests sent by database clients
+     * with auto-batch mode are mutually safe, a viable strategy is to ensure
+     * that all SQL is read-only and does not interrupt the current transaction.
+     * Benefiting from the reduction in the number of transactions, the
+     * automatic batch mode has a certain performance improvement for some
+     * high-concurrency scenarios. The auto-batch mode can only be enabled
+     * before the client is used, and enabling it during use will have uncertain
+     * side effects. This feature can be enabled in the configuration file.
+     * */
+    // virtual void enableAutoBatch() = 0;
 
   private:
     friend internal::SqlBinder;
@@ -304,6 +357,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     ClientType type_;
     std::string connectionInfo_;
 };
+
 using DbClientPtr = std::shared_ptr<DbClient>;
 
 class Transaction : public DbClient
@@ -313,6 +367,10 @@ class Transaction : public DbClient
     // virtual void commit() = 0;
     virtual void setCommitCallback(
         const std::function<void(bool)> &commitCallback) = 0;
+
+    void closeAll() override
+    {
+    }
 };
 
 #ifdef __cpp_impl_coroutine

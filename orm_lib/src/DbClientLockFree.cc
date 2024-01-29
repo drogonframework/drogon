@@ -17,39 +17,44 @@
 #include "TransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
 #include <drogon/config.h>
+#include <drogon/drogon.h>
+#include <drogon/orm/DbClient.h>
+#include <drogon/orm/Exception.h>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/Channel.h>
 #include <exception>
+#include <memory>
+#include <thread>
+#include <vector>
+#include <unordered_set>
+
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
 #endif
 #if USE_MYSQL
 #include "mysql_impl/MysqlConnection.h"
 #endif
-#include "TransactionImpl.h"
-#include <drogon/drogon.h>
-#include <drogon/orm/DbClient.h>
-#include <drogon/orm/Exception.h>
-#include <iostream>
-#include <memory>
-#include <sstream>
-#include <stdio.h>
+
 #ifndef _WIN32
-#include <sys/select.h>
 #include <unistd.h>
 #endif
-#include <thread>
-#include <trantor/net/EventLoop.h>
-#include <trantor/net/Channel.h>
-#include <unordered_set>
-#include <vector>
 
 using namespace drogon::orm;
 
 DbClientLockFree::DbClientLockFree(const std::string &connInfo,
                                    trantor::EventLoop *loop,
                                    ClientType type,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                                   size_t connectionNumberPerLoop,
+                                   bool autoBatch)
+#else
                                    size_t connectionNumberPerLoop)
+#endif
     : connectionInfo_(connInfo),
       loop_(loop),
+#if LIBPQ_SUPPORTS_BATCH_MODE
+      autoBatch_(autoBatch),
+#endif
       numberOfConnections_(connectionNumberPerLoop)
 {
     type_ = type;
@@ -69,10 +74,16 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo,
 
 DbClientLockFree::~DbClientLockFree() noexcept
 {
+    closeAll();
+}
+
+void DbClientLockFree::closeAll()
+{
     for (auto &conn : connections_)
     {
         conn->disconnect();
     }
+    connections_.clear();
 }
 
 void DbClientLockFree::execSql(
@@ -112,7 +123,7 @@ void DbClientLockFree::execSql(
                 (transSet_.empty() || transSet_.find(conn) == transSet_.end()))
             {
                 conn->execSql(
-                    string_view{sql, sqlLength},
+                    std::string_view{sql, sqlLength},
                     paraNum,
                     std::move(parameters),
                     std::move(length),
@@ -142,7 +153,7 @@ void DbClientLockFree::execSql(
                      transSet_.find(conn) == transSet_.end()))
                 {
                     conn->execSql(
-                        string_view{sql, sqlLength},
+                        std::string_view{sql, sqlLength},
                         paraNum,
                         std::move(parameters),
                         std::move(length),
@@ -174,7 +185,7 @@ void DbClientLockFree::execSql(
                 if (transSet_.empty() ||
                     transSet_.find(conn) == transSet_.end())
                 {
-                    conn->execSql(string_view{sql, sqlLength},
+                    conn->execSql(std::string_view{sql, sqlLength},
                                   paraNum,
                                   std::move(parameters),
                                   std::move(length),
@@ -200,7 +211,7 @@ void DbClientLockFree::execSql(
 
     // LOG_TRACE << "Push query to buffer";
     sqlCmdBuffer_.emplace_back(std::make_shared<SqlCmd>(
-        string_view{sql, sqlLength},
+        std::string_view{sql, sqlLength},
         paraNum,
         std::move(parameters),
         std::move(length),
@@ -289,7 +300,7 @@ void DbClientLockFree::makeTrans(
     std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
 {
     std::weak_ptr<DbClientLockFree> weakThis = shared_from_this();
-    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(
+    auto trans = std::make_shared<TransactionImpl>(
         type_, conn, std::function<void(bool)>(), [weakThis, conn]() {
             auto thisPtr = weakThis.lock();
             if (!thisPtr)
@@ -331,7 +342,7 @@ void DbClientLockFree::makeTrans(
                     break;
                 }
             }
-        }));
+        });
     transSet_.insert(conn);
     trans->doBegin();
     if (timeout_ > 0.0)
@@ -398,7 +409,12 @@ DbConnectionPtr DbClientLockFree::newConnection()
     if (type_ == ClientType::PostgreSQL)
     {
 #if USE_POSTGRESQL
-        connPtr = std::make_shared<PgConnection>(loop_, connectionInfo_);
+#if LIBPQ_SUPPORTS_BATCH_MODE
+        connPtr =
+            std::make_shared<PgConnection>(loop_, connectionInfo_, autoBatch_);
+#else
+        connPtr = std::make_shared<PgConnection>(loop_, connectionInfo_, false);
+#endif
 #else
         return nullptr;
 #endif
@@ -538,7 +554,7 @@ void DbClientLockFree::execSqlWithTimeout(
                 (transSet_.empty() || transSet_.find(conn) == transSet_.end()))
             {
                 conn->execSql(
-                    string_view{sql, sqlLength},
+                    std::string_view{sql, sqlLength},
                     paraNum,
                     std::move(parameters),
                     std::move(length),
@@ -571,7 +587,7 @@ void DbClientLockFree::execSqlWithTimeout(
                      transSet_.find(conn) == transSet_.end()))
                 {
                     conn->execSql(
-                        string_view{sql, sqlLength},
+                        std::string_view{sql, sqlLength},
                         paraNum,
                         std::move(parameters),
                         std::move(length),
@@ -606,7 +622,7 @@ void DbClientLockFree::execSqlWithTimeout(
                 if (transSet_.empty() ||
                     transSet_.find(conn) == transSet_.end())
                 {
-                    conn->execSql(string_view{sql, sqlLength},
+                    conn->execSql(std::string_view{sql, sqlLength},
                                   paraNum,
                                   std::move(parameters),
                                   std::move(length),
@@ -632,7 +648,7 @@ void DbClientLockFree::execSqlWithTimeout(
 
     // LOG_TRACE << "Push query to buffer";
     auto cmdPtr = std::make_shared<SqlCmd>(
-        string_view{sql, sqlLength},
+        std::string_view{sql, sqlLength},
         paraNum,
         std::move(parameters),
         std::move(length),

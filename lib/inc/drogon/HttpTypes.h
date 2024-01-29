@@ -15,8 +15,9 @@
 #include <atomic>
 #include <thread>
 #include <iostream>
-#include <drogon/utils/string_view.h>
+#include <string_view>
 #include <trantor/utils/LogStream.h>
+#include <drogon/utils/Utilities.h>
 
 namespace drogon
 {
@@ -102,7 +103,8 @@ enum ContentType
     CT_TEXT_PLAIN,
     CT_TEXT_HTML,
     CT_APPLICATION_X_FORM,
-    CT_APPLICATION_X_JAVASCRIPT,
+    CT_APPLICATION_X_JAVASCRIPT [[deprecated("use CT_TEXT_JAVASCRIPT")]],
+    CT_TEXT_JAVASCRIPT,
     CT_TEXT_CSS,
     CT_TEXT_XML,
     CT_APPLICATION_XML,
@@ -160,6 +162,7 @@ enum class ReqResult
     Timeout,
     HandshakeError,
     InvalidCertificate,
+    EncryptionFailure,
 };
 
 enum class WebSocketMessageType
@@ -172,7 +175,7 @@ enum class WebSocketMessageType
     Unknown
 };
 
-inline string_view to_string_view(drogon::ReqResult result)
+inline std::string_view to_string_view(drogon::ReqResult result)
 {
     switch (result)
     {
@@ -190,6 +193,8 @@ inline string_view to_string_view(drogon::ReqResult result)
             return "Handshake error";
         case ReqResult::InvalidCertificate:
             return "Invalid certificate";
+        case ReqResult::EncryptionFailure:
+            return "Unrecoverable encryption failure";
         default:
             return "Unknown error";
     }
@@ -197,7 +202,8 @@ inline string_view to_string_view(drogon::ReqResult result)
 
 inline std::string to_string(drogon::ReqResult result)
 {
-    return to_string_view(result).data();
+    auto sv = to_string_view(result);
+    return std::string(sv.data(), sv.size());
 }
 
 inline std::ostream &operator<<(std::ostream &out, drogon::ReqResult result)
@@ -210,4 +216,34 @@ inline trantor::LogStream &operator<<(trantor::LogStream &out,
 {
     return out << to_string_view(result);
 }
+
+inline std::string_view to_string_view(drogon::HttpMethod method)
+{
+    switch (method)
+    {
+        case drogon::HttpMethod::Get:
+            return "GET";
+        case drogon::HttpMethod::Post:
+            return "POST";
+        case drogon::HttpMethod::Head:
+            return "HEAD";
+        case drogon::HttpMethod::Put:
+            return "PUT";
+        case drogon::HttpMethod::Delete:
+            return "DELETE";
+        case drogon::HttpMethod::Options:
+            return "OPTIONS";
+        case drogon::HttpMethod::Patch:
+            return "PATCH";
+        default:
+            return "INVALID";
+    }
+}
+
+inline std::string to_string(drogon::HttpMethod method)
+{
+    auto sv = to_string_view(method);
+    return std::string(sv.data(), sv.size());
+}
+
 }  // namespace drogon

@@ -16,7 +16,8 @@
 #include <drogon/exports.h>
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/nosql/RedisException.h>
-#include <drogon/utils/string_view.h>
+#include <drogon/nosql/RedisSubscriber.h>
+#include <string_view>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
 #include <memory>
@@ -33,16 +34,19 @@ namespace nosql
 #ifdef __cpp_impl_coroutine
 class RedisClient;
 class RedisTransaction;
+
 namespace internal
 {
 struct [[nodiscard]] RedisAwaiter : public CallbackAwaiter<RedisResult>
 {
     using RedisFunction =
         std::function<void(RedisResultCallback &&, RedisExceptionCallback &&)>;
+
     explicit RedisAwaiter(RedisFunction &&function)
         : function_(std::move(function))
     {
     }
+
     void await_suspend(std::coroutine_handle<> handle)
     {
         function_(
@@ -77,6 +81,7 @@ struct [[nodiscard]] RedisTransactionAwaiter
 #endif
 
 class RedisTransaction;
+
 /**
  * @brief This class represents a redis client that contains several connections
  * to a redis server.
@@ -90,6 +95,7 @@ class DROGON_EXPORT RedisClient
      *
      * @param serverAddress The server address.
      * @param numberOfConnections The number of connections. 1 by default.
+     * @param username The username to authenticate if necessary.
      * @param password The password to authenticate if necessary.
      * @return std::shared_ptr<RedisClient>
      */
@@ -97,7 +103,8 @@ class DROGON_EXPORT RedisClient
         const trantor::InetAddress &serverAddress,
         size_t numberOfConnections = 1,
         const std::string &password = "",
-        const unsigned int db = 0);
+        unsigned int db = 0,
+        const std::string &username = "");
     /**
      * @brief Execute a redis command
      *
@@ -120,7 +127,7 @@ class DROGON_EXPORT RedisClient
      */
     virtual void execCommandAsync(RedisResultCallback &&resultCallback,
                                   RedisExceptionCallback &&exceptionCallback,
-                                  string_view command,
+                                  std::string_view command,
                                   ...) noexcept = 0;
 
     /**
@@ -154,30 +161,53 @@ class DROGON_EXPORT RedisClient
      */
     template <typename T, typename... Args>
     T execCommandSync(std::function<T(const RedisResult &)> &&processFunc,
-                      string_view command,
+                      std::string_view command,
                       Args &&...args)
     {
-        std::shared_ptr<std::promise<T>> pro(new std::promise<T>);
-        std::future<T> f = pro->get_future();
+        return execCommandSync<std::decay_t<decltype(processFunc)>>(
+            std::move(processFunc), command, std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief Execute a redis command synchronously
+     * Return type can be deduced automatically in this version.
+     */
+    template <typename F, typename... Args>
+    std::invoke_result_t<F, const RedisResult &> execCommandSync(
+        F &&processFunc,
+        std::string_view command,
+        Args &&...args)
+    {
+        using Ret = std::invoke_result_t<F, const RedisResult &>;
+        std::promise<Ret> prom;
         execCommandAsync(
-            [process = std::move(processFunc), pro](const RedisResult &result) {
+            [&processFunc, &prom](const RedisResult &result) {
                 try
                 {
-                    pro->set_value(process(result));
+                    prom.set_value(processFunc(result));
                 }
                 catch (...)
                 {
-                    pro->set_exception(std::current_exception());
+                    prom.set_exception(std::current_exception());
                 }
             },
-            [pro](const RedisException &err) {
-                pro->set_exception(std::make_exception_ptr(err));
+            [&prom](const RedisException &err) {
+                prom.set_exception(std::make_exception_ptr(err));
             },
             command,
             std::forward<Args>(args)...);
 
-        return f.get();
+        return prom.get_future().get();
     }
+
+    /**
+     * @brief Create a subscriber for redis subscribe commands.
+     *
+     * @return std::shared_ptr<RedisSubscriber>
+     * @note This subscriber creates a new redis connection dedicated to
+     * subscribe commands. This connection is managed by RedisClient.
+     */
+    virtual std::shared_ptr<RedisSubscriber> newSubscriber() noexcept = 0;
 
     /**
      * @brief Create a redis transaction object.
@@ -205,13 +235,20 @@ class DROGON_EXPORT RedisClient
      * @param timeout in seconds, if the result is not returned from the
      * server within the timeout, a RedisException with "Command execution
      * timeout" string is generated and returned to the caller.
-     * @note set the timeout value to zero or negative for no limit on time. The
-     * default value is -1.0, this means there is no time limit if this method
-     * is not called.
+     * @note set the timeout value to zero or negative for no limit on time.
+     * The default value is -1.0, this means there is no time limit if this
+     * method is not called.
      */
     virtual void setTimeout(double timeout) = 0;
 
     virtual ~RedisClient() = default;
+
+    /**
+     * @brief Close all connections in the client. usually used by Drogon in the
+     * quit() method.
+     * */
+    virtual void closeAll() = 0;
+
 #ifdef __cpp_impl_coroutine
     /**
      * @brief Send a Redis command and await the RedisResult in a coroutine.
@@ -235,7 +272,7 @@ class DROGON_EXPORT RedisClient
        @endcode
      */
     template <typename... Arguments>
-    internal::RedisAwaiter execCommandCoro(string_view command,
+    internal::RedisAwaiter execCommandCoro(std::string_view command,
                                            Arguments... args)
     {
         return internal::RedisAwaiter(
@@ -249,6 +286,7 @@ class DROGON_EXPORT RedisClient
                                  args...);
             });
     }
+
     /**
      * @brief await a RedisTransactionPtr in a coroutine.
      *
@@ -273,6 +311,7 @@ class DROGON_EXPORT RedisClient
     }
 #endif
 };
+
 class DROGON_EXPORT RedisTransaction : public RedisClient
 {
   public:
@@ -310,7 +349,11 @@ class DROGON_EXPORT RedisTransaction : public RedisClient
             });
     }
 #endif
+    void closeAll() override
+    {
+    }
 };
+
 using RedisClientPtr = std::shared_ptr<RedisClient>;
 using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
 
@@ -320,7 +363,7 @@ inline void internal::RedisTransactionAwaiter::await_suspend(
 {
     assert(client_ != nullptr);
     client_->newTransactionAsync(
-        [this, &handle](const std::shared_ptr<RedisTransaction> &transaction) {
+        [this, handle](const std::shared_ptr<RedisTransaction> &transaction) {
             if (transaction == nullptr)
                 setException(std::make_exception_ptr(RedisException(
                     RedisErrorCode::kTimeout,

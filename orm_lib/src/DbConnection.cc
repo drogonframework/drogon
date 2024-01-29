@@ -19,7 +19,7 @@
 using namespace drogon::orm;
 
 std::map<std::string, std::string> DbConnection::parseConnString(
-    const std::string& connInfo)
+    const std::string &connInfo)
 {
     const static std::regex re(
         R"((\w+) *= *('(?:[^\n]|\\[^\n])+'|(?:\S|\\\S)+))");

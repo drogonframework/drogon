@@ -41,7 +41,11 @@
         //enable_session: False by default
         "enable_session": false,
         "session_timeout": 0,
-        //document_root: Root path of HTTP document, defaut path is ./
+        //session_cookie_key: The cookie key of the session, "JSESSIONID" by default
+        "session_cookie_key": "JSESSIONID",
+        //session_max_age: The max age of the session cookie, -1 by default
+        "session_max_age": -1,
+        //document_root: Root path of HTTP document, default path is ./
         "document_root": "./",
         //home_page: Set the HTML file of the home page, the default value is "index.html"
         //If there isn't any handler registered to the path "/", the home page file in the "document_root" is send to clients as a response
@@ -107,7 +111,7 @@
         ],
         //max_connections: maximum number of connections, 100000 by default
         "max_connections": 100000,
-        //max_connections_per_ip: maximum number of connections per clinet, 0 by default which means no limit
+        //max_connections_per_ip: maximum number of connections per client, 0 by default which means no limit
         "max_connections_per_ip": 0,
         //Load_dynamic_views: False by default, when set to true, drogon
         //compiles and loads dynamically "CSP View Files" in directories defined

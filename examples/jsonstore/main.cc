@@ -50,8 +50,8 @@ class JsonStore : public HttpController<JsonStore>
     ADD_METHOD_VIA_REGEX(JsonStore::updateItem, "/([a-f0-9]{64})/(.*)", Put);
     METHOD_LIST_END
 
-    void getToken(const HttpRequestPtr&,
-                  std::function<void(const HttpResponsePtr&)>&& callback)
+    void getToken(const HttpRequestPtr &,
+                  std::function<void(const HttpResponsePtr &)> &&callback)
     {
         std::string randomString = getRandomString(64);
         Json::Value res;
@@ -60,10 +60,10 @@ class JsonStore : public HttpController<JsonStore>
         callback(HttpResponse::newHttpJsonResponse(std::move(res)));
     }
 
-    void getItem(const HttpRequestPtr&,
-                 std::function<void(const HttpResponsePtr&)>&& callback,
-                 const std::string& token,
-                 const std::string& path)
+    void getItem(const HttpRequestPtr &,
+                 std::function<void(const HttpResponsePtr &)> &&callback,
+                 const std::string &token,
+                 const std::string &path)
     {
         auto itemPtr = [this, &token]() -> std::shared_ptr<DataItem> {
             // It is possible that the item is being removed while another
@@ -81,12 +81,12 @@ class JsonStore : public HttpController<JsonStore>
             return;
         }
 
-        auto& item = *itemPtr;
+        auto &item = *itemPtr;
         // Prevents another thread from writing to the same item while this
         // thread reads. Could cause blockage if multiple clients are asking to
         // read the same object. But that should be rare.
         std::lock_guard<std::mutex> lock(item.mtx);
-        Json::Value* valuePtr = walkJson(item.item, path);
+        Json::Value *valuePtr = walkJson(item.item, path);
 
         if (valuePtr == nullptr)
         {
@@ -98,10 +98,10 @@ class JsonStore : public HttpController<JsonStore>
         callback(resp);
     }
 
-    void updateItem(const HttpRequestPtr& req,
-                    std::function<void(const HttpResponsePtr&)>&& callback,
-                    const std::string& token,
-                    const std::string& path)
+    void updateItem(const HttpRequestPtr &req,
+                    std::function<void(const HttpResponsePtr &)> &&callback,
+                    const std::string &token,
+                    const std::string &path)
     {
         auto jsonPtr = req->jsonObject();
         auto itemPtr = [this, &token]() -> std::shared_ptr<DataItem> {
@@ -121,9 +121,9 @@ class JsonStore : public HttpController<JsonStore>
             return;
         }
 
-        auto& item = *itemPtr;
+        auto &item = *itemPtr;
         std::lock_guard<std::mutex> lock(item.mtx);
-        Json::Value* valuePtr = walkJson(item.item, path, 1);
+        Json::Value *valuePtr = walkJson(item.item, path, 1);
 
         if (valuePtr == nullptr)
         {
@@ -137,9 +137,9 @@ class JsonStore : public HttpController<JsonStore>
         callback(makeSuccessResponse());
     }
 
-    void createItem(const HttpRequestPtr& req,
-                    std::function<void(const HttpResponsePtr&)>&& callback,
-                    const std::string& token)
+    void createItem(const HttpRequestPtr &req,
+                    std::function<void(const HttpResponsePtr &)> &&callback,
+                    const std::string &token)
     {
         auto jsonPtr = req->jsonObject();
         if (jsonPtr == nullptr)
@@ -163,9 +163,9 @@ class JsonStore : public HttpController<JsonStore>
         }
     }
 
-    void deleteItem(const HttpRequestPtr&,
-                    std::function<void(const HttpResponsePtr&)>&& callback,
-                    const std::string& token)
+    void deleteItem(const HttpRequestPtr &,
+                    std::function<void(const HttpResponsePtr &)> &&callback,
+                    const std::string &token)
     {
         std::lock_guard<std::mutex> lock(storageMtx_);
         dataStore_.erase(token);
@@ -174,19 +174,19 @@ class JsonStore : public HttpController<JsonStore>
     }
 
   protected:
-    static Json::Value* walkJson(Json::Value& json,
-                                 const std::string& path,
+    static Json::Value *walkJson(Json::Value &json,
+                                 const std::string &path,
                                  size_t ignore_back = 0)
     {
         auto pathElem = utils::splitString(path, "/", false);
         if (pathElem.size() >= ignore_back)
             pathElem.resize(pathElem.size() - ignore_back);
-        Json::Value* valuePtr = &json;
-        for (const auto& elem : pathElem)
+        Json::Value *valuePtr = &json;
+        for (const auto &elem : pathElem)
         {
             if (valuePtr->isArray())
             {
-                Json::Value& value = (*valuePtr)[std::stoi(elem)];
+                Json::Value &value = (*valuePtr)[std::stoi(elem)];
                 if (value.isNull())
                     return nullptr;
 
@@ -194,7 +194,7 @@ class JsonStore : public HttpController<JsonStore>
             }
             else
             {
-                Json::Value& value = (*valuePtr)[elem];
+                Json::Value &value = (*valuePtr)[elem];
                 if (value.isNull())
                     return nullptr;
 

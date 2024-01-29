@@ -1,5 +1,6 @@
 #include "api_v1_ApiTest.h"
 using namespace api::v1;
+
 // add definition of your processing function here
 void ApiTest::rootGet(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback)
@@ -8,6 +9,7 @@ void ApiTest::rootGet(const HttpRequestPtr &req,
     res->setBody("ROOT Get!!!");
     callback(res);
 }
+
 void ApiTest::rootPost(const HttpRequestPtr &req,
                        std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -17,6 +19,7 @@ void ApiTest::rootPost(const HttpRequestPtr &req,
         callback(res);
     }).detach();
 }
+
 void ApiTest::get(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback,
                   int p1,
@@ -24,7 +27,9 @@ void ApiTest::get(const HttpRequestPtr &req,
 {
     HttpViewData data;
     data.insert("title", std::string("ApiTest::get"));
-    std::unordered_map<std::string, std::string> para;
+    std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            para;
     para["p1"] = std::to_string(p1);
     para["p2"] = p2;
     data.insert("parameters", para);
@@ -41,16 +46,19 @@ void ApiTest::your_method_name(
     LOG_WARN << req->matchedPathPatternData();
     HttpViewData data;
     data.insert("title", std::string("ApiTest::get"));
-    std::unordered_map<std::string, std::string> para;
+    std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            para;
     para["p1"] = std::to_string(p1);
     para["p2"] = std::to_string(p2);
-    para["p3"] = HttpViewData::htmlTranslate(string_view(
+    para["p3"] = HttpViewData::htmlTranslate(std::string_view(
         "<script>alert(\" This should not be displayed in a browser alert "
         "box.\");</script>"));
     data.insert("parameters", para);
     auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
     callback(res);
 }
+
 void ApiTest::staticApi(const HttpRequestPtr &req,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -456,6 +464,7 @@ void ApiTest::regexTest(const HttpRequestPtr &req,
 }
 
 static std::mutex cacheTestMtx;
+
 void ApiTest::cacheTest(const HttpRequestPtr &req,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -472,6 +481,7 @@ void ApiTest::cacheTest(const HttpRequestPtr &req,
 }
 
 static std::mutex cacheTest2Mtx;
+
 void ApiTest::cacheTest2(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
@@ -491,6 +501,7 @@ void ApiTest::cacheTest2(
 }
 
 static std::mutex regexCacheApiMtx;
+
 void ApiTest::cacheTestRegex(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
@@ -507,4 +518,12 @@ void ApiTest::cacheTestRegex(
         resp->setExpiredTime(31536000000);
     callback(resp);
     callCount++;
+}
+
+void ApiTest::echoBody(const HttpRequestPtr &req,
+                       std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setBody(std::string(req->body()));
+    callback(resp);
 }

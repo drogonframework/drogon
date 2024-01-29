@@ -118,7 +118,7 @@ void create_controller::newSimpleControllerHeaderFile(
          << class_name << ">\n";
     file << "{\n";
     file << "  public:\n";
-    file << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& "
+    file << "    void asyncHandleHttpRequest(const HttpRequestPtr& "
             "req, std::function<void (const HttpResponsePtr &)> &&callback) "
             "override;\n";
 
@@ -135,6 +135,7 @@ void create_controller::newSimpleControllerHeaderFile(
         file << "}\n";
     }
 }
+
 void create_controller::newSimpleControllerSourceFile(
     std::ofstream &file,
     const std::string &className,
@@ -187,15 +188,14 @@ void create_controller::newWebsockControllerHeaderFile(
          << class_name << ">\n";
     file << "{\n";
     file << "  public:\n";
-    file
-        << "    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
+    file << "     void handleNewMessage(const WebSocketConnectionPtr&,\n";
     file << "                                  std::string &&,\n";
     file << "                                  const WebSocketMessageType &) "
             "override;\n";
-    file << "    virtual void handleNewConnection(const HttpRequestPtr &,\n";
+    file << "    void handleNewConnection(const HttpRequestPtr &,\n";
     file << "                                     const "
             "WebSocketConnectionPtr&) override;\n";
-    file << "    virtual void handleConnectionClosed(const "
+    file << "    void handleConnectionClosed(const "
             "WebSocketConnectionPtr&) override;\n";
     file << "    WS_PATH_LIST_BEGIN\n";
     file << "    // list path definitions here;\n";
@@ -208,6 +208,7 @@ void create_controller::newWebsockControllerHeaderFile(
         file << "}\n";
     }
 }
+
 void create_controller::newWebsockControllerSourceFile(
     std::ofstream &file,
     const std::string &className,
@@ -304,6 +305,7 @@ void create_controller::newHttpControllerHeaderFile(
         file << "}\n";
     }
 }
+
 void create_controller::newHttpControllerSourceFile(
     std::ofstream &file,
     const std::string &className,
