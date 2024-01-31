@@ -49,10 +49,10 @@ class BlogTag
         static const std::string _tag_id;
     };
 
-    const static int primaryKeyNumber;
-    const static std::string tableName;
-    const static bool hasPrimaryKey;
-    const static std::vector<std::string> primaryKeyName;
+    static const int primaryKeyNumber;
+    static const std::string tableName;
+    static const bool hasPrimaryKey;
+    static const std::vector<std::string> primaryKeyName;
     using PrimaryKeyType = std::tuple<int64_t, int64_t>;  // blog_id,tag_id
     PrimaryKeyType getPrimaryKey() const;
 
