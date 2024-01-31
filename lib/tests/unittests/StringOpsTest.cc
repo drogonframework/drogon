@@ -4,7 +4,7 @@
 
 struct SameContent
 {
-    SameContent(const std::vector<std::string> &container)
+    explicit SameContent(const std::vector<std::string> &container)
         : container_(container.begin(), container.end())
     {
     }

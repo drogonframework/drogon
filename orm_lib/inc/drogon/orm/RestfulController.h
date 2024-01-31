@@ -92,7 +92,7 @@ class DROGON_EXPORT RestfulController : trantor::NonCopyable
     orm::Criteria makeCriteria(const Json::Value &pJson) noexcept(false);
 
   protected:
-    RestfulController(const std::vector<std::string> &columnsVector)
+    explicit RestfulController(const std::vector<std::string> &columnsVector)
         : columnsVector_(columnsVector)
     {
     }

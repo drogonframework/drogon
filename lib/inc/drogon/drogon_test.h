@@ -171,7 +171,7 @@ struct Lhs
         return {(bool)ref_, attemptPrint(ref_)};
     }
 
-    Lhs(const T &lhs) : ref_(lhs)
+    explicit Lhs(const T &lhs) : ref_(lhs)
     {
     }
 
@@ -299,7 +299,7 @@ class CaseBase : public trantor::NonCopyable
   public:
     CaseBase() = default;
 
-    CaseBase(const std::string &name) : name_(name)
+    explicit CaseBase(const std::string &name) : name_(name)
     {
     }
 
@@ -352,7 +352,7 @@ class CaseBase : public trantor::NonCopyable
 class Case : public CaseBase
 {
   public:
-    Case(const std::string &name) : CaseBase(name)
+    explicit Case(const std::string &name) : CaseBase(name)
     {
         internal::registerCase(this);
     }
@@ -371,7 +371,7 @@ class Case : public CaseBase
 
 struct TestCase : public CaseBase
 {
-    TestCase(const std::string &name) : CaseBase(name)
+    explicit TestCase(const std::string &name) : CaseBase(name)
     {
     }
 

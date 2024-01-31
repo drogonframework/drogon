@@ -218,7 +218,7 @@ class HttpBinder : public HttpBinderBase
         return traits::arity;
     }
 
-    HttpBinder(FUNCTION &&func) : func_(std::forward<FUNCTION>(func))
+    explicit HttpBinder(FUNCTION &&func) : func_(std::forward<FUNCTION>(func))
     {
         static_assert(traits::isHTTPFunction,
                       "Your API handler function interface is wrong!");

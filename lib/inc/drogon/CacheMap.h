@@ -39,7 +39,7 @@ namespace drogon
 class CallbackEntry
 {
   public:
-    CallbackEntry(std::function<void()> cb) : cb_(std::move(cb))
+    explicit CallbackEntry(std::function<void()> cb) : cb_(std::move(cb))
     {
     }
 
@@ -189,11 +189,11 @@ class CacheMap
         {
         }
 
-        MapValue(T2 &&value) : value_(std::move(value))
+        explicit MapValue(T2 &&value) : value_(std::move(value))
         {
         }
 
-        MapValue(const T2 &value) : value_(value)
+        explicit MapValue(const T2 &value) : value_(value)
         {
         }
 

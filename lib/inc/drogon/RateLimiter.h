@@ -56,7 +56,7 @@ class DROGON_EXPORT RateLimiter
 class DROGON_EXPORT SafeRateLimiter : public RateLimiter
 {
   public:
-    SafeRateLimiter(RateLimiterPtr limiter) : limiter_(limiter)
+    explicit SafeRateLimiter(RateLimiterPtr limiter) : limiter_(limiter)
     {
     }
 

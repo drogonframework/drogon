@@ -57,7 +57,7 @@ class StopWatch
 class LifeTimeWatch
 {
   public:
-    LifeTimeWatch(std::function<void(double)> callback)
+    explicit LifeTimeWatch(std::function<void(double)> callback)
         : stopWatch_(), callback_(std::move(callback))
     {
         assert(callback_);

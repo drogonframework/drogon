@@ -83,7 +83,7 @@ class PivotTable
   public:
     PivotTable() = default;
 
-    PivotTable(const Json::Value &json)
+    explicit PivotTable(const Json::Value &json)
         : tableName_(json.get("table_name", "").asString())
     {
         if (tableName_.empty())
@@ -135,7 +135,7 @@ class PivotTable
 class ConvertMethod
 {
   public:
-    ConvertMethod(const Json::Value &convert)
+    explicit ConvertMethod(const Json::Value &convert)
     {
         tableName_ = convert.get("table", "*").asString();
         colName_ = convert.get("column", "*").asString();
@@ -215,7 +215,7 @@ class Relationship
         ManyToMany
     };
 
-    Relationship(const Json::Value &relationship)
+    explicit Relationship(const Json::Value &relationship)
     {
         auto type = relationship.get("type", "has one").asString();
         if (type == "has one")

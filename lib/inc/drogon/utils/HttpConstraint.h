@@ -31,17 +31,17 @@ enum class ConstraintType
 class HttpConstraint
 {
   public:
-    HttpConstraint(HttpMethod method)
+    explicit HttpConstraint(HttpMethod method)
         : type_(ConstraintType::HttpMethod), method_(method)
     {
     }
 
-    HttpConstraint(const std::string &filterName)
+    explicit HttpConstraint(const std::string &filterName)
         : type_(ConstraintType::HttpFilter), filterName_(filterName)
     {
     }
 
-    HttpConstraint(const char *filterName)
+    explicit HttpConstraint(const char *filterName)
         : type_(ConstraintType::HttpFilter), filterName_(filterName)
     {
     }

@@ -7,7 +7,7 @@ using namespace drogon;
 
 struct TestCookie
 {
-    TestCookie(std::shared_ptr<test::CaseBase> ctx) : TEST_CTX(ctx)
+    explicit TestCookie(std::shared_ptr<test::CaseBase> ctx) : TEST_CTX(ctx)
     {
     }
 

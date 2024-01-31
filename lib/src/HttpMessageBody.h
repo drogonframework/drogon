@@ -71,12 +71,12 @@ class HttpMessageStringBody : public HttpMessageBody
         type_ = BodyType::kString;
     }
 
-    HttpMessageStringBody(const std::string &body) : body_(body)
+    explicit HttpMessageStringBody(const std::string &body) : body_(body)
     {
         type_ = BodyType::kString;
     }
 
-    HttpMessageStringBody(std::string &&body) : body_(std::move(body))
+    explicit HttpMessageStringBody(std::string &&body) : body_(std::move(body))
     {
         type_ = BodyType::kString;
     }

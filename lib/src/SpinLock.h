@@ -23,7 +23,7 @@ namespace drogon
 class SpinLock
 {
   public:
-    inline SpinLock(std::atomic<bool> &flag) : flag_(flag)
+    inline explicit SpinLock(std::atomic<bool> &flag) : flag_(flag)
     {
         const static int cpu = std::thread::hardware_concurrency();
         int n, i;
@@ -66,7 +66,7 @@ class SpinLock
 class SimpleSpinLock
 {
   public:
-    inline SimpleSpinLock(std::atomic_flag &flag) : flag_(flag)
+    inline explicit SimpleSpinLock(std::atomic_flag &flag) : flag_(flag)
     {
         while (flag_.test_and_set(std::memory_order_acquire))
         {

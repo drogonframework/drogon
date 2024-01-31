@@ -354,7 +354,7 @@ struct AsyncTask
 
     AsyncTask() = default;
 
-    AsyncTask(handle_type h) : coro_(h)
+    explicit AsyncTask(handle_type h) : coro_(h)
     {
     }
 
