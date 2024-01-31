@@ -290,8 +290,9 @@ static void loadApp(const Json::Value &app)
             std::vector<std::pair<std::string, std::string>> headers;
             for (auto &header : app["static_file_headers"])
             {
-                headers.emplace_back(std::make_pair<std::string, std::string>(
-                    header["name"].asString(), header["value"].asString()));
+                headers.emplace_back(
+                    std::make_pair(header["name"].asString(),
+                                   header["value"].asString()));
             }
             drogon::app().setStaticFileHeaders(headers);
         }
