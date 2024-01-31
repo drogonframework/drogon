@@ -5,7 +5,7 @@ using namespace drogon;
 class ForwardCtrl : public drogon::HttpSimpleController<ForwardCtrl>
 {
   public:
-    virtual void asyncHandleHttpRequest(
+    void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
