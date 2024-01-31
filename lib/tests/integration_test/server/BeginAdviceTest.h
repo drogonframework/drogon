@@ -7,7 +7,7 @@ using namespace drogon;
 class BeginAdviceTest : public drogon::HttpSimpleController<BeginAdviceTest>
 {
   public:
-    virtual void asyncHandleHttpRequest(
+    void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
