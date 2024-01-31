@@ -178,10 +178,10 @@ void create_model::createModelClassFromPG(
         data["schema"] = schema;
     }
     std::vector<ColumnInfo> cols;
-    *client << "SELECT * \
-                FROM information_schema.columns \
-                WHERE table_schema = $1 \
-                AND table_name   = $2"
+    *client << "SELECT * "
+               "FROM information_schema.columns "
+               "WHERE table_schema = $1 "
+               "AND table_name   = $2"
             << schema << tableName << Mode::Blocking >>
         [&](const Result &r) {
             if (r.size() == 0)
@@ -284,14 +284,14 @@ void create_model::createModelClassFromPG(
             exit(1);
         };
     size_t pkNumber = 0;
-    *client << "SELECT \
-                pg_constraint.conname AS pk_name,\
-                pg_constraint.conkey AS pk_vector \
-                FROM pg_constraint \
-                INNER JOIN pg_class ON pg_constraint.conrelid = pg_class.oid \
-                WHERE \
-                pg_class.relname = $1 \
-                AND pg_constraint.contype = 'p'"
+    *client << "SELECT "
+               "pg_constraint.conname AS pk_name,"
+               "pg_constraint.conkey AS pk_vector "
+               "FROM pg_constraint "
+               "INNER JOIN pg_class ON pg_constraint.conrelid = pg_class.oid "
+               "WHERE "
+               "pg_class.relname = $1 "
+               "AND pg_constraint.contype = 'p'"
             << tableName << Mode::Blocking >>
         [&](bool isNull,
             const std::string &pkName,
