@@ -127,7 +127,7 @@ class Base64CharMap
     char charMap_[256]{0};
 };
 
-const static Base64CharMap base64CharMap;
+static const Base64CharMap base64CharMap;
 
 static inline bool isBase64(unsigned char c)
 {

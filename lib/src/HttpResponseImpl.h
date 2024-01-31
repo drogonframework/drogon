@@ -143,7 +143,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     const std::string &getHeaderBy(const std::string &lowerKey) const
     {
-        const static std::string defaultVal;
+        static const std::string defaultVal;
         auto iter = headers_.find(lowerKey);
         if (iter == headers_.end())
         {
@@ -298,7 +298,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     const std::string &getJsonError() const override
     {
-        const static std::string none;
+        static const std::string none;
         if (jsonParsingErrorPtr_)
             return *jsonParsingErrorPtr_;
         return none;

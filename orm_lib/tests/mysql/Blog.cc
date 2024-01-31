@@ -219,7 +219,7 @@ void Blog::updateByJson(const Json::Value &pJson) noexcept(false)
 
 const int32_t &Blog::getValueOfId() const noexcept
 {
-    const static int32_t defaultValue = int32_t();
+    static const int32_t defaultValue = int32_t();
     if (id_)
         return *id_;
     return defaultValue;
@@ -244,7 +244,7 @@ const typename Blog::PrimaryKeyType &Blog::getPrimaryKey() const
 
 const std::string &Blog::getValueOfTitle() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (title_)
         return *title_;
     return defaultValue;
@@ -275,7 +275,7 @@ void Blog::setTitleToNull() noexcept
 
 const int32_t &Blog::getValueOfCategoryId() const noexcept
 {
-    const static int32_t defaultValue = int32_t();
+    static const int32_t defaultValue = int32_t();
     if (categoryId_)
         return *categoryId_;
     return defaultValue;
@@ -703,7 +703,7 @@ bool Blog::validJsonOfField(size_t index,
 
 Category Blog::getCategory(const DbClientPtr &clientPtr) const
 {
-    const static std::string sql = "select * from category where id = ?";
+    static const std::string sql = "select * from category where id = ?";
     Result r(nullptr);
     {
         auto binder = *clientPtr << sql;
@@ -726,7 +726,7 @@ void Blog::getCategory(const DbClientPtr &clientPtr,
                        const std::function<void(Category)> &rcb,
                        const ExceptionCallback &ecb) const
 {
-    const static std::string sql = "select * from category where id = ?";
+    static const std::string sql = "select * from category where id = ?";
     *clientPtr << sql << *categoryId_ >> [rcb = std::move(rcb),
                                           ecb](const Result &r) {
         if (r.size() == 0)
@@ -747,7 +747,7 @@ void Blog::getCategory(const DbClientPtr &clientPtr,
 std::vector<std::pair<Tag, BlogTag>> Blog::getTags(
     const DbClientPtr &clientPtr) const
 {
-    const static std::string sql =
+    static const std::string sql =
         "select * from tag,blog_tag where blog_tag.blog_id = ? and "
         "blog_tag.tag_id = tag.id";
     Result r(nullptr);
@@ -773,7 +773,7 @@ void Blog::getTags(
     const std::function<void(std::vector<std::pair<Tag, BlogTag>>)> &rcb,
     const ExceptionCallback &ecb) const
 {
-    const static std::string sql =
+    static const std::string sql =
         "select * from tag,blog_tag where blog_tag.blog_id = ? and "
         "blog_tag.tag_id = tag.id";
     *clientPtr << sql << *id_ >> [rcb = std::move(rcb)](const Result &r) {
