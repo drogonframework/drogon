@@ -812,7 +812,7 @@ struct WaitForNotify : public CallbackAwaiter<void>
             else
                 handle_ = handle;
         }
-        if(should_resume)
+        if (should_resume)
             handle.resume();
     }
 
@@ -825,7 +825,7 @@ struct WaitForNotify : public CallbackAwaiter<void>
             if (handle_)
                 should_resume = true;
         }
-        if(should_resume)
+        if (should_resume)
             handle_.resume();
     }
 
