@@ -848,8 +848,14 @@ inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
 /**
  * @brief Waits for all tasks to complete. Throws exception if any of the tasks
  * throws. In such cases, all tasks are still waited for completion.
+ * @param tasks A list of tasks to wait for
+ * @param loop The event loop to switch to after all tasks are completed
+ * (default nullptr, which means to keep on whichever thread the last task is
+ * completed)
+ * @return A task that completes when all tasks are completed
  */
-inline Task<> when_all(std::vector<Task<>> tasks, trantor::EventLoop* loop = nullptr)
+inline Task<> when_all(std::vector<Task<>> tasks,
+                       trantor::EventLoop *loop = nullptr)
 {
     std::exception_ptr eptr;
     std::atomic_size_t counter = tasks.size();
@@ -877,7 +883,7 @@ inline Task<> when_all(std::vector<Task<>> tasks, trantor::EventLoop* loop = nul
         }(eptr, counter, waiter, std::move(task));
     }
     co_await waiter;
-    if(loop)
+    if (loop)
         co_await switchThreadCoro(loop);
 
     if (eptr)
