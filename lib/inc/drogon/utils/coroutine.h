@@ -21,6 +21,7 @@
 #include <cassert>
 #include <condition_variable>
 #include <coroutine>
+#include <cstddef>
 #include <exception>
 #include <future>
 #include <mutex>
@@ -803,21 +804,34 @@ struct WaitForNotify : public CallbackAwaiter<void>
 {
     void await_suspend(std::coroutine_handle<> handle)
     {
-        if (notified)
+        bool should_resume = false;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (notified)
+                should_resume = true;
+            else
+                handle_ = handle;
+        }
+        if(should_resume)
             handle.resume();
-        else
-            handle_ = handle;
     }
 
     void notify()
     {
-        notified = true;
-        if (handle_)
+        bool should_resume = false;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            notified = true;
+            if (handle_)
+                should_resume = true;
+        }
+        if(should_resume)
             handle_.resume();
     }
 
     bool notified = false;
     std::coroutine_handle<> handle_;
+    std::mutex mtx;
 };
 }  // namespace internal
 
@@ -856,7 +870,8 @@ inline Task<> when_all(std::vector<Task<>> tasks)
                 eptr = std::current_exception();
             }
 
-            if (--counter == 0)
+            size_t c = counter.fetch_sub(1, std::memory_order_acq_rel) - 1;
+            if (c == 0)
             {
                 waiter.notify();
             }
