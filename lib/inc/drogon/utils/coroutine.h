@@ -860,7 +860,7 @@ inline Task<> when_all(std::vector<Task<>> tasks,
     std::exception_ptr eptr;
     std::atomic_size_t counter = tasks.size();
     internal::WaitForNotify waiter;
-    for (auto &task : tasks)
+    for (auto &&task : tasks)
     {
         [](std::exception_ptr &eptr,
            std::atomic_size_t &counter,
