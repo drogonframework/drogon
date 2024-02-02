@@ -197,7 +197,7 @@ struct [[nodiscard]] Task
             return Task<T>{handle_type::from_promise(*this)};
         }
 
-        std::suspend_always initial_suspend()
+        std::suspend_never initial_suspend()
         {
             return {};
         }
@@ -301,7 +301,7 @@ struct [[nodiscard]] Task<void>
             return Task<>{handle_type::from_promise(*this)};
         }
 
-        std::suspend_always initial_suspend()
+        std::suspend_never initial_suspend()
         {
             return {};
         }
