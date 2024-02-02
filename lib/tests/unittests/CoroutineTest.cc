@@ -2,6 +2,9 @@
 #include <drogon/utils/coroutine.h>
 #include <drogon/HttpAppFramework.h>
 #include <trantor/net/EventLoopThread.h>
+#include <atomic>
+#include <coroutine>
+#include <functional>
 #include <type_traits>
 
 using namespace drogon;
@@ -215,6 +218,7 @@ DROGON_TEST(SwitchThread)
 
 DROGON_TEST(WhenAll)
 {
+    // Check all tasks are executed
     int counter = 0;
     auto coro = [&]() -> Task<> {
         counter++;
@@ -223,10 +227,36 @@ DROGON_TEST(WhenAll)
 
     std::vector<Task<>> tasks;
     for (int i = 0; i < 10; ++i)
-    {
         tasks.push_back(coro());
-    }
     auto wait = when_all(std::move(tasks));
     sync_wait([&]() -> Task<> { co_await wait; }());
     CHECK(counter == 10);
+
+    // Check exceptions are propagated while all coroutines run until completion
+    auto except = []() -> Task<> {
+        throw std::runtime_error("test error");
+        co_return;
+    };
+    counter = 0;
+    std::vector<Task<>> tasks2;
+    tasks2.push_back(coro());
+    tasks2.push_back(except());
+    tasks2.push_back(coro());
+
+    CHECK_THROWS_AS(sync_wait(when_all(std::move(tasks2))), std::runtime_error);
+    CHECK(counter == 2);
+
+    // Check waiting for tasks that can't complete immediately works
+    counter = 0;
+    auto slow = []() -> Task<> {
+        co_await sleepCoro(drogon::app().getLoop(), 0.001);
+        co_return;
+    };
+    std::vector<Task<>> tasks3;
+    tasks3.push_back(slow());
+    // tasks3.push_back(slow());
+    tasks3.push_back(coro());
+    auto wait3 = when_all(std::move(tasks3));
+    sync_wait([&]() -> Task<> { co_await wait3; }());
+    CHECK(counter == 1);
 }

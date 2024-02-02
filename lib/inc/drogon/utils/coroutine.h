@@ -798,6 +798,27 @@ struct [[nodiscard]] EventLoopAwaiter : public drogon::CallbackAwaiter<T>
     std::function<T()> task_;
     trantor::EventLoop *loop_;
 };
+
+struct WaitForNotify : public CallbackAwaiter<void>
+{
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        if (notified)
+            handle.resume();
+        else
+            handle_ = handle;
+    }
+
+    void notify()
+    {
+        notified = true;
+        if (handle_)
+            handle_.resume();
+    }
+
+    bool notified = false;
+    std::coroutine_handle<> handle_;
+};
 }  // namespace internal
 
 /**
@@ -815,44 +836,38 @@ inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
  * @brief Waits for all tasks to complete. Throws exception if any of the tasks
  * throws. In such cases, all tasks are still waited for completion.
  */
-struct when_all : public CallbackAwaiter<void>
+inline Task<> when_all(std::vector<Task<>> tasks)
 {
-    when_all(std::vector<Task<>> &&tasks) : tasks_(std::move(tasks))
+    std::exception_ptr eptr;
+    std::atomic_size_t counter = tasks.size();
+    internal::WaitForNotify waiter;
+    for (auto &task : tasks)
     {
-    }
+        [](std::exception_ptr &eptr,
+           std::atomic_size_t &counter,
+           internal::WaitForNotify &waiter,
+           Task<> task) -> AsyncTask {
+            try
+            {
+                co_await task;
+            }
+            catch (...)
+            {
+                eptr = std::current_exception();
+            }
 
-    void await_suspend(std::coroutine_handle<> handle)
+            if (--counter == 0)
+            {
+                waiter.notify();
+            }
+        }(eptr, counter, waiter, std::move(task));
+    }
+    co_await waiter;
+
+    if (eptr)
     {
-        int counter = 0;
-        std::exception_ptr eptr;
-        for (auto &task : tasks_)
-        {
-            auto runner = [task = std::move(task),
-                           &eptr,
-                           &counter,
-                           handle,
-                           ntask = tasks_.size(),
-                           this]() -> AsyncTask {
-                try
-                {
-                    co_await task;
-                }
-                catch (...)
-                {
-                    eptr = std::current_exception();
-                }
-                if (++counter == ntask)
-                {
-                    if (eptr)
-                        setException(eptr);
-                    handle.resume();
-                }
-            }();
-        }
+        std::rethrow_exception(eptr);
     }
-
-    std::vector<Task<>> tasks_;
-    std::atomic_size_t tasksLeft_{tasks_.size()};
-};
+}
 
 }  // namespace drogon
