@@ -21,7 +21,6 @@
 #include <cassert>
 #include <condition_variable>
 #include <coroutine>
-#include <cstddef>
 #include <exception>
 #include <future>
 #include <mutex>
@@ -850,7 +849,7 @@ inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
  * @brief Waits for all tasks to complete. Throws exception if any of the tasks
  * throws. In such cases, all tasks are still waited for completion.
  */
-inline Task<> when_all(std::vector<Task<>> tasks)
+inline Task<> when_all(std::vector<Task<>> tasks, trantor::EventLoop* loop = nullptr)
 {
     std::exception_ptr eptr;
     std::atomic_size_t counter = tasks.size();
@@ -878,11 +877,11 @@ inline Task<> when_all(std::vector<Task<>> tasks)
         }(eptr, counter, waiter, std::move(task));
     }
     co_await waiter;
+    if(loop)
+        co_await switchThreadCoro(loop);
 
     if (eptr)
-    {
         std::rethrow_exception(eptr);
-    }
 }
 
 }  // namespace drogon
