@@ -269,6 +269,20 @@ class CacheMap
     }
 
     /**
+     * @brief Get the all values in the cache.
+     * */
+    std::vector<T2> getAllValues()
+    {
+        std::vector<T2> ret;
+        std::lock_guard<std::mutex> lock(mtx_);
+        for (auto &pair : map_)
+        {
+            ret.push_back(pair.second.value_);
+        }
+        return ret;
+    }
+
+    /**
      * @brief Return the value of the keyword.
      *
      * @param key

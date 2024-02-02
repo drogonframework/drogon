@@ -1259,3 +1259,43 @@ HttpAppFramework &HttpAppFrameworkImpl::registerPreSendingAdvice(
     AopAdvice::instance().registerPreSendingAdvice(advice);
     return *this;
 }
+
+void HttpAppFrameworkImpl::insertSession(const SessionPtr &session)
+{
+    if (useSession_)
+    {
+        if (isRunning() && sessionManagerPtr_)
+        {
+            sessionManagerPtr_->insertSession(session);
+        }
+        else
+        {
+            LOG_ERROR << "Session manager is not initialized!";
+        }
+    }
+    else
+    {
+        LOG_ERROR << "Session is not enabled!";
+    }
+}
+
+std::vector<SessionPtr> HttpAppFrameworkImpl::getAllSessions() const
+{
+    if (useSession_)
+    {
+        if (isRunning() && sessionManagerPtr_)
+        {
+            return sessionManagerPtr_->getAllSessions();
+        }
+        else
+        {
+            LOG_ERROR << "Session manager is not initialized!";
+            return {};
+        }
+    }
+    else
+    {
+        LOG_ERROR << "Session is not enabled!";
+        return {};
+    }
+}
