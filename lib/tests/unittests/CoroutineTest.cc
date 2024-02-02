@@ -224,19 +224,22 @@ DROGON_TEST(WhenAll)
         counter++;
         co_return;
     };
-
-    std::vector<Task<>> tasks;
-    for (int i = 0; i < 10; ++i)
-        tasks.push_back(coro());
-    auto wait = when_all(std::move(tasks));
-    sync_wait([&]() -> Task<> { co_await wait; }());
-    CHECK(counter == 10);
-
-    // Check exceptions are propagated while all coroutines run until completion
     auto except = []() -> Task<> {
         throw std::runtime_error("test error");
         co_return;
     };
+    auto slow = []() -> Task<> {
+        co_await sleepCoro(drogon::app().getLoop(), 0.001);
+        co_return;
+    };
+
+    std::vector<Task<>> tasks;
+    for (int i = 0; i < 10; ++i)
+        tasks.push_back(coro());
+    sync_wait(when_all(std::move(tasks)));
+    CHECK(counter == 10);
+
+    // Check exceptions are propagated while all coroutines run until completion
     counter = 0;
     std::vector<Task<>> tasks2;
     tasks2.push_back(coro());
@@ -248,15 +251,10 @@ DROGON_TEST(WhenAll)
 
     // Check waiting for tasks that can't complete immediately works
     counter = 0;
-    auto slow = []() -> Task<> {
-        co_await sleepCoro(drogon::app().getLoop(), 0.001);
-        co_return;
-    };
     std::vector<Task<>> tasks3;
     tasks3.push_back(slow());
     // tasks3.push_back(slow());
     tasks3.push_back(coro());
-    auto wait3 = when_all(std::move(tasks3));
-    sync_wait([&]() -> Task<> { co_await wait3; }());
+    sync_wait(when_all(std::move(tasks3)));
     CHECK(counter == 1);
 }
