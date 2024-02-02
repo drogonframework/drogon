@@ -212,3 +212,21 @@ DROGON_TEST(SwitchThread)
     sync_wait(switch_thread());
     thread.wait();
 }
+
+DROGON_TEST(WhenAll)
+{
+    int counter = 0;
+    auto coro = [&]() -> Task<> {
+        counter++;
+        co_return;
+    };
+
+    std::vector<Task<>> tasks;
+    for (int i = 0; i < 10; ++i)
+    {
+        tasks.push_back(coro());
+    }
+    auto wait = when_all(std::move(tasks));
+    sync_wait([&]() -> Task<> { co_await wait; }());
+    CHECK(counter == 10);
+}

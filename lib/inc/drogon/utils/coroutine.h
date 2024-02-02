@@ -811,4 +811,48 @@ inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
     return internal::EventLoopAwaiter<T>(std::move(task), loop);
 }
 
+/**
+ * @brief Waits for all tasks to complete. Throws exception if any of the tasks
+ * throws. In such cases, all tasks are still waited for completion.
+ */
+struct when_all : public CallbackAwaiter<void>
+{
+    when_all(std::vector<Task<>> &&tasks) : tasks_(std::move(tasks))
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        int counter = 0;
+        std::exception_ptr eptr;
+        for (auto &task : tasks_)
+        {
+            auto runner = [task = std::move(task),
+                           &eptr,
+                           &counter,
+                           handle,
+                           ntask = tasks_.size(),
+                           this]() -> AsyncTask {
+                try
+                {
+                    co_await task;
+                }
+                catch (...)
+                {
+                    eptr = std::current_exception();
+                }
+                if (++counter == ntask)
+                {
+                    if (eptr)
+                        setException(eptr);
+                    handle.resume();
+                }
+            }();
+        }
+    }
+
+    std::vector<Task<>> tasks_;
+    std::atomic_size_t tasksLeft_{tasks_.size()};
+};
+
 }  // namespace drogon
