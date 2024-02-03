@@ -27,7 +27,6 @@
 #include <mutex>
 #include <type_traits>
 #include <optional>
-#include "drogon/DrTemplateBase.h"
 
 namespace drogon
 {
@@ -953,6 +952,9 @@ inline Task<> when_all(std::vector<Awaiter> tasks,
             }
         }(eptr, counter, waiter, std::move(task));
     }
+    // In case there's no task, we should still wait for the notify
+    if (tasks.empty())
+        waiter.notify();
     co_await waiter;
     if (loop)
         co_await switchThreadCoro(loop);
@@ -1007,6 +1009,9 @@ inline Task<std::vector<await_result_t<Awaiter>>> when_all(
             }
         }(eptr, counter, waiter, results, i, std::move(tasks[i]));
     }
+    // In case there's no task, we should still wait for the notify
+    if (tasks.empty())
+        waiter.notify();
     co_await waiter;
     if (loop)
         co_await switchThreadCoro(loop);

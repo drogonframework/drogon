@@ -2,8 +2,6 @@
 #include <drogon/utils/coroutine.h>
 #include <drogon/HttpAppFramework.h>
 #include <trantor/net/EventLoopThread.h>
-#include <atomic>
-#include <coroutine>
 #include <functional>
 #include <type_traits>
 
@@ -49,6 +47,10 @@ DROGON_TEST(CroutineBasics)
     STATIC_REQUIRE(is_awaitable_v<Task<int>>);
     STATIC_REQUIRE(is_int<await_result_t<Task<int>>>::value);
     STATIC_REQUIRE(is_void<await_result_t<Task<>>>::value);
+
+    // Regular functions should not be awaitable
+    STATIC_REQUIRE(is_awaitable_v<std::function<void()>> == false);
+    STATIC_REQUIRE(is_awaitable_v<std::function<int()>> == false);
 
     // No, you cannot await AsyncTask. By design
     STATIC_REQUIRE(is_awaitable_v<AsyncTask> == false);
@@ -133,6 +135,7 @@ DROGON_TEST(AwaiterTraits)
     auto awaiter = sleepCoro(drogon::app().getLoop(), 0.001);
     STATIC_REQUIRE(is_awaitable_v<decltype(awaiter)>);
     STATIC_REQUIRE(std::is_void<await_result_t<decltype(awaiter)>>::value);
+    sync_wait(awaiter);
 }
 
 DROGON_TEST(CompilcatedCoroutineLifetime)
@@ -289,4 +292,8 @@ DROGON_TEST(WhenAll)
     tasks5.emplace_back(std::move(sleep));
     tasks5.emplace_back(std::move(sleep2));
     sync_wait(when_all(std::move(tasks5)));
+
+    // Check waiting on empty list works
+    std::vector<Task<>> tasks6;
+    sync_wait(when_all(std::move(tasks6)));
 }
