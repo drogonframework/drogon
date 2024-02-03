@@ -53,6 +53,13 @@ DROGON_TEST(CroutineBasics)
     // No, you cannot await AsyncTask. By design
     STATIC_REQUIRE(is_awaitable_v<AsyncTask> == false);
 
+    // Coroutine bodies should be awaitable
+    auto empty_coro = []() -> Task<> { co_return; };
+    STATIC_REQUIRE(is_awaitable_v<decltype(empty_coro)> == false);
+
+    // But their return types should be
+    STATIC_REQUIRE(is_awaitable_v<decltype(empty_coro())>);
+
     // AsyncTask should execute eagerly
     int m = 0;
     [&m]() -> AsyncTask {
@@ -119,6 +126,13 @@ DROGON_TEST(CroutineBasics)
     async_run([TEST_CTX]() -> Task<void> {
         co_await queueInLoopCoro<void>(app().getLoop(), []() { LOG_DEBUG; });
     });
+}
+
+DROGON_TEST(AwaiterTraits)
+{
+    auto awaiter = sleepCoro(drogon::app().getLoop(), 0.001);
+    STATIC_REQUIRE(is_awaitable_v<decltype(awaiter)>);
+    STATIC_REQUIRE(std::is_void<await_result_t<decltype(awaiter)>>::value);
 }
 
 DROGON_TEST(CompilcatedCoroutineLifetime)

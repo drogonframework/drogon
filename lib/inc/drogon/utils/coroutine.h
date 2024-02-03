@@ -26,6 +26,7 @@
 #include <mutex>
 #include <type_traits>
 #include <optional>
+#include "drogon/DrTemplateBase.h"
 
 namespace drogon
 {
@@ -54,26 +55,36 @@ auto getAwaiter(T &&value) noexcept(
 {
     return getAwaiterImpl(static_cast<T &&>(value));
 }
-
 }  // end namespace internal
 
+// Some concepts used in this file
+// * Coroutine - Something C++ generated for us. It has promise_type, etc..
+// * Awaiter - Something we wrote manually that has await_ready, await_suspend,
+// etc..
+template <typename T, typename = std::void_t<>>
+struct coroutine_result : std::false_type
+{
+};
+
 template <typename T>
-struct await_result
+struct coroutine_result<
+    T,
+    std::void_t<decltype(internal::getAwaiter(std::declval<T>()))>>
 {
     using awaiter_t = decltype(internal::getAwaiter(std::declval<T>()));
     using type = decltype(std::declval<awaiter_t>().await_resume());
 };
 
 template <typename T>
-using await_result_t = typename await_result<T>::type;
+using coroutine_result_t = typename coroutine_result<T>::type;
 
 template <typename T, typename = std::void_t<>>
-struct is_awaitable : std::false_type
+struct is_coroutine : std::false_type
 {
 };
 
 template <typename T>
-struct is_awaitable<
+struct is_coroutine<
     T,
     std::void_t<decltype(internal::getAwaiter(std::declval<T>()))>>
     : std::true_type
@@ -81,7 +92,63 @@ struct is_awaitable<
 };
 
 template <typename T>
+constexpr bool is_coroutine_v = is_coroutine<T>::value;
+
+template <typename T, typename = std::void_t<>>
+struct awaiter_result : std::false_type
+{
+};
+
+template <typename T>
+struct awaiter_result<T,
+                      std::void_t<decltype(std::declval<T>().await_ready()),
+                                  decltype(std::declval<T>().await_suspend(
+                                      std::declval<std::coroutine_handle<>>())),
+                                  decltype(std::declval<T>().await_resume())>>
+{
+    using type = decltype(std::declval<T>().await_resume());
+};
+
+template <typename T>
+using awaiter_result_t = typename awaiter_result<T>::type;
+
+template <typename T, typename = std::void_t<>>
+struct is_awaiter : std::false_type
+{
+};
+
+template <typename T>
+struct is_awaiter<T,
+                  std::void_t<decltype(std::declval<T>().await_ready()),
+                              decltype(std::declval<T>().await_suspend(
+                                  std::declval<std::coroutine_handle<>>())),
+                              decltype(std::declval<T>().await_resume())>>
+    : std::true_type
+{
+};
+
+template <typename T>
+constexpr bool is_awaiter_v = is_awaiter<T>::value;
+
+// More generic traits
+template <typename T>
+struct is_awaitable : std::bool_constant<is_awaiter_v<T> || is_coroutine_v<T>>
+{
+};
+
+template <typename T>
 constexpr bool is_awaitable_v = is_awaitable<T>::value;
+
+template <typename T>
+struct await_result
+{
+    using type = std::conditional_t<is_coroutine_v<T>,
+                                    coroutine_result_t<T>,
+                                    awaiter_result_t<T>>;
+};
+
+template <typename T>
+using await_result_t = typename await_result<T>::type;
 
 /**
  * @struct final_awaiter
