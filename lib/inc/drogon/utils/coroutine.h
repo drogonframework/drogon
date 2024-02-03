@@ -21,6 +21,7 @@
 #include <cassert>
 #include <condition_variable>
 #include <coroutine>
+#include <cstddef>
 #include <exception>
 #include <future>
 #include <mutex>
@@ -921,9 +922,13 @@ inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
  * completed)
  * @return A task that completes when all tasks are completed
  */
-inline Task<> when_all(std::vector<Task<>> tasks,
+template <typename Awaiter,
+          typename = std::enable_if_t<std::is_void_v<await_result_t<Awaiter>>>>
+inline Task<> when_all(std::vector<Awaiter> tasks,
                        trantor::EventLoop *loop = nullptr)
 {
+    static_assert(is_awaitable_v<Awaiter>);
+    static_assert(std::is_same_v<await_result_t<Awaiter>, void>);
     std::exception_ptr eptr;
     std::atomic_size_t counter = tasks.size();
     internal::WaitForNotify waiter;
@@ -955,6 +960,62 @@ inline Task<> when_all(std::vector<Task<>> tasks,
 
     if (eptr)
         std::rethrow_exception(eptr);
+}
+
+/**
+ * @brief Waits for all tasks to complete. Throws exception if any of the tasks
+ * throws. In such cases, all tasks are still waited for completion.
+ * @param tasks A list of tasks to wait for
+ * @param loop The event loop to switch to after all tasks are completed
+ * (default nullptr, which means to keep on whichever thread the last task is
+ * completed)
+ * @return A task that completes when all tasks are completed and yields
+ * results of all tasks
+ */
+template <typename Awaiter,
+          typename = std::enable_if_t<!std::is_void_v<await_result_t<Awaiter>>>>
+inline Task<std::vector<await_result_t<Awaiter>>> when_all(
+    std::vector<Awaiter> tasks,
+    trantor::EventLoop *loop = nullptr)
+{
+    static_assert(is_awaitable_v<Awaiter>);
+    std::exception_ptr eptr;
+    std::vector<await_result_t<Awaiter>> results;
+    results.resize(tasks.size());
+    std::atomic_size_t counter = tasks.size();
+    internal::WaitForNotify waiter;
+    for (size_t i = 0; i < tasks.size(); ++i)
+    {
+        [](std::exception_ptr &eptr,
+           std::atomic_size_t &counter,
+           internal::WaitForNotify &waiter,
+           std::vector<await_result_t<Awaiter>> &results,
+           size_t i,
+           Awaiter task) -> AsyncTask {
+            try
+            {
+                results[i] = co_await task;
+            }
+            catch (...)
+            {
+                eptr = std::current_exception();
+            }
+
+            size_t c = counter.fetch_sub(1, std::memory_order_acq_rel) - 1;
+            if (c == 0)
+            {
+                waiter.notify();
+            }
+        }(eptr, counter, waiter, results, i, std::move(tasks[i]));
+    }
+    co_await waiter;
+    if (loop)
+        co_await switchThreadCoro(loop);
+
+    if (eptr)
+        std::rethrow_exception(eptr);
+
+    co_return results;
 }
 
 }  // namespace drogon

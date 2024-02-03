@@ -246,6 +246,7 @@ DROGON_TEST(WhenAll)
         co_await sleepCoro(drogon::app().getLoop(), 0.001);
         co_return;
     };
+    auto return42 = []() -> Task<int> { co_return 42; };
 
     std::vector<Task<>> tasks;
     for (int i = 0; i < 10; ++i)
@@ -271,4 +272,13 @@ DROGON_TEST(WhenAll)
     tasks3.push_back(coro());
     sync_wait(when_all(std::move(tasks3)));
     CHECK(counter == 1);
+
+    // Check we can get the results of the tasks
+    std::vector<Task<int>> tasks4;
+    tasks4.push_back(return42());
+    tasks4.push_back(return42());
+    auto results = sync_wait(when_all(std::move(tasks4)));
+    CHECK(results.size() == 2);
+    CHECK(results[0] == 42);
+    CHECK(results[1] == 42);
 }
