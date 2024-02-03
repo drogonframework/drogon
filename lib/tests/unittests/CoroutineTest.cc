@@ -281,4 +281,12 @@ DROGON_TEST(WhenAll)
     CHECK(results.size() == 2);
     CHECK(results[0] == 42);
     CHECK(results[1] == 42);
+
+    // Check waiting on non-task works
+    auto sleep = sleepCoro(drogon::app().getLoop(), 0.001);
+    auto sleep2 = sleepCoro(drogon::app().getLoop(), 0.001);
+    std::vector<decltype(sleep)> tasks5;
+    tasks5.emplace_back(std::move(sleep));
+    tasks5.emplace_back(std::move(sleep2));
+    sync_wait(when_all(std::move(tasks5)));
 }

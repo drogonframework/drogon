@@ -928,7 +928,6 @@ inline Task<> when_all(std::vector<Awaiter> tasks,
                        trantor::EventLoop *loop = nullptr)
 {
     static_assert(is_awaitable_v<Awaiter>);
-    static_assert(std::is_same_v<await_result_t<Awaiter>, void>);
     std::exception_ptr eptr;
     std::atomic_size_t counter = tasks.size();
     internal::WaitForNotify waiter;
@@ -937,7 +936,7 @@ inline Task<> when_all(std::vector<Awaiter> tasks,
         [](std::exception_ptr &eptr,
            std::atomic_size_t &counter,
            internal::WaitForNotify &waiter,
-           Task<> task) -> AsyncTask {
+           Awaiter task) -> AsyncTask {
             try
             {
                 co_await task;
