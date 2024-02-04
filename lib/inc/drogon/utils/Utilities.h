@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <string_view>
+#include <unordered_map>
 #ifdef _WIN32
 #include <time.h>
 DROGON_EXPORT char *strptime(const char *s, const char *f, struct tm *tm);
@@ -558,6 +559,10 @@ struct SafeStringHash
 };
 }  // namespace internal
 }  // namespace utils
+
+template <typename T>
+using SafeStringMap =
+    std::unordered_map<std::string, T, utils::internal::SafeStringHash>;
 }  // namespace drogon
 
 namespace trantor
