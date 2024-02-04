@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "drogon/utils/Utilities.h"
 #include <drogon/exports.h>
 #include <drogon/HttpRequest.h>
 #include <unordered_map>
@@ -132,7 +133,7 @@ class DROGON_EXPORT MultiPartParser
 
     /// Get parameters, This method should be called after calling the parse ()
     /// method.
-    const std::unordered_map<std::string, std::string> &getParameters() const;
+    const std::unordered_map<std::string, std::string, utils::internal::SafeStringHash> &getParameters() const;
 
     /// Get the value of an optional parameter
     /// This method should be called after calling the parse() method.
@@ -173,7 +174,7 @@ class DROGON_EXPORT MultiPartParser
 
   protected:
     std::vector<HttpFile> files_;
-    std::unordered_map<std::string, std::string> parameters_;
+    std::unordered_map<std::string, std::string, utils::internal::SafeStringHash> parameters_;
     int parse(const HttpRequestPtr &req,
               const char *boundaryData,
               size_t boundaryLen);
