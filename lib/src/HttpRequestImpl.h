@@ -169,10 +169,7 @@ class HttpRequestImpl : public HttpRequest
         pathEncode_ = pathEncode;
     }
 
-    const std::unordered_map<std::string,
-                             std::string,
-                             utils::internal::SafeStringHash> &
-    parameters() const override
+    const SafeStringMap<std::string> &parameters() const override
     {
         parseParametersOnce();
         return parameters_;
@@ -342,18 +339,12 @@ class HttpRequestImpl : public HttpRequest
         return defaultVal;
     }
 
-    const std::unordered_map<std::string,
-                             std::string,
-                             utils::internal::SafeStringHash> &
-    headers() const override
+    const SafeStringMap<std::string> &headers() const override
     {
         return headers_;
     }
 
-    const std::unordered_map<std::string,
-                             std::string,
-                             utils::internal::SafeStringHash> &
-    cookies() const override
+    const SafeStringMap<std::string> &cookies() const override
     {
         return cookies_;
     }
@@ -611,15 +602,9 @@ class HttpRequestImpl : public HttpRequest
     bool pathEncode_{true};
     std::string_view matchedPathPattern_{""};
     std::string query_;
-    std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            headers_;
-    std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            cookies_;
-    mutable std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            parameters_;
+    SafeStringMap<std::string> headers_;
+    SafeStringMap<std::string> cookies_;
+    mutable SafeStringMap<std::string> parameters_;
     mutable std::shared_ptr<Json::Value> jsonPtr_;
     SessionPtr sessionPtr_;
     mutable AttributesPtr attributesPtr_;

@@ -133,10 +133,7 @@ class DROGON_EXPORT MultiPartParser
 
     /// Get parameters, This method should be called after calling the parse ()
     /// method.
-    const std::unordered_map<std::string,
-                             std::string,
-                             utils::internal::SafeStringHash> &
-    getParameters() const;
+    const SafeStringMap<std::string> &getParameters() const;
 
     /// Get the value of an optional parameter
     /// This method should be called after calling the parse() method.
@@ -177,9 +174,7 @@ class DROGON_EXPORT MultiPartParser
 
   protected:
     std::vector<HttpFile> files_;
-    std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            parameters_;
+    SafeStringMap<std::string> parameters_;
     int parse(const HttpRequestPtr &req,
               const char *boundaryData,
               size_t boundaryLen);
