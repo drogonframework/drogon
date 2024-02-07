@@ -113,7 +113,7 @@ class WebSocketConnection
      * @param type The message type.
      */
     virtual void send(
-        const std::string_view msg,
+        std::string_view msg,
         const WebSocketMessageType type = WebSocketMessageType::Text) = 0;
 
     /// Return the local IP address and port number of the connection
