@@ -61,7 +61,7 @@ class WebSocketConnectionImpl final
         uint64_t len,
         const WebSocketMessageType type = WebSocketMessageType::Text) override;
     void send(
-        const std::string_view msg,
+        std::string_view msg,
         const WebSocketMessageType type = WebSocketMessageType::Text) override;
 
     const trantor::InetAddress &localAddr() const override;
