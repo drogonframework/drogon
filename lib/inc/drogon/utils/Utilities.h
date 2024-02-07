@@ -29,6 +29,7 @@
 #include <filesystem>
 #include <string_view>
 #include <unordered_map>
+#include <type_traits>
 #ifdef _WIN32
 #include <time.h>
 DROGON_EXPORT char *strptime(const char *s, const char *f, struct tm *tm);
@@ -38,57 +39,27 @@ namespace drogon
 {
 namespace internal
 {
-template <typename T>
-struct CanConvertFromStringStream
+template <typename T, typename = void>
+struct CanConvertFromStringStream : std::false_type
 {
-  private:
-    using yes = std::true_type;
-    using no = std::false_type;
-
-    template <typename U>
-    static auto test(U *p, std::stringstream &&ss)
-        -> decltype((ss >> *p), yes());
-
-    template <typename>
-    static no test(...);
-
-  public:
-    static constexpr bool value =
-        std::is_same_v<decltype(test<T>(nullptr, std::stringstream())), yes>;
 };
 
 template <typename T>
-struct CanConstructFromString
+struct CanConvertFromStringStream<
+    T,
+    std::void_t<decltype(std::declval<std::stringstream &>() >>
+                         std::declval<T &>())>> : std::true_type
 {
-  private:
-    using yes = std::true_type;
-    using no = std::false_type;
-
-    template <typename U>
-    static auto test(U *p) -> decltype(U(std::string{}), yes());
-
-    template <typename>
-    static no test(...);
-
-  public:
-    static constexpr bool value =
-        std::is_same_v<decltype(test<T>(nullptr)), yes>;
 };
 
 template <typename T>
-struct CanConvertFromString
+struct CanConstructFromString : std::is_constructible<T, std::string>
 {
-  private:
-    using yes = std::true_type;
-    using no = std::false_type;
-    template <class U>
-    static auto test(U *p) -> decltype(*p = std::string(), yes());
-    template <class>
-    static no test(...);
+};
 
-  public:
-    static constexpr bool value =
-        std::is_same_v<decltype(test<T>(nullptr)), yes>;
+template <typename T>
+struct CanConvertFromString : std::is_assignable<T &, std::string>
+{
 };
 
 }  // namespace internal
