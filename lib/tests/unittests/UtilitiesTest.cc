@@ -1,6 +1,8 @@
 #include <string>
 #include <string_view>
 #include <istream>
+#include <array>
+#include <vector>
 #include <drogon/utils/Utilities.h>
 #include <drogon/drogon_test.h>
 
