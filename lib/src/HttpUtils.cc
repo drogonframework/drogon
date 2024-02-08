@@ -124,7 +124,8 @@ static const std::unordered_map<
         {CT_VIDEO_X_MSVIDEO, {{"video/x-msvideo"}, ""}},
     };
 
-static const std::unordered_map<std::string_view, std::pair<FileType, ContentType>>
+static const std::unordered_map<std::string_view,
+                                std::pair<FileType, ContentType>>
     fileTypeDatabase_{
         {"", {FT_UNKNOWN, CT_CUSTOM}},
         {"aac", {FT_AUDIO, CT_AUDIO_AAC}},
@@ -719,7 +720,8 @@ std::pair<ContentType, const std::string_view> fileNameToContentTypeAndMime(
 std::vector<std::string_view> getFileExtensions(ContentType contentType)
 {
     // Generate map from database for faster query
-    static std::unordered_map<ContentType, std::vector<std::string_view>> extensionMap_;
+    static std::unordered_map<ContentType, std::vector<std::string_view>>
+        extensionMap_;
     // Thread safe initialization
     static std::once_flag flag;
     std::call_once(flag, []() {
