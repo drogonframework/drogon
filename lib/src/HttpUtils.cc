@@ -30,8 +30,9 @@ static std::unordered_map<std::string, std::string> customMime;
 // content type -> list of corresponding mime types, the first being the default
 // (more standard) one + the mime type to return in contentTypeToMime() when not
 // empty (mainly to return the charset for text types)
-static const std::map<ContentType,
-                      std::pair<std::list<std::string_view>, std::string_view>>
+static const std::unordered_map<
+    ContentType,
+    std::pair<std::vector<std::string_view>, std::string_view>>
     mimeTypeDatabase_{
         {CT_NONE, {{""}, ""}},
         {CT_APPLICATION_OCTET_STREAM, {{"application/octet-stream"}, ""}},
@@ -123,7 +124,7 @@ static const std::map<ContentType,
         {CT_VIDEO_X_MSVIDEO, {{"video/x-msvideo"}, ""}},
     };
 
-static const std::map<std::string_view, std::pair<FileType, ContentType>>
+static const std::unordered_map<std::string_view, std::pair<FileType, ContentType>>
     fileTypeDatabase_{
         {"", {FT_UNKNOWN, CT_CUSTOM}},
         {"aac", {FT_AUDIO, CT_AUDIO_AAC}},
@@ -599,7 +600,7 @@ ContentType getContentType(const std::string &fileName)
 ContentType parseContentType(const std::string_view &contentType)
 {
     // Generate map from database for faster query
-    static std::map<std::string_view, ContentType> contentTypeMap_;
+    static std::unordered_map<std::string_view, ContentType> contentTypeMap_;
     // Thread safe initialization
     static std::once_flag flag;
     std::call_once(flag, []() {
@@ -634,7 +635,7 @@ FileType parseFileType(const std::string_view &fileExtension)
 FileType getFileType(ContentType contentType)
 {
     // Generate map from database for faster query
-    static std::map<ContentType, FileType> fileTypeMap_;
+    static std::unordered_map<ContentType, FileType> fileTypeMap_;
     // Thread safe initialization
     static std::once_flag flag;
     std::call_once(flag, []() {
@@ -715,10 +716,10 @@ std::pair<ContentType, const std::string_view> fileNameToContentTypeAndMime(
     return {CT_CUSTOM, it->second};
 }
 
-std::list<std::string_view> getFileExtensions(ContentType contentType)
+std::vector<std::string_view> getFileExtensions(ContentType contentType)
 {
     // Generate map from database for faster query
-    static std::map<ContentType, std::list<std::string_view>> extensionMap_;
+    static std::unordered_map<ContentType, std::vector<std::string_view>> extensionMap_;
     // Thread safe initialization
     static std::once_flag flag;
     std::call_once(flag, []() {

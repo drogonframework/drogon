@@ -42,9 +42,9 @@ inline std::string_view getFileExtension(const std::string &fileName)
     return std::string_view(&fileName[pos + 1], fileName.length() - pos - 1);
 }
 
-std::list<std::string_view> getFileExtensions(ContentType contentType);
+std::vector<std::string_view> getFileExtensions(ContentType contentType);
 
-inline std::list<std::string_view> getFileExtensions(
+inline std::vector<std::string_view> getFileExtensions(
     const std::string_view &contentType)
 {
     return getFileExtensions(parseContentType(contentType));
