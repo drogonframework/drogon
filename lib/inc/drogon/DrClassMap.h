@@ -138,7 +138,7 @@ class DROGON_EXPORT DrClassMap
 
   protected:
     static std::unordered_map<std::string,
-                              std::pair<DrAllocFunc, DrSharedAllocFunc>>
-        &getMap();
+                              std::pair<DrAllocFunc, DrSharedAllocFunc>> &
+    getMap();
 };
 }  // namespace drogon

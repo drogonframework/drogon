@@ -51,10 +51,10 @@ class Tag
         static const std::string _name;
     };
 
-    const static int primaryKeyNumber;
-    const static std::string tableName;
-    const static bool hasPrimaryKey;
-    const static std::string primaryKeyName;
+    static const int primaryKeyNumber;
+    static const std::string tableName;
+    static const bool hasPrimaryKey;
+    static const std::string primaryKeyName;
     using PrimaryKeyType = int64_t;
     const PrimaryKeyType &getPrimaryKey() const;
 

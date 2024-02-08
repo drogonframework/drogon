@@ -3,10 +3,10 @@
 # You can customize the clang-format path by setting the CLANG_FORMAT environment variable
 CLANG_FORMAT=${CLANG_FORMAT:-clang-format}
 
-# Check if clang-format version is 14 to avoid inconsistent formatting
+# Check if clang-format version is 17 to avoid inconsistent formatting
 $CLANG_FORMAT --version
-if [[ ! $($CLANG_FORMAT --version) =~ "version 14" ]]; then
-    echo "Error: clang-format version must be 14"
+if [[ ! $($CLANG_FORMAT --version) =~ "version 17" ]]; then
+    echo "Error: clang-format version must be 17"
     exit 1
 fi
 

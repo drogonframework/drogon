@@ -3,7 +3,7 @@
  * mman-win32
  */
 
-#ifndef _SYS_MMAN_H_
+#ifndef _SYS_MMAN_H_ // NOLINT(build/header_guard)
 #define _SYS_MMAN_H_
 
 #ifndef _WIN32_WINNT		// Allow use of features specific to Windows XP or later.                   

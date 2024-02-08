@@ -25,7 +25,7 @@ class SpinLock
   public:
     inline SpinLock(std::atomic<bool> &flag) : flag_(flag)
     {
-        const static int cpu = std::thread::hardware_concurrency();
+        static const int cpu = std::thread::hardware_concurrency();
         int n, i;
         while (1)
         {

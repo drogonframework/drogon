@@ -178,10 +178,10 @@ void create_model::createModelClassFromPG(
         data["schema"] = schema;
     }
     std::vector<ColumnInfo> cols;
-    *client << "SELECT * \
-                FROM information_schema.columns \
-                WHERE table_schema = $1 \
-                AND table_name   = $2"
+    *client << "SELECT * "
+               "FROM information_schema.columns "
+               "WHERE table_schema = $1 "
+               "AND table_name   = $2"
             << schema << tableName << Mode::Blocking >>
         [&](const Result &r) {
             if (r.size() == 0)
@@ -284,14 +284,14 @@ void create_model::createModelClassFromPG(
             exit(1);
         };
     size_t pkNumber = 0;
-    *client << "SELECT \
-                pg_constraint.conname AS pk_name,\
-                pg_constraint.conkey AS pk_vector \
-                FROM pg_constraint \
-                INNER JOIN pg_class ON pg_constraint.conrelid = pg_class.oid \
-                WHERE \
-                pg_class.relname = $1 \
-                AND pg_constraint.contype = 'p'"
+    *client << "SELECT "
+               "pg_constraint.conname AS pk_name,"
+               "pg_constraint.conkey AS pk_vector "
+               "FROM pg_constraint "
+               "INNER JOIN pg_class ON pg_constraint.conrelid = pg_class.oid "
+               "WHERE "
+               "pg_class.relname = $1 "
+               "AND pg_constraint.contype = 'p'"
             << tableName << Mode::Blocking >>
         [&](bool isNull,
             const std::string &pkName,
@@ -308,16 +308,18 @@ void create_model::createModelClassFromPG(
     data["hasPrimaryKey"] = (int)pkNumber;
     if (pkNumber == 1)
     {
-        *client << "SELECT \
-                pg_attribute.attname AS colname,\
-                pg_type.typname AS typename,\
-                pg_constraint.contype AS contype \
-                FROM pg_constraint \
-                INNER JOIN pg_class ON pg_constraint.conrelid = pg_class.oid \
-                INNER JOIN pg_attribute ON pg_attribute.attrelid = pg_class.oid \
-                AND pg_attribute.attnum = pg_constraint.conkey [ 1 ] \
-                INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
-                WHERE pg_class.relname = $1 and pg_constraint.contype='p'"
+        *client << "SELECT "
+                   "pg_attribute.attname AS colname,"
+                   "pg_type.typname AS typename,"
+                   "pg_constraint.contype AS contype "
+                   "FROM pg_constraint "
+                   "INNER JOIN pg_class ON pg_constraint.conrelid = "
+                   "pg_class.oid "
+                   "INNER JOIN pg_attribute ON pg_attribute.attrelid = "
+                   "pg_class.oid "
+                   "AND pg_attribute.attnum = pg_constraint.conkey [ 1 ] "
+                   "INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid "
+                   "WHERE pg_class.relname = $1 and pg_constraint.contype='p'"
                 << tableName << Mode::Blocking >>
             [&](bool isNull,
                 const std::string &colName,
@@ -345,16 +347,20 @@ void create_model::createModelClassFromPG(
         std::vector<std::string> pkNames, pkTypes, pkValNames;
         for (size_t i = 1; i <= pkNumber; ++i)
         {
-            *client << "SELECT \
-                pg_attribute.attname AS colname,\
-                pg_type.typname AS typename,\
-                pg_constraint.contype AS contype \
-                FROM pg_constraint \
-                INNER JOIN pg_class ON pg_constraint.conrelid = pg_class.oid \
-                INNER JOIN pg_attribute ON pg_attribute.attrelid = pg_class.oid \
-                AND pg_attribute.attnum = pg_constraint.conkey [ $1 ] \
-                INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
-                WHERE pg_class.relname = $2 and pg_constraint.contype='p'"
+            *client << "SELECT "
+                       "pg_attribute.attname AS colname,"
+                       "pg_type.typname AS typename,"
+                       "pg_constraint.contype AS contype "
+                       "FROM pg_constraint "
+                       "INNER JOIN pg_class ON pg_constraint.conrelid = "
+                       "pg_class.oid "
+                       "INNER JOIN pg_attribute ON pg_attribute.attrelid = "
+                       "pg_class.oid "
+                       "AND pg_attribute.attnum = pg_constraint.conkey [ $1 ] "
+                       "INNER JOIN pg_type ON pg_type.oid = "
+                       "pg_attribute.atttypid "
+                       "WHERE pg_class.relname = $2 and "
+                       "pg_constraint.contype='p'"
                     << (int)i << tableName << Mode::Blocking >>
                 [&](bool isNull, std::string colName, const std::string &type) {
                     if (isNull)
