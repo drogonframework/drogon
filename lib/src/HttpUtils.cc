@@ -717,11 +717,12 @@ std::pair<ContentType, const std::string_view> fileNameToContentTypeAndMime(
     return {CT_CUSTOM, it->second};
 }
 
-std::vector<std::string_view> getFileExtensions(ContentType contentType)
+const std::vector<std::string_view> &getFileExtensions(ContentType contentType)
 {
     // Generate map from database for faster query
     static std::unordered_map<ContentType, std::vector<std::string_view>>
         extensionMap_;
+    static std::vector<std::string_view> notFound_;
     // Thread safe initialization
     static std::once_flag flag;
     std::call_once(flag, []() {
@@ -735,7 +736,7 @@ std::vector<std::string_view> getFileExtensions(ContentType contentType)
     });
     auto it = extensionMap_.find(contentType);
     if (it == extensionMap_.end())
-        return {};
+        return notFound_;
     return it->second;
 }
 
