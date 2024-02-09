@@ -26,6 +26,7 @@ const std::string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
 ContentType parseContentType(const std::string_view &contentType);
 FileType parseFileType(const std::string_view &fileExtension);
+FileType getFileType(ContentType contentType);
 void registerCustomExtensionMime(const std::string &ext,
                                  const std::string &mime);
 const std::string_view fileNameToMime(const std::string &fileName);
@@ -38,6 +39,14 @@ inline std::string_view getFileExtension(const std::string &fileName)
     if (pos == std::string::npos)
         return "";
     return std::string_view(&fileName[pos + 1], fileName.length() - pos - 1);
+}
+
+const std::vector<std::string_view> &getFileExtensions(ContentType contentType);
+
+inline const std::vector<std::string_view> &getFileExtensions(
+    const std::string_view &contentType)
+{
+    return getFileExtensions(parseContentType(contentType));
 }
 
 template <typename T>
