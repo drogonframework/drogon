@@ -551,7 +551,7 @@ void HttpServer::httpRequestHandling(
         req,
         // This is the actual callback being passed to controller
         [req, binderPtr = std::move(binderPtr), callback = std::move(callback)](
-            const HttpResponsePtr &resp) {
+            const HttpResponsePtr &resp) mutable {
             // Check if we need to cache the response
             if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
             {
@@ -563,9 +563,10 @@ void HttpServer::httpRequestHandling(
                 }
                 else
                 {
-                    loop->queueInLoop([binderPtr, resp]() {
-                        binderPtr->responseCache_.setThreadData(resp);
-                    });
+                    loop->queueInLoop(
+                        [binderPtr = std::move(binderPtr), resp]() {
+                            binderPtr->responseCache_.setThreadData(resp);
+                        });
                 }
             }
             // post-handling aop
