@@ -546,10 +546,11 @@ void HttpServer::httpRequestHandling(
         }
     }
 
-    binderPtr->handleRequest(
+    auto &binderRef = *binderPtr;
+    binderRef.handleRequest(
         req,
         // This is the actual callback being passed to controller
-        [req, binderPtr, callback = std::move(callback)](
+        [req, binderPtr = std::move(binderPtr), callback = std::move(callback)](
             const HttpResponsePtr &resp) {
             // Check if we need to cache the response
             if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
