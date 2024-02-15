@@ -99,31 +99,32 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
 
 HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
 {
-    std::weak_ptr<HttpRequestParser> weakPtr = shared_from_this();
-    return std::shared_ptr<HttpRequestImpl>(ptr, [weakPtr](HttpRequestImpl *p) {
-        auto thisPtr = weakPtr.lock();
-        if (thisPtr)
-        {
-            if (thisPtr->loop_->isInLoopThread())
+    return std::shared_ptr<HttpRequestImpl>(
+        ptr, [weakPtr = weak_from_this()](HttpRequestImpl *p) {
+            auto thisPtr = weakPtr.lock();
+            if (thisPtr)
             {
-                p->reset();
-                thisPtr->requestsPool_.emplace_back(
-                    thisPtr->makeRequestForPool(p));
-            }
-            else
-            {
-                thisPtr->loop_->queueInLoop([thisPtr, p]() {
+                if (thisPtr->loop_->isInLoopThread())
+                {
                     p->reset();
                     thisPtr->requestsPool_.emplace_back(
                         thisPtr->makeRequestForPool(p));
-                });
+                }
+                else
+                {
+                    auto &loop = thisPtr->loop_;
+                    loop->queueInLoop([thisPtr = std::move(thisPtr), p]() {
+                        p->reset();
+                        thisPtr->requestsPool_.emplace_back(
+                            thisPtr->makeRequestForPool(p));
+                    });
+                }
             }
-        }
-        else
-        {
-            delete p;
-        }
-    });
+            else
+            {
+                delete p;
+            }
+        });
 }
 
 void HttpRequestParser::reset()
