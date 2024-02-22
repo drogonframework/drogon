@@ -604,7 +604,7 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
             {
                 routerItemPtr = &item;
                 //-------------
-                SafeStringMap<std::string> map_restful_result;
+                SafeStringMap<std::string> routingparameters;
                 size_t paramPos = 1;
                 for (size_t i = 1; i < result.size(); ++i)
                 {
@@ -615,11 +615,10 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
                     {
                         break;
                     }
-                    std::string value = result[i].str();
-                    map_restful_result[key] = value;
+                    routingparameters[key] = result[i].str();
                     paramPos = paramEnd;
                 }
-                req->setRoutingParameters(std::move(map_restful_result));
+                req->setRoutingParameters(std::move(routingparameters));
                 break;
             }
         }
