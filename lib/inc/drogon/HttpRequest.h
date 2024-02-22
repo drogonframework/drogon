@@ -245,6 +245,7 @@ class DROGON_EXPORT HttpRequest
 
     /// This method usually is called by the framework.
     virtual void setRoutingParameters(std::vector<std::string> &&params) = 0;
+    virtual void setRoutingParameters(SafeStringMap<std::string> &&params) = 0;
 
     virtual const char *matchedPathPatternData() const = 0;
     virtual size_t matchedPathPatternLength() const = 0;
