@@ -61,7 +61,6 @@ void WebSocketClientImpl::createTcpClient()
             .setConfCmds(sslConfCmds_)
             .setCertPath(clientCertPath_)
             .setKeyPath(clientKeyPath_);
-        ;
         tcpClientPtr_->enableSSL(std::move(policy));
     }
     auto thisPtr = shared_from_this();
