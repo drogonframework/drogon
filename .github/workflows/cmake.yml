@@ -39,7 +39,7 @@ jobs:
         working-directory: ./build
         run: |
           conan profile detect --force
-          conan install .. -s compiler="msvc" -sbuild_type=Debug --build=missing -s compiler.cppstd=17
+          conan install .. --output-folder=. --build=missing --settings=build_type=Debug --settings=compiler="msvc" --settings=compiler.version=193 --settings=compiler.cppstd=17
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
