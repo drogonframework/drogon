@@ -58,7 +58,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=17
 
       - name: Build
-        run: cmake --build build --target install --parallel
+        run: runas /user:Administrator "cmake --build build --target install --parallel"
 
       - name: Test
         shell: bash
