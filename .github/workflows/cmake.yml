@@ -38,9 +38,8 @@ jobs:
       - name: Install conan packages
         working-directory: ./build
         run: |
-          conan profile detect
+          conan profile detect --force
           conan install .. -s compiler="msvc" -sbuild_type=Debug --build=missing -s compiler.cppstd=17
-
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
