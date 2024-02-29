@@ -124,7 +124,17 @@ class WebSocketConnection
      * @param type The message type.
      */
     virtual void send(
-        const Json::Value &json,
+        const Json::Value *json,
+        const WebSocketMessageType type = WebSocketMessageType::Text) = 0;
+
+    /**
+     * @brief Send a message to the peer
+     *
+     * @param json The JSON message to be sent.
+     * @param type The message type.
+     */
+    virtual void send(
+        Json::Value &json,
         const WebSocketMessageType type = WebSocketMessageType::Text) = 0;
 
     /// Return the local IP address and port number of the connection
