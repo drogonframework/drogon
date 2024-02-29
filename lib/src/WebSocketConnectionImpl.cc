@@ -167,15 +167,6 @@ void WebSocketConnectionImpl::send(const std::string_view msg,
     send(msg.data(), msg.length(), type);
 }
 
-void WebSocketConnectionImpl::send(const Json::Value *json,
-                                   const WebSocketMessageType type)
-{
-    Json::FastWriter writer;
-    writer.omitEndingLineFeed();
-    auto msg = writer.write(*json);
-    send(msg.data(), msg.length(), type);
-}
-
 void WebSocketConnectionImpl::send(Json::Value &json,
                                    const WebSocketMessageType type)
 {
