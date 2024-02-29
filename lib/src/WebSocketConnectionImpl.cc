@@ -14,6 +14,8 @@
 
 #include "WebSocketConnectionImpl.h"
 #include "HttpAppFrameworkImpl.h"
+#include <json/value.h>
+#include <json/writer.h>
 #include <thread>
 
 using namespace drogon;
@@ -162,6 +164,15 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
 void WebSocketConnectionImpl::send(const std::string_view msg,
                                    const WebSocketMessageType type)
 {
+    send(msg.data(), msg.length(), type);
+}
+
+void WebSocketConnectionImpl::send(const Json::Value &json,
+                                   const WebSocketMessageType type)
+{
+    Json::FastWriter writer;
+    writer.omitEndingLineFeed();
+    auto msg = writer.write(json);
     send(msg.data(), msg.length(), type);
 }
 
