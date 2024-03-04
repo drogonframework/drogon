@@ -38,9 +38,8 @@ jobs:
       - name: Install conan packages
         working-directory: ./build
         run: |
-          conan profile detect
-          conan install .. -s compiler="msvc" -sbuild_type=Debug --build=missing -s compiler.cppstd=17
-
+          conan profile detect --force
+          conan install .. --output-folder=. --build=missing --settings=build_type=Debug --settings=compiler="msvc" --settings=compiler.cppstd=17
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
@@ -59,7 +58,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=17
 
       - name: Build
-        run: cmake --build build --target install --parallel
+        run: cmake --build build --parallel
 
       - name: Test
         shell: bash
