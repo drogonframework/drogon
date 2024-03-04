@@ -46,6 +46,8 @@ class SessionManager : public trantor::NonCopyable
 
     SessionPtr getSession(const std::string &sessionID, bool needToSet);
     void changeSessionId(const SessionPtr &sessionPtr);
+    void insertSession(const SessionPtr &sessionPtr);
+    std::vector<SessionPtr> getAllSessions() const;
 
   private:
     std::unique_ptr<CacheMap<std::string, SessionPtr>> sessionMapPtr_;

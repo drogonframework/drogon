@@ -121,7 +121,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual void run() = 0;
 
     /// Return true if the framework is running
-    virtual bool isRunning() = 0;
+    virtual bool isRunning() const = 0;
 
     /// Quit the event loop
     /**
@@ -843,6 +843,22 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &cookieKey = "JSESSIONID",
         int maxAge = -1,
         std::function<std::string()> idGeneratorCallback = nullptr) = 0;
+
+    /**
+     * @brief Insert a session into the session manager within the framework.
+     *
+     * @note This method should be called after the framework runs. Users
+     * usually don't need to call this method because all sessions are managed
+     * by the framework.
+     * */
+    virtual void insertSession(const SessionPtr &session) = 0;
+
+    /**
+     * @brief Get all sessions in the session manager within the framework.
+     *
+     * @note This method should be called after the framework runs.
+     * */
+    virtual std::vector<SessionPtr> getAllSessions() const = 0;
 
     /// A wrapper of the above method.
     /**
