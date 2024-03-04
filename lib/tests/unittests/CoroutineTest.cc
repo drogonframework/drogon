@@ -2,6 +2,7 @@
 #include <drogon/utils/coroutine.h>
 #include <drogon/HttpAppFramework.h>
 #include <trantor/net/EventLoopThread.h>
+#include <functional>
 #include <type_traits>
 
 using namespace drogon;
@@ -47,8 +48,19 @@ DROGON_TEST(CroutineBasics)
     STATIC_REQUIRE(is_int<await_result_t<Task<int>>>::value);
     STATIC_REQUIRE(is_void<await_result_t<Task<>>>::value);
 
+    // Regular functions should not be awaitable
+    STATIC_REQUIRE(is_awaitable_v<std::function<void()>> == false);
+    STATIC_REQUIRE(is_awaitable_v<std::function<int()>> == false);
+
     // No, you cannot await AsyncTask. By design
     STATIC_REQUIRE(is_awaitable_v<AsyncTask> == false);
+
+    // Coroutine bodies should be awaitable
+    auto empty_coro = []() -> Task<> { co_return; };
+    STATIC_REQUIRE(is_awaitable_v<decltype(empty_coro)> == false);
+
+    // But their return types should be
+    STATIC_REQUIRE(is_awaitable_v<decltype(empty_coro())>);
 
     // AsyncTask should execute eagerly
     int m = 0;
@@ -116,6 +128,14 @@ DROGON_TEST(CroutineBasics)
     async_run([TEST_CTX]() -> Task<void> {
         co_await queueInLoopCoro<void>(app().getLoop(), []() { LOG_DEBUG; });
     });
+}
+
+DROGON_TEST(AwaiterTraits)
+{
+    auto awaiter = sleepCoro(drogon::app().getLoop(), 0.001);
+    STATIC_REQUIRE(is_awaitable_v<decltype(awaiter)>);
+    STATIC_REQUIRE(std::is_void<await_result_t<decltype(awaiter)>>::value);
+    sync_wait(awaiter);
 }
 
 DROGON_TEST(CompilcatedCoroutineLifetime)
@@ -211,4 +231,69 @@ DROGON_TEST(SwitchThread)
     };
     sync_wait(switch_thread());
     thread.wait();
+}
+
+DROGON_TEST(WhenAll)
+{
+    // Check all tasks are executed
+    int counter = 0;
+    auto coro = [&]() -> Task<> {
+        counter++;
+        co_return;
+    };
+    auto except = []() -> Task<> {
+        throw std::runtime_error("test error");
+        co_return;
+    };
+    auto slow = []() -> Task<> {
+        co_await sleepCoro(drogon::app().getLoop(), 0.001);
+        co_return;
+    };
+    auto return42 = []() -> Task<int> { co_return 42; };
+
+    std::vector<Task<>> tasks;
+    for (int i = 0; i < 10; ++i)
+        tasks.push_back(coro());
+    sync_wait(when_all(std::move(tasks)));
+    CHECK(counter == 10);
+
+    // Check exceptions are propagated while all coroutines run until completion
+    counter = 0;
+    std::vector<Task<>> tasks2;
+    tasks2.push_back(coro());
+    tasks2.push_back(except());
+    tasks2.push_back(coro());
+
+    CHECK_THROWS_AS(sync_wait(when_all(std::move(tasks2))), std::runtime_error);
+    CHECK(counter == 2);
+
+    // Check waiting for tasks that can't complete immediately works
+    counter = 0;
+    std::vector<Task<>> tasks3;
+    tasks3.push_back(slow());
+    // tasks3.push_back(slow());
+    tasks3.push_back(coro());
+    sync_wait(when_all(std::move(tasks3)));
+    CHECK(counter == 1);
+
+    // Check we can get the results of the tasks
+    std::vector<Task<int>> tasks4;
+    tasks4.push_back(return42());
+    tasks4.push_back(return42());
+    auto results = sync_wait(when_all(std::move(tasks4)));
+    CHECK(results.size() == 2);
+    CHECK(results[0] == 42);
+    CHECK(results[1] == 42);
+
+    // Check waiting on non-task works
+    auto sleep = sleepCoro(drogon::app().getLoop(), 0.001);
+    auto sleep2 = sleepCoro(drogon::app().getLoop(), 0.001);
+    std::vector<decltype(sleep)> tasks5;
+    tasks5.emplace_back(std::move(sleep));
+    tasks5.emplace_back(std::move(sleep2));
+    sync_wait(when_all(std::move(tasks5)));
+
+    // Check waiting on empty list works
+    std::vector<Task<>> tasks6;
+    sync_wait(when_all(std::move(tasks6)));
 }
