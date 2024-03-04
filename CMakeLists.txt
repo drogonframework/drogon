@@ -245,6 +245,7 @@ if (BUILD_BROTLI)
 endif (BUILD_BROTLI)
 
 set(DROGON_SOURCES
+    lib/src/coroutine.cc
     lib/src/AOPAdvice.cc
     lib/src/AccessLogger.cc
     lib/src/CacheFile.cc
