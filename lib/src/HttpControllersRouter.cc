@@ -603,6 +603,22 @@ RouteResult HttpControllersRouter::route(const HttpRequestImplPtr &req)
                 std::regex_match(req->path(), result, ctrlRegex))
             {
                 routerItemPtr = &item;
+                //-------------
+                SafeStringMap<std::string> routingparameters;
+                size_t paramPos = 1;
+                for (size_t i = 1; i < result.size(); ++i)
+                {
+                    size_t paramStart = routerItemPtr->pathPattern_.find("{", paramPos);
+                    size_t paramEnd = routerItemPtr->pathPattern_.find("}", paramStart + 1);
+                    std::string key = routerItemPtr->pathPattern_.substr(paramStart + 1, paramEnd - paramStart - 1);
+                    if(key.empty())
+                    {
+                        break;
+                    }
+                    routingparameters[key] = result[i].str();
+                    paramPos = paramEnd;
+                }
+                req->setRoutingParameters(std::move(routingparameters));
                 break;
             }
         }

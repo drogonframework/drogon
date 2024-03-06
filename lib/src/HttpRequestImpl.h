@@ -154,6 +154,11 @@ class HttpRequestImpl : public HttpRequest
         routingParams_ = std::move(params);
     }
 
+    void setRoutingParameters(SafeStringMap<std::string> &&params) override
+    {
+        routingparameters_ = std::move(params);
+    }
+
     void setPath(const std::string &path) override
     {
         path_ = path;
@@ -583,6 +588,7 @@ class HttpRequestImpl : public HttpRequest
         {
             flagForParsingParameters_ = true;
             parseParameters();
+            parameters_.merge(routingparameters_);
         }
     }
 
@@ -619,6 +625,7 @@ class HttpRequestImpl : public HttpRequest
     bool isOnSecureConnection_{false};
     bool passThrough_{false};
     std::vector<std::string> routingParams_;
+    mutable SafeStringMap<std::string> routingparameters_;
 
   protected:
     std::string content_;

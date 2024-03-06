@@ -98,7 +98,7 @@ class DROGON_EXPORT DrClassMap
      *
      * @param ins The smart pointer to the instance.
      */
-    static void setSingleInstance(const std::shared_ptr<DrObjectBase> &ins);
+    static void setSingleInstance(const std::shared_ptr<DrObjectBase> &ins,const std::string& name="");
 
     /**
      * @brief Get all names of classes registered in the map.

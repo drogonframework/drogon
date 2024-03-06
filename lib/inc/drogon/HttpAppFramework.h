@@ -649,7 +649,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * This method should be called before calling the app().run() method.
      */
     template <typename T>
-    HttpAppFramework &registerController(const std::shared_ptr<T> &ctrlPtr)
+    HttpAppFramework &registerController(const std::shared_ptr<T> &ctrlPtr,const std::string& name="")
     {
         static_assert((std::is_base_of<HttpControllerBase, T>::value ||
                        std::is_base_of<HttpSimpleControllerBase, T>::value ||
@@ -659,7 +659,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                       "Controllers created and initialized "
                       "automatically by drogon cannot be "
                       "registered here");
-        DrClassMap::setSingleInstance(ctrlPtr);
+        DrClassMap::setSingleInstance(ctrlPtr,name);
         T::initPathRouting();
         return *this;
     }
@@ -669,7 +669,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * This method is similar to the above method.
      */
     template <typename T>
-    HttpAppFramework &registerFilter(const std::shared_ptr<T> &filterPtr)
+    HttpAppFramework &registerFilter(const std::shared_ptr<T> &filterPtr,const std::string& name="")
     {
         static_assert(std::is_base_of<HttpFilterBase, T>::value,
                       "Error! Only filter objects can be registered here");
@@ -677,7 +677,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                       "Filters created and initialized "
                       "automatically by drogon cannot be "
                       "registered here");
-        DrClassMap::setSingleInstance(filterPtr);
+        DrClassMap::setSingleInstance(filterPtr,name);
         return *this;
     }
 

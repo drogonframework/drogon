@@ -94,12 +94,12 @@ const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(
     }
 }
 
-void DrClassMap::setSingleInstance(const std::shared_ptr<DrObjectBase> &ins)
+void DrClassMap::setSingleInstance(const std::shared_ptr<DrObjectBase> &ins, const std::string& name)
 {
     auto &mtx = internal::getMapMutex();
     auto &singleInstanceMap = internal::getObjsMap();
     std::lock_guard<std::mutex> lock(mtx);
-    singleInstanceMap[ins->className()] = ins;
+    singleInstanceMap[name.empty()?ins->className():name] = ins;
 }
 
 std::vector<std::string> DrClassMap::getAllClassName()
