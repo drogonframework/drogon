@@ -46,19 +46,21 @@ class DbClientManager : public trantor::NonCopyable
         return iter->second.getThreadData();
     }
 
-    void createDbClient(const std::string &dbType,
-                        const std::string &host,
-                        const unsigned short port,
-                        const std::string &databaseName,
-                        const std::string &userName,
-                        const std::string &password,
-                        const size_t connectionNum,
-                        const std::string &filename,
-                        const std::string &name,
-                        const bool isFast,
-                        const std::string &characterSet,
-                        double timeout,
-                        const bool autoBatch);
+    void createDbClient(
+        const std::string &dbType,
+        const std::string &host,
+        unsigned short port,
+        const std::string &databaseName,
+        const std::string &userName,
+        const std::string &password,
+        size_t connectionNum,
+        const std::string &filename,
+        const std::string &name,
+        bool isFast,
+        const std::string &characterSet,
+        double timeout,
+        const std::unordered_map<std::string, std::string> &connectOptions,
+        bool autoBatch);
     bool areAllDbClientsAvailable() const noexcept;
 
   private:

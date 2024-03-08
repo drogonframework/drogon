@@ -564,8 +564,18 @@ static void loadDbClients(const Json::Value &dbClients)
         {
             characterSet = client.get("client_encoding", "").asString();
         }
+        auto connectOptions = client.get("connect_options", Json::Value());
         auto timeout = client.get("timeout", -1.0).asDouble();
         auto autoBatch = client.get("auto_batch", false).asBool();
+
+        std::unordered_map<std::string, std::string> options;
+        if (connectOptions.isObject() && !connectOptions.empty())
+        {
+            for (const auto &key : connectOptions.getMemberNames())
+            {
+                options[key] = connectOptions[key].asString();
+            }
+        }
         drogon::app().createDbClient(type,
                                      host,
                                      (unsigned short)port,
@@ -578,6 +588,7 @@ static void loadDbClients(const Json::Value &dbClients)
                                      isFast,
                                      characterSet,
                                      timeout,
+                                     options,
                                      autoBatch);
     }
 }

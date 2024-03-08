@@ -127,23 +127,25 @@ void DbClientManager::createDbClients(
     }
 }
 
-void DbClientManager::createDbClient(const std::string &dbType,
-                                     const std::string &host,
-                                     const unsigned short port,
-                                     const std::string &databaseName,
-                                     const std::string &userName,
-                                     const std::string &password,
-                                     const size_t connectionNum,
+void DbClientManager::createDbClient(
+    const std::string &dbType,
+    const std::string &host,
+    unsigned short port,
+    const std::string &databaseName,
+    const std::string &userName,
+    const std::string &password,
+    size_t connectionNum,
 #if USE_SQLITE3
-                                     const std::string &filename,
+    const std::string &filename,
 #else
-                                     const std::string &,
+    const std::string &,
 #endif
-                                     const std::string &name,
-                                     const bool isFast,
-                                     const std::string &characterSet,
-                                     double timeout,
-                                     const bool autoBatch)
+    const std::string &name,
+    bool isFast,
+    const std::string &characterSet,
+    double timeout,
+    const std::unordered_map<std::string, std::string> &connectOptions,
+    bool autoBatch)
 {
     auto connStr =
         utils::formattedString("host=%s port=%u dbname=%s user=%s",
@@ -176,6 +178,21 @@ void DbClientManager::createDbClient(const std::string &dbType,
     if (type == "postgresql" || type == "postgres")
     {
 #if USE_POSTGRESQL
+        // For valid connection options, see:
+        // https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNSTRING
+        if (!connectOptions.empty())
+        {
+            std::string optionStr = " options='";
+            for (auto const &[key, value] : connectOptions)
+            {
+                optionStr += " -c ";
+                optionStr += escapeConnString(key);
+                optionStr += "=";
+                optionStr += escapeConnString(value);
+            }
+            optionStr += "'";
+            info.connectionInfo_ += optionStr;
+        }
         info.dbType_ = orm::ClientType::PostgreSQL;
         dbInfos_.push_back(info);
 #else

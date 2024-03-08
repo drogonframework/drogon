@@ -27,19 +27,21 @@ void DbClientManager::createDbClients(
     return;
 }
 
-void DbClientManager::createDbClient(const std::string & /*dbType*/,
-                                     const std::string & /*host*/,
-                                     const unsigned short /*port*/,
-                                     const std::string & /*databaseName*/,
-                                     const std::string & /*userName*/,
-                                     const std::string & /*password*/,
-                                     const size_t /*connectionNum*/,
-                                     const std::string & /*filename*/,
-                                     const std::string & /*name*/,
-                                     const bool /*isFast*/,
-                                     const std::string & /*characterSet*/,
-                                     double /*timeout*/,
-                                     const bool /*autoBatch*/)
+void DbClientManager::createDbClient(
+    const std::string & /*dbType*/,
+    const std::string & /*host*/,
+    unsigned short /*port*/,
+    const std::string & /*databaseName*/,
+    const std::string & /*userName*/,
+    const std::string & /*password*/,
+    size_t /*connectionNum*/,
+    const std::string & /*filename*/,
+    const std::string & /*name*/,
+    bool /*isFast*/,
+    const std::string & /*characterSet*/,
+    double /*timeout*/,
+    const std::unordered_map<std::string, std::string> & /*connectOptions*/,
+    bool /*autoBatch*/)
 {
     LOG_FATAL << "No database is supported by drogon, please install the "
                  "database development library first.";

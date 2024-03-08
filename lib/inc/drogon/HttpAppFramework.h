@@ -1445,17 +1445,18 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &createDbClient(
         const std::string &dbType,
         const std::string &host,
-        const unsigned short port,
+        unsigned short port,
         const std::string &databaseName,
         const std::string &userName,
         const std::string &password,
-        const size_t connectionNum = 1,
+        size_t connectionNum = 1,
         const std::string &filename = "",
         const std::string &name = "default",
-        const bool isFast = false,
+        bool isFast = false,
         const std::string &characterSet = "",
         double timeout = -1.0,
-        const bool autoBatch = false) = 0;
+        const std::unordered_map<std::string, std::string> &connectOptions = {},
+        bool autoBatch = false) = 0;
 
     /// Create a redis client
     /**

@@ -530,19 +530,21 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     orm::DbClientPtr getDbClient(const std::string &name) override;
     orm::DbClientPtr getFastDbClient(const std::string &name) override;
-    HttpAppFramework &createDbClient(const std::string &dbType,
-                                     const std::string &host,
-                                     unsigned short port,
-                                     const std::string &databaseName,
-                                     const std::string &userName,
-                                     const std::string &password,
-                                     size_t connectionNum,
-                                     const std::string &filename,
-                                     const std::string &name,
-                                     bool isFast,
-                                     const std::string &characterSet,
-                                     double timeout,
-                                     const bool autoBatch) override;
+    HttpAppFramework &createDbClient(
+        const std::string &dbType,
+        const std::string &host,
+        unsigned short port,
+        const std::string &databaseName,
+        const std::string &userName,
+        const std::string &password,
+        size_t connectionNum,
+        const std::string &filename,
+        const std::string &name,
+        bool isFast,
+        const std::string &characterSet,
+        double timeout,
+        const std::unordered_map<std::string, std::string> &connectOptions,
+        bool autoBatch) override;
     HttpAppFramework &createRedisClient(const std::string &ip,
                                         unsigned short port,
                                         const std::string &name,
