@@ -179,7 +179,7 @@ void DbClientManager::createDbClient(
     {
 #if USE_POSTGRESQL
         // For valid connection options, see:
-        // https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNSTRING
+        // https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-OPTIONS
         if (!connectOptions.empty())
         {
             std::string optionStr = " options='";
