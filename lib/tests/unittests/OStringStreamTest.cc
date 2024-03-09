@@ -1,10 +1,28 @@
 #include <drogon/utils/OStringStream.h>
 #include <drogon/drogon_test.h>
 #include <string>
+#include <string_view>
 #include <iostream>
 
 DROGON_TEST(OStringStreamTest)
 {
+    SUBSECTION(CanConvertToString)
+    {
+        using drogon::internal::CanConvertToString;
+
+        static_assert(CanConvertToString<int>::value);
+        static_assert(CanConvertToString<long>::value);
+        static_assert(CanConvertToString<long long>::value);
+        static_assert(CanConvertToString<unsigned>::value);
+        static_assert(CanConvertToString<unsigned long>::value);
+        static_assert(CanConvertToString<unsigned long long>::value);
+        static_assert(CanConvertToString<float>::value);
+        static_assert(CanConvertToString<double>::value);
+        static_assert(CanConvertToString<long double>::value);
+        static_assert(!CanConvertToString<std::string>::value);
+        static_assert(!CanConvertToString<std::string_view>::value);
+    }
+
     SUBSECTION(integer)
     {
         drogon::OStringStream ss;

@@ -167,7 +167,7 @@ void Category::updateByJson(const Json::Value &pJson) noexcept(false)
 
 const int32_t &Category::getValueOfId() const noexcept
 {
-    const static int32_t defaultValue = int32_t();
+    static const int32_t defaultValue = int32_t();
     if (id_)
         return *id_;
     return defaultValue;
@@ -192,7 +192,7 @@ const typename Category::PrimaryKeyType &Category::getPrimaryKey() const
 
 const std::string &Category::getValueOfName() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (name_)
         return *name_;
     return defaultValue;
@@ -529,7 +529,7 @@ bool Category::validJsonOfField(size_t index,
 
 std::vector<Blog> Category::getBlogs(const DbClientPtr &clientPtr) const
 {
-    const static std::string sql = "select * from blog where category_id = ?";
+    static const std::string sql = "select * from blog where category_id = ?";
     Result r(nullptr);
     {
         auto binder = *clientPtr << sql;
@@ -550,7 +550,7 @@ void Category::getBlogs(const DbClientPtr &clientPtr,
                         const std::function<void(std::vector<Blog>)> &rcb,
                         const ExceptionCallback &ecb) const
 {
-    const static std::string sql = "select * from blog where category_id = ?";
+    static const std::string sql = "select * from blog where category_id = ?";
     *clientPtr << sql << *id_ >> [rcb = std::move(rcb)](const Result &r) {
         std::vector<Blog> ret;
         ret.reserve(r.size());

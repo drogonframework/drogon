@@ -17,5 +17,25 @@ jobs:
       - name: Install dos2unix
         run: sudo apt-get install -y dos2unix
 
+      - name: Install clang-format-17
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x ./llvm.sh
+          sudo ./llvm.sh 17
+          sudo apt-get install -y clang-format-17
+
       - name: Check formatting
         run: ./format.sh && git diff --exit-code
+        env:
+          CLANG_FORMAT: clang-format-17
+
+  cpplint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cpplint
+        run: pip install cpplint
+
+      - name: Run lint
+        run: cpplint --recursive .

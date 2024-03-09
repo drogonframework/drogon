@@ -45,7 +45,7 @@ std::unordered_map<std::string, HttpFile> MultiPartParser::getFilesMap() const
     return result;
 }
 
-const std::map<std::string, std::string> &MultiPartParser::getParameters() const
+const SafeStringMap<std::string> &MultiPartParser::getParameters() const
 {
     return parameters_;
 }

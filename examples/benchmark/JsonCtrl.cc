@@ -6,6 +6,6 @@ void JsonCtrl::asyncHandleHttpRequest(
 {
     Json::Value ret;
     ret["message"] = "Hello, World!";
-    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    auto resp = HttpResponse::newHttpJsonResponse(std::move(ret));
     callback(resp);
 }

@@ -620,7 +620,7 @@ void Groups::updateByJson(const Json::Value &pJson) noexcept(false)
 
 const uint64_t &Groups::getValueOfGroupId() const noexcept
 {
-    const static uint64_t defaultValue = uint64_t();
+    static const uint64_t defaultValue = uint64_t();
     if (groupId_)
         return *groupId_;
     return defaultValue;
@@ -639,7 +639,7 @@ const typename Groups::PrimaryKeyType &Groups::getPrimaryKey() const
 
 const std::string &Groups::getValueOfGroupName() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (groupName_)
         return *groupName_;
     return defaultValue;
@@ -670,7 +670,7 @@ void Groups::setGroupNameToNull() noexcept
 
 const uint64_t &Groups::getValueOfCreaterId() const noexcept
 {
-    const static uint64_t defaultValue = uint64_t();
+    static const uint64_t defaultValue = uint64_t();
     if (createrId_)
         return *createrId_;
     return defaultValue;
@@ -695,7 +695,7 @@ void Groups::setCreaterIdToNull() noexcept
 
 const std::string &Groups::getValueOfCreateTime() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (createTime_)
         return *createTime_;
     return defaultValue;
@@ -726,7 +726,7 @@ void Groups::setCreateTimeToNull() noexcept
 
 const uint64_t &Groups::getValueOfInviting() const noexcept
 {
-    const static uint64_t defaultValue = uint64_t();
+    static const uint64_t defaultValue = uint64_t();
     if (inviting_)
         return *inviting_;
     return defaultValue;
@@ -751,7 +751,7 @@ void Groups::setInvitingToNull() noexcept
 
 const uint64_t &Groups::getValueOfInvitingUserId() const noexcept
 {
-    const static uint64_t defaultValue = uint64_t();
+    static const uint64_t defaultValue = uint64_t();
     if (invitingUserId_)
         return *invitingUserId_;
     return defaultValue;
@@ -776,7 +776,7 @@ void Groups::setInvitingUserIdToNull() noexcept
 
 const std::string &Groups::getValueOfAvatarId() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (avatarId_)
         return *avatarId_;
     return defaultValue;
@@ -807,7 +807,7 @@ void Groups::setAvatarIdToNull() noexcept
 
 const double &Groups::getValueOfUuu() const noexcept
 {
-    const static double defaultValue = double();
+    static const double defaultValue = double();
     if (uuu_)
         return *uuu_;
     return defaultValue;
@@ -832,7 +832,7 @@ void Groups::setUuuToNull() noexcept
 
 const std::string &Groups::getValueOfText() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (text_)
         return *text_;
     return defaultValue;
@@ -863,7 +863,7 @@ void Groups::setTextToNull() noexcept
 
 const std::vector<char> &Groups::getValueOfAvatar() const noexcept
 {
-    const static std::vector<char> defaultValue = std::vector<char>();
+    static const std::vector<char> defaultValue = std::vector<char>();
     if (avatar_)
         return *avatar_;
     return defaultValue;
@@ -871,7 +871,7 @@ const std::vector<char> &Groups::getValueOfAvatar() const noexcept
 
 std::string Groups::getValueOfAvatarAsString() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (avatar_)
         return std::string(avatar_->data(), avatar_->size());
     return defaultValue;
@@ -904,7 +904,7 @@ void Groups::setAvatarToNull() noexcept
 
 const bool &Groups::getValueOfIsDefault() const noexcept
 {
-    const static bool defaultValue = bool();
+    static const bool defaultValue = bool();
     if (isDefault_)
         return *isDefault_;
     return defaultValue;

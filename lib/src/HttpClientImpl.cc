@@ -28,7 +28,7 @@ using namespace std::placeholders;
 
 namespace trantor
 {
-const static size_t kDefaultDNSTimeout{600};
+static const size_t kDefaultDNSTimeout{600};
 }
 
 void HttpClientImpl::createTcpClient()

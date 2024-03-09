@@ -26,6 +26,7 @@ set(UNITTEST_SOURCES
     unittests/ControllerCreationTest.cc
     unittests/MultiPartParserTest.cc
     unittests/SlashRemoverTest.cc
+    unittests/UtilitiesTest.cc
     unittests/UuidUnittest.cc
 )
 
@@ -113,7 +114,7 @@ if (BUILD_CTL)
             $<TARGET_FILE_DIR:integration_test_server>/a-directory)
 endif(BUILD_CTL)
 
-set(COOKIE_SAME_SITE 
+set(COOKIE_SAME_SITE
   main_CookieSameSite.cc
   CookieSameSite.cc
 )
