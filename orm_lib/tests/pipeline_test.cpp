@@ -248,7 +248,8 @@ int main(int argc, char **argv)
         "default",         // name
         true,              // isFast
         "",                // charset
-        10,                 // timeout
+        10,                // timeout
+        {},                // connectOptions
         true               // autobatch
     );
 #endif
