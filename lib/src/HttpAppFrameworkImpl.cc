@@ -966,7 +966,6 @@ void HttpAppFrameworkImpl::quit()
             listenerManagerPtr_->stopListening();
             listenerManagerPtr_.reset();
             StaticFileRouter::instance().reset();
-            HttpControllersRouter::instance().reset();
             pluginsManagerPtr_.reset();
             redisClientManagerPtr_.reset();
             dbClientManagerPtr_.reset();
