@@ -87,6 +87,15 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
 {
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::reset()
+{
+    listenerManagerPtr_ = std::make_unique<ListenerManager>();
+    pluginsManagerPtr_ = std::make_unique<PluginsManager>();
+    dbClientManagerPtr_ = std::make_unique<orm::DbClientManager>();
+    redisClientManagerPtr_ = std::make_unique<nosql::RedisClientManager>();
+    return *this;
+}
+
 static std::function<void()> f = [] {
     LOG_TRACE << "Initialize the main event loop in the main thread";
 };
