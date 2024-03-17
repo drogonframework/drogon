@@ -57,9 +57,12 @@
 #     # timeout: -1 by default, in seconds, the timeout for executing a SQL query.
 #     # zero or negative value means no timeout.
 #     timeout: -1
-#     # "auto_batch": this feature is only available for the PostgreSQL driver(version >= 14.0), see
-#     #  the wiki for more details.
+#     # auto_batch: this feature is only available for the PostgreSQL driver(version >= 14.0), see
+#     # the wiki for more details.
 #     auto_batch: false
+#     # connect_options: extra options for the connection. Only works for PostgreSQL now.
+#     # connect_options:
+#     #   statement_timeout: '1s'
 # redis_clients:
 #     # name: Name of the client,'default' by default
 #   - name: default
