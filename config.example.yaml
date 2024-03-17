@@ -61,6 +61,7 @@
 #     # the wiki for more details.
 #     auto_batch: false
 #     # connect_options: extra options for the connection. Only works for PostgreSQL now.
+#     # For more information, see https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-OPTIONS
 #     # connect_options:
 #     #   statement_timeout: '1s'
 # redis_clients:
