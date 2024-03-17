@@ -63,25 +63,25 @@ int main(int argc, char **argv)
     std::future<void> f1 = p1.get_future();
     app().setThreadNum(1);
 #if USE_POSTGRESQL
-    app().createDbClient(  //
-        "postgresql",      // dbType
-        "127.0.0.1",       // host
-        5432,              // port
-        "postgres",        // dbname
-        "postgres",        // username
-        "12345",           // password
-        4,                 // connectionNum
-        "",                // filename
-        "default",         // name
-        false,             // isFast
-        "",                // charset
-        10,                // timeout
-        true,              // autobatch
+    app().createDbClient({
+        "postgresql",  // dbType
+        "127.0.0.1",   // host
+        5432,          // port
+        "postgres",    // dbname
+        "postgres",    // username
+        "12345",       // password
+        4,             // connectionNum
+        "",            // filename
+        "default",     // name
+        false,         // isFast
+        "",            // charset
+        10,            // timeout
+        true,          // autobatch
         {
             {"statement_timeout", "3s"},
             {"lock_timeout", "0.5s"},
         }  // connectOptions
-    );
+    });
 #endif
     std::thread thr([&]() {
         app().getLoop()->queueInLoop([&]() { p1.set_value(); });

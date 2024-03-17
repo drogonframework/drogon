@@ -914,24 +914,30 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     bool isFast,
     const std::string &characterSet,
     double timeout,
-    bool autoBatch,
-    const std::unordered_map<std::string, std::string> &connectOptions)
+    bool autoBatch)
 {
     assert(!running_);
-    dbClientManagerPtr_->createDbClient(dbType,
-                                        host,
-                                        port,
-                                        databaseName,
-                                        userName,
-                                        password,
-                                        connectionNum,
-                                        filename,
-                                        name,
-                                        isFast,
-                                        characterSet,
-                                        timeout,
-                                        autoBatch,
-                                        connectOptions);
+    dbClientManagerPtr_->createDbClient({dbType,
+                                         host,
+                                         port,
+                                         databaseName,
+                                         userName,
+                                         password,
+                                         connectionNum,
+                                         filename,
+                                         name,
+                                         isFast,
+                                         characterSet,
+                                         timeout,
+                                         autoBatch,
+                                         {}});
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
+    const orm::DbGeneralConfig &cfg)
+{
+    dbClientManagerPtr_->createDbClient(cfg);
     return *this;
 }
 

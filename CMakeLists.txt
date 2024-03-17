@@ -683,6 +683,7 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/BaseBuilder.h
     orm_lib/inc/drogon/orm/Criteria.h
     orm_lib/inc/drogon/orm/DbClient.h
+    orm_lib/inc/drogon/orm/DbGeneralConfig.h
     orm_lib/inc/drogon/orm/DbListener.h
     orm_lib/inc/drogon/orm/DbTypes.h
     orm_lib/inc/drogon/orm/Exception.h

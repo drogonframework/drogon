@@ -127,63 +127,45 @@ void DbClientManager::createDbClients(
     }
 }
 
-void DbClientManager::createDbClient(
-    const std::string &dbType,
-    const std::string &host,
-    unsigned short port,
-    const std::string &databaseName,
-    const std::string &userName,
-    const std::string &password,
-    size_t connectionNum,
-#if USE_SQLITE3
-    const std::string &filename,
-#else
-    const std::string &,
-#endif
-    const std::string &name,
-    bool isFast,
-    const std::string &characterSet,
-    double timeout,
-    bool autoBatch,
-    const std::unordered_map<std::string, std::string> &connectOptions)
+void DbClientManager::createDbClient(const DbGeneralConfig &cfg)
 {
     auto connStr =
         utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                               escapeConnString(host).c_str(),
-                               port,
-                               escapeConnString(databaseName).c_str(),
-                               escapeConnString(userName).c_str());
-    if (!password.empty())
+                               escapeConnString(cfg.host).c_str(),
+                               cfg.port,
+                               escapeConnString(cfg.databaseName).c_str(),
+                               escapeConnString(cfg.username).c_str());
+    if (!cfg.password.empty())
     {
         connStr += " password=";
-        connStr += escapeConnString(password);
+        connStr += escapeConnString(cfg.password);
     }
-    std::string type = dbType;
+    std::string type = cfg.dbType;
     std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
         return tolower(c);
     });
-    if (!characterSet.empty())
+    if (!cfg.characterSet.empty())
     {
         connStr += " client_encoding=";
-        connStr += escapeConnString(characterSet);
+        connStr += escapeConnString(cfg.characterSet);
     }
     DbInfo info;
     info.connectionInfo_ = connStr;
-    info.connectionNumber_ = connectionNum;
-    info.isFast_ = isFast;
-    info.name_ = name;
-    info.timeout_ = timeout;
-    info.autoBatch_ = autoBatch;
+    info.connectionNumber_ = cfg.connectionNumber;
+    info.isFast_ = cfg.isFast;
+    info.name_ = cfg.name;
+    info.timeout_ = cfg.timeout;
+    info.autoBatch_ = cfg.autoBatch;
 
     if (type == "postgresql" || type == "postgres")
     {
 #if USE_POSTGRESQL
         // For valid connection options, see:
         // https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-OPTIONS
-        if (!connectOptions.empty())
+        if (!cfg.connectOptions.empty())
         {
             std::string optionStr = " options='";
-            for (auto const &[key, value] : connectOptions)
+            for (auto const &[key, value] : cfg.connectOptions)
             {
                 optionStr += " -c ";
                 optionStr += escapeConnString(key);
@@ -218,7 +200,7 @@ void DbClientManager::createDbClient(
     else if (type == "sqlite3")
     {
 #if USE_SQLITE3
-        std::string sqlite3ConnStr = "filename=" + filename;
+        std::string sqlite3ConnStr = "filename=" + cfg.filename;
         info.connectionInfo_ = sqlite3ConnStr;
         info.dbType_ = orm::ClientType::Sqlite3;
         dbInfos_.push_back(info);
