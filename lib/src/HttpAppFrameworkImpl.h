@@ -543,8 +543,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         bool isFast,
         const std::string &characterSet,
         double timeout,
-        const std::unordered_map<std::string, std::string> &connectOptions,
-        bool autoBatch) override;
+        bool autoBatch,
+        const std::unordered_map<std::string, std::string> &connectOptions)
+        override;
     HttpAppFramework &createRedisClient(const std::string &ip,
                                         unsigned short port,
                                         const std::string &name,

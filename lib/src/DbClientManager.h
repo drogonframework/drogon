@@ -59,8 +59,8 @@ class DbClientManager : public trantor::NonCopyable
         bool isFast,
         const std::string &characterSet,
         double timeout,
-        const std::unordered_map<std::string, std::string> &connectOptions,
-        bool autoBatch);
+        bool autoBatch,
+        const std::unordered_map<std::string, std::string> &connectOptions);
     bool areAllDbClientsAvailable() const noexcept;
 
   private:

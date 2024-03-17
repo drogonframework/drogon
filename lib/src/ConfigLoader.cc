@@ -588,8 +588,8 @@ static void loadDbClients(const Json::Value &dbClients)
                                      isFast,
                                      characterSet,
                                      timeout,
-                                     options,
-                                     autoBatch);
+                                     autoBatch,
+                                     options);
     }
 }
 

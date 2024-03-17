@@ -249,7 +249,6 @@ int main(int argc, char **argv)
         true,              // isFast
         "",                // charset
         10,                // timeout
-        {},                // connectOptions
         true               // autobatch
     );
 #endif

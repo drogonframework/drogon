@@ -144,8 +144,8 @@ void DbClientManager::createDbClient(
     bool isFast,
     const std::string &characterSet,
     double timeout,
-    const std::unordered_map<std::string, std::string> &connectOptions,
-    bool autoBatch)
+    bool autoBatch,
+    const std::unordered_map<std::string, std::string> &connectOptions)
 {
     auto connStr =
         utils::formattedString("host=%s port=%u dbname=%s user=%s",
