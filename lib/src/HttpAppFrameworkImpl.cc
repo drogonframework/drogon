@@ -902,32 +902,40 @@ nosql::RedisClientPtr HttpAppFrameworkImpl::getFastRedisClient(
 HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     const std::string &dbType,
     const std::string &host,
-    const unsigned short port,
+    unsigned short port,
     const std::string &databaseName,
     const std::string &userName,
     const std::string &password,
-    const size_t connectionNum,
+    size_t connectionNum,
     const std::string &filename,
     const std::string &name,
-    const bool isFast,
+    bool isFast,
     const std::string &characterSet,
     double timeout,
-    const bool autoBatch)
+    bool autoBatch)
 {
     assert(!running_);
-    dbClientManagerPtr_->createDbClient(dbType,
-                                        host,
-                                        port,
-                                        databaseName,
-                                        userName,
-                                        password,
-                                        connectionNum,
-                                        filename,
-                                        name,
-                                        isFast,
-                                        characterSet,
-                                        timeout,
-                                        autoBatch);
+    dbClientManagerPtr_->createDbClient({dbType,
+                                         host,
+                                         port,
+                                         databaseName,
+                                         userName,
+                                         password,
+                                         connectionNum,
+                                         filename,
+                                         name,
+                                         isFast,
+                                         characterSet,
+                                         timeout,
+                                         autoBatch,
+                                         {}});
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
+    const orm::DbGeneralConfig &cfg)
+{
+    dbClientManagerPtr_->createDbClient(cfg);
     return *this;
 }
 

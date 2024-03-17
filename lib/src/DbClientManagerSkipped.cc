@@ -13,8 +13,6 @@
  */
 
 #include "DbClientManager.h"
-#include <drogon/config.h>
-#include <drogon/utils/Utilities.h>
 #include <algorithm>
 #include <stdlib.h>
 
@@ -27,19 +25,7 @@ void DbClientManager::createDbClients(
     return;
 }
 
-void DbClientManager::createDbClient(const std::string & /*dbType*/,
-                                     const std::string & /*host*/,
-                                     const unsigned short /*port*/,
-                                     const std::string & /*databaseName*/,
-                                     const std::string & /*userName*/,
-                                     const std::string & /*password*/,
-                                     const size_t /*connectionNum*/,
-                                     const std::string & /*filename*/,
-                                     const std::string & /*name*/,
-                                     const bool /*isFast*/,
-                                     const std::string & /*characterSet*/,
-                                     double /*timeout*/,
-                                     const bool /*autoBatch*/)
+void DbClientManager::createDbClient(const DbGeneralConfig &cfg)
 {
     LOG_FATAL << "No database is supported by drogon, please install the "
                  "database development library first.";
