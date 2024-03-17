@@ -10,6 +10,8 @@ using namespace trantor;
 DROGON_TEST(ConnOptionsTest)
 {
     auto clientPtr = app().getDbClient();
+
+    // Run a query that will take longer than the statement_timeout
     clientPtr->execSqlAsync(
         "select pg_sleep(3);",
         [TEST_CTX](const drogon::orm::Result &r) {
@@ -22,6 +24,7 @@ DROGON_TEST(ConnOptionsTest)
             SUCCESS();
         });
 
+    // Run sql codes to hold a lock for sometime
     clientPtr->execSqlAsync(
         R"(
 DO $$
@@ -37,6 +40,8 @@ END $$;)",
             FAULT("query failed: ", e.base().what());
         });
 
+    // Run sql codes that requires the same lock, and will be canceled due to
+    // lock_timeout
     clientPtr->execSqlAsync(
         R"(
 DO $$
