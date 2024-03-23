@@ -26,8 +26,8 @@
 #include <sys/file.h>
 #elif !defined(__MINGW32__)
 #define stat _wstati64
-#define S_ISREG(m) (((m)&0170000) == (0100000))
-#define S_ISDIR(m) (((m)&0170000) == (0040000))
+#define S_ISREG(m) (((m) & 0170000) == (0100000))
+#define S_ISDIR(m) (((m) & 0170000) == (0040000))
 #endif
 #include <sys/stat.h>
 #include <filesystem>
@@ -237,8 +237,8 @@ void StaticFileRouter::route(
                                                    contentType);
                         }
                     });
-                return;
             }
+            return;
         }
     }
     std::string directoryPath =

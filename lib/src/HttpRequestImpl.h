@@ -169,9 +169,7 @@ class HttpRequestImpl : public HttpRequest
         pathEncode_ = pathEncode;
     }
 
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &parameters() const override
+    const SafeStringMap<std::string> &parameters() const override
     {
         parseParametersOnce();
         return parameters_;
@@ -179,7 +177,7 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &getParameter(const std::string &key) const override
     {
-        const static std::string defaultVal;
+        static const std::string defaultVal;
         parseParametersOnce();
         auto iter = parameters_.find(key);
         if (iter != parameters_.end())
@@ -321,7 +319,7 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &getHeaderBy(const std::string &lowerField) const
     {
-        const static std::string defaultVal;
+        static const std::string defaultVal;
         auto it = headers_.find(lowerField);
         if (it != headers_.end())
         {
@@ -332,7 +330,7 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &getCookie(const std::string &field) const override
     {
-        const static std::string defaultVal;
+        static const std::string defaultVal;
         auto it = cookies_.find(field);
         if (it != cookies_.end())
         {
@@ -341,16 +339,12 @@ class HttpRequestImpl : public HttpRequest
         return defaultVal;
     }
 
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &headers() const override
+    const SafeStringMap<std::string> &headers() const override
     {
         return headers_;
     }
 
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &cookies() const override
+    const SafeStringMap<std::string> &cookies() const override
     {
         return cookies_;
     }
@@ -506,7 +500,7 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &expect() const
     {
-        const static std::string none{""};
+        static const std::string none{""};
         if (expectPtr_)
             return *expectPtr_;
         return none;
@@ -524,7 +518,7 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &getJsonError() const override
     {
-        const static std::string none{""};
+        static const std::string none{""};
         if (jsonParsingErrorPtr_)
             return *jsonParsingErrorPtr_;
         return none;
@@ -608,15 +602,9 @@ class HttpRequestImpl : public HttpRequest
     bool pathEncode_{true};
     std::string_view matchedPathPattern_{""};
     std::string query_;
-    std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            headers_;
-    std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            cookies_;
-    mutable std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            parameters_;
+    SafeStringMap<std::string> headers_;
+    SafeStringMap<std::string> cookies_;
+    mutable SafeStringMap<std::string> parameters_;
     mutable std::shared_ptr<Json::Value> jsonPtr_;
     SessionPtr sessionPtr_;
     mutable AttributesPtr attributesPtr_;

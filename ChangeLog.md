@@ -4,6 +4,56 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.2] - 2024-01-18
+
+### API changes list
+
+- Feature: Integrate spdlog as logging backend.
+
+- Support asynchronous sending of chunked responses.
+
+### Changed
+
+- Modify the configuration file templates in drogon_ctl.
+
+- Use execute_process instead of exec_program in FindJsoncpp.cmake.
+
+- GitHub Action to find typos in the codebase using codespell.
+
+- add discord link to readme.
+
+- Add -k option to the drogon_ctl when running the press command.
+
+- Refine request routing process.
+
+- Add CI tests with more compilers.
+
+- Avoid a race condition in database listener tests.
+
+- Remove macos-11 CI; not supported by Homebrew.
+
+- Bump github/codeql-action from 2 to 3.
+
+- Move the RealIpResolver plugin to the PreRouting join point.
+
+### Fixed
+
+- Fix: typo on Mapper method.
+
+- Fix a error of coroutines on Windows.
+
+- Fix ORM: The original way did not handle exceptions correctly.
+
+- Remove the default ctor of the Row class in ORM.
+
+- Set the url of trantor to the official repository.
+
+- Fix htonll/ntohll redefinition.
+
+- Fix building with MSYS2.
+
+- Fix name issue when cross-compiling.
+
 ## [1.9.1] - 2023-11-27
 
 ### API changes list
@@ -1525,7 +1575,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.1...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.2...HEAD
+
+[1.9.2]: https://github.com/an-tao/drogon/compare/v1.9.1...v1.9.2
 
 [1.9.1]: https://github.com/an-tao/drogon/compare/v1.9.0...v1.9.1
 

@@ -679,7 +679,7 @@ void Users::updateByJson(const Json::Value &pJson) noexcept(false)
 
 const int64_t &Users::getValueOfId() const noexcept
 {
-    const static int64_t defaultValue = int64_t();
+    static const int64_t defaultValue = int64_t();
     if (id_)
         return *id_;
     return defaultValue;
@@ -710,7 +710,7 @@ const typename Users::PrimaryKeyType &Users::getPrimaryKey() const
 
 const std::string &Users::getValueOfUserId() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (userId_)
         return *userId_;
     return defaultValue;
@@ -741,7 +741,7 @@ void Users::setUserIdToNull() noexcept
 
 const std::string &Users::getValueOfUserName() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (userName_)
         return *userName_;
     return defaultValue;
@@ -772,7 +772,7 @@ void Users::setUserNameToNull() noexcept
 
 const std::string &Users::getValueOfPassword() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (password_)
         return *password_;
     return defaultValue;
@@ -803,7 +803,7 @@ void Users::setPasswordToNull() noexcept
 
 const std::string &Users::getValueOfOrgName() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (orgName_)
         return *orgName_;
     return defaultValue;
@@ -834,7 +834,7 @@ void Users::setOrgNameToNull() noexcept
 
 const std::string &Users::getValueOfSignature() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (signature_)
         return *signature_;
     return defaultValue;
@@ -865,7 +865,7 @@ void Users::setSignatureToNull() noexcept
 
 const std::string &Users::getValueOfAvatarId() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (avatarId_)
         return *avatarId_;
     return defaultValue;
@@ -896,7 +896,7 @@ void Users::setAvatarIdToNull() noexcept
 
 const std::string &Users::getValueOfSalt() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (salt_)
         return *salt_;
     return defaultValue;
@@ -927,7 +927,7 @@ void Users::setSaltToNull() noexcept
 
 const std::string &Users::getValueOfAdmin() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (admin_)
         return *admin_;
     return defaultValue;
@@ -958,7 +958,7 @@ void Users::setAdminToNull() noexcept
 
 const ::trantor::Date &Users::getValueOfCreateTime() const noexcept
 {
-    const static ::trantor::Date defaultValue = ::trantor::Date();
+    static const ::trantor::Date defaultValue = ::trantor::Date();
     if (createTime_)
         return *createTime_;
     return defaultValue;
@@ -2057,7 +2057,7 @@ bool Users::validJsonOfField(size_t index,
 
 Wallets Users::getWallet(const DbClientPtr &clientPtr) const
 {
-    const static std::string sql = "select * from wallets where user_id = ?";
+    static const std::string sql = "select * from wallets where user_id = ?";
     Result r(nullptr);
     {
         auto binder = *clientPtr << sql;
@@ -2080,7 +2080,7 @@ void Users::getWallet(const DbClientPtr &clientPtr,
                       const std::function<void(Wallets)> &rcb,
                       const ExceptionCallback &ecb) const
 {
-    const static std::string sql = "select * from wallets where user_id = ?";
+    static const std::string sql = "select * from wallets where user_id = ?";
     *clientPtr << sql << *userId_ >> [rcb = std::move(rcb),
                                       ecb](const Result &r) {
         if (r.size() == 0)

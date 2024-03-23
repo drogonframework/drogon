@@ -22,8 +22,8 @@ namespace drogon
 {
 namespace internal
 {
-static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>>
-    &getObjsMap()
+static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> &
+getObjsMap()
 {
     static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>>
         singleInstanceMap;
@@ -112,8 +112,8 @@ std::vector<std::string> DrClassMap::getAllClassName()
     return ret;
 }
 
-std::unordered_map<std::string, std::pair<DrAllocFunc, DrSharedAllocFunc>>
-    &DrClassMap::getMap()
+std::unordered_map<std::string, std::pair<DrAllocFunc, DrSharedAllocFunc>> &
+DrClassMap::getMap()
 {
     static std::unordered_map<std::string,
                               std::pair<DrAllocFunc, DrSharedAllocFunc>>

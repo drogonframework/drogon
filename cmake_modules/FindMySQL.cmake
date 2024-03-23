@@ -27,6 +27,26 @@
 # ##############################################################################
 
 # -------------- FIND MYSQL_INCLUDE_DIRS ------------------
+find_path(MARIADB_INCLUDE_DIRS
+          NAMES mysql.h
+          PATH_SUFFIXES mariadb
+          PATHS /usr/include/mysql
+                /usr/local/include/mysql
+                /usr/include/mariadb
+                /usr/local/include/mariadb
+                /opt/mysql/mysql/include
+                /opt/mysql/mysql/include/mysql
+                /opt/mysql/include
+                /opt/local/include/mysql5
+                /usr/local/mysql/include
+                /usr/local/mysql/include/mysql
+                /usr/local/mariadb/include
+                /usr/local/mariadb/include/mariadb
+                /opt/rh/rh-mariadb105/root/usr/include
+                /opt/rh/rh-mariadb105/root/usr/include/mysql
+                $ENV{ProgramFiles}/MySQL/*/include
+                $ENV{SystemDrive}/MySQL/*/include)
+
 find_path(MYSQL_INCLUDE_DIRS
           NAMES mysql.h
           PATH_SUFFIXES mysql
@@ -47,7 +67,9 @@ find_path(MYSQL_INCLUDE_DIRS
                 $ENV{ProgramFiles}/MySQL/*/include
                 $ENV{SystemDrive}/MySQL/*/include)
 
-if(EXISTS "${MYSQL_INCLUDE_DIRS}/mysql.h")
+if(EXISTS "${MARIADB_INCLUDE_DIRS}/mysql.h")
+  set(MYSQL_INCLUDE_DIRS ${MARIADB_INCLUDE_DIRS})
+elseif(EXISTS "${MYSQL_INCLUDE_DIRS}/mysql.h")
 
 elseif(EXISTS "${MYSQL_INCLUDE_DIRS}/mysql/mysql.h")
   set(MYSQL_INCLUDE_DIRS ${MYSQL_INCLUDE_DIRS}/mysql)
@@ -77,7 +99,7 @@ if(WIN32)
                      $ENV{SystemDrive}/MySQL/*/lib/${libsuffixDist})
 else(WIN32)
   find_library(MYSQL_LIBRARIES
-               NAMES mysqlclient_r mariadbclient
+               NAMES mysqlclient_r mariadbclient mariadb
                PATHS /usr/lib/mysql
                      /usr/lib/mariadb
                      /usr/local/lib/mysql

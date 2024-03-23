@@ -86,11 +86,11 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 %>
     };
 
-    const static int primaryKeyNumber;
-    const static std::string tableName;
-    const static bool hasPrimaryKey;
+    static const int primaryKeyNumber;
+    static const std::string tableName;
+    static const bool hasPrimaryKey;
 <%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
-    const static std::string primaryKeyName;
+    static const std::string primaryKeyName;
 <%c++if(!@@.get<std::string>("primaryKeyType").empty()){%>
     using PrimaryKeyType = [[primaryKeyType]];
     const PrimaryKeyType &getPrimaryKey() const;
@@ -108,7 +108,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
             typelist += ",";
     }
 %>
-    const static std::vector<std::string> primaryKeyName;
+    static const std::vector<std::string> primaryKeyName;
     using PrimaryKeyType = std::tuple<{%typelist%}>;//<%c++
     auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
     for(size_t i=0;i<pkName.size();i++)
