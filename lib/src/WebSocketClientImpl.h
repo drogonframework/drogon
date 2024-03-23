@@ -51,6 +51,11 @@ class WebSocketClientImpl
     void connectToServer(const HttpRequestPtr &request,
                          const WebSocketRequestCallback &callback) override;
 
+    void setCertPath(const std::string &cert, const std::string &key) override;
+
+    void addSSLConfigs(const std::vector<std::pair<std::string, std::string>>
+                           &sslConfCmds) override;
+
     trantor::EventLoop *getLoop() override
     {
         return loop_;
@@ -83,6 +88,9 @@ class WebSocketClientImpl
     bool stop_{false};
     std::string wsKey_;
     std::string wsAccept_;
+    std::string clientCertPath_;
+    std::string clientKeyPath_;
+    std::vector<std::pair<std::string, std::string>> sslConfCmds_;
 
     HttpRequestPtr upgradeRequest_;
     std::function<void(std::string &&,

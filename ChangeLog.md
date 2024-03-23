@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.3] - 2024-02-09
+
+### API changes list
+
+- Added getParameter() and getOptionalParameter().
+
+- Change drogon::MultiPartParser's parameters data type.
+
+- Use std::string_view for WebSockets.
+
+### Changed
+
+- Add support for gentoo linux, dev-db/mariadb contains mysql.
+
+- Introduce cpplint to the CI.
+
+- Enable readability/alt_tokens for cpplint.
+
+- Use clang-format-17.
+
+- Add newline at EOF.
+
+- Enable readability/inheritance for cpplint.
+
+- Enable build/explicit_make_pair for cpplint.
+
+- Enable build/include_order for cpplint.
+
+- Enable build/header_guard for cpplint.
+
+- Enable build/storage_class for cpplint.
+
+- Enable readability/multiline_string for cpplint.
+
+- Alias the safe hashmap template.
+
+- Simplify traits in utils.
+
+- Enhancement: extend drogon::ContentType for file handling.
+
+### Fixed
+
+- Fix a wrong place of return.
+
+- Fix drogon::util::fromString().
+
 ## [1.9.2] - 2024-01-18
 
 ### API changes list
@@ -1575,7 +1621,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.2...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.3...HEAD
+
+[1.9.3]: https://github.com/an-tao/drogon/compare/v1.9.2...v1.9.3
 
 [1.9.2]: https://github.com/an-tao/drogon/compare/v1.9.1...v1.9.2
 

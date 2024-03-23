@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <drogon/HttpTypes.h>
+#include <string_view>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/NonCopyable.h>
 
@@ -112,7 +113,7 @@ class WebSocketConnection
      * @param type The message type.
      */
     virtual void send(
-        const std::string &msg,
+        std::string_view msg,
         const WebSocketMessageType type = WebSocketMessageType::Text) = 0;
 
     /// Return the local IP address and port number of the connection
