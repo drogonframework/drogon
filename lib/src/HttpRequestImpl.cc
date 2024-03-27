@@ -182,7 +182,8 @@ void HttpRequestImpl::parseParameters() const
     }
 }
 
-void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
+void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output,
+                                     Version protoVer) const
 {
     switch (method_)
     {
@@ -266,11 +267,11 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
 
     output->append(" ");
-    if (version_ == Version::kHttp11)
+    if (protoVer == Version::kHttp11)
     {
         output->append("HTTP/1.1");
     }
-    else if (version_ == Version::kHttp10)
+    else if (protoVer == Version::kHttp10)
     {
         output->append("HTTP/1.0");
     }
@@ -285,57 +286,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         auto mReq = dynamic_cast<const HttpFileUploadRequest *>(this);
         if (mReq)
         {
-            for (auto &param : mReq->getParameters())
-            {
-                content.append("--");
-                content.append(mReq->boundary());
-                content.append("\r\n");
-                content.append("content-disposition: form-data; name=\"");
-                content.append(param.first);
-                content.append("\"\r\n\r\n");
-                content.append(param.second);
-                content.append("\r\n");
-            }
-            for (auto &file : mReq->files())
-            {
-                content.append("--");
-                content.append(mReq->boundary());
-                content.append("\r\n");
-                content.append("content-disposition: form-data; name=\"");
-                content.append(file.itemName());
-                content.append("\"; filename=\"");
-                content.append(file.fileName());
-                content.append("\"");
-                if (file.contentType() != CT_NONE)
-                {
-                    content.append("\r\n");
-
-                    auto &type = contentTypeToMime(file.contentType());
-                    content.append("content-type: ");
-                    content.append(type.data(), type.length());
-                }
-                content.append("\r\n\r\n");
-                std::ifstream infile(utils::toNativePath(file.path()),
-                                     std::ifstream::binary);
-                if (!infile)
-                {
-                    LOG_ERROR << file.path() << " not found";
-                }
-                else
-                {
-                    std::streambuf *pbuf = infile.rdbuf();
-                    std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
-                    pbuf->pubseekoff(0, infile.beg);  // rewind
-                    std::string str;
-                    str.resize(filesize);
-                    pbuf->sgetn(&str[0], filesize);
-                    content.append(std::move(str));
-                }
-                content.append("\r\n");
-            }
-            content.append("--");
-            content.append(mReq->boundary());
-            content.append("--");
+            mReq->renderMultipartFormData(content);
         }
     }
     assert(!(!content.empty() && !content_.empty()));
@@ -506,7 +457,6 @@ HttpRequestPtr HttpRequest::newHttpRequest()
 {
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
-    req->setVersion(drogon::Version::kHttp11);
     return req;
 }
 
@@ -514,7 +464,6 @@ HttpRequestPtr HttpRequest::newHttpFormPostRequest()
 {
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Post);
-    req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_X_FORM;
     req->flagForParsingContentType_ = true;
     return req;
@@ -540,7 +489,6 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     });
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
-    req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_JSON;
     req->setContent(writeString(builder, data));
     req->flagForParsingContentType_ = true;
@@ -597,6 +545,10 @@ const char *HttpRequestImpl::versionString() const
 
         case Version::kHttp11:
             result = "HTTP/1.1";
+            break;
+
+        case Version::kHttp2:
+            result = "HTTP/2";
             break;
 
         default:

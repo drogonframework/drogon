@@ -24,9 +24,13 @@
 #include <queue>
 #include <vector>
 #include "impl_forwards.h"
+#include "Http2Transport.h"
+#include "HttpTransport.h"
+#include "Http1xTransport.h"
 
 namespace drogon
 {
+
 class HttpClientImpl final : public HttpClient,
                              public std::enable_shared_from_this<HttpClientImpl>
 {
@@ -35,11 +39,13 @@ class HttpClientImpl final : public HttpClient,
                    const trantor::InetAddress &addr,
                    bool useSSL = false,
                    bool useOldTLS = false,
-                   bool validateCert = true);
+                   bool validateCert = true,
+                   std::optional<Version> httpVersion = std::nullopt);
     HttpClientImpl(trantor::EventLoop *loop,
                    const std::string &hostString,
                    bool useOldTLS = false,
-                   bool validateCert = true);
+                   bool validateCert = true,
+                   std::optional<Version> httpVersion = std::nullopt);
     void sendRequest(const HttpRequestPtr &req,
                      const HttpReqCallback &callback,
                      double timeout = 0) override;
@@ -115,14 +121,17 @@ class HttpClientImpl final : public HttpClient,
         sockOptCallback_ = std::move(cb);
     }
 
+    std::optional<Version> protocolVersion() const override
+    {
+        return httpVersion_;
+    }
+
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
     trantor::InetAddress serverAddr_;
     bool useSSL_;
     bool validateCert_;
-    void sendReq(const trantor::TcpConnectionPtr &connPtr,
-                 const HttpRequestPtr &req);
     void sendRequestInLoop(const HttpRequestPtr &req,
                            HttpReqCallback &&callback);
     void sendRequestInLoop(const HttpRequestPtr &req,
@@ -133,7 +142,6 @@ class HttpClientImpl final : public HttpClient,
                         std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
                         const trantor::TcpConnectionPtr &connPtr);
     void createTcpClient();
-    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
     std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
@@ -152,6 +160,9 @@ class HttpClientImpl final : public HttpClient,
     std::string clientCertPath_;
     std::string clientKeyPath_;
     std::function<void(int)> sockOptCallback_;
+    std::unique_ptr<HttpTransport> transport_;
+    std::optional<Version> targetHttpVersion_;
+    std::optional<Version> httpVersion_;
 };
 
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;

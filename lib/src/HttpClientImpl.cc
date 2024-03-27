@@ -36,6 +36,7 @@ void HttpClientImpl::createTcpClient()
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
     tcpClientPtr_ =
         std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
+    Version version = targetHttpVersion_.value_or(Version::kHttp2);
 
     if (useSSL_ && utils::supportsTls())
     {
@@ -48,6 +49,8 @@ void HttpClientImpl::createTcpClient()
             .setConfCmds(sslConfCmds_)
             .setCertPath(clientCertPath_)
             .setKeyPath(clientKeyPath_);
+        if (version == Version::kHttp2)
+            policy->setAlpnProtocols({"h2", "http/1.1"});
         tcpClientPtr_->enableSSL(std::move(policy));
     }
 
@@ -60,55 +63,118 @@ void HttpClientImpl::createTcpClient()
         if (thisPtr->sockOptCallback_)
             thisPtr->sockOptCallback_(fd);
     });
-    tcpClientPtr_->setConnectionCallback(
-        [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
-            auto thisPtr = weakPtr.lock();
-            if (!thisPtr)
-                return;
-            if (connPtr->connected())
+    tcpClientPtr_->setConnectionCallback([weakPtr](
+                                             const trantor::TcpConnectionPtr
+                                                 &connPtr) {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        if (connPtr->connected())
+        {
+            // send request;
+            LOG_TRACE << "Connection established!";
+
+            auto protocol = connPtr->applicationProtocol();
+            if (protocol == "http/1.1")
             {
-                connPtr->setContext(
-                    std::make_shared<HttpResponseParser>(connPtr));
-                // send request;
-                LOG_TRACE << "Connection established!";
-                while (thisPtr->pipeliningCallbacks_.size() <=
-                           thisPtr->pipeliningDepth_ &&
-                       !thisPtr->requestsBuffer_.empty())
-                {
-                    thisPtr->sendReq(connPtr,
-                                     thisPtr->requestsBuffer_.front().first);
-                    thisPtr->pipeliningCallbacks_.push(
-                        std::move(thisPtr->requestsBuffer_.front()));
-                    thisPtr->requestsBuffer_.pop_front();
-                }
+                LOG_TRACE << "Select http/1.1 protocol";
+                thisPtr->transport_ =
+                    std::make_unique<Http1xTransport>(connPtr,
+                                                      Version::kHttp11,
+                                                      &thisPtr->bytesSent_,
+                                                      &thisPtr->bytesReceived_);
+                thisPtr->httpVersion_ = Version::kHttp11;
+            }
+            else if (protocol == "h2")
+            {
+                LOG_TRACE << "Select http/2 protocol";
+                thisPtr->transport_ =
+                    std::make_unique<Http2Transport>(connPtr,
+                                                     &thisPtr->bytesSent_,
+                                                     &thisPtr->bytesReceived_);
+                thisPtr->httpVersion_ = Version::kHttp2;
+            }
+            else if (protocol.empty())
+            {
+                // Either we are not using TLS or the server does not support
+                // ALPN. Use HTTP/1.1 if not specified otherwise.
+                bool force1_0 = thisPtr->targetHttpVersion_.value_or(
+                                    Version::kUnknown) == Version::kHttp10;
+                auto version = force1_0 ? Version::kHttp10 : Version::kHttp11;
+                thisPtr->httpVersion_ = version;
+                thisPtr->transport_ =
+                    std::make_unique<Http1xTransport>(connPtr,
+                                                      version,
+                                                      &thisPtr->bytesSent_,
+                                                      &thisPtr->bytesReceived_);
             }
             else
             {
-                LOG_TRACE << "connection disconnect";
-                auto responseParser = connPtr->getContext<HttpResponseParser>();
-                if (responseParser && responseParser->parseResponseOnClose() &&
-                    responseParser->gotAll())
-                {
-                    auto &firstReq = thisPtr->pipeliningCallbacks_.front();
-                    if (firstReq.first->method() == Head)
-                    {
-                        responseParser->setForHeadMethod();
-                    }
-                    auto resp = responseParser->responseImpl();
-                    responseParser->reset();
-                    // temporary fix of dead tcpClientPtr_
-                    // TODO: fix HttpResponseParser when content-length absence
-                    thisPtr->tcpClientPtr_.reset();
-                    thisPtr->handleResponse(resp, std::move(firstReq), connPtr);
-                    if (!thisPtr->requestsBuffer_.empty())
-                    {
-                        thisPtr->createTcpClient();
-                    }
-                    return;
-                }
-                thisPtr->onError(ReqResult::NetworkFailure);
+                LOG_ERROR << "Unknown protocol " << protocol
+                          << " selected by server for HTTP";
+                thisPtr->onError(ReqResult::BadResponse);
+                return;
             }
-        });
+
+            assert(thisPtr->httpVersion_.has_value());
+            assert(thisPtr->transport_);
+            thisPtr->transport_->setRespCallback(
+                [weakPtr](const HttpResponseImplPtr &resp,
+                          std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
+                          const trantor::TcpConnectionPtr &connPtr) {
+                    auto thisPtr = weakPtr.lock();
+                    if (!thisPtr)
+                        return;
+                    thisPtr->handleResponse(resp, std::move(reqAndCb), connPtr);
+                });
+            thisPtr->transport_->setErrorCallback([weakPtr](ReqResult result) {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
+                thisPtr->onError(result);
+            });
+
+            size_t maxSendReq = (*(thisPtr->httpVersion_) == Version::kHttp2)
+                                    ? size_t{0xfffffff}
+                                    : thisPtr->pipeliningDepth_;
+            if (maxSendReq == 0)
+                maxSendReq = 1;
+            while (!thisPtr->requestsBuffer_.empty() &&
+                   thisPtr->transport_->requestsInFlight() < maxSendReq)
+            {
+                auto &reqAndCb = thisPtr->requestsBuffer_.front();
+                thisPtr->transport_->sendRequestInLoop(reqAndCb.first,
+                                                       std::move(
+                                                           reqAndCb.second));
+                thisPtr->requestsBuffer_.pop_front();
+            }
+        }
+        else
+        {
+            LOG_TRACE << "connection disconnect";
+            // TODO: Make sure the sequence of handling is correct
+            bool isUnexpected = false;
+            if (thisPtr->transport_)
+            {
+                isUnexpected = thisPtr->transport_->handleConnectionClose();
+            }
+            if (isUnexpected)
+            {
+                thisPtr->onError(ReqResult::NetworkFailure);
+                return;
+            }
+
+            // temporary fix of dead tcpClientPtr_
+            // TODO: fix HttpResponseParser when content-length absence
+            // TODO: HTTP/2 transport also relies on this behavior to reconnect
+            //   when running out of stream IDs
+            thisPtr->tcpClientPtr_.reset();
+            if (!thisPtr->requestsBuffer_.empty())
+            {
+                thisPtr->createTcpClient();
+            }
+        }
+    });
     tcpClientPtr_->setConnectionErrorCallback([weakPtr]() {
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
@@ -148,20 +214,26 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL,
                                bool useOldTLS,
-                               bool validateCert)
+                               bool validateCert,
+                               std::optional<Version> targetVersion)
     : loop_(loop),
       serverAddr_(addr),
       useSSL_(useSSL),
       validateCert_(validateCert),
-      useOldTLS_(useOldTLS)
+      useOldTLS_(useOldTLS),
+      targetHttpVersion_(targetVersion)
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString,
                                bool useOldTLS,
-                               bool validateCert)
-    : loop_(loop), validateCert_(validateCert), useOldTLS_(useOldTLS)
+                               bool validateCert,
+                               std::optional<Version> targetVersion)
+    : loop_(loop),
+      validateCert_(validateCert),
+      useOldTLS_(useOldTLS),
+      targetHttpVersion_(targetVersion)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -319,35 +391,35 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                                                 shared_from_this(),
                                                 req);
 
-    loop_->runAfter(
-        timeout,
-        [weakCallbackBackPtr =
-             std::weak_ptr<RequestCallbackParams>(callbackParamsPtr)] {
-            auto callbackParamsPtr = weakCallbackBackPtr.lock();
-            if (callbackParamsPtr != nullptr)
-            {
-                auto &thisPtr = callbackParamsPtr->clientPtr;
-                if (callbackParamsPtr->timeoutFlag)
-                {
-                    return;
-                }
+    // TODO: Cancel the timer when the request is finished.
+    loop_->runAfter(timeout,
+                    [weakCallbackBackPtr = std::weak_ptr<RequestCallbackParams>(
+                         callbackParamsPtr)] {
+                        auto callbackParamsPtr = weakCallbackBackPtr.lock();
+                        if (callbackParamsPtr == nullptr)
+                            return;
+                        auto &thisPtr = callbackParamsPtr->clientPtr;
+                        if (callbackParamsPtr->timeoutFlag)
+                        {
+                            return;
+                        }
 
-                callbackParamsPtr->timeoutFlag = true;
+                        callbackParamsPtr->timeoutFlag = true;
 
-                for (auto iter = thisPtr->requestsBuffer_.begin();
-                     iter != thisPtr->requestsBuffer_.end();
-                     ++iter)
-                {
-                    if (iter->first == callbackParamsPtr->requestPtr)
-                    {
-                        thisPtr->requestsBuffer_.erase(iter);
-                        break;
-                    }
-                }
+                        for (auto iter = thisPtr->requestsBuffer_.begin();
+                             iter != thisPtr->requestsBuffer_.end();
+                             ++iter)
+                        {
+                            if (iter->first == callbackParamsPtr->requestPtr)
+                            {
+                                thisPtr->requestsBuffer_.erase(iter);
+                                break;
+                            }
+                        }
 
-                (callbackParamsPtr->callback)(ReqResult::Timeout, nullptr);
-            }
-        });
+                        (callbackParamsPtr->callback)(ReqResult::Timeout,
+                                                      nullptr);
+                    });
     sendRequestInLoop(req,
                       [callbackParamsPtr](ReqResult r,
                                           const HttpResponsePtr &resp) {
@@ -355,6 +427,7 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                           {
                               return;
                           }
+
                           callbackParamsPtr->timeoutFlag = true;
                           (callbackParamsPtr->callback)(r, resp);
                       });
@@ -422,10 +495,11 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         requestsBuffer_.push_back(
             {req,
              [thisPtr = shared_from_this(),
-              callbackPtr](ReqResult result, const HttpResponsePtr &response) {
+              callbackPtr =
+                  std::move(callbackPtr)](ReqResult result,
+                                          const HttpResponsePtr &response) {
                  (*callbackPtr)(result, response);
              }});
-
         if (domain_.empty() || !isDomainName_)
         {
             // Valid ip address, no domain, connect directly
@@ -436,8 +510,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             // No ip address and no domain, respond with BadServerAddress
             else
             {
-                requestsBuffer_.pop_front();
-                (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
+                callback(ReqResult::BadServerAddress, nullptr);
                 assert(requestsBuffer_.empty());
             }
             return;
@@ -504,19 +577,18 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
              }});
         return;
     }
+    assert(transport_ != nullptr);
+    assert(httpVersion_.has_value());
+
+    size_t maxSendReq = (*httpVersion_ == Version::kHttp2) ? size_t{0xfffffffff}
+                                                           : pipeliningDepth_;
+    if (maxSendReq == 0)
+        maxSendReq = 1;
 
     // Connected, send request now
-    if (pipeliningCallbacks_.size() <= pipeliningDepth_ &&
-        requestsBuffer_.empty())
+    if (transport_->requestsInFlight() <= maxSendReq && requestsBuffer_.empty())
     {
-        sendReq(connPtr, req);
-        pipeliningCallbacks_.push(
-            {req,
-             [thisPtr,
-              callback = std::move(callback)](ReqResult result,
-                                              const HttpResponsePtr &response) {
-                 callback(result, response);
-             }});
+        transport_->sendRequestInLoop(req, std::move(callback));
     }
     else
     {
@@ -530,25 +602,11 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     }
 }
 
-void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
-                             const HttpRequestPtr &req)
-{
-    trantor::MsgBuffer buffer;
-    assert(req);
-    auto implPtr = static_cast<HttpRequestImpl *>(req.get());
-    implPtr->appendToBuffer(&buffer);
-    LOG_TRACE << "Send request:"
-              << std::string(buffer.peek(), buffer.readableBytes());
-    bytesSent_ += buffer.readableBytes();
-    connPtr->send(std::move(buffer));
-}
-
 void HttpClientImpl::handleResponse(
     const HttpResponseImplPtr &resp,
     std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
     const trantor::TcpConnectionPtr &connPtr)
 {
-    assert(!pipeliningCallbacks_.empty());
     auto &type = resp->getHeaderBy("content-type");
     auto &coding = resp->getHeaderBy("content-encoding");
     if (coding == "gzip")
@@ -565,8 +623,8 @@ void HttpClientImpl::handleResponse(
     {
         resp->parseJson();
     }
+    resp->setPeerCertificate(connPtr->peerCertificate());
     auto cb = std::move(reqAndCb);
-    pipeliningCallbacks_.pop();
     handleCookies(resp);
     cb.second(ReqResult::Ok, resp);
 
@@ -579,13 +637,16 @@ void HttpClientImpl::handleResponse(
         if (!requestsBuffer_.empty())
         {
             auto &reqAndCallback = requestsBuffer_.front();
-            sendReq(connPtr, reqAndCallback.first);
-            pipeliningCallbacks_.push(std::move(reqAndCallback));
+            transport_->sendRequestInLoop(reqAndCallback.first,
+                                          std::move(reqAndCallback.second));
             requestsBuffer_.pop_front();
         }
         else
         {
-            if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
+            assert(httpVersion_.has_value());
+            if (resp->ifCloseConnection() &&
+                transport_->requestsInFlight() == 0 &&
+                *httpVersion_ != Version::kHttp2)
             {
                 tcpClientPtr_.reset();
             }
@@ -593,56 +654,15 @@ void HttpClientImpl::handleResponse(
     }
     else
     {
-        while (!pipeliningCallbacks_.empty())
-        {
-            auto cb = std::move(pipeliningCallbacks_.front());
-            pipeliningCallbacks_.pop();
-            cb.second(ReqResult::NetworkFailure, nullptr);
-        }
+        transport_->onError(ReqResult::NetworkFailure);
     }
 }
 
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
                                    trantor::MsgBuffer *msg)
 {
-    auto responseParser = connPtr->getContext<HttpResponseParser>();
-
-    // LOG_TRACE << "###:" << msg->readableBytes();
-    auto msgSize = msg->readableBytes();
-    while (msg->readableBytes() > 0)
-    {
-        if (pipeliningCallbacks_.empty())
-        {
-            LOG_ERROR << "More responses than expected!";
-            connPtr->shutdown();
-            return;
-        }
-        auto &firstReq = pipeliningCallbacks_.front();
-        if (firstReq.first->method() == Head)
-        {
-            responseParser->setForHeadMethod();
-        }
-        if (!responseParser->parseResponse(msg))
-        {
-            onError(ReqResult::BadResponse);
-            bytesReceived_ += (msgSize - msg->readableBytes());
-            return;
-        }
-        if (responseParser->gotAll())
-        {
-            auto resp = responseParser->responseImpl();
-            resp->setPeerCertificate(connPtr->peerCertificate());
-            responseParser->reset();
-            bytesReceived_ += (msgSize - msg->readableBytes());
-            msgSize = msg->readableBytes();
-            handleResponse(resp, std::move(firstReq), connPtr);
-        }
-        else
-        {
-            bytesReceived_ += (msgSize - msg->readableBytes());
-            break;
-        }
-    }
+    assert(transport_ != nullptr);
+    transport_->onRecvMessage(connPtr, msg);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
@@ -650,7 +670,8 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         bool useSSL,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS,
-                                        bool validateCert)
+                                        bool validateCert,
+                                        std::optional<Version> targetVersion)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
@@ -658,29 +679,28 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
         useOldTLS,
-        validateCert);
+        validateCert,
+        targetVersion);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS,
-                                        bool validateCert)
+                                        bool validateCert,
+                                        std::optional<Version> targetVersion)
 {
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         hostString,
         useOldTLS,
-        validateCert);
+        validateCert,
+        targetVersion);
 }
 
 void HttpClientImpl::onError(ReqResult result)
 {
-    while (!pipeliningCallbacks_.empty())
-    {
-        auto cb = std::move(pipeliningCallbacks_.front());
-        pipeliningCallbacks_.pop();
-        cb.second(result, nullptr);
-    }
+    if (transport_)
+        transport_->onError(result);
     while (!requestsBuffer_.empty())
     {
         auto cb = std::move(requestsBuffer_.front().second);

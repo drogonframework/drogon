@@ -262,6 +262,7 @@ class DROGON_EXPORT HttpRequest
     /**
      * kHttp10 means Http version is 1.0
      * kHttp11 means Http version is 1.1
+     * kHttp20 means Http version is 2.0
      */
     virtual Version version() const = 0;
 

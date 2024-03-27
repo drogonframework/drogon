@@ -184,6 +184,11 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * If this method is not called, the default depth value is 0 which means
      * the pipelining is disabled. For details about pipelining, see
      * rfc2616-8.1.2.2
+     *
+     * @param depth The depth value.
+     * @note This option is only valid for HTTP/1.x. If the client running in
+     * HTTP/2 mode, this settings have no effect. The maximum concurrent
+     * requests for HTTP/2 is 100 (unless the server has a different setting).
      */
     virtual void setPipeliningDepth(size_t depth) = 0;
 
@@ -238,15 +243,20 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * enabled for HTTPS.
      * @param validateCert If the parameter is set to true, the client validates
      * the server certificate when SSL handshaking.
+     * @param targetVersion The target TLS version to use for HTTPS connections.
+     * This is a mere hint, and the actual version used will depend on the
+     * server and the client's capabilities.
      * @return HttpClientPtr The smart pointer to the new client object.
      * @note: The ip parameter support for both ipv4 and ipv6 address
      */
-    static HttpClientPtr newHttpClient(const std::string &ip,
-                                       uint16_t port,
-                                       bool useSSL = false,
-                                       trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false,
-                                       bool validateCert = true);
+    static HttpClientPtr newHttpClient(
+        const std::string &ip,
+        uint16_t port,
+        bool useSSL = false,
+        trantor::EventLoop *loop = nullptr,
+        bool useOldTLS = false,
+        bool validateCert = true,
+        std::optional<Version> targetVersion = std::nullopt);
 
     /// Get the event loop of the client;
     virtual trantor::EventLoop *getLoop() = 0;
@@ -303,6 +313,16 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
 
+    /**
+     * @brief get the protocol version used by the HTTP connection
+     * @return std::optional<Version> the protocol version used by the HTTP
+     *
+     * NOTE: It could return std::nullopt if the connection is not established
+     * or is still negotiating the protocol. This is IMPORTANT as the client
+     * COULD be lazy and not connecting until the first request arrives.
+     */
+    virtual std::optional<Version> protocolVersion() const = 0;
+
     /// Create a Http client using the hostString to connect to server
     /**
      *
@@ -329,15 +349,25 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * @param validateCert If the parameter is set to true, the client validates
      * the server certificate when SSL handshaking.
      *
+     * @param targetVersion The target HTTP version that the client will attempt
+     * to use. **THIS IS ONLY A HINT**. The server may choose to ignore this as
+     * the server may not support the requested version. The preference is as
+     * follows:
+     *   HTTP/2 > HTTP/1.1 > HTTP/1.0
+     * Note that there is no way to auto-detect HTTP/1.0 servers, so it is only
+     * used if explicitly requested.
+     *
      * @note Don't add path and parameters in hostString, the request path and
      * parameters should be set in HttpRequestPtr when calling the sendRequest()
      * method.
      *
      */
-    static HttpClientPtr newHttpClient(const std::string &hostString,
-                                       trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false,
-                                       bool validateCert = true);
+    static HttpClientPtr newHttpClient(
+        const std::string &hostString,
+        trantor::EventLoop *loop = nullptr,
+        bool useOldTLS = false,
+        bool validateCert = true,
+        std::optional<Version> targetVersion = std::nullopt);
 
     virtual ~HttpClient()
     {
