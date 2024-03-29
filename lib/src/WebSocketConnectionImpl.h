@@ -64,16 +64,9 @@ class WebSocketConnectionImpl final
     void send(
         std::string_view msg,
         const WebSocketMessageType type = WebSocketMessageType::Text) override;
-    void send(
-        Json::Value &json,
+    void sendJson(
+        const Json::Value &json,
         const WebSocketMessageType type = WebSocketMessageType::Text) override;
-
-    inline void send(
-        const Json::Value *json,
-        const WebSocketMessageType type = WebSocketMessageType::Text) override
-    {
-        send(*(Json::Value *)json, type);
-    }
 
     const trantor::InetAddress &localAddr() const override;
     const trantor::InetAddress &peerAddr() const override;

@@ -167,12 +167,26 @@ void WebSocketConnectionImpl::send(const std::string_view msg,
     send(msg.data(), msg.length(), type);
 }
 
-void WebSocketConnectionImpl::send(Json::Value &json,
-                                   const WebSocketMessageType type)
+void WebSocketConnectionImpl::sendJson(const Json::Value &json,
+                                       const WebSocketMessageType type)
 {
-    Json::FastWriter writer;
-    writer.omitEndingLineFeed();
-    auto msg = writer.write(json);
+    static std::once_flag once;
+    static Json::StreamWriterBuilder builder;
+    std::call_once(once, []() {
+        builder["commentStyle"] = "None";
+        builder["indentation"] = "";
+        if (!app().isUnicodeEscapingUsedInJson())
+        {
+            builder["emitUTF8"] = true;
+        }
+        auto &precision = app().getFloatPrecisionInJson();
+        if (precision.first != 0)
+        {
+            builder["precision"] = precision.first;
+            builder["precisionType"] = precision.second;
+        }
+    });
+    auto msg = writeString(builder, json);
     send(msg.data(), msg.length(), type);
 }
 
