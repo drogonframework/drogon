@@ -27,15 +27,16 @@ int main()
     //         std::cout << e.base().what() << std::endl;
     //     };
     // ;
-    *clientPtr
-            << "CREATE TABLE IF NOT EXISTS GROUPS (GROUP_ID INTEGER PRIMARY KEY autoincrement,\
-     GROUP_NAME TEXT,\
-     CREATER_ID INTEGER,\
-     CREATE_TIME TEXT,\
-     INVITING INTEGER,\
-     INVITING_USER_ID INTEGER,\
-     AVATAR_ID TEXT, uuu double, text VARCHAR(255),avatar blob,is_default bool)"
-            << Mode::Blocking >>
+    *clientPtr << "CREATE TABLE IF NOT EXISTS GROUPS (GROUP_ID INTEGER PRIMARY "
+                  "KEY autoincrement,"
+                  "GROUP_NAME TEXT,"
+                  "CREATER_ID INTEGER,"
+                  "CREATE_TIME TEXT,"
+                  "INVITING INTEGER,"
+                  "INVITING_USER_ID INTEGER,"
+                  "AVATAR_ID TEXT, uuu double, text VARCHAR(255),avatar "
+                  "blob,is_default bool)"
+               << Mode::Blocking >>
         [](const Result &r) { LOG_DEBUG << "created"; } >>
         [](const DrogonDbException &e) {
             std::cout << e.base().what() << std::endl;

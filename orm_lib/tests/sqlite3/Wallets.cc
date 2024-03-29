@@ -218,7 +218,7 @@ void Wallets::updateByJson(const Json::Value &pJson) noexcept(false)
 
 const int64_t &Wallets::getValueOfId() const noexcept
 {
-    const static int64_t defaultValue = int64_t();
+    static const int64_t defaultValue = int64_t();
     if (id_)
         return *id_;
     return defaultValue;
@@ -249,7 +249,7 @@ const typename Wallets::PrimaryKeyType &Wallets::getPrimaryKey() const
 
 const std::string &Wallets::getValueOfUserId() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (userId_)
         return *userId_;
     return defaultValue;
@@ -280,7 +280,7 @@ void Wallets::setUserIdToNull() noexcept
 
 const std::string &Wallets::getValueOfAmount() const noexcept
 {
-    const static std::string defaultValue = std::string();
+    static const std::string defaultValue = std::string();
     if (amount_)
         return *amount_;
     return defaultValue;
@@ -703,7 +703,7 @@ bool Wallets::validJsonOfField(size_t index,
 
 Users Wallets::getUser(const DbClientPtr &clientPtr) const
 {
-    const static std::string sql = "select * from users where user_id = ?";
+    static const std::string sql = "select * from users where user_id = ?";
     Result r(nullptr);
     {
         auto binder = *clientPtr << sql;
@@ -726,7 +726,7 @@ void Wallets::getUser(const DbClientPtr &clientPtr,
                       const std::function<void(Users)> &rcb,
                       const ExceptionCallback &ecb) const
 {
-    const static std::string sql = "select * from users where user_id = ?";
+    static const std::string sql = "select * from users where user_id = ?";
     *clientPtr << sql << *userId_ >> [rcb = std::move(rcb),
                                       ecb](const Result &r) {
         if (r.size() == 0)

@@ -5,7 +5,7 @@ using namespace drogon;
 class TestViewCtl : public drogon::HttpSimpleController<TestViewCtl>
 {
   public:
-    virtual void asyncHandleHttpRequest(
+    void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN

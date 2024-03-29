@@ -168,7 +168,7 @@ void BlogTag::updateByJson(const Json::Value &pJson) noexcept(false)
 
 const int32_t &BlogTag::getValueOfBlogId() const noexcept
 {
-    const static int32_t defaultValue = int32_t();
+    static const int32_t defaultValue = int32_t();
     if (blogId_)
         return *blogId_;
     return defaultValue;
@@ -187,7 +187,7 @@ void BlogTag::setBlogId(const int32_t &pBlogId) noexcept
 
 const int32_t &BlogTag::getValueOfTagId() const noexcept
 {
-    const static int32_t defaultValue = int32_t();
+    static const int32_t defaultValue = int32_t();
     if (tagId_)
         return *tagId_;
     return defaultValue;

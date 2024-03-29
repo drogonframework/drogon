@@ -11,6 +11,8 @@
  *  Drogon
  *
  */
+#pragma once
+
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
 #include <chrono>

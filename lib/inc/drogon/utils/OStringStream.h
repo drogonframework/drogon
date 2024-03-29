@@ -21,23 +21,16 @@ namespace drogon
 {
 namespace internal
 {
-template <typename T>
-struct CanConvertToString
+template <typename T, typename = void>
+struct CanConvertToString : std::false_type
 {
-    using Type = std::remove_reference_t<std::remove_cv_t<T>>;
+};
 
-  private:
-    using yes = std::true_type;
-    using no = std::false_type;
-
-    template <typename U>
-    static auto test(int) -> decltype(std::to_string(U{}), yes());
-
-    template <typename>
-    static no test(...);
-
-  public:
-    static constexpr bool value = std::is_same_v<decltype(test<Type>(0)), yes>;
+template <typename T>
+struct CanConvertToString<
+    T,
+    std::void_t<decltype(std::to_string(std::declval<T>()))>> : std::true_type
+{
 };
 }  // namespace internal
 

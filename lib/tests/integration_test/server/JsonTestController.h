@@ -8,7 +8,7 @@ class JsonTestController
 {
   public:
     // TestController(){}
-    virtual void asyncHandleHttpRequest(
+    void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) override;
 

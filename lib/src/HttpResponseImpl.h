@@ -133,16 +133,14 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         removeHeaderBy(key);
     }
 
-    const std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            &headers() const override
+    const SafeStringMap<std::string> &headers() const override
     {
         return headers_;
     }
 
     const std::string &getHeaderBy(const std::string &lowerKey) const
     {
-        const static std::string defaultVal;
+        static const std::string defaultVal;
         auto iter = headers_.find(lowerKey);
         if (iter == headers_.end())
         {
@@ -205,9 +203,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return defaultCookie;
     }
 
-    const std::
-        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
-            &cookies() const override
+    const SafeStringMap<Cookie> &cookies() const override
     {
         return cookies_;
     }
@@ -297,7 +293,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     const std::string &getJsonError() const override
     {
-        const static std::string none;
+        static const std::string none;
         if (jsonParsingErrorPtr_)
             return *jsonParsingErrorPtr_;
         return none;
@@ -498,11 +494,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         statusMessage_ = std::string_view{message, messageLength};
     }
 
-    std::
-        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
-            headers_;
-    std::unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
-        cookies_;
+    SafeStringMap<std::string> headers_;
+    SafeStringMap<Cookie> cookies_;
 
     int customStatusCode_{-1};
     HttpStatusCode statusCode_{kUnknown};
