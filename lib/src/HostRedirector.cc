@@ -129,15 +129,12 @@ void HostRedirector::lookup(string &host, string &path) const
             if (isWildcard)
             {
                 const string &toPath = to->path;
-                string newPath;
                 const auto len = path.size();
                 auto start = len - lastWildcardPathViewLen;
                 start += toPath.back() == '/' && path[start] == '/';
-                newPath.reserve(toPath.size() + (len - start));
 
-                newPath = toPath;
-                newPath.append(path.substr(start));
-                path = std::move(newPath);
+                path.reserve(toPath.size() + (len - start));
+                path.replace(0, start, toPath);
             }
             else
                 path = to->path;
@@ -155,199 +152,193 @@ void HostRedirector::lookup(string &host, string &path) const
 void HostRedirector::initAndStart(const Json::Value &config)
 {
     doHostLookup_ = false;
-    if (config.isMember("rules"))
+    const auto &rules = config["rules"];
+    if (rules.isObject())
     {
-        const auto &rules = config["rules"];
-        if (rules.isObject())
+        const auto redirectToList = rules.getMemberNames();
+        rulesTo_.reserve(redirectToList.size());
+        for (const string &redirectToStr : redirectToList)
         {
-            const auto redirectToList = rules.getMemberNames();
-            rulesTo_.reserve(redirectToList.size());
-            for (const string redirectToStr : redirectToList)
+            string redirectToHost, redirectToPath;
+            auto pathIdx = redirectToStr.find('/');
+            if (pathIdx != string::npos)
             {
-                string redirectToHost, redirectToPath;
-                auto pathIdx = redirectToStr.find('/');
-                if (pathIdx != string::npos)
+                redirectToHost = redirectToStr.substr(0, pathIdx);
+                redirectToPath = redirectToStr.substr(pathIdx);
+            }
+            else
+                redirectToPath = "/";
+
+            const auto &redirectFromValue = rules[redirectToStr];
+
+            auto toIdx = rulesTo_.size();
+            rulesTo_.push_back({
+                std::move(redirectToHost.empty() && pathIdx != 0
+                              ? redirectToStr
+                              : redirectToHost),
+                std::move(redirectToPath),
+            });
+
+            if (redirectFromValue.isArray())
+            {
+                for (const auto &redirectFrom : redirectFromValue)
                 {
-                    redirectToHost = redirectToStr.substr(0, pathIdx);
-                    redirectToPath = redirectToStr.substr(pathIdx);
-                }
-                else
-                    redirectToPath = "/";
+                    assert(redirectFrom.isString());
 
-                const auto &redirectFromValue = rules[redirectToStr];
-
-                auto toIdx = rulesTo_.size();
-                rulesTo_.push_back({
-                    std::move(redirectToHost.empty() && pathIdx != 0
-                                  ? redirectToStr
-                                  : redirectToHost),
-                    std::move(redirectToPath),
-                });
-
-                if (redirectFromValue.isArray())
-                {
-                    for (const auto &redirectFrom : redirectFromValue)
+                    string redirectFromStr = redirectFrom.asString();
+                    auto len = redirectFromStr.size();
+                    bool isWildcard = false;
+                    if (len > 1 && redirectFromStr[len - 2] == '/' &&
+                        redirectFromStr[len - 1] == '*')
                     {
-                        assert(redirectFrom.isString());
-
-                        string redirectFromStr = redirectFrom.asString();
-                        auto len = redirectFromStr.size();
-                        bool isWildcard = false;
-                        if (len > 1 && redirectFromStr[len - 2] == '/' &&
-                            redirectFromStr[len - 1] == '*')
-                        {
-                            redirectFromStr.resize(len - 2);
-                            isWildcard = true;
-                        }
-
-                        string redirectFromHost, redirectFromPath;
-                        pathIdx = redirectFromStr.find('/');
-                        if (pathIdx != string::npos)
-                        {
-                            redirectFromHost =
-                                redirectFromStr.substr(0, pathIdx);
-                            redirectFromPath = redirectFromStr.substr(pathIdx);
-                        }
-                        else
-                            redirectFromPath = '/';
-
-                        const string &fromHost =
-                            redirectFromHost.empty() && pathIdx != 0
-                                ? redirectFromStr
-                                : redirectFromHost;
-                        if (!fromHost.empty())
-                            doHostLookup_ =
-                                true;  // We have hosts in lookup rules
-                        rulesFromData_.push_back({
-                            std::move(fromHost),
-                            std::move(redirectFromPath),
-                            isWildcard,
-                            toIdx,
-                        });
-                    }
-                }
-                // This commented block can be used to support {from: to}
-                // syntax, but the JSON library must support multi-key objects
-                /*else if(redirectFromValue.isString())
-                {
-
-                }*/
-            }
-
-            struct RedirectDepthGroup
-            {
-                std::vector<const RedirectFrom *> fromData;
-                size_t maxPathLen;
-            };
-
-            std::unordered_map<RedirectGroup *, RedirectDepthGroup> leafs,
-                leafsBackbuffer;  // Keep track of most recent leaf nodes
-
-            // Find minimum required path length for each host
-            for (const auto &redirectFrom : rulesFromData_)
-            {
-                const auto &path = redirectFrom.path;
-                auto &rule = rulesFrom_[redirectFrom.host];
-                if (path == "/")  // Root rules are part of the host group
-                    continue;
-
-                auto len = path.size();
-                if (len < rule.maxPathLen)
-                    rule.maxPathLen = len;
-            }
-
-            // Create initial leaf nodes
-            for (const auto &redirectFrom : rulesFromData_)
-            {
-                string_view path = redirectFrom.path;
-                auto &rule = rulesFrom_[redirectFrom.host];
-                if (path == "/")
-                {
-                    (redirectFrom.isWildcard ? rule.wildcard : rule.to) =
-                        &rulesTo_[redirectFrom.toIdx];
-                    continue;
-                }
-
-                size_t maxLen = rule.maxPathLen;
-                string_view pathGroup = path.substr(0, maxLen);
-
-                auto &groups = rule.groups;
-                auto find = groups.find(pathGroup);
-                RedirectGroup *group;
-                if (find != groups.end())
-                    group = find->second;
-                else
-                {
-                    group = new RedirectGroup;
-                    groups[pathGroup] = group;
-                }
-
-                if (path.size() == maxLen)  // Reached the end
-                {
-                    (redirectFrom.isWildcard ? group->wildcard : group->to) =
-                        &rulesTo_[redirectFrom.toIdx];
-                    group->maxPathLen = 0;
-                    continue;  // No need to queue this node up, it reached the
-                               // end
-                }
-
-                auto &leaf = leafs[group];
-                leaf.fromData.push_back(&redirectFrom);
-                leaf.maxPathLen = maxLen;
-            }
-
-            // Populate subsequent leaf nodes
-            while (!leafs.empty())
-            {
-                for (auto &[group, depthGroup] : leafs)
-                {
-                    size_t minIdx = depthGroup.maxPathLen,
-                           maxIdx = string::npos;
-                    const auto &fromData = depthGroup.fromData;
-                    for (const auto &redirectFrom : fromData)
-                    {
-                        auto len = redirectFrom->path.size();
-                        if (len >= minIdx && len < maxIdx)
-                            maxIdx = len;
+                        redirectFromStr.resize(len - 2);
+                        isWildcard = true;
                     }
 
-                    size_t maxLen = maxIdx - minIdx;
-                    group->maxPathLen = maxLen;
-                    for (const auto &redirectFrom : fromData)
+                    string redirectFromHost, redirectFromPath;
+                    pathIdx = redirectFromStr.find('/');
+                    if (pathIdx != string::npos)
                     {
-                        string_view path = redirectFrom->path;
-                        string_view pathGroup = path.substr(minIdx, maxLen);
-
-                        auto &groups = group->groups;
-                        auto find = groups.find(pathGroup);
-                        RedirectGroup *childGroup;
-                        if (find != groups.end())
-                            childGroup = find->second;
-                        else
-                        {
-                            childGroup = new RedirectGroup;
-                            groups[pathGroup] = childGroup;
-                        }
-
-                        if (path.size() == maxIdx)  // Reached the end
-                        {
-                            (redirectFrom->isWildcard ? childGroup->wildcard
-                                                      : childGroup->to) =
-                                &rulesTo_[redirectFrom->toIdx];
-                            childGroup->maxPathLen = 0;
-                            continue;  // No need to queue this node up, it
-                                       // reached the end
-                        }
-
-                        auto &leaf = leafsBackbuffer[childGroup];
-                        leaf.fromData.push_back(redirectFrom);
-                        leaf.maxPathLen = maxIdx;
+                        redirectFromHost = redirectFromStr.substr(0, pathIdx);
+                        redirectFromPath = redirectFromStr.substr(pathIdx);
                     }
+                    else
+                        redirectFromPath = '/';
+
+                    const string &fromHost =
+                        redirectFromHost.empty() && pathIdx != 0
+                            ? redirectFromStr
+                            : redirectFromHost;
+                    if (!fromHost.empty())
+                        doHostLookup_ = true;  // We have hosts in lookup rules
+                    rulesFromData_.push_back({
+                        std::move(fromHost),
+                        std::move(redirectFromPath),
+                        isWildcard,
+                        toIdx,
+                    });
+                }
+            }
+            // TODO: This commented block can be used to support {from: to}
+            // syntax if we wish to add such support
+            /*else if(redirectFromValue.isString())
+            {
+
+            }*/
+        }
+
+        struct RedirectDepthGroup
+        {
+            std::vector<const RedirectFrom *> fromData;
+            size_t maxPathLen;
+        };
+
+        std::unordered_map<RedirectGroup *, RedirectDepthGroup> leafs,
+            leafsBackbuffer;  // Keep track of most recent leaf nodes
+
+        // Find minimum required path length for each host
+        for (const auto &redirectFrom : rulesFromData_)
+        {
+            const auto &path = redirectFrom.path;
+            auto &rule = rulesFrom_[redirectFrom.host];
+            if (path == "/")  // Root rules are part of the host group
+                continue;
+
+            auto len = path.size();
+            if (len < rule.maxPathLen)
+                rule.maxPathLen = len;
+        }
+
+        // Create initial leaf nodes
+        for (const auto &redirectFrom : rulesFromData_)
+        {
+            string_view path = redirectFrom.path;
+            auto &rule = rulesFrom_[redirectFrom.host];
+            if (path == "/")
+            {
+                (redirectFrom.isWildcard ? rule.wildcard : rule.to) =
+                    &rulesTo_[redirectFrom.toIdx];
+                continue;
+            }
+
+            size_t maxLen = rule.maxPathLen;
+            string_view pathGroup = path.substr(0, maxLen);
+
+            auto &groups = rule.groups;
+            auto find = groups.find(pathGroup);
+            RedirectGroup *group;
+            if (find != groups.end())
+                group = find->second;
+            else
+            {
+                group = new RedirectGroup;
+                groups[pathGroup] = group;
+            }
+
+            if (path.size() == maxLen)  // Reached the end
+            {
+                (redirectFrom.isWildcard ? group->wildcard : group->to) =
+                    &rulesTo_[redirectFrom.toIdx];
+                group->maxPathLen = 0;
+                continue;  // No need to queue this node up, it reached the
+                           // end
+            }
+
+            auto &leaf = leafs[group];
+            leaf.fromData.push_back(&redirectFrom);
+            leaf.maxPathLen = maxLen;
+        }
+
+        // Populate subsequent leaf nodes
+        while (!leafs.empty())
+        {
+            for (auto &[group, depthGroup] : leafs)
+            {
+                size_t minIdx = depthGroup.maxPathLen, maxIdx = string::npos;
+                const auto &fromData = depthGroup.fromData;
+                for (const auto &redirectFrom : fromData)
+                {
+                    auto len = redirectFrom->path.size();
+                    if (len >= minIdx && len < maxIdx)
+                        maxIdx = len;
                 }
 
-                leafs = leafsBackbuffer;
-                leafsBackbuffer.clear();
+                size_t maxLen = maxIdx - minIdx;
+                group->maxPathLen = maxLen;
+                for (const auto &redirectFrom : fromData)
+                {
+                    string_view path = redirectFrom->path;
+                    string_view pathGroup = path.substr(minIdx, maxLen);
+
+                    auto &groups = group->groups;
+                    auto find = groups.find(pathGroup);
+                    RedirectGroup *childGroup;
+                    if (find != groups.end())
+                        childGroup = find->second;
+                    else
+                    {
+                        childGroup = new RedirectGroup;
+                        groups[pathGroup] = childGroup;
+                    }
+
+                    if (path.size() == maxIdx)  // Reached the end
+                    {
+                        (redirectFrom->isWildcard ? childGroup->wildcard
+                                                  : childGroup->to) =
+                            &rulesTo_[redirectFrom->toIdx];
+                        childGroup->maxPathLen = 0;
+                        continue;  // No need to queue this node up, it
+                                   // reached the end
+                    }
+
+                    auto &leaf = leafsBackbuffer[childGroup];
+                    leaf.fromData.push_back(redirectFrom);
+                    leaf.maxPathLen = maxIdx;
+                }
             }
+
+            leafs = leafsBackbuffer;
+            leafsBackbuffer.clear();
         }
     }
     std::weak_ptr<HostRedirector> weakPtr = shared_from_this();
