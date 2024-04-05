@@ -129,12 +129,11 @@ void HostRedirector::lookup(string &host, string &path) const
             if (isWildcard)
             {
                 const string &toPath = to->path;
-                const auto len = path.size();
-                auto start = len - lastWildcardPathViewLen;
-                start += toPath.back() == '/' && path[start] == '/';
-
-                path.reserve(toPath.size() + (len - start));
-                path.replace(0, start, toPath);
+                const auto start = path.size() - lastWildcardPathViewLen;
+                path.replace(0,
+                             start +
+                                 (toPath.back() == '/' && path[start] == '/'),
+                             toPath);
             }
             else
                 path = to->path;
