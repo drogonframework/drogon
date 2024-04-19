@@ -130,6 +130,7 @@ class DbConnection : public trantor::NonCopyable
     }
 
     virtual void disconnect() = 0;
+    virtual void init(){};
 
     bool isWorking() const
     {

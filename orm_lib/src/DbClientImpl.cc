@@ -81,10 +81,7 @@ void DbClientImpl::init()
         for (size_t i = 0; i < numberOfConnections_; ++i)
         {
             auto loop = loops_.getNextLoop();
-            loop->runInLoop([this, loop]() {
-                std::lock_guard<std::mutex> lock(connectionsMutex_);
-                connections_.insert(newConnection(loop));
-            });
+            loop->runInLoop([this, loop]() { newConnection(loop); });
         }
     }
     else if (type_ == ClientType::Sqlite3)
@@ -92,10 +89,9 @@ void DbClientImpl::init()
         sharedMutexPtr_ = std::make_shared<SharedMutex>();
         assert(sharedMutexPtr_);
 
-        std::lock_guard<std::mutex> lock(connectionsMutex_);
         for (size_t i = 0; i < numberOfConnections_; ++i)
         {
-            connections_.insert(newConnection(nullptr));
+            newConnection(nullptr);
         }
     }
 }
@@ -405,12 +401,9 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
     else if (type_ == ClientType::Sqlite3)
     {
 #if USE_SQLITE3
-        auto sqlite3ConnPtr =
-            std::make_shared<Sqlite3Connection>(loop,
-                                                connectionInfo_,
-                                                sharedMutexPtr_);
-        sqlite3ConnPtr->init();
-        connPtr = sqlite3ConnPtr;
+        connPtr = std::make_shared<Sqlite3Connection>(loop,
+                                                      connectionInfo_,
+                                                      sharedMutexPtr_);
 #else
         return nullptr;
 #endif
@@ -440,8 +433,8 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
-            std::lock_guard<std::mutex> guard(thisPtr->connectionsMutex_);
-            thisPtr->connections_.insert(thisPtr->newConnection(loop));
+
+            thisPtr->newConnection(loop);
         });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
@@ -467,6 +460,16 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
             return;
         thisPtr->handleNewTask(connPtr);
     });
+
+    {
+        std::lock_guard<std::mutex> guard(connectionsMutex_);
+        connections_.insert(connPtr);
+    }
+
+    // Init database connection only after all callbacks are set and connPtr
+    // is added to connections_.
+    connPtr->init();
+
     // std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;
 }
