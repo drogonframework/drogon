@@ -107,15 +107,17 @@ void RealIpResolver::initAndStart(const Json::Value &config)
     }
 
     drogon::app().registerPreRoutingAdvice([this](const HttpRequestPtr &req) {
-        const std::string &ipHeader = req->getHeader(fromHeader_);
+        const auto &headers = req->headers();
+        auto ipHeaderFind = headers.find(fromHeader_);
         const trantor::InetAddress &peerAddr = req->getPeerAddr();
-        if (ipHeader.empty() || !matchCidr(peerAddr))
+        if (ipHeaderFind == headers.end() || !matchCidr(peerAddr))
         {
             // Target header is empty, or
             // direct peer is already a non-proxy
             req->attributes()->insert(attributeKey_, peerAddr);
             return;
         }
+        const std::string &ipHeader = ipHeaderFind->second;
         // Use a header field which contains a single ip
         if (!useXForwardedFor_)
         {
