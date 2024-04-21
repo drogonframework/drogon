@@ -63,7 +63,7 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo,
     {
         loop_->queueInLoop([this]() {
             for (size_t i = 0; i < numberOfConnections_; ++i)
-                connectionHolders_.push_back(newConnection());
+                newConnection();
         });
     }
     else
@@ -439,26 +439,17 @@ DbConnectionPtr DbClientLockFree::newConnection()
         if (!thisPtr)
             return;
 
-        for (auto iter = thisPtr->connections_.begin();
-             iter != thisPtr->connections_.end();
-             iter++)
-        {
-            if (closeConnPtr == *iter)
-            {
-                thisPtr->connections_.erase(iter);
-                break;
-            }
-        }
-        for (auto iter = thisPtr->connectionHolders_.begin();
-             iter != thisPtr->connectionHolders_.end();
-             iter++)
-        {
-            if (closeConnPtr == *iter)
-            {
-                thisPtr->connectionHolders_.erase(iter);
-                break;
-            }
-        }
+        auto iter = std::find(thisPtr->connections_.begin(),
+                              thisPtr->connections_.end(),
+                              closeConnPtr);
+        if (iter != thisPtr->connections_.end())
+            thisPtr->connections_.erase(iter);
+
+        iter = std::find(thisPtr->connectionHolders_.begin(),
+                         thisPtr->connectionHolders_.end(),
+                         closeConnPtr);
+        if (iter != thisPtr->connectionHolders_.end())
+            thisPtr->connectionHolders_.erase(iter);
 
         thisPtr->transSet_.erase(closeConnPtr);
         // Reconnect after 1 second
@@ -466,7 +457,7 @@ DbConnectionPtr DbClientLockFree::newConnection()
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
-            thisPtr->connectionHolders_.push_back(thisPtr->newConnection());
+            thisPtr->newConnection();
         });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
@@ -488,6 +479,10 @@ DbConnectionPtr DbClientLockFree::newConnection()
         thisPtr->handleNewTask(connPtr);
     });
 
+    connectionHolders_.push_back(connPtr);
+
+    // Init database connection only after all callbacks are set and connPtr
+    // is added to connectionHolders_.
     connPtr->init();
 
     // std::cout<<"newConn end"<<connPtr<<std::endl;
