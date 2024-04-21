@@ -487,6 +487,9 @@ DbConnectionPtr DbClientLockFree::newConnection()
             return;
         thisPtr->handleNewTask(connPtr);
     });
+
+    connPtr->init();
+
     // std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;
 }
