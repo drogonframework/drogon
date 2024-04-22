@@ -302,6 +302,7 @@ PgConnectionPtr PgListener::newConnection(
                 thisPtr->onMessage(channel, message);
             }
         });
+    connPtr->init();
     return connPtr;
 }
 
