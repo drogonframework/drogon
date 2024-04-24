@@ -44,6 +44,8 @@ class Sqlite3Connection : public DbConnection,
                       const std::string &connInfo,
                       const std::shared_ptr<SharedMutex> &sharedMutex);
 
+    void init() override;
+
     void execSql(std::string_view &&sql,
                  size_t paraNum,
                  std::vector<const char *> &&parameters,
@@ -60,7 +62,6 @@ class Sqlite3Connection : public DbConnection,
     }
 
     void disconnect() override;
-    void init();
 
   private:
     static std::once_flag once_;

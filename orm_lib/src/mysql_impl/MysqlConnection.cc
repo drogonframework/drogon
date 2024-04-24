@@ -101,6 +101,10 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
             characterSet_ = value;
         }
     }
+}
+
+void MysqlConnection::init()
+{
     loop_->queueInLoop([this]() {
         MYSQL *ret;
         status_ = ConnectStatus::Connecting;
@@ -120,10 +124,13 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         auto fd = mysql_get_socket(mysqlPtr_.get());
         if (fd < 0)
         {
-            LOG_FATAL << "Socket fd < 0, Usually this is because the number of "
-                         "files opened by the program exceeds the system "
-                         "limit. Please use the ulimit command to check.";
-            exit(1);
+            LOG_ERROR << "Connection with MySQL could not be established";
+            if (closeCallback_)
+            {
+                auto thisPtr = shared_from_this();
+                closeCallback_(thisPtr);
+            }
+            return;
         }
         channelPtr_ = std::make_unique<trantor::Channel>(loop_, fd);
         channelPtr_->setEventCallback([this]() { handleEvent(); });

@@ -38,6 +38,8 @@ class MysqlConnection : public DbConnection,
   public:
     MysqlConnection(trantor::EventLoop *loop, const std::string &connInfo);
 
+    void init() override;
+
     ~MysqlConnection()
     {
     }
