@@ -18,6 +18,7 @@
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/HttpMiddleware.h>
 #include <memory>
 
 #ifdef __cpp_impl_coroutine
@@ -30,7 +31,8 @@ namespace drogon
  * @brief The abstract base class for filters
  * For more details on the class, see the wiki site (the 'Filter' section)
  */
-class DROGON_EXPORT HttpFilterBase : public virtual DrObjectBase
+class DROGON_EXPORT HttpFilterBase : public virtual DrObjectBase,
+                                     public HttpMiddlewareBase
 {
   public:
     /// This virtual function should be overridden in subclasses.
@@ -48,6 +50,24 @@ class DROGON_EXPORT HttpFilterBase : public virtual DrObjectBase
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) = 0;
     ~HttpFilterBase() override = default;
+
+  private:
+    void invoke(const HttpRequestPtr &req,
+                MiddlewareNextCallback &&nextCb,
+                MiddlewareCallback &&mcb) final
+    {
+        auto mcbPtr = std::make_shared<MiddlewareCallback>(std::move(mcb));
+        doFilter(
+            req,
+            [mcbPtr](const HttpResponsePtr &resp) {
+                (*mcbPtr)(resp);
+            },  // fcb, intercept the response
+            [nextCb = std::move(nextCb), mcbPtr]() {
+                nextCb([mcbPtr = std::move(mcbPtr)](
+                           const HttpResponsePtr &resp) { (*mcbPtr)(resp); });
+            }  // fccb, call the next middleware
+        );
+    }
 };
 
 /**
@@ -64,14 +84,6 @@ class HttpFilter : public DrObject<T>, public HttpFilterBase
     static constexpr bool isAutoCreation{AutoCreation};
     ~HttpFilter() override = default;
 };
-
-namespace internal
-{
-DROGON_EXPORT void handleException(
-    const std::exception &,
-    const HttpRequestPtr &,
-    std::function<void(const HttpResponsePtr &)> &&);
-}
 
 #ifdef __cpp_impl_coroutine
 template <typename T, bool AutoCreation = true>
