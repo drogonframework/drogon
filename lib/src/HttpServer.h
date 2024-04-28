@@ -25,7 +25,7 @@ struct CallbackParamPack;
 
 namespace drogon
 {
-class ControllerBinderBase;
+struct ControllerBinderBase;
 
 class HttpServer : trantor::NonCopyable
 {
