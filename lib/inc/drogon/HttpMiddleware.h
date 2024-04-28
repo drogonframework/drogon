@@ -109,7 +109,7 @@ class HttpCoroMiddleware : public DrObject<T>, public HttpMiddlewareBase
             HttpResponsePtr resp;
             try
             {
-                resp = co_await invoke(req, next);
+                resp = co_await invoke(req, std::move(next));
             }
             catch (const std::exception &ex)
             {
@@ -128,7 +128,7 @@ class HttpCoroMiddleware : public DrObject<T>, public HttpMiddlewareBase
 
     virtual Task<HttpResponsePtr> invoke(
         const HttpRequestPtr &req,
-        const std::function<MiddlewareNextAwaiter()> &next) = 0;
+        std::function<MiddlewareNextAwaiter()> &&next) = 0;
 };
 
 #endif

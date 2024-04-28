@@ -89,7 +89,7 @@ class MiddlewareCoro : public drogon::HttpCoroMiddleware<MiddlewareCoro>
 
     Task<HttpResponsePtr> invoke(
         const HttpRequestPtr &req,
-        const std::function<MiddlewareNextAwaiter()> &next) override
+        std::function<MiddlewareNextAwaiter()> &&next) override
     {
         auto ptr = req->attributes()->get<std::shared_ptr<std::string>>(
             "test-middleware");
