@@ -1046,6 +1046,25 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                         });
 #endif
 
+    // Test middleware
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/test-middleware");
+    client->sendRequest(req,
+                        [TEST_CTX, req](ReqResult r,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(r == ReqResult::Ok);
+                            CHECK(resp->body() == "123test321");
+                        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/test-middleware-block");
+    client->sendRequest(req,
+                        [TEST_CTX, req](ReqResult r,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(r == ReqResult::Ok);
+                            CHECK(resp->body() == "12block21");
+                        });
+
 #if defined(__cpp_impl_coroutine)
     async_run([client, TEST_CTX]() -> Task<> {
         // Test coroutine requests
@@ -1137,6 +1156,19 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             auto resp = co_await client->sendRequestCoro(req);
             CHECK(resp->getStatusCode() == k200OK);
             CHECK(resp->getBody() == "some_data");
+        }
+        catch (const std::exception &e)
+        {
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
+        }
+
+        // Test coroutine middleware
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/test-middleware-coro");
+            auto resp = co_await client->sendRequestCoro(req);
+            CHECK(resp->body() == "12corotestcoro21");
         }
         catch (const std::exception &e)
         {

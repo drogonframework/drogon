@@ -56,21 +56,6 @@ class HttpMiddleware : public DrObject<T>, public HttpMiddlewareBase
     ~HttpMiddleware() override = default;
 };
 
-class MyMiddle : public HttpMiddleware<MyMiddle>
-{
-  public:
-    void invoke(const HttpRequestPtr &req,
-                MiddlewareNextCallback &&nextCb,
-                MiddlewareCallback &&mcb) override
-    {
-        // Do something before calling the next middleware
-        nextCb([callback = std::move(mcb)](const HttpResponsePtr &resp) {
-            // Do something after the next middleware returns
-            callback(resp);
-        });
-    }
-};
-
 namespace internal
 {
 DROGON_EXPORT void handleException(
@@ -144,20 +129,6 @@ class HttpCoroMiddleware : public DrObject<T>, public HttpMiddlewareBase
     virtual Task<HttpResponsePtr> invoke(
         const HttpRequestPtr &req,
         const std::function<MiddlewareNextAwaiter()> &next) = 0;
-};
-
-class MyCoroMiddle : public HttpCoroMiddleware<MyCoroMiddle>
-{
-  public:
-    Task<HttpResponsePtr> invoke(
-        const HttpRequestPtr &req,
-        const std::function<MiddlewareNextAwaiter()> &next) override
-    {
-        // Do something before calling the next middleware
-        auto resp = co_await next();
-        // Do something after the next middleware returns
-        co_return resp;
-    }
 };
 
 #endif
