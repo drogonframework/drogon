@@ -73,7 +73,7 @@ class StaticFileRouter
                       bool isCaseSensitive,
                       bool allowAll,
                       bool isRecursive,
-                      const std::vector<std::string> &filters)
+                      const std::vector<std::string> &middlewareNames)
     {
         locations_.emplace_back(uriPrefix,
                                 defaultContentType,
@@ -81,7 +81,7 @@ class StaticFileRouter
                                 isCaseSensitive,
                                 allowAll,
                                 isRecursive,
-                                filters);
+                                middlewareNames);
     }
 
     void setStaticFileHeaders(
@@ -165,7 +165,7 @@ class StaticFileRouter
         bool isCaseSensitive_;
         bool allowAll_;
         bool isRecursive_;
-        std::vector<std::shared_ptr<drogon::HttpFilterBase>> filters_;
+        std::vector<std::shared_ptr<drogon::HttpMiddlewareBase>> middlewares_;
 
         Location(const std::string &uriPrefix,
                  const std::string &defaultContentType,
@@ -173,13 +173,13 @@ class StaticFileRouter
                  bool isCaseSensitive,
                  bool allowAll,
                  bool isRecursive,
-                 const std::vector<std::string> &filters)
+                 const std::vector<std::string> &middlewares)
             : uriPrefix_(uriPrefix),
               alias_(alias),
               isCaseSensitive_(isCaseSensitive),
               allowAll_(allowAll),
               isRecursive_(isRecursive),
-              filters_(filters_function::createFilters(filters))
+              middlewares_(filters_function::createMiddlewares(middlewares))
         {
             if (!defaultContentType.empty())
             {

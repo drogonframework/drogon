@@ -45,20 +45,20 @@ class HttpControllersRouter : public trantor::NonCopyable
     void registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods);
+        const std::vector<internal::HttpConstraint> &middlewaresAndMethods);
     void registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods);
+        const std::vector<internal::HttpConstraint> &middlewaresAndMethods);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
-                     const std::vector<std::string> &filters,
+                     const std::vector<std::string> &middlewareNames,
                      const std::string &handlerName = "");
     void addHttpRegex(const std::string &regExp,
                       const internal::HttpBinderBasePtr &binder,
                       const std::vector<HttpMethod> &validMethods,
-                      const std::vector<std::string> &filters,
+                      const std::vector<std::string> &middlewareNames,
                       const std::string &handlerName = "");
     RouteResult route(const HttpRequestImplPtr &req);
     RouteResult routeWs(const HttpRequestImplPtr &req);

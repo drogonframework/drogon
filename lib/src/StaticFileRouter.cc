@@ -205,7 +205,7 @@ void StaticFileRouter::route(
                 }
             }
 
-            if (location.filters_.empty())
+            if (location.middlewares_.empty())
             {
                 sendStaticFileResponse(filePath,
                                        req,
@@ -215,27 +215,21 @@ void StaticFileRouter::route(
             }
             else
             {
-                filters_function::doFilters(
-                    location.filters_,
+                filters_function::passMiddlewares(
+                    location.middlewares_,
                     req,
+                    std::move(callback),
                     [this,
                      req,
                      filePath = std::move(filePath),
                      contentType =
-                         std::string_view{location.defaultContentType_},
-                     callback = std::move(callback)](
-                        const HttpResponsePtr &resp) mutable {
-                        if (resp)
-                        {
-                            callback(resp);
-                        }
-                        else
-                        {
-                            sendStaticFileResponse(filePath,
-                                                   req,
-                                                   std::move(callback),
-                                                   contentType);
-                        }
+                         std::string_view{location.defaultContentType_}](
+                        std::function<void(const HttpResponsePtr &)>
+                            &&nestedPostCb) mutable {
+                        sendStaticFileResponse(filePath,
+                                               req,
+                                               std::move(nestedPostCb),
+                                               contentType);
                     });
             }
             return;

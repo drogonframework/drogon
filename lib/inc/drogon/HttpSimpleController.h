@@ -76,7 +76,7 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
 
     static void registerSelf__(
         const std::string &path,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods)
+        const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
     {
         LOG_TRACE << "register simple controller("
                   << HttpSimpleController<T, AutoCreation>::classTypeName()
@@ -84,7 +84,7 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
         app().registerHttpSimpleController(
             path,
             HttpSimpleController<T, AutoCreation>::classTypeName(),
-            filtersAndMethods);
+            middlewaresAndMethods);
     }
 
   private:

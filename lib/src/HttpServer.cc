@@ -418,7 +418,7 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
     aop.passPostRoutingObservers(req);
     if (!aop.hasPostRoutingAdvices())
     {
-        requestPassFilters(req, std::forward<Pack>(pack));
+        requestPassMiddlewares(req, std::forward<Pack>(pack));
         return;
     }
     aop.passPostRoutingAdvices(req,
@@ -430,35 +430,36 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
                                    }
                                    else
                                    {
-                                       requestPassFilters(req, std::move(pack));
+                                       requestPassMiddlewares(req,
+                                                              std::move(pack));
                                    }
                                });
 }
 
 template <typename Pack>
-void HttpServer::requestPassFilters(const HttpRequestImplPtr &req, Pack &&pack)
+void HttpServer::requestPassMiddlewares(const HttpRequestImplPtr &req,
+                                        Pack &&pack)
 {
-    // pass filters
-    auto &filters = pack.binderPtr->filters_;
-    if (filters.empty())
+    // pass middlewares
+    auto &middlewares = pack.binderPtr->middlewares_;
+    if (middlewares.empty())
     {
         requestPreHandling(req, std::forward<Pack>(pack));
         return;
     }
-    filters_function::doFilters(filters,
-                                req,
-                                [req, pack = std::forward<Pack>(pack)](
-                                    const HttpResponsePtr &resp) mutable {
-                                    if (resp)
-                                    {
-                                        pack.callback(resp);
-                                    }
-                                    else
-                                    {
-                                        requestPreHandling(req,
-                                                           std::move(pack));
-                                    }
-                                });
+
+    auto callback = std::move(pack.callback);
+    pack.callback = nullptr;
+    filters_function::passMiddlewares(
+        middlewares,
+        req,
+        std::move(callback),
+        [req, pack = std::forward<Pack>(pack)](
+            std::function<void(const HttpResponsePtr &)>
+                &&nestedPostCb) mutable {
+            pack.callback = nestedPostCb;
+            requestPreHandling(req, std::forward<Pack>(pack));
+        });
 }
 
 template <typename Pack>

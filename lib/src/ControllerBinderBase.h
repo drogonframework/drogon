@@ -23,7 +23,7 @@
 
 namespace drogon
 {
-class HttpFilterBase;
+class HttpMiddlewareBase;
 
 /**
  * @brief A component to associate router class and controller class
@@ -31,8 +31,8 @@ class HttpFilterBase;
 struct ControllerBinderBase
 {
     std::string handlerName_;
-    std::vector<std::string> filterNames_;
-    std::vector<std::shared_ptr<HttpFilterBase>> filters_;
+    std::vector<std::string> middlewareNames_;
+    std::vector<std::shared_ptr<HttpMiddlewareBase>> middlewares_;
     IOThreadStorage<HttpResponsePtr> responseCache_;
     std::shared_ptr<std::string> corsMethods_;
     bool isCORS_{false};

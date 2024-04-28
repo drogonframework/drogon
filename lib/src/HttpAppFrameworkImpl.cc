@@ -285,22 +285,22 @@ HttpAppFramework &HttpAppFrameworkImpl::setFileTypes(
 HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
 {
     assert(!routersInit_);
     HttpControllersRouter::instance().registerWebSocketController(
-        pathName, ctrlName, filtersAndMethods);
+        pathName, ctrlName, middlewaresAndMethods);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
 {
     assert(!routersInit_);
     HttpControllersRouter::instance().registerHttpSimpleController(
-        pathName, ctrlName, filtersAndMethods);
+        pathName, ctrlName, middlewaresAndMethods);
     return *this;
 }
 
@@ -308,28 +308,28 @@ void HttpAppFrameworkImpl::registerHttpController(
     const std::string &pathPattern,
     const internal::HttpBinderBasePtr &binder,
     const std::vector<HttpMethod> &validMethods,
-    const std::vector<std::string> &filters,
+    const std::vector<std::string> &middlewareNames,
     const std::string &handlerName)
 {
     assert(!pathPattern.empty());
     assert(binder);
     assert(!routersInit_);
     HttpControllersRouter::instance().addHttpPath(
-        pathPattern, binder, validMethods, filters, handlerName);
+        pathPattern, binder, validMethods, middlewareNames, handlerName);
 }
 
 void HttpAppFrameworkImpl::registerHttpControllerViaRegex(
     const std::string &regExp,
     const internal::HttpBinderBasePtr &binder,
     const std::vector<HttpMethod> &validMethods,
-    const std::vector<std::string> &filters,
+    const std::vector<std::string> &middlewareNames,
     const std::string &handlerName)
 {
     assert(!regExp.empty());
     assert(binder);
     assert(!routersInit_);
     HttpControllersRouter::instance().addHttpRegex(
-        regExp, binder, validMethods, filters, handlerName);
+        regExp, binder, validMethods, middlewareNames, handlerName);
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
@@ -1013,7 +1013,7 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
     bool isCaseSensitive,
     bool allowAll,
     bool isRecursive,
-    const std::vector<std::string> &filters)
+    const std::vector<std::string> &middlewareNames)
 {
     StaticFileRouter::instance().addALocation(uriPrefix,
                                               defaultContentType,
@@ -1021,7 +1021,7 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
                                               isCaseSensitive,
                                               allowAll,
                                               isRecursive,
-                                              filters);
+                                              middlewareNames);
     return *this;
 }
 

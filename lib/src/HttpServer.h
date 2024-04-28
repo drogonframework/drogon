@@ -107,7 +107,8 @@ class HttpServer : trantor::NonCopyable
     template <typename Pack>
     static void requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack);
     template <typename Pack>
-    static void requestPassFilters(const HttpRequestImplPtr &req, Pack &&pack);
+    static void requestPassMiddlewares(const HttpRequestImplPtr &req,
+                                       Pack &&pack);
     template <typename Pack>
     static void requestPreHandling(const HttpRequestImplPtr &req, Pack &&pack);
 
