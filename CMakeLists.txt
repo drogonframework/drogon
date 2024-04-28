@@ -557,6 +557,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpClient.h
     lib/inc/drogon/HttpController.h
     lib/inc/drogon/HttpFilter.h
+    lib/inc/drogon/HttpMiddleware.h
     lib/inc/drogon/HttpRequest.h
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h

@@ -17,6 +17,7 @@
 #include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
 #include <drogon/HttpFilter.h>
+#include <drogon/HttpMiddleware.h>
 
 #include <queue>
 
@@ -76,9 +77,15 @@ std::vector<std::shared_ptr<HttpFilterBase>> createFilters(
     for (auto const &filter : filterNames)
     {
         auto object_ = DrClassMap::getSingleInstance(filter);
-        auto filter_ = std::dynamic_pointer_cast<HttpFilterBase>(object_);
-        if (filter_)
+        if (auto filter_ = std::dynamic_pointer_cast<HttpFilterBase>(object_))
+        {
             filters.push_back(filter_);
+        }
+        else if (auto middleware =
+                     std::dynamic_pointer_cast<HttpMiddlewareBase>(object_))
+        {
+            // filters.push_back(middleware);
+        }
         else
         {
             LOG_ERROR << "filter " << filter << " not found";
