@@ -62,7 +62,7 @@ class DROGON_EXPORT HttpFilterBase : public virtual DrObjectBase,
             [mcbPtr](const HttpResponsePtr &resp) {
                 (*mcbPtr)(resp);
             },  // fcb, intercept the response
-            [nextCb = std::move(nextCb), mcbPtr]() {
+            [nextCb = std::move(nextCb), mcbPtr]() mutable {
                 nextCb([mcbPtr = std::move(mcbPtr)](
                            const HttpResponsePtr &resp) { (*mcbPtr)(resp); });
             }  // fccb, call the next middleware
@@ -75,7 +75,7 @@ class DROGON_EXPORT HttpFilterBase : public virtual DrObjectBase,
  *
  * @tparam T The type of the implementation class
  * @tparam AutoCreation The flag for automatically creating, user can set this
- * flag to false for classes that have nondefault constructors.
+ * flag to false for classes that have non-default constructors.
  */
 template <typename T, bool AutoCreation = true>
 class HttpFilter : public DrObject<T>, public HttpFilterBase
