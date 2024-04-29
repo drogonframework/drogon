@@ -1,6 +1,6 @@
 /**
  *
- *  FiltersFunction.h
+ *  MiddlewaresFunction.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -21,7 +21,7 @@
 
 namespace drogon
 {
-namespace filters_function
+namespace middlewares_function
 {
 // We can not remove old filters api. GlobalFilter still needs it.
 // GlobalFilter run filters in advice chains, which does not expose the outer
@@ -40,5 +40,5 @@ void passMiddlewares(
     std::function<void(std::function<void(const HttpResponsePtr &)> &&)>
         &&innermostHandler);
 
-}  // namespace filters_function
+}  // namespace middlewares_function
 }  // namespace drogon

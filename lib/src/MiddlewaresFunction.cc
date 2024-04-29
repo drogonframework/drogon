@@ -1,6 +1,6 @@
 /**
  *
- *  @file FiltersFunction.cc
+ *  @file MiddlewaresFunction.cc
  *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -12,7 +12,7 @@
  *
  */
 
-#include "FiltersFunction.h"
+#include "MiddlewaresFunction.h"
 #include "HttpRequestImpl.h"
 #include "HttpAppFrameworkImpl.h"
 #include <drogon/HttpMiddleware.h>
@@ -21,7 +21,7 @@
 
 namespace drogon
 {
-namespace filters_function
+namespace middlewares_function
 {
 static void doFilterChains(
     const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
@@ -181,5 +181,5 @@ void passMiddlewares(
                          std::move(innermostHandler));
 }
 
-}  // namespace filters_function
+}  // namespace middlewares_function
 }  // namespace drogon

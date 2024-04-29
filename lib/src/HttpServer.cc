@@ -20,7 +20,7 @@
 #include <memory>
 #include <utility>
 #include "AOPAdvice.h"
-#include "FiltersFunction.h"
+#include "MiddlewaresFunction.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpConnectionLimit.h"
 #include "HttpControllerBinder.h"
@@ -450,7 +450,7 @@ void HttpServer::requestPassMiddlewares(const HttpRequestImplPtr &req,
 
     auto callback = std::move(pack.callback);
     pack.callback = nullptr;
-    filters_function::passMiddlewares(
+    middlewares_function::passMiddlewares(
         middlewares,
         req,
         std::move(callback),

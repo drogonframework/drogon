@@ -15,7 +15,7 @@
 #pragma once
 
 #include "impl_forwards.h"
-#include "FiltersFunction.h"
+#include "MiddlewaresFunction.h"
 #include <drogon/CacheMap.h>
 #include <drogon/IOThreadStorage.h>
 #include <functional>
@@ -179,7 +179,7 @@ class StaticFileRouter
               isCaseSensitive_(isCaseSensitive),
               allowAll_(allowAll),
               isRecursive_(isRecursive),
-              middlewares_(filters_function::createMiddlewares(middlewares))
+              middlewares_(middlewares_function::createMiddlewares(middlewares))
         {
             if (!defaultContentType.empty())
             {

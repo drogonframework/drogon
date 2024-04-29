@@ -16,7 +16,7 @@
 #include "HttpControllerBinder.h"
 #include "HttpRequestImpl.h"
 #include "HttpAppFrameworkImpl.h"
-#include "FiltersFunction.h"
+#include "MiddlewaresFunction.h"
 #include <drogon/HttpSimpleController.h>
 #include <drogon/WebSocketController.h>
 #include <algorithm>
@@ -33,7 +33,7 @@ void HttpControllersRouter::init(
             auto &binder = item.binders_[i];
             if (binder)
             {
-                binder->middlewares_ = filters_function::createMiddlewares(
+                binder->middlewares_ = middlewares_function::createMiddlewares(
                     binder->middlewareNames_);
                 binder->corsMethods_ = corsMethods;
                 if (binder->isCORS_)

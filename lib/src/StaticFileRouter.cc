@@ -215,7 +215,7 @@ void StaticFileRouter::route(
             }
             else
             {
-                filters_function::passMiddlewares(
+                middlewares_function::passMiddlewares(
                     location.middlewares_,
                     req,
                     std::move(callback),
