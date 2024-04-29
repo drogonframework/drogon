@@ -456,8 +456,8 @@ void HttpServer::requestPassMiddlewares(const HttpRequestImplPtr &req,
         std::move(callback),
         [req, pack = std::forward<Pack>(pack)](
             std::function<void(const HttpResponsePtr &)>
-                &&nestedPostCb) mutable {
-            pack.callback = nestedPostCb;
+                &&middlewarePostCb) mutable {
+            pack.callback = std::move(middlewarePostCb);
             requestPreHandling(req, std::forward<Pack>(pack));
         });
 }

@@ -225,10 +225,10 @@ void StaticFileRouter::route(
                      contentType =
                          std::string_view{location.defaultContentType_}](
                         std::function<void(const HttpResponsePtr &)>
-                            &&nestedPostCb) mutable {
+                            &&middlewarePostCb) mutable {
                         sendStaticFileResponse(filePath,
                                                req,
-                                               std::move(nestedPostCb),
+                                               std::move(middlewarePostCb),
                                                contentType);
                     });
             }
