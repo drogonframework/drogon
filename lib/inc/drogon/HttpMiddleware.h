@@ -118,18 +118,14 @@ class HttpCoroMiddleware : public DrObject<T>, public HttpMiddlewareBase
                 MiddlewareNextCallback &&nextCb,
                 MiddlewareCallback &&mcb) final
     {
-        auto next = [nextCb = std::move(nextCb)]() mutable {
-            return MiddlewareNextAwaiter(std::move(nextCb));
-        };
-
         drogon::async_run([this,
                            req,
-                           next = std::move(next),
+                           nextCb = std::move(nextCb),
                            mcb = std::move(mcb)]() mutable -> drogon::Task<> {
             HttpResponsePtr resp;
             try
             {
-                resp = co_await invoke(req, std::move(next));
+                resp = co_await invoke(req, {std::move(nextCb)});
             }
             catch (const std::exception &ex)
             {
@@ -146,9 +142,8 @@ class HttpCoroMiddleware : public DrObject<T>, public HttpMiddlewareBase
         });
     }
 
-    virtual Task<HttpResponsePtr> invoke(
-        const HttpRequestPtr &req,
-        std::function<MiddlewareNextAwaiter()> &&next) = 0;
+    virtual Task<HttpResponsePtr> invoke(const HttpRequestPtr &req,
+                                         MiddlewareNextAwaiter &&next) = 0;
 };
 
 #endif

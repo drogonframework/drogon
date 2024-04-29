@@ -5,7 +5,11 @@ using namespace drogon;
 class Middleware1 : public drogon::HttpMiddleware<Middleware1>
 {
   public:
-    Middleware1(){};
+    Middleware1()
+    {
+        // do not omit constructor
+        void(0);
+    };
 
     void invoke(const HttpRequestPtr &req,
                 MiddlewareNextCallback &&nextCb,
@@ -25,7 +29,11 @@ class Middleware1 : public drogon::HttpMiddleware<Middleware1>
 class Middleware2 : public drogon::HttpMiddleware<Middleware2>
 {
   public:
-    Middleware2(){};
+    Middleware2()
+    {
+        // do not omit constructor
+        void(0);
+    };
 
     void invoke(const HttpRequestPtr &req,
                 MiddlewareNextCallback &&nextCb,
@@ -46,7 +54,11 @@ class Middleware2 : public drogon::HttpMiddleware<Middleware2>
 class Middleware3 : public drogon::HttpMiddleware<Middleware3>
 {
   public:
-    Middleware3(){};
+    Middleware3()
+    {
+        // do not omit constructor
+        void(0);
+    };
 
     void invoke(const HttpRequestPtr &req,
                 MiddlewareNextCallback &&nextCb,
@@ -67,7 +79,11 @@ class Middleware3 : public drogon::HttpMiddleware<Middleware3>
 class MiddlewareBlock : public drogon::HttpMiddleware<MiddlewareBlock>
 {
   public:
-    MiddlewareBlock(){};
+    MiddlewareBlock()
+    {
+        // do not omit constructor
+        void(0);
+    };
 
     void invoke(const HttpRequestPtr &req,
                 MiddlewareNextCallback &&nextCb,
@@ -85,17 +101,20 @@ class MiddlewareBlock : public drogon::HttpMiddleware<MiddlewareBlock>
 class MiddlewareCoro : public drogon::HttpCoroMiddleware<MiddlewareCoro>
 {
   public:
-    MiddlewareCoro(){};
+    MiddlewareCoro()
+    {
+        // do not omit constructor
+        void(0);
+    };
 
-    Task<HttpResponsePtr> invoke(
-        const HttpRequestPtr &req,
-        std::function<MiddlewareNextAwaiter()> &&next) override
+    Task<HttpResponsePtr> invoke(const HttpRequestPtr &req,
+                                 MiddlewareNextAwaiter &&nextAwaiter) override
     {
         auto ptr = req->attributes()->get<std::shared_ptr<std::string>>(
             "test-middleware");
         ptr->append("coro");
 
-        auto resp = co_await next();
+        auto resp = co_await nextAwaiter;
 
         ptr->append("coro");
         resp->setBody(*ptr);
