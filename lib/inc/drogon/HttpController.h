@@ -66,8 +66,7 @@ class HttpController : public DrObject<T>, public HttpControllerBase
     static void registerMethod(
         FUNCTION &&function,
         const std::string &pattern,
-        const std::vector<internal::HttpConstraint> &middlewaresAndMethods =
-            std::vector<internal::HttpConstraint>{},
+        const std::vector<internal::HttpConstraint> &constraints = {},
         bool classNameInPath = true,
         const std::string &handlerName = "")
     {
@@ -88,12 +87,12 @@ class HttpController : public DrObject<T>, public HttpControllerBase
             if (pattern.empty() || pattern[0] == '/')
                 app().registerHandler(path + pattern,
                                       std::forward<FUNCTION>(function),
-                                      middlewaresAndMethods,
+                                      constraints,
                                       handlerName);
             else
                 app().registerHandler(path + "/" + pattern,
                                       std::forward<FUNCTION>(function),
-                                      middlewaresAndMethods,
+                                      constraints,
                                       handlerName);
         }
         else
@@ -105,7 +104,7 @@ class HttpController : public DrObject<T>, public HttpControllerBase
             }
             app().registerHandler(path,
                                   std::forward<FUNCTION>(function),
-                                  middlewaresAndMethods,
+                                  constraints,
                                   handlerName);
         }
     }
@@ -114,13 +113,13 @@ class HttpController : public DrObject<T>, public HttpControllerBase
     static void registerMethodViaRegex(
         FUNCTION &&function,
         const std::string &regExp,
-        const std::vector<internal::HttpConstraint> &middlewaresAndMethods =
+        const std::vector<internal::HttpConstraint> &constraints =
             std::vector<internal::HttpConstraint>{},
         const std::string &handlerName = "")
     {
         app().registerHandlerViaRegex(regExp,
                                       std::forward<FUNCTION>(function),
-                                      middlewaresAndMethods,
+                                      constraints,
                                       handlerName);
     }
 

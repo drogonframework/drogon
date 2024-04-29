@@ -285,22 +285,24 @@ HttpAppFramework &HttpAppFrameworkImpl::setFileTypes(
 HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!routersInit_);
-    HttpControllersRouter::instance().registerWebSocketController(
-        pathName, ctrlName, middlewaresAndMethods);
+    HttpControllersRouter::instance().registerWebSocketController(pathName,
+                                                                  ctrlName,
+                                                                  constraints);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!routersInit_);
-    HttpControllersRouter::instance().registerHttpSimpleController(
-        pathName, ctrlName, middlewaresAndMethods);
+    HttpControllersRouter::instance().registerHttpSimpleController(pathName,
+                                                                   ctrlName,
+                                                                   constraints);
     return *this;
 }
 

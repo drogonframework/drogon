@@ -15,7 +15,6 @@
 #include "HttpControllersRouter.h"
 #include "HttpControllerBinder.h"
 #include "HttpRequestImpl.h"
-#include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
 #include "FiltersFunction.h"
 #include <drogon/HttpSimpleController.h>
@@ -27,7 +26,7 @@ using namespace drogon;
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> & /*ioLoops*/)
 {
-    auto initFiltersAndCorsMethods = [](const auto &item) {
+    auto initMiddlewaresAndCorsMethods = [](const auto &item) {
         auto corsMethods = std::make_shared<std::string>("OPTIONS,");
         for (size_t i = 0; i < Invalid; ++i)
         {
@@ -56,19 +55,19 @@ void HttpControllersRouter::init(
 
     for (auto &iter : simpleCtrlMap_)
     {
-        initFiltersAndCorsMethods(iter.second);
+        initMiddlewaresAndCorsMethods(iter.second);
     }
 
     for (auto &iter : wsCtrlMap_)
     {
-        initFiltersAndCorsMethods(iter.second);
+        initMiddlewaresAndCorsMethods(iter.second);
     }
 
     for (auto &router : ctrlVector_)
     {
         router.regex_ = std::regex(router.pathParameterPattern_,
                                    std::regex_constants::icase);
-        initFiltersAndCorsMethods(router);
+        initMiddlewaresAndCorsMethods(router);
     }
 
     for (auto &p : ctrlMap_)
@@ -76,7 +75,7 @@ void HttpControllersRouter::init(
         auto &router = p.second;
         router.regex_ = std::regex(router.pathParameterPattern_,
                                    std::regex_constants::icase);
-        initFiltersAndCorsMethods(router);
+        initMiddlewaresAndCorsMethods(router);
     }
 }
 
@@ -215,14 +214,13 @@ static SimpleControllerProcessResult processSimpleControllerParams(
 void HttpControllersRouter::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
     // Note: some compiler version failed to handle structural bindings with
     // lambda capture
-    auto result =
-        processSimpleControllerParams(pathName, middlewaresAndMethods);
+    auto result = processSimpleControllerParams(pathName, constraints);
     std::string path = std::move(result.lowerPath);
 
     auto &item = simpleCtrlMap_[path];
@@ -250,12 +248,11 @@ void HttpControllersRouter::registerHttpSimpleController(
 void HttpControllersRouter::registerWebSocketController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
-    auto result =
-        processSimpleControllerParams(pathName, middlewaresAndMethods);
+    auto result = processSimpleControllerParams(pathName, constraints);
     std::string path = std::move(result.lowerPath);
 
     auto &item = wsCtrlMap_[path];

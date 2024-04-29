@@ -88,13 +88,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
-        override;
+        const std::vector<internal::HttpConstraint> &constraints) override;
     HttpAppFramework &registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
-        override;
+        const std::vector<internal::HttpConstraint> &constraints) override;
 
     HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp,
                                        bool set404) override

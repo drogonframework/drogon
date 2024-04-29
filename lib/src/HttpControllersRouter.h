@@ -45,11 +45,11 @@ class HttpControllersRouter : public trantor::NonCopyable
     void registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &middlewaresAndMethods);
+        const std::vector<internal::HttpConstraint> &constraints);
     void registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &middlewaresAndMethods);
+        const std::vector<internal::HttpConstraint> &constraints);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,

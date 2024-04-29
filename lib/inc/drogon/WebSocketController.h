@@ -83,7 +83,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
 
     static void registerSelf__(
         const std::string &path,
-        const std::vector<internal::HttpConstraint> &middlewaresAndMethods)
+        const std::vector<internal::HttpConstraint> &constraints)
     {
         LOG_TRACE << "register websocket controller("
                   << WebSocketController<T, AutoCreation>::classTypeName()
@@ -91,7 +91,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
         app().registerWebSocketController(
             path,
             WebSocketController<T, AutoCreation>::classTypeName(),
-            middlewaresAndMethods);
+            constraints);
     }
 
   private:
