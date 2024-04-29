@@ -23,10 +23,9 @@ namespace drogon
 {
 namespace filters_function
 {
-// remove later. We still use it in GlobalFilter
-std::vector<std::shared_ptr<HttpFilterBase>> createFilters(
-    const std::vector<std::string> &filterNames);
-
+// We can not remove old filters api. GlobalFilter still needs it.
+// GlobalFilter run filters in advice chains, which does not expose the outer
+// response handler, so HttpMiddleware is not suitable for it.
 void doFilters(const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
                const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback);

@@ -14,7 +14,6 @@
 
 #include "FiltersFunction.h"
 #include "HttpRequestImpl.h"
-#include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
 #include <drogon/HttpMiddleware.h>
 
@@ -69,30 +68,6 @@ static void doFilterChains(
     }
 }
 
-std::vector<std::shared_ptr<HttpFilterBase>> createFilters(
-    const std::vector<std::string> &filterNames)
-{
-    std::vector<std::shared_ptr<HttpFilterBase>> filters;
-    for (auto const &filter : filterNames)
-    {
-        auto object_ = DrClassMap::getSingleInstance(filter);
-        if (auto filter_ = std::dynamic_pointer_cast<HttpFilterBase>(object_))
-        {
-            filters.push_back(filter_);
-        }
-        else if (auto middleware =
-                     std::dynamic_pointer_cast<HttpMiddlewareBase>(object_))
-        {
-            // filters.push_back(middleware);
-        }
-        else
-        {
-            LOG_ERROR << "filter " << filter << " not found";
-        }
-    }
-    return filters;
-}
-
 void doFilters(const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
                const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback)
@@ -102,13 +77,27 @@ void doFilters(const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
     doFilterChains(filters, 0, req, std::move(callbackPtr));
 }
 
-// Nitromelon 2024.04.28: I doubt anyone else (or even myself a week later)
-// could understand this function !!!
+/**
+ * @brief
+ * The middlewares are invoked according to the onion ring model.
+ *
+ * @param outerCallback The road back to the outer layer of the onion ring.
+ * @param innermostHandler The innermost handler at the core of the onion ring.
+ *
+ * When going through each middleware, the `innermostHandler` is passed down as
+ * is, while the `outerCallback` is passed to the user code. User code wraps the
+ * outerCallback along with other post processing codes into `userPostCb`, and
+ * passes it to the next middleware.
+ *
+ * When reaching the onion core, the `innermostHandler` is finally called. It's
+ * parameter is a function that wraps the original `outerCallback` and all
+ * `userPostCb`s.
+ */
 static void passMiddlewareChains(
     const std::vector<std::shared_ptr<HttpMiddlewareBase>> &middlewares,
     size_t index,
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&outermostCallback,
+    std::function<void(const HttpResponsePtr &)> &&outerCallback,
     std::function<void(std::function<void(const HttpResponsePtr &)> &&)>
         &&innermostHandler)
 {
@@ -150,11 +139,11 @@ static void passMiddlewareChains(
                                          std::move(innermostHandler));
                 }
             },
-            std::move(outermostCallback));
+            std::move(outerCallback));
     }
     else
     {
-        innermostHandler(std::move(outermostCallback));
+        innermostHandler(std::move(outerCallback));
     }
 }
 

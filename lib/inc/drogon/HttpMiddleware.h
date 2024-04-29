@@ -42,7 +42,7 @@ class DROGON_EXPORT HttpMiddlewareBase : public virtual DrObjectBase
 };
 
 /**
- * @brief The reflection base class template for filters
+ * @brief The reflection base class template for middlewares
  *
  * @tparam T The type of the implementation class
  * @tparam AutoCreation The flag for automatically creating, user can set this
