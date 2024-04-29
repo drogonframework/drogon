@@ -32,8 +32,28 @@ namespace drogon
 class DROGON_EXPORT HttpMiddlewareBase : public virtual DrObjectBase
 {
   public:
-    /// This virtual function should be overridden in subclasses.
     /**
+     * This virtual function should be overridden in subclasses.
+     *
+     * Example:
+     * @code
+     * void invoke(const HttpRequestPtr &req,
+     *             MiddlewareNextCallback &&nextCb,
+     *             MiddlewareCallback &&mcb) override
+     *  {
+     *     if (req->path() == "/some/path") {
+     *         // intercept directly
+     *         mcb(HttpResponse::newNotFoundResponse(req));
+     *         return;
+     *     }
+     *     // Do something before calling the next middleware
+     *     nextCb([mcb = std::move(mcb)](const HttpResponsePtr &resp) {
+     *         // Do something after the next middleware returns
+     *         mcb(resp);
+     *     });
+     * }
+     * @endcode
+     *
      */
     virtual void invoke(const HttpRequestPtr &req,
                         MiddlewareNextCallback &&nextCb,
