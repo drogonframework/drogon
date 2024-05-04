@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <json/value.h>
 #include <memory>
 #include <string>
 #include <drogon/HttpTypes.h>
@@ -114,6 +115,16 @@ class WebSocketConnection
      */
     virtual void send(
         std::string_view msg,
+        const WebSocketMessageType type = WebSocketMessageType::Text) = 0;
+
+    /**
+     * @brief Send a message to the peer
+     *
+     * @param json The JSON message to be sent.
+     * @param type The message type.
+     */
+    virtual void sendJson(
+        const Json::Value &json,
         const WebSocketMessageType type = WebSocketMessageType::Text) = 0;
 
     /// Return the local IP address and port number of the connection

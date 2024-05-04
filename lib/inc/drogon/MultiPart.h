@@ -178,8 +178,9 @@ class DROGON_EXPORT MultiPartParser
     int parse(const HttpRequestPtr &req,
               const char *boundaryData,
               size_t boundaryLen);
-    int parseEntity(const char *begin, const char *end);
-    HttpRequestPtr requestPtr_;
+    int parseEntity(const HttpRequestPtr &req,
+                    const char *begin,
+                    const char *end);
 };
 
 /// In order to be compatible with old interfaces

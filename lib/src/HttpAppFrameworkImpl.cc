@@ -624,12 +624,12 @@ void HttpAppFrameworkImpl::run()
     running_ = true;
     // Initialize plugins
     auto &pluginConfig = jsonConfig_["plugins"];
-    const auto &runtumePluginConfig = jsonRuntimeConfig_["plugins"];
+    const auto &runtimePluginConfig = jsonRuntimeConfig_["plugins"];
     if (!pluginConfig.isNull())
     {
-        if (!runtumePluginConfig.isNull() && runtumePluginConfig.isArray())
+        if (!runtimePluginConfig.isNull() && runtimePluginConfig.isArray())
         {
-            for (const auto &plugin : runtumePluginConfig)
+            for (const auto &plugin : runtimePluginConfig)
             {
                 pluginConfig.append(plugin);
             }
@@ -637,7 +637,7 @@ void HttpAppFrameworkImpl::run()
     }
     else
     {
-        jsonConfig_["plugins"] = runtumePluginConfig;
+        jsonConfig_["plugins"] = runtimePluginConfig;
     }
     if (!pluginConfig.isNull())
     {
