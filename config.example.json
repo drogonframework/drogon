@@ -101,7 +101,7 @@
         //is the number of CPU cores
         "number_of_threads": 1,
         //enable_session: False by default
-        "enable_session": false,
+        "enable_session": true,
         "session_timeout": 0,
         //string value of SameSite attribute of the Set-Cookie HTTP response header
         //valid value is either 'Null' (default), 'Lax', 'Strict' or 'None'
@@ -340,5 +340,14 @@
         }
     ],
     //custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 
-    "custom_config": {}
+    "custom_config": {
+        "realm": "drogonRealm",
+        "opaque": "drogonOpaque",
+        "credentials": [
+            {
+                "user": "drogon",
+                "password": "dr0g0n"
+            }
+        ]
+    }
 }

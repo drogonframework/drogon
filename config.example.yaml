@@ -303,4 +303,9 @@ plugins:
       # custom_time_format: ''
       # use_real_ip: false
 # custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 
-custom_config: {}
+custom_config:
+  realm: drogonRealm
+  opaque: drogonOpaque
+  credentials:
+    - user: drogon
+      password: dr0g0n
