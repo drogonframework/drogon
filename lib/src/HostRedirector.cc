@@ -154,10 +154,14 @@ void HostRedirector::initAndStart(const Json::Value &config)
     const auto &rules = config["rules"];
     if (rules.isObject())
     {
-        const auto redirectToList = rules.getMemberNames();
-        rulesTo_.reserve(redirectToList.size());
-        for (const string &redirectToStr : redirectToList)
+        auto it = rules.begin(), _end = rules.end();
+        rulesTo_.reserve(_end - it);
+        for (; it != _end; ++it)
         {
+            const char *end, *begin = it.memberName(&end);
+            string_view redirectToStr(
+                begin,
+                end - begin);  // NOTE: After C++20 we can just do (begin, end)
             string redirectToHost, redirectToPath;
             auto pathIdx = redirectToStr.find('/');
             if (pathIdx != string::npos)
@@ -168,29 +172,33 @@ void HostRedirector::initAndStart(const Json::Value &config)
             else
                 redirectToPath = "/";
 
-            const auto &redirectFromValue = rules[redirectToStr];
+            if (redirectToHost.empty() && pathIdx != 0)
+                redirectToHost = redirectToStr;
 
             auto toIdx = rulesTo_.size();
             rulesTo_.push_back({
-                std::move(redirectToHost.empty() && pathIdx != 0
-                              ? redirectToStr
-                              : redirectToHost),
+                std::move(redirectToHost),
                 std::move(redirectToPath),
             });
 
+            const auto &redirectFromValue = *it;
             if (redirectFromValue.isArray())
             {
                 for (const auto &redirectFrom : redirectFromValue)
                 {
-                    assert(redirectFrom.isString());
+                    if (!redirectFrom.getString(&begin, &end))
+                        continue;
 
-                    string redirectFromStr = redirectFrom.asString();
+                    string_view redirectFromStr(
+                        begin, end - begin);  // NOTE: After C++20 we can just
+                                              // do (begin, end)
                     auto len = redirectFromStr.size();
                     bool isWildcard = false;
+                    // NOTE: After C++20 we can just do ends_with("/*")
                     if (len > 1 && redirectFromStr[len - 2] == '/' &&
                         redirectFromStr[len - 1] == '*')
                     {
-                        redirectFromStr.resize(len - 2);
+                        redirectFromStr.remove_suffix(2);  // remove "/*" suffix
                         isWildcard = true;
                     }
 
@@ -204,14 +212,14 @@ void HostRedirector::initAndStart(const Json::Value &config)
                     else
                         redirectFromPath = '/';
 
-                    const string &fromHost =
-                        redirectFromHost.empty() && pathIdx != 0
-                            ? redirectFromStr
-                            : redirectFromHost;
-                    if (!fromHost.empty())
+                    if (redirectFromHost.empty() && pathIdx != 0)
+                        redirectFromHost = redirectFromStr;
+
+                    if (!redirectFromHost.empty())
                         doHostLookup_ = true;  // We have hosts in lookup rules
+
                     rulesFromData_.push_back({
-                        std::move(fromHost),
+                        std::move(redirectFromHost),
                         std::move(redirectFromPath),
                         isWildcard,
                         toIdx,
