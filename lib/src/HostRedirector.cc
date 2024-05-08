@@ -171,11 +171,12 @@ void HostRedirector::initAndStart(const Json::Value &config)
             const auto &redirectFromValue = rules[redirectToStr];
 
             auto toIdx = rulesTo_.size();
-            rulesTo_.emplace_back(std::move(redirectToHost.empty() &&
-                                                    pathIdx != 0
-                                                ? redirectToStr
-                                                : redirectToHost),
-                                  std::move(redirectToPath));
+            rulesTo_.push_back({
+                std::move(redirectToHost.empty() && pathIdx != 0
+                              ? redirectToStr
+                              : redirectToHost),
+                std::move(redirectToPath),
+            });
 
             if (redirectFromValue.isArray())
             {
@@ -209,10 +210,12 @@ void HostRedirector::initAndStart(const Json::Value &config)
                             : redirectFromHost;
                     if (!fromHost.empty())
                         doHostLookup_ = true;  // We have hosts in lookup rules
-                    rulesFromData_.emplace_back(std::move(fromHost),
-                                                std::move(redirectFromPath),
-                                                isWildcard,
-                                                toIdx);
+                    rulesFromData_.push_back({
+                        std::move(fromHost),
+                        std::move(redirectFromPath),
+                        isWildcard,
+                        toIdx,
+                    });
                 }
             }
             // TODO: This commented block can be used to support {from: to}
