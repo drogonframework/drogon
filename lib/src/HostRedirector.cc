@@ -171,12 +171,11 @@ void HostRedirector::initAndStart(const Json::Value &config)
             const auto &redirectFromValue = rules[redirectToStr];
 
             auto toIdx = rulesTo_.size();
-            rulesTo_.push_back({
-                std::move(redirectToHost.empty() && pathIdx != 0
-                              ? redirectToStr
-                              : redirectToHost),
-                std::move(redirectToPath),
-            });
+            rulesTo_.emplace_back(std::move(redirectToHost.empty() &&
+                                                    pathIdx != 0
+                                                ? redirectToStr
+                                                : redirectToHost),
+                                  std::move(redirectToPath));
 
             if (redirectFromValue.isArray())
             {
@@ -210,12 +209,10 @@ void HostRedirector::initAndStart(const Json::Value &config)
                             : redirectFromHost;
                     if (!fromHost.empty())
                         doHostLookup_ = true;  // We have hosts in lookup rules
-                    rulesFromData_.push_back({
-                        std::move(fromHost),
-                        std::move(redirectFromPath),
-                        isWildcard,
-                        toIdx,
-                    });
+                    rulesFromData_.emplace_back(std::move(fromHost),
+                                                std::move(redirectFromPath),
+                                                isWildcard,
+                                                toIdx);
                 }
             }
             // TODO: This commented block can be used to support {from: to}
@@ -239,11 +236,11 @@ void HostRedirector::initAndStart(const Json::Value &config)
         for (const auto &redirectFrom : rulesFromData_)
         {
             const auto &path = redirectFrom.path;
-            auto &rule = rulesFrom_[redirectFrom.host];
             if (path == "/")  // Root rules are part of the host group
                 continue;
 
             auto len = path.size();
+            auto &rule = rulesFrom_[redirectFrom.host];
             if (len < rule.maxPathLen)
                 rule.maxPathLen = len;
         }
@@ -284,7 +281,7 @@ void HostRedirector::initAndStart(const Json::Value &config)
             }
 
             auto &leaf = leafs[group];
-            leaf.fromData.push_back(&redirectFrom);
+            leaf.fromData.emplace_back(&redirectFrom);
             leaf.maxPathLen = maxLen;
         }
 
@@ -331,7 +328,7 @@ void HostRedirector::initAndStart(const Json::Value &config)
                     }
 
                     auto &leaf = leafsBackbuffer[childGroup];
-                    leaf.fromData.push_back(redirectFrom);
+                    leaf.fromData.emplace_back(redirectFrom);
                     leaf.maxPathLen = maxIdx;
                 }
             }
