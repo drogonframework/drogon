@@ -2,7 +2,6 @@
 #include <drogon/plugins/Redirector.h>
 #include <drogon/HttpAppFramework.h>
 #include "drogon/utils/FunctionTraits.h"
-#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <memory>
