@@ -25,32 +25,9 @@ if [ "X$os" = "Xwindows" ]; then
   cd Debug
 fi
 
-make_flags=''
-cmake_gen=''
-parallel=1
-
-# simulate ninja's parallelism
-case $(nproc) in
-1)
-    parallel=$(($(nproc) + 1))
-    ;;
-2)
-    parallel=$(($(nproc) + 1))
-    ;;
-*)
-    parallel=$(($(nproc) + 2))
-    ;;
-esac
-
-if [ "X$os" = "Xlinux" ]; then
-  if [ -f /bin/ninja ]; then
-      cmake_gen='-G Ninja'
-  else
-      make_flags="$make_flags -j$parallel"
-  fi
-fi
-
 #Make integration_test_server run as a daemon
+function do_integration_test()
+{
 if [ "X$os" = "Xlinux" ]; then
   sed -i -e "s/\"run_as_daemon.*$/\"run_as_daemon\": true\,/" config.example.json
 fi
@@ -81,8 +58,11 @@ if [ $? -ne 0 ]; then
 fi
 
 killall -9 integration_test_server
+}
 
 #Test drogon_ctl
+function do_drogon_ctl_test()
+{
 echo "Testing drogon_ctl"
 rm -rf drogon_test
 
@@ -131,7 +111,31 @@ cd ../views
 echo "Hello, world!" >>hello.csp
 
 cd ../build
-if [ "X$os" = "Xwindows" ]; then
+
+make_flags=''
+cmake_gen=''
+parallel=1
+
+# simulate ninja's parallelism
+case $(nproc) in
+1)
+    parallel=$(($(nproc) + 1))
+    ;;
+2)
+    parallel=$(($(nproc) + 1))
+    ;;
+*)
+    parallel=$(($(nproc) + 2))
+    ;;
+esac
+
+if [ "X$os" = "Xlinux" ]; then
+  if [ -f /bin/ninja ]; then
+      cmake_gen='-G Ninja'
+  else
+      make_flags="$make_flags -j$parallel"
+  fi
+else
   cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=$src_dir/conan_toolchain.cmake \
                         -DCMAKE_PREFIX_PATH=$src_dir/install \
                         -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
@@ -165,6 +169,15 @@ fi
 
 cd ../../
 rm -rf drogon_test
+}
+
+if ! drogon_ctl -v > /dev/null 2>&1
+then
+    echo "No drogon_ctl, skip integration test and drogon_ctl test"
+else
+    do_integration_test
+    do_drogon_ctl_test
+fi
 
 if [ "X$1" = "X-t" ]; then
     #unit testing
