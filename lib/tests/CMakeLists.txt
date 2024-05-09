@@ -47,7 +47,7 @@ endif()
 
 add_executable(unittest ${UNITTEST_SOURCES})
 
-if (BUILD_CTL)
+#if (BUILD_CTL)
   set(INTEGRATION_TEST_CLIENT_SOURCES
       integration_test/client/main.cc
       integration_test/client/WebSocketTest.cc
@@ -89,7 +89,7 @@ if (BUILD_CTL)
   drogon_create_views(integration_test_server
                       ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server
                       ${CMAKE_CURRENT_BINARY_DIR})
-  add_dependencies(integration_test_server drogon_ctl)
+#  add_dependencies(integration_test_server drogon_ctl)
   add_custom_command(
     TARGET integration_test_server POST_BUILD
     COMMAND ${CMAKE_COMMAND}
@@ -112,7 +112,7 @@ if (BUILD_CTL)
             copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/a-directory
             $<TARGET_FILE_DIR:integration_test_server>/a-directory)
-endif(BUILD_CTL)
+#endif(BUILD_CTL)
 
 set(COOKIE_SAME_SITE
   main_CookieSameSite.cc
@@ -123,9 +123,9 @@ add_executable(cookie_same_site ${COOKIE_SAME_SITE})
 add_executable(real_ip_resolver RealIpResolverTest.cc)
 
 set(tests unittest cookie_same_site real_ip_resolver)
-if (BUILD_CTL)
+#if (BUILD_CTL)
   list(APPEND tests integration_test_server integration_test_client)
-endif(BUILD_CTL)
+#endif(BUILD_CTL)
 set_property(TARGET ${tests} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${tests} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${tests} PROPERTY CXX_EXTENSIONS OFF)
