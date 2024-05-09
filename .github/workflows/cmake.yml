@@ -47,7 +47,7 @@ jobs:
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
           cmake ..                                         \
             -DCMAKE_BUILD_TYPE=Debug                       \
-            -DBUILD_TESTING=OFF                            \
+            -DBUILD_TESTING=on                             \
             -DBUILD_SHARED_LIBS=$shared                    \
             -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
             -DBUILD_CTL=ON                                 \
