@@ -42,15 +42,15 @@ foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
   get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
-  add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                     COMMAND $<TARGET_FILE:_drogon_ctl>
-                             ARGS
-                             create
-                             view
-                             ${cspFile}
-                     DEPENDS ${cspFile}
-                     VERBATIM)
-  set(TEMPL_SRC ${TEMPL_SRC} ${classname}.cc)
+#  add_custom_command(OUTPUT ${classname}.h ${classname}.cc
+#                     COMMAND $<TARGET_FILE:_drogon_ctl>
+#                             ARGS
+#                             create
+#                             view
+#                             ${cspFile}
+#                     DEPENDS ${cspFile}
+#                     VERBATIM)
+#  set(TEMPL_SRC ${TEMPL_SRC} ${classname}.cc)
 endforeach()
 add_executable(drogon_ctl ${ctl_sources} ${TEMPL_SRC})
 target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
