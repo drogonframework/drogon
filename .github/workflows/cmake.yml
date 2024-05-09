@@ -43,6 +43,8 @@ jobs:
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
+        # For unknown reasons, we fail to create file in windows ci environment.
+        # So drogon_ctl and integration test are not built in windows ci.
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
           cmake ..                                         \
@@ -60,9 +62,9 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
-#      - name: Test
-#        shell: bash
-#        run: ./test.sh -w
+      - name: Test
+        shell: bash
+        run: ./test.sh -w
 
   ubuntu:
     runs-on: ubuntu-22.04
