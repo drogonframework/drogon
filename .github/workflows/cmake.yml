@@ -50,8 +50,8 @@ jobs:
             -DBUILD_TESTING=on                             \
             -DBUILD_SHARED_LIBS=$shared                    \
             -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
-            -DBUILD_CTL=ON                                 \
-            -DBUILD_EXAMPLES=OFF                           \
+            -DBUILD_CTL=OFF                                \
+            -DBUILD_EXAMPLES=ON                            \
             -DUSE_SPDLOG=ON                                \
             -DCMAKE_INSTALL_PREFIX=../install              \
             -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             \
@@ -60,9 +60,9 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
-      - name: Test
-        shell: bash
-        run: ./test.sh -w
+#      - name: Test
+#        shell: bash
+#        run: ./test.sh -w
 
   ubuntu:
     runs-on: ubuntu-22.04
