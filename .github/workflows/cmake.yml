@@ -55,7 +55,7 @@ jobs:
             -DUSE_SPDLOG=ON                                \
             -DCMAKE_INSTALL_PREFIX=../install              \
             -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             \
-            -DCMAKE_CXX_STANDARD=20
+            -DCMAKE_CXX_STANDARD=17
 
       - name: Build
         run: cmake --build build --parallel
