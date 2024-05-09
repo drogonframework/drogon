@@ -51,7 +51,7 @@ jobs:
             -DBUILD_SHARED_LIBS=$shared                    \
             -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
             -DBUILD_CTL=ON                                 \
-            -DBUILD_EXAMPLES=ON                            \
+            -DBUILD_EXAMPLES=OFF                           \
             -DUSE_SPDLOG=ON                                \
             -DCMAKE_INSTALL_PREFIX=../install              \
             -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             \
