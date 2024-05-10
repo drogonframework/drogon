@@ -182,7 +182,7 @@ function do_unittest()
     if [ "X$os" = "Xlinux" ]; then
         ctest . --output-on-failure
     else
-        ctest . --output-on-failure -C Debug
+        ctest . -VV -C Debug
     fi
     if [ $? -ne 0 ]; then
         echo "Error in unit testing"
