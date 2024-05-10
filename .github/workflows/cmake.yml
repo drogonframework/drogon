@@ -46,6 +46,7 @@ jobs:
         working-directory: ./build
         # For unknown reasons, we fail to create file in windows ci environment.
         # So examples, drogon_ctl and integration tests can not be built in windows ci.
+        # We should try to enable them again in the future.
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
           cmake ..                                         \
