@@ -253,7 +253,7 @@ set(DROGON_SOURCES
     lib/src/Cookie.cc
     lib/src/DrClassMap.cc
     lib/src/DrTemplateBase.cc
-    lib/src/FiltersFunction.cc
+    lib/src/MiddlewaresFunction.cc
     lib/src/FixedWindowRateLimiter.cc
     lib/src/GlobalFilters.cc
     lib/src/Histogram.cc
@@ -302,7 +302,7 @@ set(private_headers
     lib/src/CacheFile.h
     lib/src/ConfigLoader.h
     lib/src/ControllerBinderBase.h
-    lib/src/FiltersFunction.h
+    lib/src/MiddlewaresFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h
     lib/src/HttpConnectionLimit.h
@@ -557,6 +557,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpClient.h
     lib/inc/drogon/HttpController.h
     lib/inc/drogon/HttpFilter.h
+    lib/inc/drogon/HttpMiddleware.h
     lib/inc/drogon/HttpRequest.h
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h
