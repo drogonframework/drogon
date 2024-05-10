@@ -38,13 +38,14 @@ jobs:
       - name: Install conan packages
         working-directory: ./build
         run: |
-          conan profile detect --force
-          conan install .. --output-folder=. --build=missing --settings=build_type=Debug --settings=compiler="msvc" --settings=compiler.cppstd=17
+          conan profile detect
+          conan install .. -s compiler="msvc" -sbuild_type=Debug --build=missing -s compiler.cppstd=17
+
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
         # For unknown reasons, we fail to create file in windows ci environment.
-        # So drogon_ctl and integration test are not built in windows ci.
+        # So examples, drogon_ctl and integration tests can not be built in windows ci.
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
           cmake ..                                         \
@@ -60,21 +61,94 @@ jobs:
             -DCMAKE_CXX_STANDARD=17
 
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --target install --parallel
 
       - name: Test
         shell: bash
         run: ./test.sh -w
+
+  macos:
+    runs-on: macos-${{ matrix.osver }}
+    strategy:
+      fail-fast: false
+      matrix:
+        osver: [12, 13]
+    steps:
+      - name: Checkout Drogon source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Install dependencies
+        # Already installed: brotli, zlib, lz4, sqlite3
+        run: brew install ninja jsoncpp mariadb hiredis redis spdlog postgresql@14
+
+      - name: Create Build Environment & Configure Cmake
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        run: |
+          cmake -B build -G Ninja          \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DBUILD_TESTING=on             \
+            -DUSE_SPDLOG=ON                \
+            -DBUILD_SHARED_LIBS=OFF
+
+      - name: Build
+        working-directory: ./build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: ninja && sudo ninja install
+
+      - name: Prepare for testing
+        run: |
+          brew tap homebrew/services
+          brew services restart postgresql@14
+          brew services start mariadb
+          brew services start redis
+          sleep 4
+          mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')"
+          mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'"
+          mariadb -e "FLUSH PRIVILEGES"
+          brew services restart mariadb
+          sleep 4
+          psql -c 'create user postgres superuser;' postgres
+
+      - name: Test
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ./test.sh -t
 
   ubuntu:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        link: [STATIC]
+        link: [SHARED, STATIC]
         compiler:
           - cxx: g++
+            ver: 9
+          - cxx: g++
+            ver: 10
+          - cxx: g++
+            ver: 11
+          - cxx: g++
+            ver: 12
+          - cxx: g++
             ver: 13
+          - cxx: clang++
+            ver: 11
+          - cxx: clang++
+            ver: 12
+          - cxx: clang++
+            ver: 13
+          - cxx: clang++
+            ver: 14
+          - cxx: clang++
+            ver: 15
+          - cxx: clang++
+            ver: 16
+          - cxx: clang++
+            ver: 17
         include:
           - link: STATIC
             compiler:
