@@ -179,11 +179,7 @@ function do_unittest()
     echo "Unit testing"
     pushd $src_dir/build
 
-    if [ "X$os" = "Xlinux" ]; then
-        ctest . --output-on-failure
-    else
-        ctest . -VV -C Debug
-    fi
+    ctest . --output-on-failure
     if [ $? -ne 0 ]; then
         echo "Error in unit testing"
         exit -1
@@ -236,9 +232,8 @@ else
     do_drogon_ctl_test
 fi
 
-do_unittest
-
 if [ "X$1" = "X-t" ]; then
+    do_unittest
     do_db_test
 fi
 
