@@ -198,16 +198,16 @@ DROGON_TEST(AsyncWaitLifetime)
 
 DROGON_TEST(SwitchThread)
 {
-    thread_local int num{0};
     trantor::EventLoopThread thread;
+    thread.getLoop()->setIndex(12345);
     thread.run();
-    thread.getLoop()->queueInLoop([]() { num = 100; });
 
     auto switch_thread = [TEST_CTX, &thread]() -> Task<> {
-        CHECK(num == 0);
         co_await switchThreadCoro(thread.getLoop());
-        CHECK(num == 100);
-        thread.getLoop()->quit();
+        auto currentLoop = trantor::EventLoop::getEventLoopOfCurrentThread();
+        MANDATE(currentLoop != nullptr);
+        CHECK(currentLoop->index() == 12345);
+        currentLoop->quit();
     };
     sync_wait(switch_thread());
     thread.wait();

@@ -88,13 +88,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods)
-        override;
+        const std::vector<internal::HttpConstraint> &constraints) override;
     HttpAppFramework &registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods)
-        override;
+        const std::vector<internal::HttpConstraint> &constraints) override;
 
     HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp,
                                        bool set404) override
@@ -246,7 +244,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         bool isCaseSensitive,
         bool allowAll,
         bool isRecursive,
-        const std::vector<std::string> &filters) override;
+        const std::vector<std::string> &middlewareNames) override;
 
     const std::string &getUploadPath() const override
     {
@@ -642,13 +640,13 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
                                 const std::vector<HttpMethod> &validMethods,
-                                const std::vector<std::string> &filters,
+                                const std::vector<std::string> &middlewareNames,
                                 const std::string &handlerName) override;
     void registerHttpControllerViaRegex(
         const std::string &regExp,
         const internal::HttpBinderBasePtr &binder,
         const std::vector<HttpMethod> &validMethods,
-        const std::vector<std::string> &filters,
+        const std::vector<std::string> &middlewareNames,
         const std::string &handlerName) override;
 
     // We use an uuid string as session id;

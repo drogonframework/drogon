@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.4] - 2024-05-04
+
+### API changes list
+
+- Add client cert support for websocket.
+
+- Add JSON send overloads for WebSocket connections.
+
+### Changed
+
+- Minor enhancement: move some smart pointers around instead of copying them.
+
+- Remove the request shared_ptr from the multipart parser.
+
+- Fix typo in HttpAppFrameworkImpl.cc.
+
+- Avoid string copy and lowercasing on every request.
+
+- Implemented database reconnection loop.
+
+### Fixed
+
+- Bypass clang thread_local error.
+
 ## [1.9.3] - 2024-02-09
 
 ### API changes list
@@ -1621,7 +1645,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.3...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.4...HEAD
+
+[1.9.4]: https://github.com/an-tao/drogon/compare/v1.9.3...v1.9.4
 
 [1.9.3]: https://github.com/an-tao/drogon/compare/v1.9.2...v1.9.3
 

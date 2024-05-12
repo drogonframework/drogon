@@ -65,13 +65,20 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
                                   [](PGconn *conn) { PQfinish(conn); })),
       channel_(loop, PQsocket(connectionPtr_.get()))
 {
+}
+
+void PgConnection::init()
+{
     PQsetnonblocking(connectionPtr_.get(), 1);
     if (channel_.fd() < 0)
     {
-        LOG_FATAL << "Socket fd < 0, Usually this is because the number of "
-                     "files opened by the program exceeds the system "
-                     "limit. Please use the ulimit command to check.";
-        exit(1);
+        LOG_ERROR << "Connection with Postgres could not be established";
+        if (closeCallback_)
+        {
+            auto thisPtr = shared_from_this();
+            closeCallback_(thisPtr);
+        }
+        return;
     }
     channel_.setReadCallback([this]() {
         if (status_ == ConnectStatus::Bad)

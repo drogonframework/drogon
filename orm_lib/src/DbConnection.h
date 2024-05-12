@@ -88,6 +88,8 @@ class DbConnection : public trantor::NonCopyable
     {
     }
 
+    virtual void init(){};
+
     void setOkCallback(const DbConnectionCallback &cb)
     {
         okCallback_ = cb;

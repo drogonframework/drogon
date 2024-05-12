@@ -17,6 +17,8 @@ class WebSocketControllerBase;
 using WebSocketControllerBasePtr = std::shared_ptr<WebSocketControllerBase>;
 class HttpFilterBase;
 using HttpFilterBasePtr = std::shared_ptr<HttpFilterBase>;
+class HttpMiddlewareBase;
+using HttpMiddlewareBasePtr = std::shared_ptr<HttpMiddlewareBase>;
 class HttpSimpleControllerBase;
 using HttpSimpleControllerBasePtr = std::shared_ptr<HttpSimpleControllerBase>;
 class HttpRequestImpl;
