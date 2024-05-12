@@ -1,9 +1,9 @@
 #include "Http2Transport.h"
 #include "HttpFileUploadRequest.h"
 #include "drogon/utils/Utilities.h"
+#include "hpack/hpack.h"
 
 #include <cstdint>
-#include <fstream>
 #include <limits>
 #include <type_traits>
 #include <variant>
@@ -687,7 +687,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     const auto &headers = req->headers();
 
     LOG_TRACE << "Sending HTTP/2 headers: size=" << headers.size();
-    hpack::HPacker::KeyValueVector vec;
+    std::vector<KeyValPair> vec;
     vec.reserve(headers.size() + 5);
     vec.emplace_back(":method", req->methodString());
     const auto &params = req->parameters();
@@ -723,9 +723,11 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     LOG_TRACE << "Final headers size: " << vec.size();
     for (auto &[key, value] : vec)
         LOG_TRACE << "  " << key << ": " << value;
-    std::vector<uint8_t> encoded(maxCompressiedHeaderSize);
-    int n = hpackTx.encode(vec, encoded.data(), encoded.size());
-    if (n < 0)
+    std::vector<uint8_t> encoded;
+    encoded.reserve(maxCompressiedHeaderSize);
+    auto wbuf = hpackTx.MakeHpWBuffer(encoded, maxCompressiedHeaderSize);
+    auto status = hpackTx.Encoder(*wbuf, vec);
+    if (status != Success)
     {
         LOG_TRACE << "Failed to encode headers. Internal error or header "
                      "block too large";
@@ -734,7 +736,6 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
                           "Internal error or header block too large");
         return;
     }
-    encoded.resize(n);
     LOG_TRACE << "Encoded headers size: " << encoded.size();
 
     bool haveBody =
@@ -948,7 +949,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             {
                 if (key == (uint16_t)H2SettingsKey::HeaderTableSize)
                 {
-                    hpackRx.setMaxTableSize(value);
+                    // TODO: Implement this
+                    // hpackRx.setMaxTableSize(value);
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
                 {
@@ -1055,10 +1057,12 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
                                           const void *data,
                                           size_t size)
 {
-    hpack::HPacker::KeyValueVector headers;
-    int n = hpackRx.decode((const uint8_t *)data, size, headers);
-    auto streamId = stream.streamId;
-    if (n < 0)
+    std::vector<KeyValPair> headers;
+    headers.reserve(6);  // some small amount to reduce reallocation
+    auto rbuf = hpackRx.MakeHpRBuffer((const uint8_t *)data, size);
+    const auto status = hpackRx.Decoder(*rbuf, headers);
+    const auto streamId = stream.streamId;
+    if (status != Success)
     {
         LOG_TRACE << "Failed to decode headers";
         connectionErrored(streamId,

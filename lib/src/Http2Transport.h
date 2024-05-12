@@ -2,8 +2,7 @@
 
 #include "HttpTransport.h"
 #include "HttpResponseImpl.h"
-// TODO: Write our own HPACK implementation
-#include "hpack/HPacker.h"
+#include "hpack/hpack.h"
 
 #include <string_view>
 #include <variant>
@@ -463,8 +462,8 @@ class Http2Transport : public HttpTransport
     trantor::TcpConnectionPtr connPtr;
     size_t *bytesSent_;
     size_t *bytesReceived_;
-    hpack::HPacker hpackTx;
-    hpack::HPacker hpackRx;
+    Hpack hpackTx;
+    Hpack hpackRx;
 
     int32_t currentStreamId = 1;
     std::unordered_map<int32_t, internal::H2Stream> streams;
