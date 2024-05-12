@@ -1133,7 +1133,7 @@ inline const char *HpackStatus2CString(const HpackStatus stat)
         case HpackStatus::TableSizeOverflow:
             return "HpackStatus::TableSizeOverflow";
         default:
-            return "Unexpect status in HpackStatus2String.";
+            return "Unexpected status in HpackStatus2String.";
     }
 }
 
@@ -1326,7 +1326,7 @@ void BufferFromHex(const std::string &str, std::vector<unsigned char> &s)
         }
         else
         {
-            printf("BufferFromHex Unexpect char %d.\n", (int)c);
+            printf("BufferFromHex Unexpected char %d.\n", (int)c);
             continue;
         }
         if (firstc)
