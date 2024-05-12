@@ -482,6 +482,7 @@ class Http2Transport : public HttpTransport
     size_t initialRxWindowSize = 65535;
     size_t initialTxWindowSize = 65535;
     size_t maxFrameSize = 16384;
+    size_t maxRxDynamicTableSize = 4096;
 
     // Configuration settings
     const uint32_t windowIncreaseThreshold = 16384;

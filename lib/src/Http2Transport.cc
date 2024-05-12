@@ -949,8 +949,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             {
                 if (key == (uint16_t)H2SettingsKey::HeaderTableSize)
                 {
-                    // TODO: Implement this
-                    // hpackRx.setMaxTableSize(value);
+                    maxRxDynamicTableSize = value;
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
                 {
@@ -1117,7 +1116,10 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
 Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
                                size_t *bytesSent,
                                size_t *bytesReceived)
-    : connPtr(connPtr), bytesSent_(bytesSent), bytesReceived_(bytesReceived)
+    : connPtr(connPtr),
+      bytesSent_(bytesSent),
+      bytesReceived_(bytesReceived),
+      hpackRx(&maxRxDynamicTableSize)
 {
     // TODO: Handle connection dies before constructing the object
     if (!connPtr->connected())
