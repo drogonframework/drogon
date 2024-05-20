@@ -679,9 +679,6 @@ install(TARGETS ${PROJECT_NAME}
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS
-    orm_lib/inc/drogon/orm/config/PostgresConfig.h
-    orm_lib/inc/drogon/orm/config/MysqlConfig.h
-    orm_lib/inc/drogon/orm/config/Sqlite3Config.h
     orm_lib/inc/drogon/orm/ArrayParser.h
     orm_lib/inc/drogon/orm/BaseBuilder.h
     orm_lib/inc/drogon/orm/Criteria.h
@@ -700,7 +697,13 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/RowIterator.h
     orm_lib/inc/drogon/orm/SqlBinder.h
     orm_lib/inc/drogon/orm/RestfulController.h)
+# TODO: We need a better way to handle these header files
+set(ORM_DB_CONFIG_HEADERS
+    orm_lib/inc/drogon/orm/config/PostgresConfig.h
+    orm_lib/inc/drogon/orm/config/MysqlConfig.h
+    orm_lib/inc/drogon/orm/config/Sqlite3Config.h)
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
+install(FILES ${ORM_DB_CONFIG_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm/config)
 
 set(NOSQL_HEADERS
     nosql_lib/redis/inc/drogon/nosql/RedisClient.h
@@ -750,6 +753,7 @@ target_sources(${PROJECT_NAME} PRIVATE
                ${private_headers}
                ${DROGON_HEADERS}
                ${ORM_HEADERS}
+               ${ORM_DB_CONFIG_HEADERS}
                ${DROGON_UTIL_HEADERS}
                ${DROGON_PLUGIN_HEADERS}
                ${NOSQL_HEADERS}
@@ -759,6 +763,7 @@ source_group("Public API"
     FILES
     ${DROGON_HEADERS}
     ${ORM_HEADERS}
+    ${ORM_DB_CONFIG_HEADERS}
     ${DROGON_UTIL_HEADERS}
     ${DROGON_PLUGIN_HEADERS}
     ${NOSQL_HEADERS}
@@ -833,6 +838,7 @@ if(DOXYGEN_FOUND)
                    ${DROGON_UTIL_HEADERS}
                    ${DROGON_PLUGIN_HEADERS}
                    ${ORM_HEADERS}
+                   ${ORM_DB_CONFIG_HEADERS}
                    COMMENT "Generate documentation")
   if(NOT TARGET doc)
     add_custom_target(doc)
