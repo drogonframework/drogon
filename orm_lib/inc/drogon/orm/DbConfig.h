@@ -15,9 +15,9 @@
 #pragma once
 
 #include <variant>
-#include "config/PostgresConfig.h"
-#include "config/MysqlConfig.h"
-#include "config/Sqlite3Config.h"
+#include <drogon/orm/config/PostgresConfig.h>
+#include <drogon/orm/config/MysqlConfig.h>
+#include <drogon/orm/config/Sqlite3Config.h>
 
 namespace drogon::orm
 {
