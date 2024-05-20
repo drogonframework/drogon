@@ -1444,7 +1444,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * This operation can be performed by an option in the configuration file.
      */
     [[deprecated(
-        "Use createDbClient(DbGeneralConfig) "
+        "Use addDbClient(DbGeneralConfig) "
         "instead")]] virtual HttpAppFramework &
     createDbClient(const std::string &dbType,
                    const std::string &host,
@@ -1460,8 +1460,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                    double timeout = -1.0,
                    bool autoBatch = false) = 0;
 
-    virtual HttpAppFramework &createDbClient(
-        const orm::DbGeneralConfig &cfg) = 0;
+    virtual HttpAppFramework &addDbClient(const orm::DbGeneralConfig &cfg) = 0;
 
     /// Create a redis client
     /**

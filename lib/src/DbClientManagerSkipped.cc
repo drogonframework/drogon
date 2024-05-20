@@ -25,7 +25,7 @@ void DbClientManager::createDbClients(
     return;
 }
 
-void DbClientManager::createDbClient(const DbGeneralConfig &cfg)
+void DbClientManager::addDbClient(const DbGeneralConfig &cfg)
 {
     LOG_FATAL << "No database is supported by drogon, please install the "
                  "database development library first.";

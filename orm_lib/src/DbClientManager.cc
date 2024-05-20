@@ -127,7 +127,7 @@ void DbClientManager::createDbClients(
     }
 }
 
-void DbClientManager::createDbClient(const DbGeneralConfig &cfg)
+void DbClientManager::addDbClient(const DbGeneralConfig &cfg)
 {
     auto connStr =
         utils::formattedString("host=%s port=%u dbname=%s user=%s",

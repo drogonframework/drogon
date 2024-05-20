@@ -577,20 +577,20 @@ static void loadDbClients(const Json::Value &dbClients)
             }
         }
 
-        drogon::app().createDbClient({type,
-                                      host,
-                                      (unsigned short)port,
-                                      dbname,
-                                      user,
-                                      password,
-                                      connNum,
-                                      filename,
-                                      name,
-                                      isFast,
-                                      characterSet,
-                                      timeout,
-                                      autoBatch,
-                                      options});
+        drogon::app().addDbClient({type,
+                                   host,
+                                   (unsigned short)port,
+                                   dbname,
+                                   user,
+                                   password,
+                                   connNum,
+                                   filename,
+                                   name,
+                                   isFast,
+                                   characterSet,
+                                   timeout,
+                                   autoBatch,
+                                   options});
     }
 }
 

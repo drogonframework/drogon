@@ -917,27 +917,27 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     bool autoBatch)
 {
     assert(!running_);
-    dbClientManagerPtr_->createDbClient({dbType,
-                                         host,
-                                         port,
-                                         databaseName,
-                                         userName,
-                                         password,
-                                         connectionNum,
-                                         filename,
-                                         name,
-                                         isFast,
-                                         characterSet,
-                                         timeout,
-                                         autoBatch,
-                                         {}});
+    dbClientManagerPtr_->addDbClient({dbType,
+                                      host,
+                                      port,
+                                      databaseName,
+                                      userName,
+                                      password,
+                                      connectionNum,
+                                      filename,
+                                      name,
+                                      isFast,
+                                      characterSet,
+                                      timeout,
+                                      autoBatch,
+                                      {}});
     return *this;
 }
 
-HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
+HttpAppFramework &HttpAppFrameworkImpl::addDbClient(
     const orm::DbGeneralConfig &cfg)
 {
-    dbClientManagerPtr_->createDbClient(cfg);
+    dbClientManagerPtr_->addDbClient(cfg);
     return *this;
 }
 

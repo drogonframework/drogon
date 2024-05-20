@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     std::future<void> f1 = p1.get_future();
     app().setThreadNum(1);
 #if USE_POSTGRESQL
-    app().createDbClient({
+    app().addDbClient({
         "postgresql",  // dbType
         "127.0.0.1",   // host
         5432,          // port
