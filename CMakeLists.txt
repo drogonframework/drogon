@@ -679,11 +679,14 @@ install(TARGETS ${PROJECT_NAME}
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS
+    orm_lib/inc/drogon/orm/config/PostgresConfig.h
+    orm_lib/inc/drogon/orm/config/MysqlConfig.h
+    orm_lib/inc/drogon/orm/config/Sqlite3Config.h
     orm_lib/inc/drogon/orm/ArrayParser.h
     orm_lib/inc/drogon/orm/BaseBuilder.h
     orm_lib/inc/drogon/orm/Criteria.h
     orm_lib/inc/drogon/orm/DbClient.h
-    orm_lib/inc/drogon/orm/DbGeneralConfig.h
+    orm_lib/inc/drogon/orm/DbConfig.h
     orm_lib/inc/drogon/orm/DbListener.h
     orm_lib/inc/drogon/orm/DbTypes.h
     orm_lib/inc/drogon/orm/Exception.h

@@ -31,7 +31,6 @@
 #include <drogon/HttpResponse.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/DbConfig.h>
-#include <drogon/orm/DbGeneralConfig.h>
 #include <drogon/nosql/RedisClient.h>
 #include <drogon/Cookie.h>
 #include <trantor/net/Resolver.h>
@@ -1444,9 +1443,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @note
      * This operation can be performed by an option in the configuration file.
      */
-    [[deprecated(
-        "Use addDbClient(DbGeneralConfig) "
-        "instead")]] virtual HttpAppFramework &
+    [[deprecated("Use addDbClient() instead")]] virtual HttpAppFramework &
     createDbClient(const std::string &dbType,
                    const std::string &host,
                    unsigned short port,
@@ -1460,8 +1457,6 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                    const std::string &characterSet = "",
                    double timeout = -1.0,
                    bool autoBatch = false) = 0;
-
-    virtual HttpAppFramework &addDbClient(const orm::DbGeneralConfig &cfg) = 0;
 
     virtual HttpAppFramework &addDbClient(const orm::DbConfig &config) = 0;
 

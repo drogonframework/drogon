@@ -917,27 +917,40 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     bool autoBatch)
 {
     assert(!running_);
-    dbClientManagerPtr_->addDbClient({dbType,
-                                      host,
-                                      port,
-                                      databaseName,
-                                      userName,
-                                      password,
-                                      connectionNum,
-                                      filename,
-                                      name,
-                                      isFast,
-                                      characterSet,
-                                      timeout,
-                                      autoBatch,
-                                      {}});
-    return *this;
-}
-
-HttpAppFramework &HttpAppFrameworkImpl::addDbClient(
-    const orm::DbGeneralConfig &cfg)
-{
-    dbClientManagerPtr_->addDbClient(cfg);
+    orm::DbConfig config;
+    if (dbType == "postgresql" || dbType == "postgres")
+    {
+        config = orm::PostgresConfig{host,
+                                     port,
+                                     databaseName,
+                                     userName,
+                                     password,
+                                     connectionNum,
+                                     name,
+                                     isFast,
+                                     characterSet,
+                                     timeout,
+                                     autoBatch,
+                                     {}};
+    }
+    else if (dbType == "mysql")
+    {
+        config = orm::MysqlConfig{host,
+                                  port,
+                                  databaseName,
+                                  userName,
+                                  password,
+                                  connectionNum,
+                                  name,
+                                  isFast,
+                                  characterSet,
+                                  timeout};
+    }
+    else if (dbType == "sqlite3")
+    {
+        config = orm::Sqlite3Config{connectionNum, filename, name, timeout};
+    }
+    dbClientManagerPtr_->addDbClient(config);
     return *this;
 }
 

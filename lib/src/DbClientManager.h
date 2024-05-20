@@ -47,7 +47,6 @@ class DbClientManager : public trantor::NonCopyable
         return iter->second.getThreadData();
     }
 
-    void addDbClient(const DbGeneralConfig &cfg);
     void addDbClient(const DbConfig &config);
     bool areAllDbClientsAvailable() const noexcept;
 

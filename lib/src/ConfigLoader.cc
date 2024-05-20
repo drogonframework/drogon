@@ -538,7 +538,7 @@ static void loadDbClients(const Json::Value &dbClients)
                        type.begin(),
                        [](unsigned char c) { return tolower(c); });
         auto host = client.get("host", "127.0.0.1").asString();
-        auto port = client.get("port", 5432).asUInt();
+        unsigned short port = client.get("port", 5432).asUInt();
         auto dbname = client.get("dbname", "").asString();
         if (dbname.empty() && type != "sqlite3")
         {
@@ -577,20 +577,40 @@ static void loadDbClients(const Json::Value &dbClients)
             }
         }
 
-        drogon::app().addDbClient({type,
-                                   host,
-                                   (unsigned short)port,
-                                   dbname,
-                                   user,
-                                   password,
-                                   connNum,
-                                   filename,
-                                   name,
-                                   isFast,
-                                   characterSet,
-                                   timeout,
-                                   autoBatch,
-                                   options});
+        orm::DbConfig config;
+        if (type == "postgresql" || type == "postgres")
+        {
+            config = orm::PostgresConfig{host,
+                                         port,
+                                         dbname,
+                                         user,
+                                         password,
+                                         connNum,
+                                         name,
+                                         isFast,
+                                         characterSet,
+                                         timeout,
+                                         autoBatch,
+                                         {}};
+        }
+        else if (type == "mysql")
+        {
+            config = orm::MysqlConfig{host,
+                                      port,
+                                      dbname,
+                                      user,
+                                      password,
+                                      connNum,
+                                      name,
+                                      isFast,
+                                      characterSet,
+                                      timeout};
+        }
+        else if (type == "sqlite3")
+        {
+            config = orm::Sqlite3Config{connNum, filename, name, timeout};
+        }
+        app().addDbClient(config);
     }
 }
 
