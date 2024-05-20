@@ -30,6 +30,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/orm/DbClient.h>
+#include <drogon/orm/DbConfig.h>
 #include <drogon/orm/DbGeneralConfig.h>
 #include <drogon/nosql/RedisClient.h>
 #include <drogon/Cookie.h>
@@ -1461,6 +1462,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                    bool autoBatch = false) = 0;
 
     virtual HttpAppFramework &addDbClient(const orm::DbGeneralConfig &cfg) = 0;
+
+    virtual HttpAppFramework &addDbClient(const orm::DbConfig &config) = 0;
 
     /// Create a redis client
     /**

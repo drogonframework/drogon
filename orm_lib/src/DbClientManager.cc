@@ -127,6 +127,121 @@ void DbClientManager::createDbClients(
     }
 }
 
+void DbClientManager::addDbClient(const DbConfig &config)
+{
+    if (std::holds_alternative<PostgresConfig>(config))
+    {
+#if USE_POSTGRESQL
+        auto &cfg = std::get<PostgresConfig>(config);
+        auto connStr =
+            utils::formattedString("host=%s port=%u dbname=%s user=%s",
+                                   escapeConnString(cfg.host).c_str(),
+                                   cfg.port,
+                                   escapeConnString(cfg.databaseName).c_str(),
+                                   escapeConnString(cfg.username).c_str());
+        if (!cfg.password.empty())
+        {
+            connStr += " password=";
+            connStr += escapeConnString(cfg.password);
+        }
+        if (!cfg.characterSet.empty())
+        {
+            connStr += " client_encoding=";
+            connStr += escapeConnString(cfg.characterSet);
+        }
+        DbInfo info;
+        info.connectionInfo_ = connStr;
+        info.connectionNumber_ = cfg.connectionNumber;
+        info.isFast_ = cfg.isFast;
+        info.name_ = cfg.name;
+        info.timeout_ = cfg.timeout;
+        info.autoBatch_ = cfg.autoBatch;
+        // For valid connection options, see:
+        // https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-OPTIONS
+        if (!cfg.connectOptions.empty())
+        {
+            std::string optionStr = " options='";
+            for (auto const &[key, value] : cfg.connectOptions)
+            {
+                optionStr += " -c ";
+                optionStr += escapeConnString(key);
+                optionStr += "=";
+                optionStr += escapeConnString(value);
+            }
+            optionStr += "'";
+            info.connectionInfo_ += optionStr;
+        }
+        info.dbType_ = orm::ClientType::PostgreSQL;
+        dbInfos_.push_back(info);
+#else
+        std::cout
+            << "The PostgreSQL is not supported by drogon, please install "
+               "the development library first."
+            << std::endl;
+        exit(1);
+#endif
+    }
+    else if (std::holds_alternative<MysqlConfig>(config))
+    {
+#if USE_MYSQL
+        auto cfg = std::get<MysqlConfig>(config);
+        auto connStr =
+            utils::formattedString("host=%s port=%u dbname=%s user=%s",
+                                   escapeConnString(cfg.host).c_str(),
+                                   cfg.port,
+                                   escapeConnString(cfg.databaseName).c_str(),
+                                   escapeConnString(cfg.username).c_str());
+        if (!cfg.password.empty())
+        {
+            connStr += " password=";
+            connStr += escapeConnString(cfg.password);
+        }
+        if (!cfg.characterSet.empty())
+        {
+            connStr += " client_encoding=";
+            connStr += escapeConnString(cfg.characterSet);
+        }
+        DbInfo info;
+        info.connectionInfo_ = connStr;
+        info.connectionNumber_ = cfg.connectionNumber;
+        info.isFast_ = cfg.isFast;
+        info.name_ = cfg.name;
+        info.timeout_ = cfg.timeout;
+        info.dbType_ = orm::ClientType::Mysql;
+        dbInfos_.push_back(info);
+#else
+        std::cout << "The Mysql is not supported by drogon, please install the "
+                     "development library first."
+                  << std::endl;
+        exit(1);
+#endif
+    }
+    else if (std::holds_alternative<Sqlite3Config>(config))
+    {
+#if USE_SQLITE3
+        auto cfg = std::get<Sqlite3Config>(config);
+        std::string sqlite3ConnStr = "filename=" + cfg.filename;
+        DbInfo info;
+        info.connectionInfo_ = sqlite3ConnStr;
+        info.connectionNumber_ = cfg.connectionNumber;
+        info.name_ = cfg.name;
+        info.timeout_ = cfg.timeout;
+        info.dbType_ = orm::ClientType::Sqlite3;
+        dbInfos_.push_back(info);
+#else
+        std::cout
+            << "The Sqlite3 is not supported by drogon, please install the "
+               "development library first."
+            << std::endl;
+        exit(1);
+#endif
+    }
+    else
+    {
+        assert(false && "Should not happen, unknown database type");
+    }
+}
+
 void DbClientManager::addDbClient(const DbGeneralConfig &cfg)
 {
     auto connStr =

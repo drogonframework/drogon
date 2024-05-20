@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/orm/DbClient.h>
+#include <drogon/orm/DbConfig.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/IOThreadStorage.h>
 #include <trantor/utils/NonCopyable.h>
@@ -47,6 +48,7 @@ class DbClientManager : public trantor::NonCopyable
     }
 
     void addDbClient(const DbGeneralConfig &cfg);
+    void addDbClient(const DbConfig &config);
     bool areAllDbClientsAvailable() const noexcept;
 
   private:

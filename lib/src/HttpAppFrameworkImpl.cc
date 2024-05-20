@@ -941,6 +941,12 @@ HttpAppFramework &HttpAppFrameworkImpl::addDbClient(
     return *this;
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::addDbClient(const orm::DbConfig &config)
+{
+    dbClientManagerPtr_->addDbClient(config);
+    return *this;
+}
+
 HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
     const std::string &ip,
     unsigned short port,

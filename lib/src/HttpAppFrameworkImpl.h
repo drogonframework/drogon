@@ -545,6 +545,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                                      double timeout,
                                      bool autoBatch) override;
     HttpAppFramework &addDbClient(const orm::DbGeneralConfig &cfg) override;
+    HttpAppFramework &addDbClient(const orm::DbConfig &config) override;
 
     HttpAppFramework &createRedisClient(const std::string &ip,
                                         unsigned short port,
