@@ -697,12 +697,12 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/RowIterator.h
     orm_lib/inc/drogon/orm/SqlBinder.h
     orm_lib/inc/drogon/orm/RestfulController.h)
-# TODO: We need a better way to handle these header files
+install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
+
 set(ORM_DB_CONFIG_HEADERS
     orm_lib/inc/drogon/orm/config/PostgresConfig.h
     orm_lib/inc/drogon/orm/config/MysqlConfig.h
     orm_lib/inc/drogon/orm/config/Sqlite3Config.h)
-install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 install(FILES ${ORM_DB_CONFIG_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm/config)
 
 set(NOSQL_HEADERS
