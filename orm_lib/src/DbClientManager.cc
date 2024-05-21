@@ -42,8 +42,36 @@ inline std::string escapeConnString(const std::string &str)
     return escaped;
 }
 
+static void initFastDbClients(IOThreadStorage<orm::DbClientPtr> &storage,
+                              const std::vector<trantor::EventLoop *> &ioLoops,
+                              const std::string &connInfo,
+                              ClientType dbType,
+                              size_t connNum,
+                              bool autoBatch,
+                              double timeout)
+{
+    storage.init([&](orm::DbClientPtr &c, size_t idx) {
+        assert(idx == ioLoops[idx]->index());
+        LOG_TRACE << "create fast database client for the thread " << idx;
+        c = std::shared_ptr<orm::DbClient>(
+            new drogon::orm::DbClientLockFree(connInfo,
+                                              ioLoops[idx],
+                                              dbType,
+#if LIBPQ_SUPPORTS_BATCH_MODE // Bad code
+                                              connNum,
+                                              autoBatch));
+#else
+                                              connNum));
+#endif
+        if (timeout > 0.0)
+        {
+            c->setTimeout(timeout);
+        }
+    });
+}
+
 void DbClientManager::createDbClients(
-    const std::vector<trantor::EventLoop *> &ioloops)
+    const std::vector<trantor::EventLoop *> &ioLoops)
 {
     assert(dbClientsMap_.empty());
     assert(dbFastClientsMap_.empty());
@@ -57,27 +85,13 @@ void DbClientManager::createDbClients(
             {
                 dbFastClientsMap_[cfg.name] =
                     IOThreadStorage<orm::DbClientPtr>();
-                dbFastClientsMap_[cfg.name].init([&](orm::DbClientPtr &c,
-                                                     size_t idx) {
-                    assert(idx == ioloops[idx]->index());
-                    LOG_TRACE << "create fast database client for the thread "
-                              << idx;
-                    c = std::shared_ptr<orm::DbClient>(
-                        new drogon::orm::DbClientLockFree(
-                            dbInfo.connectionInfo_,
-                            ioloops[idx],
-                            ClientType::PostgreSQL,
-#if LIBPQ_SUPPORTS_BATCH_MODE
-                            cfg.connectionNumber,
-                            cfg.autoBatch));
-#else
-                            cfg.connectionNumber));
-#endif
-                    if (cfg.timeout > 0.0)
-                    {
-                        c->setTimeout(cfg.timeout);
-                    }
-                });
+                initFastDbClients(dbFastClientsMap_[cfg.name],
+                                  ioLoops,
+                                  dbInfo.connectionInfo_,
+                                  ClientType::PostgreSQL,
+                                  cfg.connectionNumber,
+                                  cfg.autoBatch,
+                                  cfg.timeout);
             }
             else
             {
@@ -101,27 +115,13 @@ void DbClientManager::createDbClients(
             {
                 dbFastClientsMap_[cfg.name] =
                     IOThreadStorage<orm::DbClientPtr>();
-                dbFastClientsMap_[cfg.name].init([&](orm::DbClientPtr &c,
-                                                     size_t idx) {
-                    assert(idx == ioloops[idx]->index());
-                    LOG_TRACE << "create fast database client for the thread "
-                              << idx;
-                    c = std::shared_ptr<orm::DbClient>(
-                        new drogon::orm::DbClientLockFree(
-                            dbInfo.connectionInfo_,
-                            ioloops[idx],
-                            ClientType::Mysql,
-#if LIBPQ_SUPPORTS_BATCH_MODE  // Ugly code here
-                            cfg.connectionNumber,
-                            false));
-#else
-                            cfg.connectionNumber));
-#endif
-                    if (cfg.timeout > 0.0)
-                    {
-                        c->setTimeout(cfg.timeout);
-                    }
-                });
+                initFastDbClients(dbFastClientsMap_[cfg.name],
+                                  ioLoops,
+                                  dbInfo.connectionInfo_,
+                                  ClientType::Mysql,
+                                  cfg.connectionNumber,
+                                  false,
+                                  cfg.timeout);
             }
             else
             {

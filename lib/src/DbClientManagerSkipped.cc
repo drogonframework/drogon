@@ -20,7 +20,7 @@ using namespace drogon::orm;
 using namespace drogon;
 
 void DbClientManager::createDbClients(
-    const std::vector<trantor::EventLoop *> & /*ioloops*/)
+    const std::vector<trantor::EventLoop *> & /*ioLoops*/)
 {
     return;
 }

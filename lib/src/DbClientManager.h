@@ -30,7 +30,7 @@ namespace orm
 class DbClientManager : public trantor::NonCopyable
 {
   public:
-    void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
+    void createDbClients(const std::vector<trantor::EventLoop *> &ioLoops);
 
     DbClientPtr getDbClient(const std::string &name)
     {
