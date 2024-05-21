@@ -57,7 +57,7 @@ static void initFastDbClients(IOThreadStorage<orm::DbClientPtr> &storage,
             new drogon::orm::DbClientLockFree(connInfo,
                                               ioLoops[idx],
                                               dbType,
-#if LIBPQ_SUPPORTS_BATCH_MODE // Bad code
+#if LIBPQ_SUPPORTS_BATCH_MODE  // Bad code
                                               connNum,
                                               autoBatch));
 #else
