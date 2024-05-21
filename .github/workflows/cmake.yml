@@ -179,6 +179,10 @@ jobs:
           sudo apt-get --purge remove postgresql postgresql-doc postgresql-common postgresql-client-common
           sudo apt-get -y install postgresql-all
 
+      - name: Install g++
+        if: startsWith(matrix.compiler.cxx, 'g++')
+        run: sudo apt-get install g++-${{ matrix.compiler.ver }}
+
       - name: Install Clang
         if: startsWith(matrix.compiler.cxx, 'clang') && matrix.compiler.ver < 13
         run: sudo apt-get install clang-${{ matrix.compiler.ver }}
