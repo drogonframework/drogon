@@ -55,13 +55,8 @@ class DbClientManager : public trantor::NonCopyable
 
     struct DbInfo
     {
-        std::string name_;
         std::string connectionInfo_;
-        ClientType dbType_;
-        bool isFast_;
-        size_t connectionNumber_;
-        double timeout_;
-        bool autoBatch_;
+        DbConfig config_;
     };
 
     std::vector<DbInfo> dbInfos_;
