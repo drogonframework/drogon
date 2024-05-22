@@ -79,7 +79,6 @@ void DbClientManager::createDbClients(
     {
         if (std::holds_alternative<PostgresConfig>(dbInfo.config_))
         {
-#if USE_POSTGRESQL
             auto &cfg = std::get<PostgresConfig>(dbInfo.config_);
             if (cfg.isFast)
             {
@@ -104,11 +103,9 @@ void DbClientManager::createDbClients(
                     dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
                 }
             }
-#endif
         }
         else if (std::holds_alternative<MysqlConfig>(dbInfo.config_))
         {
-#if USE_MYSQL
             auto &cfg = std::get<MysqlConfig>(dbInfo.config_);
 
             if (cfg.isFast)
@@ -132,11 +129,9 @@ void DbClientManager::createDbClients(
                     dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
                 }
             }
-#endif
         }
         else if (std::holds_alternative<Sqlite3Config>(dbInfo.config_))
         {
-#if USE_SQLITE3
             auto &cfg = std::get<Sqlite3Config>(dbInfo.config_);
             dbClientsMap_[cfg.name] =
                 drogon::orm::DbClient::newSqlite3Client(dbInfo.connectionInfo_,
@@ -145,7 +140,6 @@ void DbClientManager::createDbClients(
             {
                 dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
             }
-#endif
         }
     }
 }
@@ -205,9 +199,8 @@ void DbClientManager::addDbClient(const DbConfig &config)
         }
         dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
-        std::cout << "The PostgreSQL is not supported by drogon, "
-                     "please install "
-                     "the development library first."
+        std::cout << "The PostgreSQL is not supported in current drogon build, "
+                     "please install the development library first."
                   << std::endl;
         exit(1);
 #endif
@@ -224,9 +217,8 @@ void DbClientManager::addDbClient(const DbConfig &config)
                                     cfg.characterSet);
         dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
-        std::cout << "The Mysql is not supported by drogon, please "
-                     "install the "
-                     "development library first."
+        std::cout << "The Mysql is not supported in current drogon build, "
+                     "please install the development library first."
                   << std::endl;
         exit(1);
 #endif
@@ -238,16 +230,15 @@ void DbClientManager::addDbClient(const DbConfig &config)
         std::string connStr = "filename=" + cfg.filename;
         dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
-        std::cout << "The Sqlite3 is not supported by drogon, please "
-                     "install the "
-                     "development library first."
+        std::cout << "The Sqlite3 is not supported in current drogon build, "
+                     "please install the development library first."
                   << std::endl;
         exit(1);
 #endif
     }
     else
     {
-        assert(false && "Should not happen, unknown database type");
+        assert(false && "Should not happen, unknown DbConfig alternatives");
     }
 }
 
