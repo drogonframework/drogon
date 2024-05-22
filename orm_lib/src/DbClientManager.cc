@@ -187,10 +187,7 @@ void DbClientManager::addDbClient(const DbConfig &config)
             optionStr += "'";
             connStr += optionStr;
         }
-        dbInfos_.emplace_back(DbInfo{
-            .connectionInfo_ = connStr,
-            .config_ = config,
-        });
+        dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
         std::cout << "The PostgreSQL is not supported by drogon, "
                      "please install "
@@ -219,10 +216,7 @@ void DbClientManager::addDbClient(const DbConfig &config)
             connStr += " client_encoding=";
             connStr += escapeConnString(cfg.characterSet);
         }
-        dbInfos_.emplace_back(DbInfo{
-            .connectionInfo_ = connStr,
-            .config_ = config,
-        });
+        dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
         std::cout << "The Mysql is not supported by drogon, please "
                      "install the "
@@ -236,10 +230,7 @@ void DbClientManager::addDbClient(const DbConfig &config)
 #if USE_SQLITE3
         auto cfg = std::get<Sqlite3Config>(config);
         std::string connStr = "filename=" + cfg.filename;
-        dbInfos_.emplace_back(DbInfo{
-            .connectionInfo_ = connStr,
-            .config_ = config,
-        });
+        dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
         std::cout << "The Sqlite3 is not supported by drogon, please "
                      "install the "
