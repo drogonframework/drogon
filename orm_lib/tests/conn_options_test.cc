@@ -13,13 +13,13 @@ DROGON_TEST(ConnOptionsTest)
 
     // Run a query that will take longer than the statement_timeout
     clientPtr->execSqlAsync(
-        "select pg_sleep(3);",
+        "select pg_sleep(5);",
         [TEST_CTX](const drogon::orm::Result &r) {
-            LOG_INFO << "select pg_sleep(1);";
+            LOG_INFO << "select pg_sleep(5);";
             FAULT("Statement should be canceled due to timeout.");
         },
         [TEST_CTX](const drogon::orm::DrogonDbException &e) {
-            LOG_INFO << "select pg_sleep(1); error(expected):"
+            LOG_INFO << "select pg_sleep(5); error(expected):"
                      << e.base().what();
             SUCCESS();
         });
