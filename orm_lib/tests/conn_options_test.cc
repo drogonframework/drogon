@@ -79,7 +79,7 @@ int main(int argc, char **argv)
         false,        // isFast
         "",           // charset
         10,           // timeout
-        true,         // autobatch
+        false,        // autobatch
         {
             {"statement_timeout", "3s"},
             {"lock_timeout", "0.5s"},
