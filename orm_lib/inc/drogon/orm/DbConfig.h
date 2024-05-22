@@ -14,12 +14,50 @@
 
 #pragma once
 
+#include <string>
+#include <unordered_map>
 #include <variant>
-#include <drogon/orm/config/PostgresConfig.h>
-#include <drogon/orm/config/MysqlConfig.h>
-#include <drogon/orm/config/Sqlite3Config.h>
 
 namespace drogon::orm
 {
+struct PostgresConfig
+{
+    std::string host;
+    unsigned short port;
+    std::string databaseName;
+    std::string username;
+    std::string password;
+    size_t connectionNumber;
+    std::string name;
+    bool isFast;
+    std::string characterSet;
+    double timeout;
+    bool autoBatch;
+    std::unordered_map<std::string, std::string> connectOptions;
+};
+
+struct MysqlConfig
+{
+    std::string host;
+    unsigned short port;
+    std::string databaseName;
+    std::string username;
+    std::string password;
+    size_t connectionNumber;
+    std::string name;
+    bool isFast;
+    std::string characterSet;
+    double timeout;
+};
+
+struct Sqlite3Config
+{
+    size_t connectionNumber;
+    std::string filename;
+    std::string name;
+    double timeout;
+};
+
 using DbConfig = std::variant<PostgresConfig, MysqlConfig, Sqlite3Config>;
-}
+
+}  // namespace drogon::orm

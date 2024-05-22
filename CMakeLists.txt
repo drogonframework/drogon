@@ -699,12 +699,6 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/RestfulController.h)
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
-set(ORM_DB_CONFIG_HEADERS
-    orm_lib/inc/drogon/orm/config/PostgresConfig.h
-    orm_lib/inc/drogon/orm/config/MysqlConfig.h
-    orm_lib/inc/drogon/orm/config/Sqlite3Config.h)
-install(FILES ${ORM_DB_CONFIG_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm/config)
-
 set(NOSQL_HEADERS
     nosql_lib/redis/inc/drogon/nosql/RedisClient.h
     nosql_lib/redis/inc/drogon/nosql/RedisResult.h
@@ -753,7 +747,6 @@ target_sources(${PROJECT_NAME} PRIVATE
                ${private_headers}
                ${DROGON_HEADERS}
                ${ORM_HEADERS}
-               ${ORM_DB_CONFIG_HEADERS}
                ${DROGON_UTIL_HEADERS}
                ${DROGON_PLUGIN_HEADERS}
                ${NOSQL_HEADERS}
@@ -763,7 +756,6 @@ source_group("Public API"
     FILES
     ${DROGON_HEADERS}
     ${ORM_HEADERS}
-    ${ORM_DB_CONFIG_HEADERS}
     ${DROGON_UTIL_HEADERS}
     ${DROGON_PLUGIN_HEADERS}
     ${NOSQL_HEADERS}
@@ -838,7 +830,6 @@ if(DOXYGEN_FOUND)
                    ${DROGON_UTIL_HEADERS}
                    ${DROGON_PLUGIN_HEADERS}
                    ${ORM_HEADERS}
-                   ${ORM_DB_CONFIG_HEADERS}
                    COMMENT "Generate documentation")
   if(NOT TARGET doc)
     add_custom_target(doc)
