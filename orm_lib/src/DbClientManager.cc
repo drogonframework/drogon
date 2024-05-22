@@ -150,28 +150,44 @@ void DbClientManager::createDbClients(
     }
 }
 
+static std::string buildConnStr(const std::string &host,
+                                unsigned short port,
+                                const std::string &databaseName,
+                                const std::string &username,
+                                const std::string &password,
+                                const std::string &characterSet)
+{
+    auto connStr =
+        utils::formattedString("host=%s port=%u dbname=%s user=%s",
+                               escapeConnString(host).c_str(),
+                               port,
+                               escapeConnString(databaseName).c_str(),
+                               escapeConnString(username).c_str());
+    if (!password.empty())
+    {
+        connStr += " password=";
+        connStr += escapeConnString(password);
+    }
+    if (!characterSet.empty())
+    {
+        connStr += " client_encoding=";
+        connStr += escapeConnString(characterSet);
+    }
+    return connStr;
+}
+
 void DbClientManager::addDbClient(const DbConfig &config)
 {
     if (std::holds_alternative<PostgresConfig>(config))
     {
 #if USE_POSTGRESQL
         auto &cfg = std::get<PostgresConfig>(config);
-        auto connStr =
-            utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                                   escapeConnString(cfg.host).c_str(),
-                                   cfg.port,
-                                   escapeConnString(cfg.databaseName).c_str(),
-                                   escapeConnString(cfg.username).c_str());
-        if (!cfg.password.empty())
-        {
-            connStr += " password=";
-            connStr += escapeConnString(cfg.password);
-        }
-        if (!cfg.characterSet.empty())
-        {
-            connStr += " client_encoding=";
-            connStr += escapeConnString(cfg.characterSet);
-        }
+        auto connStr = buildConnStr(cfg.host,
+                                    cfg.port,
+                                    cfg.databaseName,
+                                    cfg.username,
+                                    cfg.password,
+                                    cfg.characterSet);
         // For valid connection options, see:
         // https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-OPTIONS
         if (!cfg.connectOptions.empty())
@@ -200,22 +216,12 @@ void DbClientManager::addDbClient(const DbConfig &config)
     {
 #if USE_MYSQL
         auto cfg = std::get<MysqlConfig>(config);
-        auto connStr =
-            utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                                   escapeConnString(cfg.host).c_str(),
-                                   cfg.port,
-                                   escapeConnString(cfg.databaseName).c_str(),
-                                   escapeConnString(cfg.username).c_str());
-        if (!cfg.password.empty())
-        {
-            connStr += " password=";
-            connStr += escapeConnString(cfg.password);
-        }
-        if (!cfg.characterSet.empty())
-        {
-            connStr += " client_encoding=";
-            connStr += escapeConnString(cfg.characterSet);
-        }
+        auto connStr = buildConnStr(cfg.host,
+                                    cfg.port,
+                                    cfg.databaseName,
+                                    cfg.username,
+                                    cfg.password,
+                                    cfg.characterSet);
         dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
         std::cout << "The Mysql is not supported by drogon, please "
