@@ -591,7 +591,7 @@ static void loadDbClients(const Json::Value &dbClients)
                                          characterSet,
                                          timeout,
                                          autoBatch,
-                                         {}};
+                                         std::move(options)};
         }
         else if (type == "mysql")
         {
