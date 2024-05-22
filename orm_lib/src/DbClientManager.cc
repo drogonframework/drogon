@@ -103,8 +103,8 @@ void DbClientManager::createDbClients(
                 {
                     dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
                 }
-#endif
             }
+#endif
         }
         else if (std::holds_alternative<MysqlConfig>(dbInfo.config_))
         {
