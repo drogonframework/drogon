@@ -577,21 +577,40 @@ static void loadDbClients(const Json::Value &dbClients)
             }
         }
 
-        HttpAppFrameworkImpl::instance().createDbClientLegacy(type,
-                                                              host,
-                                                              port,
-                                                              dbname,
-                                                              user,
-                                                              password,
-                                                              connNum,
-                                                              name,
-                                                              filename,
-                                                              isFast,
-                                                              characterSet,
-                                                              timeout,
-                                                              autoBatch,
-                                                              std::move(
-                                                                  options));
+        orm::DbConfig config;
+        if (type == "postgresql" || type == "postgres")
+        {
+            config = orm::PostgresConfig{host,
+                                         port,
+                                         dbname,
+                                         user,
+                                         password,
+                                         connNum,
+                                         name,
+                                         isFast,
+                                         characterSet,
+                                         timeout,
+                                         autoBatch,
+                                         std::move(options)};
+        }
+        else if (type == "mysql")
+        {
+            config = orm::MysqlConfig{host,
+                                      port,
+                                      dbname,
+                                      user,
+                                      password,
+                                      connNum,
+                                      name,
+                                      isFast,
+                                      characterSet,
+                                      timeout};
+        }
+        else if (type == "sqlite3")
+        {
+            config = orm::Sqlite3Config{connNum, filename, name, timeout};
+        }
+        app().addDbClient(config);
     }
 }
 

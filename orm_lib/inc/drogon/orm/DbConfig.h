@@ -17,11 +17,9 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
-#include <drogon/config.h>
 
 namespace drogon::orm
 {
-#if USE_POSTGRESQL
 struct PostgresConfig
 {
     std::string host;
@@ -37,9 +35,7 @@ struct PostgresConfig
     bool autoBatch;
     std::unordered_map<std::string, std::string> connectOptions;
 };
-#endif
 
-#if USE_MYSQL
 struct MysqlConfig
 {
     std::string host;
@@ -53,9 +49,7 @@ struct MysqlConfig
     std::string characterSet;
     double timeout;
 };
-#endif
 
-#if USE_SQLITE3
 struct Sqlite3Config
 {
     size_t connectionNumber;
@@ -63,19 +57,7 @@ struct Sqlite3Config
     std::string name;
     double timeout;
 };
-#endif
 
-using DbConfig = std::variant<
-#if USE_POSTGRESQL
-    PostgresConfig,
-#endif
-#if USE_MYSQL
-    MysqlConfig,
-#endif
-#if USE_SQLITE3
-    Sqlite3Config,
-#endif
-    int  // dummy type
-    >;
+using DbConfig = std::variant<PostgresConfig, MysqlConfig, Sqlite3Config>;
 
 }  // namespace drogon::orm

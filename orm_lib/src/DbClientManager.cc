@@ -77,9 +77,9 @@ void DbClientManager::createDbClients(
     assert(dbFastClientsMap_.empty());
     for (auto &dbInfo : dbInfos_)
     {
-#if USE_POSTGRESQL
         if (std::holds_alternative<PostgresConfig>(dbInfo.config_))
         {
+#if USE_POSTGRESQL
             auto &cfg = std::get<PostgresConfig>(dbInfo.config_);
             if (cfg.isFast)
             {
@@ -104,13 +104,11 @@ void DbClientManager::createDbClients(
                     dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
                 }
             }
-            continue;
-        }
 #endif
-
-#if USE_MYSQL
-        if (std::holds_alternative<MysqlConfig>(dbInfo.config_))
+        }
+        else if (std::holds_alternative<MysqlConfig>(dbInfo.config_))
         {
+#if USE_MYSQL
             auto &cfg = std::get<MysqlConfig>(dbInfo.config_);
 
             if (cfg.isFast)
@@ -134,13 +132,11 @@ void DbClientManager::createDbClients(
                     dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
                 }
             }
-            continue;
-        }
 #endif
-
-#if USE_SQLITE3
-        if (std::holds_alternative<Sqlite3Config>(dbInfo.config_))
+        }
+        else if (std::holds_alternative<Sqlite3Config>(dbInfo.config_))
         {
+#if USE_SQLITE3
             auto &cfg = std::get<Sqlite3Config>(dbInfo.config_);
             dbClientsMap_[cfg.name] =
                 drogon::orm::DbClient::newSqlite3Client(dbInfo.connectionInfo_,
@@ -149,9 +145,8 @@ void DbClientManager::createDbClients(
             {
                 dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
             }
-            continue;
-        }
 #endif
+        }
     }
 }
 
@@ -183,9 +178,9 @@ static std::string buildConnStr(const std::string &host,
 
 void DbClientManager::addDbClient(const DbConfig &config)
 {
-#if USE_POSTGRESQL
     if (std::holds_alternative<PostgresConfig>(config))
     {
+#if USE_POSTGRESQL
         auto &cfg = std::get<PostgresConfig>(config);
         auto connStr = buildConnStr(cfg.host,
                                     cfg.port,
@@ -209,12 +204,17 @@ void DbClientManager::addDbClient(const DbConfig &config)
             connStr += optionStr;
         }
         dbInfos_.emplace_back(DbInfo{connStr, config});
-    }
+#else
+        std::cout << "The PostgreSQL is not supported by drogon, "
+                     "please install "
+                     "the development library first."
+                  << std::endl;
+        exit(1);
 #endif
-
-#if USE_MYSQL
-    if (std::holds_alternative<MysqlConfig>(config))
+    }
+    else if (std::holds_alternative<MysqlConfig>(config))
     {
+#if USE_MYSQL
         auto cfg = std::get<MysqlConfig>(config);
         auto connStr = buildConnStr(cfg.host,
                                     cfg.port,
@@ -223,17 +223,32 @@ void DbClientManager::addDbClient(const DbConfig &config)
                                     cfg.password,
                                     cfg.characterSet);
         dbInfos_.emplace_back(DbInfo{connStr, config});
-    }
+#else
+        std::cout << "The Mysql is not supported by drogon, please "
+                     "install the "
+                     "development library first."
+                  << std::endl;
+        exit(1);
 #endif
-
-#if USE_SQLITE3
-    if (std::holds_alternative<Sqlite3Config>(config))
+    }
+    else if (std::holds_alternative<Sqlite3Config>(config))
     {
+#if USE_SQLITE3
         auto cfg = std::get<Sqlite3Config>(config);
         std::string connStr = "filename=" + cfg.filename;
         dbInfos_.emplace_back(DbInfo{connStr, config});
-    }
+#else
+        std::cout << "The Sqlite3 is not supported by drogon, please "
+                     "install the "
+                     "development library first."
+                  << std::endl;
+        exit(1);
 #endif
+    }
+    else
+    {
+        assert(false && "Should not happen, unknown database type");
+    }
 }
 
 bool DbClientManager::areAllDbClientsAvailable() const noexcept
