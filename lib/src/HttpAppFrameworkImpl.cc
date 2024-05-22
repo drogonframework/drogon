@@ -901,6 +901,7 @@ nosql::RedisClientPtr HttpAppFrameworkImpl::getFastRedisClient(
     return redisClientManagerPtr_->getFastRedisClient(name);
 }
 
+// deprecated
 HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     const std::string &dbType,
     const std::string &host,
@@ -917,10 +918,63 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     bool autoBatch)
 {
     assert(!running_);
-    orm::DbConfig config;
+    createDbClientLegacy(dbType,
+                         host,
+                         port,
+                         databaseName,
+                         userName,
+                         password,
+                         connectionNum,
+                         filename,
+                         name,
+                         isFast,
+                         characterSet,
+                         timeout,
+                         autoBatch,
+                         {});
+    return *this;
+}
+
+void HttpAppFrameworkImpl::createDbClientLegacy(
+    const std::string &dbType,
+    const std::string &host,
+    unsigned short port,
+    const std::string &databaseName,
+    const std::string &userName,
+    const std::string &password,
+    size_t connectionNum,
+    const std::string &filename,
+    const std::string &name,
+    bool isFast,
+    const std::string &characterSet,
+    double timeout,
+    bool autoBatch,
+    std::unordered_map<std::string, std::string> options)
+{
     if (dbType == "postgresql" || dbType == "postgres")
     {
-        config = orm::PostgresConfig{host,
+#if USE_POSTGRESQL
+        addDbClient(orm::PostgresConfig{host,
+                                        port,
+                                        databaseName,
+                                        userName,
+                                        password,
+                                        connectionNum,
+                                        userName,
+                                        isFast,
+                                        characterSet,
+                                        timeout,
+                                        autoBatch,
+                                        std::move(options)});
+#else
+        LOG_ERROR << "PostgreSQL is not supported in current build, please "
+                     "install the development library first.";
+#endif
+    }
+    else if (dbType == "mysql")
+    {
+#if USE_MYSQL
+        addDbClient(orm::MysqlConfig{host,
                                      port,
                                      databaseName,
                                      userName,
@@ -929,33 +983,31 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
                                      name,
                                      isFast,
                                      characterSet,
-                                     timeout,
-                                     autoBatch,
-                                     {}};
-    }
-    else if (dbType == "mysql")
-    {
-        config = orm::MysqlConfig{host,
-                                  port,
-                                  databaseName,
-                                  userName,
-                                  password,
-                                  connectionNum,
-                                  name,
-                                  isFast,
-                                  characterSet,
-                                  timeout};
+                                     timeout});
+#else
+        LOG_ERROR << "Mysql is not supported in current build, please "
+                     "install the development library first.";
+#endif
     }
     else if (dbType == "sqlite3")
     {
-        config = orm::Sqlite3Config{connectionNum, filename, name, timeout};
+#if USE_SQLITE3
+        addDbClient(orm::Sqlite3Config{connectionNum, filename, name, timeout});
+#else
+        LOG_ERROR << "Mysql is not supported in current build, please "
+                     "install the development library first.";
+#endif
     }
-    dbClientManagerPtr_->addDbClient(config);
-    return *this;
+    else
+    {
+        LOG_ERROR << "Unsupported database type: " << dbType
+                  << ", should be one of (postgresql, mysql, sqlite3)";
+    }
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::addDbClient(const orm::DbConfig &config)
 {
+    assert(!running_);
     dbClientManagerPtr_->addDbClient(config);
     return *this;
 }
