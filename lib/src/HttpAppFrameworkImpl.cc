@@ -901,35 +901,99 @@ nosql::RedisClientPtr HttpAppFrameworkImpl::getFastRedisClient(
     return redisClientManagerPtr_->getFastRedisClient(name);
 }
 
+// deprecated
 HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     const std::string &dbType,
     const std::string &host,
-    const unsigned short port,
+    unsigned short port,
     const std::string &databaseName,
     const std::string &userName,
     const std::string &password,
-    const size_t connectionNum,
+    size_t connectionNum,
     const std::string &filename,
     const std::string &name,
-    const bool isFast,
+    bool isFast,
     const std::string &characterSet,
     double timeout,
-    const bool autoBatch)
+    bool autoBatch)
 {
     assert(!running_);
-    dbClientManagerPtr_->createDbClient(dbType,
-                                        host,
+    addDbClient(dbType,
+                host,
+                port,
+                databaseName,
+                userName,
+                password,
+                connectionNum,
+                filename,
+                name,
+                isFast,
+                characterSet,
+                timeout,
+                autoBatch,
+                {});
+    return *this;
+}
+
+void HttpAppFrameworkImpl::addDbClient(
+    const std::string &dbType,
+    const std::string &host,
+    unsigned short port,
+    const std::string &databaseName,
+    const std::string &userName,
+    const std::string &password,
+    size_t connectionNum,
+    const std::string &filename,
+    const std::string &name,
+    bool isFast,
+    const std::string &characterSet,
+    double timeout,
+    bool autoBatch,
+    std::unordered_map<std::string, std::string> options)
+{
+    if (dbType == "postgresql" || dbType == "postgres")
+    {
+        addDbClient(orm::PostgresConfig{host,
                                         port,
                                         databaseName,
                                         userName,
                                         password,
                                         connectionNum,
-                                        filename,
-                                        name,
+                                        userName,
                                         isFast,
                                         characterSet,
                                         timeout,
-                                        autoBatch);
+                                        autoBatch,
+                                        std::move(options)});
+    }
+    else if (dbType == "mysql")
+    {
+        addDbClient(orm::MysqlConfig{host,
+                                     port,
+                                     databaseName,
+                                     userName,
+                                     password,
+                                     connectionNum,
+                                     name,
+                                     isFast,
+                                     characterSet,
+                                     timeout});
+    }
+    else if (dbType == "sqlite3")
+    {
+        addDbClient(orm::Sqlite3Config{connectionNum, filename, name, timeout});
+    }
+    else
+    {
+        LOG_ERROR << "Unsupported database type: " << dbType
+                  << ", should be one of (postgresql, mysql, sqlite3)";
+    }
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::addDbClient(const orm::DbConfig &config)
+{
+    assert(!running_);
+    dbClientManagerPtr_->addDbClient(config);
     return *this;
 }
 

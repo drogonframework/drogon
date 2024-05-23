@@ -30,6 +30,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/orm/DbClient.h>
+#include <drogon/orm/DbConfig.h>
 #include <drogon/nosql/RedisClient.h>
 #include <drogon/Cookie.h>
 #include <trantor/net/Resolver.h>
@@ -1442,20 +1443,22 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @note
      * This operation can be performed by an option in the configuration file.
      */
-    virtual HttpAppFramework &createDbClient(
-        const std::string &dbType,
-        const std::string &host,
-        const unsigned short port,
-        const std::string &databaseName,
-        const std::string &userName,
-        const std::string &password,
-        const size_t connectionNum = 1,
-        const std::string &filename = "",
-        const std::string &name = "default",
-        const bool isFast = false,
-        const std::string &characterSet = "",
-        double timeout = -1.0,
-        const bool autoBatch = false) = 0;
+    [[deprecated("Use addDbClient() instead")]] virtual HttpAppFramework &
+    createDbClient(const std::string &dbType,
+                   const std::string &host,
+                   unsigned short port,
+                   const std::string &databaseName,
+                   const std::string &userName,
+                   const std::string &password,
+                   size_t connectionNum = 1,
+                   const std::string &filename = "",
+                   const std::string &name = "default",
+                   bool isFast = false,
+                   const std::string &characterSet = "",
+                   double timeout = -1.0,
+                   bool autoBatch = false) = 0;
+
+    virtual HttpAppFramework &addDbClient(const orm::DbConfig &config) = 0;
 
     /// Create a redis client
     /**
