@@ -1534,8 +1534,7 @@ if(!col.notNull_){%>
                 if(col.colType_ == "std::string" && col.colLength_>0)
                 {
 %>
-            // asString().length() creates a string object, is there any better way to validate the length?
-            if(pJson.isString() && pJson.asString().length() > {%col.colLength_%})
+            if(pJson.isString() && std::strlen(pJson.asCString()) > {%col.colLength_%})
             {
                 err="String length exceeds limit for the " +
                     fieldName +
