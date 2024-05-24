@@ -1,7 +1,7 @@
 #include "Http2Transport.h"
 #include "HttpFileUploadRequest.h"
 #include "drogon/utils/Utilities.h"
-#include "hpack/hpack.h"
+#include "hpack.h"
 
 #include <cstdint>
 #include <limits>
