@@ -12,6 +12,7 @@ namespace drogon
 {
 
 using namespace EricHpack;
+
 namespace internal
 {
 // Quick and dirty ByteStream implementation and extensions so we can use it
