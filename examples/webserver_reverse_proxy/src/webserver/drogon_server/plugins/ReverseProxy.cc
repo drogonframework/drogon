@@ -317,8 +317,11 @@ void ReverseProxy::initAndStart(const Json::Value &config)
     }
     else
     {
-        std::cerr << "ERROR: configuration\n";
-        abort();
+        app().getLoop()->runAfter(0, [&]()
+        {
+            std::cerr << "ERROR: configuration\nconfig don't have 'backends' member and/or 'backends' should be an array\n";
+            app().quit();
+        });
     }
 
     // pipelining
