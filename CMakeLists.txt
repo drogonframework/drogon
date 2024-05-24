@@ -303,7 +303,8 @@ set(DROGON_SOURCES
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
     lib/src/YamlConfigAdapter.cc
-    lib/src/drogon_test.cc)
+    lib/src/drogon_test.cc
+    lib/src/CORSMiddleware.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -588,6 +589,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/PubSubService.h
     lib/inc/drogon/drogon_test.h
     lib/inc/drogon/RateLimiter.h
+    lib/inc/drogon/CORSMiddleware.h
     ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 set(private_headers
     ${private_headers}
