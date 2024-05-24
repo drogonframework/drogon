@@ -1,0 +1,22 @@
+##
+## directory
+##
+/bin
+/build
+/logs
+/public
+
+
+##
+## extension
+##
+*.exe
+*.out
+*.app
+
+
+##
+## file
+##
+/.vscode/settings.json
+/.vscode/launch.json
