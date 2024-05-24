@@ -236,21 +236,18 @@ int main(int argc, char **argv)
     std::future<void> f1 = p1.get_future();
     app().setThreadNum(1);
 #if LIBPQ_SUPPORTS_BATCH_MODE
-    app().createDbClient(  //
-        "postgresql",      // dbType
-        "127.0.0.1",       // host
-        5432,              // port
-        "postgres",        // dbname
-        "postgres",        // username
-        "12345",           // password
-        1,                 // connectionNum
-        "",                // filename
-        "default",         // name
-        true,              // isFast
-        "",                // charset
-        10,                 // timeout
-        true               // autobatch
-    );
+    app().addDbClient(orm::PostgresConfig{"127.0.0.1",  // host
+                                          5432,         // port
+                                          "postgres",   // dbname
+                                          "postgres",   // username
+                                          "12345",      // password
+                                          1,            // connectionNum
+                                          "default",    // name
+                                          true,         // isFast
+                                          "",           // charset
+                                          10,           // timeout
+                                          true,         // autobatch
+                                          {}});
 #endif
     std::thread thr([&]() {
         app().getLoop()->queueInLoop([&]() { p1.set_value(); });
