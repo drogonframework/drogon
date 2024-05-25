@@ -725,6 +725,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         LOG_TRACE << "  " << key << ": " << value;
     std::vector<uint8_t> encoded;
     encoded.reserve(maxCompressiedHeaderSize);
+    // TODO: We should be able to avoid this allocation
     auto wbuf = hpackTx.MakeHpWBuffer(encoded, maxCompressiedHeaderSize);
     auto status = hpackTx.Encoder(*wbuf, vec);
     if (status != Success)
@@ -1058,6 +1059,7 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
 {
     std::vector<KeyValPair> headers;
     headers.reserve(6);  // some small amount to reduce reallocation
+    // TODO: We should be able to avoid this allocation
     auto rbuf = hpackRx.MakeHpRBuffer((const uint8_t *)data, size);
     const auto status = hpackRx.Decoder(*rbuf, headers);
     const auto streamId = stream.streamId;
