@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [1.10.0-beta.0 2024-05-25]
+## [1.10.0-beta.0] - 2024-05-25
 
 ## Changed
 
@@ -1666,6 +1666,8 @@ All notable changes to this project will be documented in this file.
 ## [1.0.0-beta1] - 2019-06-11
 
 [Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.4...HEAD
+
+[1.10.0-beta.0]: https://github.com/an-tao/drogon/compare/v1.9.4...1.10.0-beta.0
 
 [1.9.4]: https://github.com/an-tao/drogon/compare/v1.9.3...v1.9.4
 
