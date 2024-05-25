@@ -342,7 +342,7 @@ set(private_headers
     lib/src/JsonConfigAdapter.h
     lib/src/YamlConfigAdapter.h
     lib/src/ConfigAdapter.h
-    third_party/eric-hpack-stable/hpack.cpp)
+    third_party/eric-hpack-stable/hpack.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES
