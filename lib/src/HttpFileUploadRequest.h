@@ -34,6 +34,9 @@ class HttpFileUploadRequest : public HttpRequestImpl
 
     explicit HttpFileUploadRequest(const std::vector<UploadFile> &files);
 
+    void renderMultipartFormData(trantor::MsgBuffer &buffer) const;
+    void renderMultipartFormData(std::string &buffer) const;
+
   private:
     std::string boundary_;
     std::vector<UploadFile> files_;

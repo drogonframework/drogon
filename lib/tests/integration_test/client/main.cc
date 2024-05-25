@@ -1162,6 +1162,9 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
+        // Had to be put here else there's a chance that the client hasn't
+        // negotiated the protocol yet
+        CHECK(client->protocolVersion() == Version::kHttp11);
         // Test coroutine middleware
         try
         {
