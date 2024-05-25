@@ -2,3 +2,6 @@
 	path = trantor
 	url = https://github.com/an-tao/trantor.git
 	branch = master
+[submodule "third_party/eric-hpack-core"]
+	path = third_party/eric-hpack-core
+	url = https://gitlab.com/joe1231231218/eric-hpack-core.git

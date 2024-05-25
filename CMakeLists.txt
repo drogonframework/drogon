@@ -244,6 +244,10 @@ if (BUILD_BROTLI)
     endif (Brotli_FOUND)
 endif (BUILD_BROTLI)
 
+
+  target_include_directories(
+      ${PROJECT_NAME}
+      PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/eric-hpack-core>)
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
     lib/src/AccessLogger.cc
@@ -260,6 +264,8 @@ set(DROGON_SOURCES
     lib/src/Hodor.cc
     lib/src/HttpAppFrameworkImpl.cc
     lib/src/HttpBinder.cc
+    lib/src/Http2Transport.cc
+    lib/src/Http1xTransport.cc
     lib/src/HttpClientImpl.cc
     lib/src/HttpConnectionLimit.cc
     lib/src/HttpControllerBinder.cc
@@ -296,7 +302,8 @@ set(DROGON_SOURCES
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
     lib/src/YamlConfigAdapter.cc
-    lib/src/drogon_test.cc)
+    lib/src/drogon_test.cc
+    third_party/eric-hpack-core/hpack.cpp)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -305,6 +312,8 @@ set(private_headers
     lib/src/MiddlewaresFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h
+    lib/src/Http2Transport.h
+    lib/src/Http1xTransport.h
     lib/src/HttpConnectionLimit.h
     lib/src/HttpControllerBinder.h
     lib/src/HttpControllersRouter.h
@@ -332,7 +341,8 @@ set(private_headers
     lib/src/ConfigAdapterManager.h
     lib/src/JsonConfigAdapter.h
     lib/src/YamlConfigAdapter.h
-    lib/src/ConfigAdapter.h)
+    lib/src/ConfigAdapter.h
+    third_party/eric-hpack-core/hpack.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES

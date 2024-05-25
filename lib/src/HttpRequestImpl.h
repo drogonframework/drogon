@@ -410,7 +410,7 @@ class HttpRequestImpl : public HttpRequest
         return passThrough_;
     }
 
-    void appendToBuffer(trantor::MsgBuffer *output) const;
+    void appendToBuffer(trantor::MsgBuffer *output, Version protoVer) const;
 
     const SessionPtr &session() const override
     {
