@@ -247,7 +247,7 @@ endif (BUILD_BROTLI)
 
   target_include_directories(
       ${PROJECT_NAME}
-      PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/eric-hpack-stable>)
+      PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/eric-hpack-core>)
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
     lib/src/AccessLogger.cc
@@ -303,7 +303,7 @@ set(DROGON_SOURCES
     lib/src/WebSocketConnectionImpl.cc
     lib/src/YamlConfigAdapter.cc
     lib/src/drogon_test.cc
-    third_party/eric-hpack-stable/hpack.cpp)
+    third_party/eric-hpack-core/hpack.cpp)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -342,7 +342,7 @@ set(private_headers
     lib/src/JsonConfigAdapter.h
     lib/src/YamlConfigAdapter.h
     lib/src/ConfigAdapter.h
-    third_party/eric-hpack-stable/hpack.h)
+    third_party/eric-hpack-core/hpack.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES
