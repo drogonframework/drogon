@@ -16,7 +16,7 @@ int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     {
-        auto client = HttpClient::newHttpClient("https://example.com");
+        auto client = HttpClient::newHttpClient("http://www.baidu.com");
         client->setSockOptCallback([](int fd) {
             std::cout << "setSockOptCallback:" << fd << std::endl;
 #ifdef __linux__
