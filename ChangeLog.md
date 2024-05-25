@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0-beta.0 2024-05-25]
+
+## Changed
+
+* Add HTTP/2 Client
+
+## API changes
+
+* New enum for HTTP/2 `Version::kHttp2`
+* `HttpRequest::setVersion()` deprecated and has no affect.
+* HTTP version in client is no longer controlled by `req->setVersion()` but with `newHttpClient(...., DESIRED_HTTP_VERSION)`
+  * It is more of a suggestion then requirement. The client negotiates and selects the highest supported one.
+
+## Limitations
+
+* No H2C (HTTP/2 over cleartext) support
+* Technically supports handling server push. But no API to expose it to the user yet
+* Does not support setting HTTP request dependency and priority
+* Does not support trailers
+
 ## [1.9.4] - 2024-05-04
 
 ### API changes list
