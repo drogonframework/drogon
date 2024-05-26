@@ -1,6 +1,8 @@
 #include "ReverseProxy.h"
 
-void ReverseProxy::PreRouting(const HttpRequestPtr &pReq, AdviceCallback &&aCallback, AdviceChainCallback &&acCallback)
+void ReverseProxy::PreRouting(const HttpRequestPtr &pReq,
+                              AdviceCallback &&aCallback,
+                              AdviceChainCallback &&acCallback)
 {
     size_t index = 0, index_be = 0;
     size_t count = -1;
@@ -37,7 +39,8 @@ void ReverseProxy::PreRouting(const HttpRequestPtr &pReq, AdviceCallback &&aCall
     // same client same backend
     if (requestFound && m_sameClientToSameBackend)
     {
-        auto ipHash = std::hash<uint32_t>{}(pReq->getPeerAddr().ipNetEndian()) % clientsVector.size();
+        auto ipHash = std::hash<uint32_t>{}(pReq->getPeerAddr().ipNetEndian()) %
+                      clientsVector.size();
         index = (ipHash + (++(*m_clientIndex))) % clientsVector.size();
     }
     else if (requestFound && !m_sameClientToSameBackend)
@@ -57,14 +60,14 @@ void ReverseProxy::PreRouting(const HttpRequestPtr &pReq, AdviceCallback &&aCall
     if (!pClient && requestFound)
     {
         const auto &backend = m_backends[index_be];
-        const auto &address = backend.internal_proxies[index % backend.internal_proxies.size()];
+        const auto &address =
+            backend.internal_proxies[index % backend.internal_proxies.size()];
 
         pClient = HttpClient::newHttpClient(
             address,
             trantor::EventLoop::getEventLoopOfCurrentThread(),
             backend.ssl_conf.use_old_tls,
-            backend.ssl
-        );
+            backend.ssl);
     }
     else
     {
@@ -75,14 +78,14 @@ void ReverseProxy::PreRouting(const HttpRequestPtr &pReq, AdviceCallback &&aCall
         // if this else section remove, there's something wrong with the request
 
         const auto &backend = m_backends[index_be];
-        const auto &address = backend.internal_proxies[index % backend.internal_proxies.size()];
+        const auto &address =
+            backend.internal_proxies[index % backend.internal_proxies.size()];
 
         pClient = HttpClient::newHttpClient(
             address,
             trantor::EventLoop::getEventLoopOfCurrentThread(),
             backend.ssl_conf.use_old_tls,
-            backend.ssl
-        );
+            backend.ssl);
     }
 
     pReq->setPassThrough(true);
@@ -98,53 +101,62 @@ void ReverseProxy::PreRouting(const HttpRequestPtr &pReq, AdviceCallback &&aCall
         {
             auto pRequestRedirect = HttpResponse::newHttpResponse();
 
-            aCallback(pRequestRedirect->newRedirectionResponse(redirectUrl, k307TemporaryRedirect));
+            aCallback(pRequestRedirect->newRedirectionResponse(
+                redirectUrl, k307TemporaryRedirect));
             return;
         }
 
         // valid backend object helper for response
         auto validBackend = m_backends[index_be];
 
-        pClient->sendRequest(pReq, [aCallback = std::move(aCallback), validBackend = std::move(validBackend)](ReqResult result, const HttpResponsePtr &pResp)
-        {
-            pResp->setPassThrough(true);
+        pClient->sendRequest(
+            pReq,
+            [aCallback = std::move(aCallback),
+             validBackend =
+                 std::move(validBackend)](ReqResult result,
+                                          const HttpResponsePtr &pResp) {
+                pResp->setPassThrough(true);
 
-            switch (result)
-            {
-                case ReqResult::Ok:
+                switch (result)
                 {
-                    // add header if supplied
-                    if (validBackend.header_add && validBackend.header_add_list_pair.size() >= 1)
+                    case ReqResult::Ok:
                     {
-                        for (auto &pair : validBackend.header_add_list_pair)
+                        // add header if supplied
+                        if (validBackend.header_add &&
+                            validBackend.header_add_list_pair.size() >= 1)
                         {
-                            pResp->addHeader(pair.first, pair.second);
+                            for (auto &pair : validBackend.header_add_list_pair)
+                            {
+                                pResp->addHeader(pair.first, pair.second);
+                            }
                         }
-                    }
-                    // give warn or error?
+                        // give warn or error?
 
-                    // add server check origin if supplied
-                    // can be add manually from each backend before their response callback
-                    if (validBackend.check_origin_whitelist)
+                        // add server check origin if supplied
+                        // can be add manually from each backend before their
+                        // response callback
+                        if (validBackend.check_origin_whitelist)
+                        {
+                            pResp->addHeader(
+                                "access-control-allow-origin",
+                                validBackend.check_origin_whitelist_data);
+                        }
+
+                        aCallback(pResp);
+                    }
+                    break;
+
+                    default:
                     {
-                        pResp->addHeader("access-control-allow-origin", validBackend.check_origin_whitelist_data);
+                        // just to make it sure and show the message when happen
+                        pResp->setBody("Internal Server Error By Default");
+                        pResp->setStatusCode(k500InternalServerError);
+
+                        aCallback(pResp);
                     }
-
-                    aCallback(pResp);
+                    break;
                 }
-                break;
-
-                default:
-                {
-                    // just to make it sure and show the message when happen
-                    pResp->setBody("Internal Server Error By Default");
-                    pResp->setStatusCode(k500InternalServerError);
-
-                    aCallback(pResp);
-                }
-                break;
-            }
-        });
+            });
     }
     else
     {
@@ -169,7 +181,10 @@ ReverseProxy::~ReverseProxy()
 
 void ReverseProxy::initAndStart(const Json::Value &config)
 {
-    if (m_ready) { return; }
+    if (m_ready)
+    {
+        return;
+    }
 
 #pragma region configuration
     // backends storage
@@ -185,26 +200,31 @@ void ReverseProxy::initAndStart(const Json::Value &config)
 
             backend.redirect_to = backends["redirect_to"].asString();
 
-            backend.check_origin_whitelist = backends["check_origin_whitelist"].asBool();
+            backend.check_origin_whitelist =
+                backends["check_origin_whitelist"].asBool();
 
-            backend.check_origin_whitelist_data = backends["check_origin_whitelist_data"].asString();
+            backend.check_origin_whitelist_data =
+                backends["check_origin_whitelist_data"].asString();
 
             backend.header_add = backends["header_add"].asBool();
 
             if (backend.header_add)
             {
-                if (backends["header_add_list"].isArray() && backends["header_add_list"].size() <= 0)
+                if (backends["header_add_list"].isArray() &&
+                    backends["header_add_list"].size() <= 0)
                 {
-                    app().getLoop()->runAfter(0, [&]()
-                    {
-                        std::cerr << "ERROR: you are trying to add more header response, but header add list is not supplied or 0\n";
+                    app().getLoop()->runAfter(0, [&]() {
+                        std::cerr << "ERROR: you are trying to add more header "
+                                     "response, but header add list is not "
+                                     "supplied or 0\n";
                         app().quit();
                     });
                 }
 
                 for (auto &header : backends["header_add_list"])
                 {
-                    if (header.isArray() && header.size() == 2 && header[0].isString() && header[1].isString())
+                    if (header.isArray() && header.size() == 2 &&
+                        header[0].isString() && header[1].isString())
                     {
                         std::string key = header[0].asString();
                         std::string value = header[1].asString();
@@ -213,9 +233,10 @@ void ReverseProxy::initAndStart(const Json::Value &config)
                     }
                     else
                     {
-                        app().getLoop()->runAfter(0, [&]()
-                        {
-                            std::cerr << "ERROR: can't use header list, these array can't assign as pair 2 string\n";
+                        app().getLoop()->runAfter(0, [&]() {
+                            std::cerr
+                                << "ERROR: can't use header list, these array "
+                                   "can't assign as pair 2 string\n";
                             app().quit();
                         });
                     }
@@ -227,9 +248,9 @@ void ReverseProxy::initAndStart(const Json::Value &config)
             // check backend proxies
             if (backends["internal_proxies"].size() <= 0)
             {
-                app().getLoop()->runAfter(0, [&]()
-                {
-                    std::cerr << "ERROR: internal backend proxies should be provide at least one\n";
+                app().getLoop()->runAfter(0, [&]() {
+                    std::cerr << "ERROR: internal backend proxies should be "
+                                 "provide at least one\n";
                     app().quit();
                 });
             }
@@ -247,33 +268,36 @@ void ReverseProxy::initAndStart(const Json::Value &config)
 
                 backendSSL.key = backends["ssl_conf"]["key"].asString();
                 backendSSL.cert = backends["ssl_conf"]["cert"].asString();
-                backendSSL.use_old_tls = backends["ssl_conf"]["use_old_tls"].asBool();
+                backendSSL.use_old_tls =
+                    backends["ssl_conf"]["use_old_tls"].asBool();
 
                 if (backendSSL.key.length() <= 0)
                 {
-                    app().getLoop()->runAfter(0, [&]()
-                    {
-                        std::cerr << "ERROR: you're configuring using ssl, but key is not supplied\n";
+                    app().getLoop()->runAfter(0, [&]() {
+                        std::cerr << "ERROR: you're configuring using ssl, but "
+                                     "key is not supplied\n";
                         app().quit();
                     });
                 }
 
                 if (backendSSL.cert.length() <= 0)
                 {
-                    app().getLoop()->runAfter(0, [&]()
-                    {
-                        std::cerr << "ERROR: you're configuring using ssl, but cert is not supplied\n";
+                    app().getLoop()->runAfter(0, [&]() {
+                        std::cerr << "ERROR: you're configuring using ssl, but "
+                                     "cert is not supplied\n";
                         app().quit();
                     });
                 }
 
-                const auto SSL_CONF_CONFIG = backends["ssl_conf"]["configurations"];
+                const auto SSL_CONF_CONFIG =
+                    backends["ssl_conf"]["configurations"];
 
                 if (SSL_CONF_CONFIG.isArray() && SSL_CONF_CONFIG.size() >= 1)
                 {
                     for (auto &ssl_cfg : SSL_CONF_CONFIG)
                     {
-                        if (ssl_cfg.isArray() && ssl_cfg.size() == 2 && ssl_cfg[0].isString() && ssl_cfg[1].isString())
+                        if (ssl_cfg.isArray() && ssl_cfg.size() == 2 &&
+                            ssl_cfg[0].isString() && ssl_cfg[1].isString())
                         {
                             std::string key = ssl_cfg[0].asString();
                             std::string value = ssl_cfg[1].asString();
@@ -282,9 +306,10 @@ void ReverseProxy::initAndStart(const Json::Value &config)
                         }
                         else
                         {
-                            app().getLoop()->runAfter(0, [&]()
-                            {
-                                std::cerr << "ERROR: can't use config, these array can't assign as pair 2 string\n";
+                            app().getLoop()->runAfter(0, [&]() {
+                                std::cerr
+                                    << "ERROR: can't use config, these array "
+                                       "can't assign as pair 2 string\n";
                                 app().quit();
                             });
                         }
@@ -294,9 +319,11 @@ void ReverseProxy::initAndStart(const Json::Value &config)
                 }
                 else
                 {
-                    app().getLoop()->runAfter(0, [&]()
-                    {
-                        std::cerr << "ERROR: ssl_conf configurations is not an array or empty\nREADMORE: https://www.openssl.org/docs/manmaster/man3/SSL_CONF_cmd.html\n";
+                    app().getLoop()->runAfter(0, [&]() {
+                        std::cerr << "ERROR: ssl_conf configurations is not an "
+                                     "array or empty\nREADMORE: "
+                                     "https://www.openssl.org/docs/manmaster/"
+                                     "man3/SSL_CONF_cmd.html\n";
                         app().quit();
                     });
                 }
@@ -308,8 +335,7 @@ void ReverseProxy::initAndStart(const Json::Value &config)
         // final check
         if (m_backends.empty())
         {
-            app().getLoop()->runAfter(0, [&]()
-            {
+            app().getLoop()->runAfter(0, [&]() {
                 std::cerr << "ERROR: backends configuration is empty\n";
                 app().quit();
             });
@@ -317,9 +343,9 @@ void ReverseProxy::initAndStart(const Json::Value &config)
     }
     else
     {
-        app().getLoop()->runAfter(0, [&]()
-        {
-            std::cerr << "ERROR: configuration\nconfig don't have 'backends' member and/or 'backends' should be an array\n";
+        app().getLoop()->runAfter(0, [&]() {
+            std::cerr << "ERROR: configuration\nconfig don't have 'backends' "
+                         "member and/or 'backends' should be an array\n";
             app().quit();
         });
     }
@@ -332,46 +358,45 @@ void ReverseProxy::initAndStart(const Json::Value &config)
 
     if (m_connectionFactor == 0 || m_connectionFactor > 100)
     {
-        app().getLoop()->runAfter(0, [&]()
-        {
+        app().getLoop()->runAfter(0, [&]() {
             std::cerr << "ERROR: invalid number of connection factor\n";
             app().quit();
         });
     }
 
     // same client to same backend
-    m_sameClientToSameBackend = config.get("same_client_to_same_backend", false).asBool();
+    m_sameClientToSameBackend =
+        config.get("same_client_to_same_backend", false).asBool();
 
     // default document root
     m_defaultDocumentRoot = config["default_document_root"].asString();
 
     // clients config
-    m_clients.init([this](std::vector<HttpClientPtr> &clients, size_t ioLoopIndex)
-    {
-        clients.resize(m_backends.size() * m_connectionFactor);
-    });
+    m_clients.init(
+        [this](std::vector<HttpClientPtr> &clients, size_t ioLoopIndex) {
+            clients.resize(m_backends.size() * m_connectionFactor);
+        });
 
     // client index config
-    m_clientIndex.init([this](size_t &index, size_t ioLoopIndex)
-    {
-        index = ioLoopIndex;
-    });
+    m_clientIndex.init(
+        [this](size_t &index, size_t ioLoopIndex) { index = ioLoopIndex; });
 
     // pre routing register
-    app().registerPreRoutingAdvice([this](const HttpRequestPtr &pReq, AdviceCallback &&aCallback, AdviceChainCallback &&acCallback)
-    {
+    app().registerPreRoutingAdvice([this](const HttpRequestPtr &pReq,
+                                          AdviceCallback &&aCallback,
+                                          AdviceChainCallback &&acCallback) {
         PreRouting(pReq, std::move(aCallback), std::move(acCallback));
     });
 #pragma endregion
 
-    #if !NDEBUG
+#if !NDEBUG
     std::cout << "drogon_server ReverseProxy plugin started\n";
-    #endif
+#endif
 }
 
 void ReverseProxy::shutdown()
 {
-    #if !NDEBUG
+#if !NDEBUG
     std::cout << "drogon_server ReverseProxy plugin shutdown\n";
-    #endif
+#endif
 }

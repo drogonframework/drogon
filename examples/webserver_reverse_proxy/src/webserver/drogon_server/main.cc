@@ -2,7 +2,7 @@
 
 using namespace drogon;
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     app().loadConfigFile("../config.drogon_server.json");
 

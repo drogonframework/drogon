@@ -6,7 +6,7 @@ using namespace drogon;
 
 /**
  * @brief type for backend ssl storage
- * 
+ *
  */
 struct TBackendSSL
 {
@@ -16,10 +16,9 @@ struct TBackendSSL
     std::vector<std::pair<std::string, std::string>> configurations;
 };
 
-
 /**
  * @brief type for backend storage
- * 
+ *
  */
 struct TBackendStorage
 {
@@ -36,14 +35,13 @@ struct TBackendStorage
     std::vector<std::pair<std::string, std::string>> header_add_list_pair;
 };
 
-
 /**
  * @brief reverse proxy plugin for drogon_server project
- * 
+ *
  */
 class ReverseProxy final : public Plugin<ReverseProxy>
 {
-private:
+  private:
     bool m_ready = false;
     bool m_useSSL = false;
     bool m_sameClientToSameBackend = false;
@@ -58,17 +56,19 @@ private:
     IOThreadStorage<size_t> m_clientIndex = 0;
     IOThreadStorage<std::vector<HttpClientPtr>> m_clients;
 
-protected:
+  protected:
     /**
      * @brief pre routing request to array backend
-     * 
-     * @param pReq 
-     * @param aCallback 
-     * @param acCallback 
+     *
+     * @param pReq
+     * @param aCallback
+     * @param acCallback
      */
-    void PreRouting(const HttpRequestPtr &pReq, AdviceCallback &&aCallback, AdviceChainCallback &&acCallback);
+    void PreRouting(const HttpRequestPtr &pReq,
+                    AdviceCallback &&aCallback,
+                    AdviceChainCallback &&acCallback);
 
-public:
+  public:
     ReverseProxy(/* args */);
     ~ReverseProxy();
 
@@ -76,4 +76,4 @@ public:
     void shutdown() override;
 };
 
-#endif // EXAMPLES_WEBSERVER_REVERSE_PROXY_SRC_WEBSERVER_DROGON_SERVER_PLUGINS_REVERSEPROXY_H_
+#endif  // EXAMPLES_WEBSERVER_REVERSE_PROXY_SRC_WEBSERVER_DROGON_SERVER_PLUGINS_REVERSEPROXY_H_
