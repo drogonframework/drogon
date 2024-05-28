@@ -9,21 +9,40 @@ using namespace trantor;
 DROGON_TEST(DbApiTest)
 {
 #if USE_POSTGRESQL
-    CHECK(app().getDbClient("pg_non_fast") != nullptr);
-    drogon::app().getIOLoop(0)->runInLoop(
-        [TEST_CTX]() { CHECK(app().getFastDbClient("pg_fast") != nullptr); });
+    {
+        auto client = app().getDbClient("pg_non_fast");
+        CHECK(client != nullptr);
+        client->closeAll();
+        drogon::app().getIOLoop(0)->runInLoop([TEST_CTX]() {
+            auto client = app().getFastDbClient("pg_fast");
+            CHECK(client != nullptr);
+            client->closeAll();
+        });
+    }
 #endif
 
 #if USE_MYSQL
-    CHECK(app().getDbClient("mysql_non_fast") != nullptr);
-    drogon::app().getIOLoop(0)->runInLoop([TEST_CTX]() {
-        CHECK(app().getFastDbClient("mysql_fast") != nullptr);
-    });
+    {
+        auto client = app().getDbClient("mysql_non_fast");
+        CHECK(client != nullptr);
+        client->closeAll();
+        drogon::app().getIOLoop(0)->runInLoop([TEST_CTX]() {
+            auto client = app().getFastDbClient("mysql_fast");
+            CHECK(client != nullptr);
+            client->closeAll();
+        });
+    }
 #endif
 
 #if USE_SQLITE3
-    CHECK(app().getDbClient("sqlite3_non_fast") != nullptr);
+    {
+        auto client = app().getDbClient("sqlite3_non_fast");
+        CHECK(client != nullptr);
+        client->closeAll();
+    }
 #endif
+
+    app().getLoop()->runAfter(5, [TEST_CTX]() {});  // wait for some time
 }
 
 const std::string_view pg_non_fast_config = R"({
