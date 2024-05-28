@@ -13,6 +13,11 @@ DROGON_TEST(DbApiTest)
         auto client = app().getDbClient("pg_non_fast");
         CHECK(client != nullptr);
         client->closeAll();
+        drogon::app().getLoop()->runInLoop([TEST_CTX]() {
+            auto client = app().getFastDbClient("pg_fast");
+            CHECK(client != nullptr);
+            client->closeAll();
+        });
         drogon::app().getIOLoop(0)->runInLoop([TEST_CTX]() {
             auto client = app().getFastDbClient("pg_fast");
             CHECK(client != nullptr);
@@ -26,6 +31,11 @@ DROGON_TEST(DbApiTest)
         auto client = app().getDbClient("mysql_non_fast");
         CHECK(client != nullptr);
         client->closeAll();
+        drogon::app().getLoop()->runInLoop([TEST_CTX]() {
+            auto client = app().getFastDbClient("mysql_fast");
+            CHECK(client != nullptr);
+            client->closeAll();
+        });
         drogon::app().getIOLoop(0)->runInLoop([TEST_CTX]() {
             auto client = app().getFastDbClient("mysql_fast");
             CHECK(client != nullptr);
