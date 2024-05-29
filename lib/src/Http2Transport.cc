@@ -695,7 +695,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         vec.emplace_back(":path", req->path().empty() ? "/" : req->path());
     else
     {
-        std::string path = req->path() + "?";
+        std::string path = (req->path().empty() ? "/" : req->path()) + "?";
         for (auto const &[key, value] : params)
         {
             path += utils::urlEncodeComponent(key) + "=" +
