@@ -222,6 +222,14 @@ function do_db_test()
             exit -1
         fi
     fi
+    if [ -f "./orm_lib/tests/db_api_test" ]; then
+        echo "Test getDbClient() api"
+        ./orm_lib/tests/db_api_test -s
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
+        fi
+    fi
     if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
         echo "Test redis"
         ./nosql_lib/redis/tests/redis_test -s
