@@ -959,7 +959,7 @@ void HttpAppFrameworkImpl::addDbClient(
                                         userName,
                                         password,
                                         connectionNum,
-                                        userName,
+                                        name,
                                         isFast,
                                         characterSet,
                                         timeout,
