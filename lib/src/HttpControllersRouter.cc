@@ -720,7 +720,7 @@ RouteResult HttpControllersRouter::routeWs(const HttpRequestImplPtr &req)
                 std::smatch result;
                 if(std::regex_match(req->path(), result, wsCtrlRegex))
                 {
-                    req->setMatchedPathPattern(iter->first);
+                    req->setMatchedPathPattern(ctrlInfo.pathPattern_);
                     auto &binder = ctrlInfo.binders_[req->method()];
                     if (!binder)
                     {
