@@ -621,14 +621,14 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /// Register a WebSocketController into the framework.
     /**
      * The parameters of this method are the same as those in the
-     * registerHttpSimpleController() method but using regular 
+     * registerHttpSimpleController() method but using regular
      * expression string for path.
      */
-    virtual HttpAppFramework& registerWebSocketControllerRegex(
-        const std::string& regExp,
-        const std::string& ctrlName,
-        const std::vector<internal::HttpConstraint>& constraints =
-        std::vector<internal::HttpConstraint>{}) = 0;
+    virtual HttpAppFramework &registerWebSocketControllerRegex(
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &constraints =
+            std::vector<internal::HttpConstraint>{}) = 0;
 
     /// Register controller objects created and initialized by the user
     /**

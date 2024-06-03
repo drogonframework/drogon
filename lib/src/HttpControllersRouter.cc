@@ -106,7 +106,7 @@ std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
                 else if constexpr (std::is_same_v<
                                        std::decay_t<decltype(item)>,
                                        WebSocketControllerRouterItem> ||
-                                    std::is_same_v<
+                                   std::is_same_v<
                                        std::decay_t<decltype(item)>,
                                        RegExWebSocketControllerRouterItem>)
                 {
@@ -718,7 +718,7 @@ RouteResult HttpControllersRouter::routeWs(const HttpRequestImplPtr &req)
             {
                 auto const &wsCtrlRegex = ctrlInfo.regex_;
                 std::smatch result;
-                if(std::regex_match(req->path(), result, wsCtrlRegex))
+                if (std::regex_match(req->path(), result, wsCtrlRegex))
                 {
                     req->setMatchedPathPattern(ctrlInfo.pathPattern_);
                     auto &binder = ctrlInfo.binders_[req->method()];
@@ -730,7 +730,6 @@ RouteResult HttpControllersRouter::routeWs(const HttpRequestImplPtr &req)
                 }
             }
         }
-        
     }
     return {RouteResult::NotFound, nullptr};
 }

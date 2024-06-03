@@ -294,15 +294,14 @@ HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     return *this;
 }
 
-HttpAppFramework& HttpAppFrameworkImpl::registerWebSocketControllerRegex(
-    const std::string& regExp,
-    const std::string& ctrlName,
-    const std::vector<internal::HttpConstraint>& constraints)
+HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketControllerRegex(
+    const std::string &regExp,
+    const std::string &ctrlName,
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!routersInit_);
-    HttpControllersRouter::instance().registerWebSocketControllerRegex(regExp,
-        ctrlName,
-        constraints);
+    HttpControllersRouter::instance().registerWebSocketControllerRegex(
+        regExp, ctrlName, constraints);
     return *this;
 }
 

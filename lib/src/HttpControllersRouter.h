@@ -51,9 +51,9 @@ class HttpControllersRouter : public trantor::NonCopyable
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &constraints);
     void registerWebSocketControllerRegex(
-        const std::string& regExp,
-        const std::string& ctrlName,
-        const std::vector<internal::HttpConstraint>& constraints);
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &constraints);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
