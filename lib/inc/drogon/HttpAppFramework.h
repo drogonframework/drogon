@@ -691,6 +691,24 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         return *this;
     }
 
+    /// Register middleware objects created and initialized by the user
+    /**
+     * This method is similar to the above method.
+     */
+    template <typename T>
+    HttpAppFramework &registerMiddleware(
+        const std::shared_ptr<T> &middlewarePtr)
+    {
+        static_assert(std::is_base_of<HttpMiddlewareBase, T>::value,
+                      "Error! Only middleware objects can be registered here");
+        static_assert(!T::isAutoCreation,
+                      "Middleware created and initialized "
+                      "automatically by drogon cannot be "
+                      "registered here");
+        DrClassMap::setSingleInstance(middlewarePtr);
+        return *this;
+    }
+
     /// Register a default handler into the framework when no handler matches
     /// the request. If set, it is executed if the static file router does
     /// not find any file corresponding to the request. Thus it replaces
