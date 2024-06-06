@@ -20,6 +20,14 @@ namespace drogon
 class HttpStreamHandler;
 using HttpStreamHandlerPtr = std::shared_ptr<HttpStreamHandler>;
 
+struct MultipartFormData
+{
+    std::string name;
+    std::string filename;
+    std::string contentType;
+    std::string data;
+};
+
 /**
  * An interface for stream request handling.
  * User should create an implementation class.
@@ -37,6 +45,13 @@ class HttpStreamHandler
     // Create a handler with default implementation
     static HttpStreamHandlerPtr newHandler(StreamDataCallback dataCb,
                                            StreamFinishCallback finishCb);
+
+    using MultipartHeaderCallback = std::function<void(MultipartFormData form)>;
+    using MultipartBodyCallback = std::function<void(std::string bodyPart)>;
+
+    static HttpStreamHandlerPtr newMultipartHandler(
+        MultipartHeaderCallback headerCb,
+        MultipartBodyCallback bodyCb);
 };
 
 }  // namespace drogon
