@@ -350,7 +350,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 assert(status_ == HttpRequestParseStatus::kExpectBody ||
                        status_ == HttpRequestParseStatus::kExpectChunkLen);
 
-                if (/*app().enableStreamRequest()*/ true)
+                if (app().isStreamRequestEnabled())
                 {
                     request_->setStreamMode();
                     return 2;

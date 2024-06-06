@@ -53,5 +53,5 @@ int main()
         {Post});
 
     LOG_INFO << "Server running on 127.0.0.1:8848";
-    app().addListener("127.0.0.1", 8848).run();
+    app().enableStreamRequest().addListener("127.0.0.1", 8848).run();
 }
