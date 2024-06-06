@@ -736,7 +736,11 @@ void HttpRequestImpl::reserveBodySize(size_t length)
 
 void HttpRequestImpl::appendToBody(const char *data, size_t length)
 {
-    if (cacheFilePtr_)
+    if (streamHandlerPtr_)
+    {
+        streamHandlerPtr_->onStreamData(data, length);
+    }
+    else if (cacheFilePtr_)
     {
         cacheFilePtr_->append(data, length);
     }
@@ -973,4 +977,42 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyGzip() noexcept
         return status;
     }
     return status;
+}
+
+void HttpRequestImpl::setStreamHandler(HttpStreamHandlerPtr handler)
+{
+    if (!isStreamMode_ || streamHandlerPtr_)
+    {
+        return;  // should we ignore/assert/throw on either cases?
+    }
+
+    streamHandlerPtr_ = std::move(handler);
+    // Consume already received body
+    if (cacheFilePtr_)
+    {
+        auto bodyPieceView = cacheFilePtr_->getStringView();
+        if (!bodyPieceView.empty())
+            streamHandlerPtr_->onStreamData(bodyPieceView.data(),
+                                            bodyPieceView.length());
+        cacheFilePtr_.reset();
+    }
+    else if (!content_.empty())
+    {
+        streamHandlerPtr_->onStreamData(content_.data(), content_.length());
+        content_.clear();
+    }
+    if (isStreamFinished_)
+    {
+        streamHandlerPtr_->onStreamFinish();
+    }
+}
+
+void HttpRequestImpl::finishStream()
+{
+    assert(isStreamMode_);
+    isStreamFinished_ = true;
+    if (isStreamFinished_)
+    {
+        streamHandlerPtr_->onStreamFinish();
+    }
 }

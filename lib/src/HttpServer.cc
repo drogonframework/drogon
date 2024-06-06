@@ -162,9 +162,12 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             buf->retrieveAll();
             return;
         }
+
+        // TODO: handle multiple return
         int parseRes = requestParser->parseRequest(buf);
         if (parseRes < 0)
         {
+            // TODO: how to handle requests in stream mode?
             requestParser->reset();
             conn->forceClose();
             return;
@@ -174,13 +177,23 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             break;
         }
         auto &req = requestParser->requestImpl();
-        req->setPeerAddr(conn->peerAddr());
-        req->setLocalAddr(conn->localAddr());
-        req->setCreationDate(trantor::Date::date());
-        req->setSecure(conn->isSSLConnection());
-        req->setPeerCertificate(conn->peerCertificate());
-        requests.push_back(req);
-        requestParser->reset();
+        if (parseRes == 2 || parseRes == 1 && !req->isStreamMode())
+        {
+            req->setPeerAddr(conn->peerAddr());
+            req->setLocalAddr(conn->localAddr());
+            req->setCreationDate(trantor::Date::date());
+            req->setSecure(conn->isSSLConnection());
+            req->setPeerCertificate(conn->peerCertificate());
+            requests.push_back(req);
+        }
+        if (parseRes == 1)
+        {
+            if (req->isStreamMode())
+            {
+                requestParser->requestImpl()->finishStream();
+            }
+            requestParser->reset();
+        }
     }
     onRequests(conn, requests, requestParser);
     requests.clear();

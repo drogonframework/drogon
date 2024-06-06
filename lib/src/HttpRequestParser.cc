@@ -149,6 +149,7 @@ void HttpRequestParser::reset()
  * @return return -1 if encounters any error in request
  * @return return 0 if request is not ready
  * @return return 1 if request is ready
+ * @return return 2 if request header is ready and entering stream mode
  */
 int HttpRequestParser::parseRequest(MsgBuffer *buf)
 {
@@ -345,6 +346,15 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return -1;
                 }
                 request_->reserveBodySize(currentContentLength_);
+
+                assert(status_ == HttpRequestParseStatus::kExpectBody ||
+                       status_ == HttpRequestParseStatus::kExpectChunkLen);
+
+                if (/*app().enableStreamRequest()*/ true)
+                {
+                    request_->setStreamMode();
+                    return 2;
+                }
                 continue;
             }
             case HttpRequestParseStatus::kExpectBody:

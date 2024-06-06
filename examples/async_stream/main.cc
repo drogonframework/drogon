@@ -28,6 +28,30 @@ int main()
             callback(resp);
         });
 
+    app().registerHandler(
+        "/stream_req",
+        [](const HttpRequestPtr &req,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            LOG_INFO << "Headers:";
+            for (auto &[k, v] : req->headers())
+            {
+                LOG_INFO << k << ": " << v;
+            }
+            LOG_INFO << "Body: " << req->body();
+
+            auto handler = HttpStreamHandler::newHandler(
+                [](const char *data, size_t length) {
+                    LOG_INFO << "piece[" << length
+                             << "]: " << std::string_view{data, length};
+                },
+                [callback = std::move(callback)]() {
+                    LOG_INFO << "stream finish";
+                    callback(HttpResponse::newHttpResponse());
+                });
+            req->setStreamHandler(std::move(handler));
+        },
+        {Post});
+
     LOG_INFO << "Server running on 127.0.0.1:8848";
     app().addListener("127.0.0.1", 8848).run();
 }

@@ -526,7 +526,22 @@ class HttpRequestImpl : public HttpRequest
 
     StreamDecompressStatus decompressBody();
 
-    ~HttpRequestImpl();
+    // Stream mode api
+    void setStreamHandler(HttpStreamHandlerPtr handler) override;
+
+    void finishStream();
+
+    bool isStreamMode() const
+    {
+        return isStreamMode_;
+    }
+
+    void setStreamMode()
+    {
+        isStreamMode_ = true;
+    }
+
+    ~HttpRequestImpl() override;
 
   protected:
     friend class HttpRequest;
@@ -619,6 +634,10 @@ class HttpRequestImpl : public HttpRequest
     bool isOnSecureConnection_{false};
     bool passThrough_{false};
     std::vector<std::string> routingParams_;
+
+    bool isStreamMode_{false};
+    bool isStreamFinished_{false};
+    HttpStreamHandlerPtr streamHandlerPtr_;
 
   protected:
     std::string content_;
