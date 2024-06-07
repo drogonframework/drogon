@@ -736,6 +736,7 @@ void HttpRequestImpl::reserveBodySize(size_t length)
 
 void HttpRequestImpl::appendToBody(const char *data, size_t length)
 {
+    assert(loop_->isInLoopThread());
     if (streamHandlerPtr_)
     {
         streamHandlerPtr_->onStreamData(data, length);
@@ -981,11 +982,27 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyGzip() noexcept
 
 void HttpRequestImpl::setStreamHandler(HttpStreamHandlerPtr handler)
 {
-    if (!isStreamMode_ || streamHandlerPtr_)
+    if (!isStreamMode_)
     {
-        return;  // should we ignore/assert/throw on either cases?
+        return;  // should we ignore/assert/throw?
     }
+    if (loop_->isInLoopThread())
+    {
+        setStreamHandlerInLoop(std::move(handler));
+    }
+    else
+    {
+        loop_->queueInLoop([this, handler = std::move(handler)]() mutable {
+            setStreamHandlerInLoop(std::move(handler));
+        });
+    }
+}
 
+void HttpRequestImpl::setStreamHandlerInLoop(HttpStreamHandlerPtr handler)
+{
+    assert(loop_->isInLoopThread());
+    if (streamHandlerPtr_)
+        return;  // should we give feedback?
     streamHandlerPtr_ = std::move(handler);
     // Consume already received body
     if (cacheFilePtr_)
@@ -1009,6 +1026,7 @@ void HttpRequestImpl::setStreamHandler(HttpStreamHandlerPtr handler)
 
 void HttpRequestImpl::finishStream()
 {
+    assert(loop_->isInLoopThread());
     assert(isStreamMode_);
     isStreamFinished_ = true;
     if (isStreamFinished_)

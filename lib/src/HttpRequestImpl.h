@@ -607,6 +607,8 @@ class HttpRequestImpl : public HttpRequest
     StreamDecompressStatus decompressBodyBrotli() noexcept;
 #endif
     StreamDecompressStatus decompressBodyGzip() noexcept;
+    void setStreamHandlerInLoop(HttpStreamHandlerPtr handler);
+
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};
     HttpMethod method_{Invalid};

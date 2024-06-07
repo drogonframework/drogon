@@ -163,11 +163,12 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             return;
         }
 
-        // TODO: handle multiple return
+        // if stream mode enabled, parseRequest() may return >0 multiple times
+        // for the same request
         int parseRes = requestParser->parseRequest(buf);
         if (parseRes < 0)
         {
-            // TODO: how to handle requests in stream mode?
+            // TODO: how to handle force-closed requests in stream mode?
             requestParser->reset();
             conn->forceClose();
             return;
@@ -184,6 +185,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             req->setCreationDate(trantor::Date::date());
             req->setSecure(conn->isSSLConnection());
             req->setPeerCertificate(conn->peerCertificate());
+            // TODO: maybe call onRequests() directly in stream mode
             requests.push_back(req);
         }
         if (parseRes == 1)
