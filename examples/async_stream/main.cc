@@ -1,6 +1,8 @@
 #include <drogon/drogon.h>
 #include <chrono>
 #include <memory>
+#include <utility>
+#include <fstream>
 using namespace drogon;
 using namespace std::chrono_literals;
 
@@ -67,19 +69,42 @@ int main()
             }
             else
             {
+                struct File
+                {
+                    std::string filename;
+                    std::ofstream file;
+                };
+
+                auto files = std::make_shared<std::vector<File>>();
                 handler = HttpStreamHandler::newMultipartHandler(
                     req,
-                    [](MultipartHeader &&header) {
+                    [files](MultipartHeader &&header) {
                         LOG_INFO << "Multipart name: " << header.name
                                  << ", filename:" << header.filename
                                  << ", contentType:" << header.contentType;
+
+                        files->emplace_back();
+                        files->back().filename = header.filename;
+                        files->back().file.open("uploads/" + header.filename,
+                                                std::ios::trunc);
                     },
-                    [](const char *data, size_t length) {
+                    [files](const char *data, size_t length) {
                         LOG_INFO << "data[" << length
                                  << "]: " << std::string_view{data, length};
+                        if (files->back().file.is_open())
+                        {
+                            LOG_INFO << "write file";
+                            files->back().file.write(data, length);
+                            files->back().file.flush();
+                        }
+                        else
+                        {
+                            LOG_ERROR << "file not open";
+                        }
                     },
-                    [callback = std::move(callback)]() {
-                        LOG_INFO << "stream finish";
+                    [files, callback = std::move(callback)]() {
+                        LOG_INFO << "stream finish, received " << files->size()
+                                 << " files";
                         auto resp = HttpResponse::newHttpResponse();
                         resp->setBody("success\n");
                         callback(resp);
