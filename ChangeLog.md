@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.5] - 2024-06-08
+
+### API changes list
+
+- Fix an error in the yaml format config file.
+
+- Support postgresql connection options.
+
+- Add regex support for websocket controller.
+
+- Add the registerMiddleware method.
+
+### Changed
+
+- Add the conan badge to readme files.
+
+- Install gcc in ci.
+
+- Intention to present an alternative to improve the performance of a method in models.
+
+### Fixed
+
+- Fix an error in the yaml format config file.
+
+- Fix CI on Windows.
+
+- Fix some spelling errors.
+
 ## [1.9.4] - 2024-05-04
 
 ### API changes list
@@ -1645,7 +1673,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.4...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.5...HEAD
+
+[1.9.5]: https://github.com/an-tao/drogon/compare/v1.9.4...v1.9.5
 
 [1.9.4]: https://github.com/an-tao/drogon/compare/v1.9.3...v1.9.4
 
