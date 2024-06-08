@@ -39,15 +39,62 @@ int main()
             }
             LOG_INFO << "Body: " << req->body();
 
-            auto handler = HttpStreamHandler::newHandler(
-                [](const char *data, size_t length) {
-                    LOG_INFO << "piece[" << length
-                             << "]: " << std::string_view{data, length};
-                },
-                [callback = std::move(callback)]() {
-                    LOG_INFO << "stream finish";
-                    callback(HttpResponse::newHttpResponse());
-                });
+            HttpStreamHandlerPtr handler;
+            LOG_INFO << "ContentTypeCode: " << req->contentType();
+            if (req->contentType() != CT_MULTIPART_FORM_DATA)
+            {
+                handler = HttpStreamHandler::newHandler(
+                    [](const char *data, size_t length) {
+                        LOG_INFO << "piece[" << length
+                                 << "]: " << std::string_view{data, length};
+                    },
+                    [callback = std::move(callback)]() {
+                        LOG_INFO << "stream finish";
+                        auto resp = HttpResponse::newHttpResponse();
+                        resp->setBody("success\n");
+                        callback(resp);
+                    },
+                    [](std::exception_ptr ex) {
+                        try
+                        {
+                            std::rethrow_exception(std::move(ex));
+                        }
+                        catch (const std::exception &e)
+                        {
+                            LOG_ERROR << "stream error: " << e.what();
+                        }
+                    });
+            }
+            else
+            {
+                handler = HttpStreamHandler::newMultipartHandler(
+                    req,
+                    [](MultipartHeader &&header) {
+                        LOG_INFO << "Multipart name: " << header.name
+                                 << ", filename:" << header.filename
+                                 << ", contentType:" << header.contentType;
+                    },
+                    [](const char *data, size_t length) {
+                        LOG_INFO << "data[" << length
+                                 << "]: " << std::string_view{data, length};
+                    },
+                    [callback = std::move(callback)]() {
+                        LOG_INFO << "stream finish";
+                        auto resp = HttpResponse::newHttpResponse();
+                        resp->setBody("success\n");
+                        callback(resp);
+                    },
+                    [](std::exception_ptr ex) {
+                        try
+                        {
+                            std::rethrow_exception(std::move(ex));
+                        }
+                        catch (const std::exception &e)
+                        {
+                            LOG_ERROR << "stream error: " << e.what();
+                        }
+                    });
+            }
             req->setStreamHandler(std::move(handler));
         },
         {Post});

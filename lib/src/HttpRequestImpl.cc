@@ -1004,6 +1004,13 @@ void HttpRequestImpl::setStreamHandlerInLoop(HttpStreamHandlerPtr handler)
     if (streamHandlerPtr_)
         return;  // should we give feedback?
     streamHandlerPtr_ = std::move(handler);
+    if (streamExceptionPtr_)
+    {
+        streamHandlerPtr_->onStreamError(std::move(streamExceptionPtr_));
+        streamExceptionPtr_ = nullptr;
+        return;
+    }
+
     // Consume already received body
     if (cacheFilePtr_)
     {
@@ -1029,8 +1036,20 @@ void HttpRequestImpl::finishStream()
     assert(loop_->isInLoopThread());
     assert(isStreamMode_);
     isStreamFinished_ = true;
-    if (isStreamFinished_)
+    if (streamHandlerPtr_)
     {
         streamHandlerPtr_->onStreamFinish();
+    }
+}
+
+void HttpRequestImpl::streamError(std::exception_ptr ex)
+{
+    if (streamHandlerPtr_)
+    {
+        streamHandlerPtr_->onStreamError(std::move(ex));
+    }
+    else
+    {
+        streamExceptionPtr_ = std::move(ex);
     }
 }

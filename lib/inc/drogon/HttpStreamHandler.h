@@ -17,16 +17,27 @@
 
 namespace drogon
 {
+class HttpRequest;
+using HttpRequestPtr = std::shared_ptr<HttpRequest>;
+
 class HttpStreamHandler;
 using HttpStreamHandlerPtr = std::shared_ptr<HttpStreamHandler>;
 
-struct MultipartFormData
+struct MultipartHeader
 {
     std::string name;
     std::string filename;
     std::string contentType;
-    std::string data;
 };
+
+/**
+ * TODO-s:
+ * - Too many callbacks
+ * - Is `finishCb` necessary? Calling `dataCb` with null can be a replacement.
+ * - Should we notify user on each multipart block finish?
+ * - Is `errorCb` necessary? How does it act? Should user or framework send the
+ *   error response?
+ */
 
 /**
  * An interface for stream request handling.
@@ -38,20 +49,25 @@ class HttpStreamHandler
     virtual ~HttpStreamHandler() = default;
     virtual void onStreamData(const char *, size_t) = 0;
     virtual void onStreamFinish() = 0;
+    virtual void onStreamError(std::exception_ptr) = 0;
 
     using StreamDataCallback = std::function<void(const char *, size_t)>;
     using StreamFinishCallback = std::function<void()>;
+    using StreamErrorCallback = std::function<void(std::exception_ptr)>;
 
     // Create a handler with default implementation
     static HttpStreamHandlerPtr newHandler(StreamDataCallback dataCb,
-                                           StreamFinishCallback finishCb);
+                                           StreamFinishCallback finishCb,
+                                           StreamErrorCallback errorCb);
 
-    using MultipartHeaderCallback = std::function<void(MultipartFormData form)>;
-    using MultipartBodyCallback = std::function<void(std::string bodyPart)>;
+    using MultipartHeaderCallback = std::function<void(MultipartHeader header)>;
 
     static HttpStreamHandlerPtr newMultipartHandler(
+        const HttpRequestPtr &req,
         MultipartHeaderCallback headerCb,
-        MultipartBodyCallback bodyCb);
+        StreamDataCallback dataCb,
+        StreamFinishCallback finishCb,
+        StreamErrorCallback errorCb);
 };
 
 }  // namespace drogon

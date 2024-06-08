@@ -12,13 +12,13 @@
  *
  */
 
+#include "MultipartStreamParser.h"
+#include "drogon/HttpRequest.h"
 #include <drogon/HttpStreamHandler.h>
 #include <variant>
-#include <deque>
 
 namespace drogon
 {
-
 /**
  * A default implementation for convenience
  */
@@ -26,8 +26,11 @@ class DefaultStreamHandler : public HttpStreamHandler
 {
   public:
     DefaultStreamHandler(StreamDataCallback dataCb,
-                         StreamFinishCallback finishCb)
-        : dataCb_(std::move(dataCb)), finishCb_(std::move(finishCb))
+                         StreamFinishCallback finishCb,
+                         StreamErrorCallback errorCb)
+        : dataCb_(std::move(dataCb)),
+          finishCb_(std::move(finishCb)),
+          errorCb_(std::move(errorCb))
     {
     }
 
@@ -41,35 +44,15 @@ class DefaultStreamHandler : public HttpStreamHandler
         finishCb_();
     }
 
+    void onStreamError(std::exception_ptr ex) override
+    {
+        errorCb_(std::move(ex));
+    }
+
   private:
     StreamDataCallback dataCb_;
     StreamFinishCallback finishCb_;
-};
-
-class SomeMagicalParser
-{
-  public:
-    using ParsedItem = std::variant<MultipartFormData, std::string>;
-
-    void readMore(const char *data, size_t length)
-    {
-        // TODO
-    }
-
-    bool hasContent() const
-    {
-        return !parsedItems_.empty();
-    }
-
-    ParsedItem popContent()
-    {
-        auto item = std::move(parsedItems_.front());
-        parsedItems_.pop_front();
-        return item;
-    }
-
-  private:
-    std::deque<ParsedItem> parsedItems_;
+    StreamErrorCallback errorCb_;
 };
 
 /**
@@ -78,54 +61,83 @@ class SomeMagicalParser
 class MultipartStreamHandler : public HttpStreamHandler
 {
   public:
-    MultipartStreamHandler(MultipartHeaderCallback headerCb,
-                           MultipartBodyCallback bodyCb)
-        : headerCb_(std::move(headerCb)), bodyCb_(std::move(bodyCb))
+    MultipartStreamHandler(const std::string &contentType,
+                           MultipartHeaderCallback headerCb,
+                           StreamDataCallback dataCb,
+                           StreamFinishCallback finishCb,
+                           StreamErrorCallback errorCb)
+        : parser_(contentType),
+          headerCb_(std::move(headerCb)),
+          dataCb_(std::move(dataCb)),
+          finishCb_(std::move(finishCb)),
+          errorCb_(std::move(errorCb))
     {
     }
 
     void onStreamData(const char *data, size_t length) override
     {
-        parser_.readMore(data, length);
-        while (parser_.hasContent())
+        if (!parser_.isValid() || parser_.isFinished())
         {
-            auto content = parser_.popContent();
-            if (std::holds_alternative<MultipartFormData>(content))
-            {
-                headerCb_(std::move(std::get<MultipartFormData>(content)));
-            }
-            else
-            {
-                bodyCb_(std::move(std::get<std::string>(content)));
-            }
+            return;
+        }
+        parser_.parse(data, length, headerCb_, dataCb_);
+        if (!parser_.isValid())
+        {
+            errorCb_(std::make_exception_ptr(
+                std::runtime_error("invalid multipart data")));
+        }
+        else if (parser_.isFinished())
+        {
+            finishCb_();
         }
     }
 
     void onStreamFinish() override
     {
-        bodyCb_({});
+        if (!parser_.isFinished())
+        {
+            finishCb_();
+        }
+    }
+
+    void onStreamError(std::exception_ptr ex) override
+    {
+        if (parser_.isValid())
+        {
+            errorCb_(ex);
+        }
     }
 
   private:
-    SomeMagicalParser parser_;
+    MultipartStreamParser parser_;
     MultipartHeaderCallback headerCb_;
-    MultipartBodyCallback bodyCb_;
+    StreamDataCallback dataCb_;
+    StreamFinishCallback finishCb_;
+    StreamErrorCallback errorCb_;
 };
 
 HttpStreamHandlerPtr HttpStreamHandler::newHandler(
     StreamDataCallback dataCb,
-    StreamFinishCallback finishCb)
+    StreamFinishCallback finishCb,
+    StreamErrorCallback errorCb)
 {
     return std::make_shared<DefaultStreamHandler>(std::move(dataCb),
-                                                  std::move(finishCb));
+                                                  std::move(finishCb),
+                                                  std::move(errorCb));
 }
 
 HttpStreamHandlerPtr HttpStreamHandler::newMultipartHandler(
-    HttpStreamHandler::MultipartHeaderCallback headerCb,
-    HttpStreamHandler::MultipartBodyCallback bodyCb)
+    const HttpRequestPtr &req,
+    MultipartHeaderCallback headerCb,
+    StreamDataCallback dataCb,
+    StreamFinishCallback finishCb,
+    StreamErrorCallback errorCb)
 {
-    return std::make_shared<MultipartStreamHandler>(std::move(headerCb),
-                                                    std::move(bodyCb));
+    return std::make_shared<MultipartStreamHandler>(req->getHeader(
+                                                        "content-type"),
+                                                    std::move(headerCb),
+                                                    std::move(dataCb),
+                                                    std::move(finishCb),
+                                                    std::move(errorCb));
 }
-
 }  // namespace drogon

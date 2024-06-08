@@ -530,6 +530,7 @@ class HttpRequestImpl : public HttpRequest
     void setStreamHandler(HttpStreamHandlerPtr handler) override;
 
     void finishStream();
+    void streamError(std::exception_ptr ex);
 
     bool isStreamMode() const
     {
@@ -640,6 +641,7 @@ class HttpRequestImpl : public HttpRequest
     bool isStreamMode_{false};
     bool isStreamFinished_{false};
     HttpStreamHandlerPtr streamHandlerPtr_;
+    std::exception_ptr streamExceptionPtr_;
 
   protected:
     std::string content_;

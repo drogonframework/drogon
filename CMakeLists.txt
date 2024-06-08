@@ -279,6 +279,7 @@ set(DROGON_SOURCES
     lib/src/ListenerManager.cc
     lib/src/LocalHostFilter.cc
     lib/src/MultiPart.cc
+    lib/src/MultipartStreamParser.cc
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
     lib/src/PromExporter.cc
@@ -333,7 +334,8 @@ set(private_headers
     lib/src/ConfigAdapterManager.h
     lib/src/JsonConfigAdapter.h
     lib/src/YamlConfigAdapter.h
-    lib/src/ConfigAdapter.h)
+    lib/src/ConfigAdapter.h
+    lib/src/MultipartStreamParser.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES

@@ -163,12 +163,19 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             return;
         }
 
+        auto &req = requestParser->requestImpl();
         // if stream mode enabled, parseRequest() may return >0 multiple times
         // for the same request
         int parseRes = requestParser->parseRequest(buf);
         if (parseRes < 0)
         {
-            // TODO: how to handle force-closed requests in stream mode?
+            // TODO: we should let user send response in stream mode
+            if (req->isStreamMode())
+            {
+                req->streamError(
+                    std::make_exception_ptr(std::runtime_error("Bad request")));
+                return;
+            }
             requestParser->reset();
             conn->forceClose();
             return;
@@ -177,7 +184,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         {
             break;
         }
-        auto &req = requestParser->requestImpl();
         if (parseRes == 2 || parseRes == 1 && !req->isStreamMode())
         {
             req->setPeerAddr(conn->peerAddr());
@@ -192,7 +198,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         {
             if (req->isStreamMode())
             {
-                requestParser->requestImpl()->finishStream();
+                req->finishStream();
             }
             requestParser->reset();
         }
