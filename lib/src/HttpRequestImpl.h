@@ -535,12 +535,13 @@ class HttpRequestImpl : public HttpRequest
 
     bool isStreamMode() const
     {
-        return isStreamMode_;
+        return streamStatus_ > StreamStatus::None;
     }
 
     void setStreamMode()
     {
-        isStreamMode_ = true;
+        assert(streamStatus_ == StreamStatus::None);
+        streamStatus_ = StreamStatus::Open;
     }
 
     ~HttpRequestImpl() override;
@@ -638,8 +639,13 @@ class HttpRequestImpl : public HttpRequest
     bool passThrough_{false};
     std::vector<std::string> routingParams_;
 
-    bool isStreamMode_{false};
-    bool isStreamFinished_{false};
+    enum class StreamStatus
+    {
+        None = 0,
+        Open = 1,
+        Finish = 2,
+        Error = 3
+    } streamStatus_{StreamStatus::None};
     std::function<void()> streamFinishCb_;
     HttpStreamHandlerPtr streamHandlerPtr_;
     std::exception_ptr streamExceptionPtr_;

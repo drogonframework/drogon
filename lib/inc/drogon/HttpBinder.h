@@ -269,6 +269,7 @@ class HttpBinder : public HttpBinderBase
 
     template <typename... Values,
               std::size_t Boundary = argument_count,
+              bool isStreamHandler = traits::isStreamHandler,
               bool isCoroutine = traits::isCoroutine>
     void run(std::deque<std::string> &pathArguments,
              const HttpRequestPtr &req,
@@ -347,7 +348,7 @@ class HttpBinder : public HttpBinderBase
                 {
                     // Explicit copy because `callFunction` moves it
                     auto cb = callback;
-                    if constexpr (traits::isStreamHandler)
+                    if constexpr (isStreamHandler)
                     {
                         callFunction(req,
                                      StreamContext::fromRequest(req),
@@ -386,7 +387,7 @@ class HttpBinder : public HttpBinderBase
 #ifdef __cpp_impl_coroutine
             else
             {
-                static_assert(!traits::isStreamHandler);
+                static_assert(!isStreamHandler);
                 [this](HttpRequestPtr req,
                        std::function<void(const HttpResponsePtr &)> callback,
                        Values &&...values) -> AsyncTask {
