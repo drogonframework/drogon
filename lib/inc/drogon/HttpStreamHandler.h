@@ -37,9 +37,12 @@ class StreamContext
 {
   public:
     virtual void setStreamHandler(HttpStreamHandlerPtr handler) = 0;
-
-    static StreamContextPtr fromRequest(const HttpRequestPtr &req);
 };
+
+namespace internal
+{
+StreamContextPtr createStreamContext(const HttpRequestPtr &req);
+}
 
 /**
  * TODO-s:

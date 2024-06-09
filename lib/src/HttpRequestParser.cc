@@ -350,9 +350,10 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 assert(status_ == HttpRequestParseStatus::kExpectBody ||
                        status_ == HttpRequestParseStatus::kExpectChunkLen);
 
+                // TODO: how to enable stream mode only for wanted requests?
                 if (app().isStreamRequestEnabled())
                 {
-                    request_->setStreamMode();
+                    request_->enterStreamMode();
                     return 2;
                 }
                 continue;

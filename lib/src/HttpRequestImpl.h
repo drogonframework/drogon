@@ -538,7 +538,7 @@ class HttpRequestImpl : public HttpRequest
         return streamStatus_ > StreamStatus::None;
     }
 
-    void setStreamMode()
+    void enterStreamMode()
     {
         assert(streamStatus_ == StreamStatus::None);
         streamStatus_ = StreamStatus::Open;

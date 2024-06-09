@@ -351,7 +351,7 @@ class HttpBinder : public HttpBinderBase
                     if constexpr (isStreamHandler)
                     {
                         callFunction(req,
-                                     StreamContext::fromRequest(req),
+                                     createStreamContext(req),
                                      cb,
                                      std::move(values)...);
                     }
@@ -363,6 +363,7 @@ class HttpBinder : public HttpBinderBase
                         }
                         else
                         {
+                            // TODO: we can not do this in c++17!!!
                             waitForFullBody(
                                 req,
                                 [this,

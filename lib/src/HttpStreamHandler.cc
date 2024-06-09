@@ -169,10 +169,17 @@ class StreamContextImpl : public StreamContext
     HttpRequestImplPtr req_;
 };
 
-StreamContextPtr StreamContext::fromRequest(const HttpRequestPtr &req)
+namespace internal
 {
+StreamContextPtr createStreamContext(const HttpRequestPtr &req)
+{
+    if (!static_cast<HttpRequestImpl *>(req.get())->isStreamMode())
+    {
+        return nullptr;
+    }
     return std::make_shared<StreamContextImpl>(
         std::static_pointer_cast<HttpRequestImpl>(req));
 }
+}  // namespace internal
 
 }  // namespace drogon
