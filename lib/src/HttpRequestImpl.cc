@@ -1036,6 +1036,9 @@ void HttpRequestImpl::finishStream()
 
 void HttpRequestImpl::streamError(std::exception_ptr ex)
 {
+    // TODO: can we be sure that streamError() only be called once?
+    // If not, we could allow it to be called multiple times, and
+    // only handle the first one.
     assert(loop_->isInLoopThread());
     assert(streamStatus_ == StreamStatus::Open);
     if (streamHandlerPtr_)

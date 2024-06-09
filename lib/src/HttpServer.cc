@@ -132,6 +132,12 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
             {
                 requestParser->webSocketConn()->onClose();
             }
+            else if (requestParser->requestImpl()->isStreamMode())
+            {
+                requestParser->requestImpl()->streamError(
+                    std::make_exception_ptr(
+                        std::runtime_error("Connection closed")));
+            }
             conn->clearContext();
         }
     }
@@ -174,7 +180,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             {
                 req->streamError(
                     std::make_exception_ptr(std::runtime_error("Bad request")));
-                return;
             }
             requestParser->reset();
             conn->forceClose();
