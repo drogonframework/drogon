@@ -3,6 +3,7 @@
 #include <memory>
 #include <utility>
 #include <fstream>
+
 using namespace drogon;
 using namespace std::chrono_literals;
 
@@ -33,6 +34,7 @@ int main()
     app().registerHandler(
         "/stream_req",
         [](const HttpRequestPtr &req,
+           const StreamContextPtr &streamCtx,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             LOG_INFO << "Headers:";
             for (auto &[k, v] : req->headers())
@@ -120,7 +122,7 @@ int main()
                         }
                     });
             }
-            req->setStreamHandler(std::move(handler));
+            streamCtx->setStreamHandler(std::move(handler));
         },
         {Post});
 

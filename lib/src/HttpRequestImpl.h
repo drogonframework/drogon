@@ -18,6 +18,7 @@
 #include "CacheFile.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
+#include <drogon/HttpStreamHandler.h>
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/InetAddress.h>
@@ -527,7 +528,7 @@ class HttpRequestImpl : public HttpRequest
     StreamDecompressStatus decompressBody();
 
     // Stream mode api
-    void setStreamHandler(HttpStreamHandlerPtr handler) override;
+    void setStreamHandler(HttpStreamHandlerPtr handler);
 
     void finishStream();
     void streamError(std::exception_ptr ex);
@@ -608,7 +609,6 @@ class HttpRequestImpl : public HttpRequest
     StreamDecompressStatus decompressBodyBrotli() noexcept;
 #endif
     StreamDecompressStatus decompressBodyGzip() noexcept;
-    void setStreamHandlerInLoop(HttpStreamHandlerPtr handler);
 
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};

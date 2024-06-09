@@ -30,6 +30,17 @@ struct MultipartHeader
     std::string contentType;
 };
 
+class StreamContext;
+using StreamContextPtr = std::shared_ptr<StreamContext>;
+
+class StreamContext
+{
+  public:
+    virtual void setStreamHandler(HttpStreamHandlerPtr handler) = 0;
+
+    static StreamContextPtr fromRequest(const HttpRequestPtr &req);
+};
+
 /**
  * TODO-s:
  * - Too many callbacks

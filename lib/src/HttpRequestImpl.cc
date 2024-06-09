@@ -982,25 +982,11 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyGzip() noexcept
 
 void HttpRequestImpl::setStreamHandler(HttpStreamHandlerPtr handler)
 {
+    assert(loop_->isInLoopThread());
     if (!isStreamMode_)
     {
         return;  // should we ignore/assert/throw?
     }
-    if (loop_->isInLoopThread())
-    {
-        setStreamHandlerInLoop(std::move(handler));
-    }
-    else
-    {
-        loop_->queueInLoop([this, handler = std::move(handler)]() mutable {
-            setStreamHandlerInLoop(std::move(handler));
-        });
-    }
-}
-
-void HttpRequestImpl::setStreamHandlerInLoop(HttpStreamHandlerPtr handler)
-{
-    assert(loop_->isInLoopThread());
     if (streamHandlerPtr_)
         return;  // should we give feedback?
     streamHandlerPtr_ = std::move(handler);

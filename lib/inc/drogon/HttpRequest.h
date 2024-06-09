@@ -21,7 +21,6 @@
 #include <drogon/Session.h>
 #include <drogon/Attribute.h>
 #include <drogon/UploadFile.h>
-#include <drogon/HttpStreamHandler.h>
 #include <json/json.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/net/Certificate.h>
@@ -494,9 +493,6 @@ class DROGON_EXPORT HttpRequest
     virtual bool isOnSecureConnection() const noexcept = 0;
     virtual void setContentTypeString(const char *typeString,
                                       size_t typeStringLength) = 0;
-
-    // Stream handler
-    virtual void setStreamHandler(HttpStreamHandlerPtr handler) = 0;
 
     virtual ~HttpRequest()
     {

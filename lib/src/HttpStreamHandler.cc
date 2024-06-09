@@ -13,7 +13,8 @@
  */
 
 #include "MultipartStreamParser.h"
-#include "drogon/HttpRequest.h"
+#include "HttpRequestImpl.h"
+
 #include <drogon/HttpStreamHandler.h>
 #include <variant>
 
@@ -140,4 +141,38 @@ HttpStreamHandlerPtr HttpStreamHandler::newMultipartHandler(
                                                     std::move(finishCb),
                                                     std::move(errorCb));
 }
+
+class StreamContextImpl : public StreamContext
+{
+  public:
+    StreamContextImpl(HttpRequestImplPtr req) : req_(std::move(req))
+    {
+    }
+
+    void setStreamHandler(HttpStreamHandlerPtr handler) override
+    {
+        auto loop = req_->getLoop();
+        if (loop->isInLoopThread())
+        {
+            req_->setStreamHandler(std::move(handler));
+        }
+        else
+        {
+            loop->queueInLoop(
+                [req = req_, handler = std::move(handler)]() mutable {
+                    req->setStreamHandler(std::move(handler));
+                });
+        }
+    }
+
+  private:
+    HttpRequestImplPtr req_;
+};
+
+StreamContextPtr StreamContext::fromRequest(const HttpRequestPtr &req)
+{
+    return std::make_shared<StreamContextImpl>(
+        std::static_pointer_cast<HttpRequestImpl>(req));
+}
+
 }  // namespace drogon
