@@ -14,6 +14,7 @@
 
 #include <drogon/HttpBinder.h>
 #include <drogon/HttpAppFramework.h>
+#include "HttpRequestImpl.h"
 
 namespace drogon
 {
@@ -25,5 +26,22 @@ void handleException(const std::exception &e,
 {
     app().getExceptionHandler()(e, req, std::move(callback));
 }
+
+bool isStreamMode(const HttpRequestPtr &req)
+{
+    return static_cast<HttpRequestImpl *>(req.get())->isStreamMode();
+}
+
+void waitForFullBody(const HttpRequestPtr &req, std::function<void()> &&cb)
+{
+    auto reqImpl = static_cast<HttpRequestImpl *>(req.get());
+    if (!reqImpl->isStreamMode())
+    {
+        cb();
+        return;
+    }
+    reqImpl->waitForStreamFinish(std::move(cb));
+}
+
 }  // namespace internal
 }  // namespace drogon

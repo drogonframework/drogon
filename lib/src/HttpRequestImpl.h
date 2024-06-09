@@ -529,7 +529,7 @@ class HttpRequestImpl : public HttpRequest
 
     // Stream mode api
     void setStreamHandler(HttpStreamHandlerPtr handler);
-
+    void waitForStreamFinish(std::function<void()> &&cb);
     void finishStream();
     void streamError(std::exception_ptr ex);
 
@@ -640,6 +640,7 @@ class HttpRequestImpl : public HttpRequest
 
     bool isStreamMode_{false};
     bool isStreamFinished_{false};
+    std::function<void()> streamFinishCb_;
     HttpStreamHandlerPtr streamHandlerPtr_;
     std::exception_ptr streamExceptionPtr_;
 

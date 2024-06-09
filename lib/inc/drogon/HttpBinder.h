@@ -186,6 +186,9 @@ DROGON_EXPORT void handleException(
     const HttpRequestPtr &,
     std::function<void(const HttpResponsePtr &)> &&);
 
+bool isStreamMode(const HttpRequestPtr &);
+void waitForFullBody(const HttpRequestPtr &req, std::function<void()> &&cb);
+
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 
 template <typename FUNCTION>
@@ -344,7 +347,31 @@ class HttpBinder : public HttpBinderBase
                 {
                     // Explicit copy because `callFunction` moves it
                     auto cb = callback;
-                    callFunction(req, cb, std::move(values)...);
+                    if constexpr (traits::isStreamHandler)
+                    {
+                        callFunction(req,
+                                     StreamContext::fromRequest(req),
+                                     cb,
+                                     std::move(values)...);
+                    }
+                    else
+                    {
+                        if (!isStreamMode(req))
+                        {
+                            callFunction(req, cb, std::move(values)...);
+                        }
+                        else
+                        {
+                            waitForFullBody(
+                                req,
+                                [this,
+                                 req,
+                                 cb = std::move(cb),
+                                 ... values = std::move(values)]() mutable {
+                                    callFunction(req, cb, std::move(values)...);
+                                });
+                        }
+                    }
                 }
                 catch (const std::exception &except)
                 {
@@ -359,6 +386,7 @@ class HttpBinder : public HttpBinderBase
 #ifdef __cpp_impl_coroutine
             else
             {
+                static_assert(!traits::isStreamHandler);
                 [this](HttpRequestPtr req,
                        std::function<void(const HttpResponsePtr &)> callback,
                        Values &&...values) -> AsyncTask {
@@ -411,7 +439,6 @@ class HttpBinder : public HttpBinderBase
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass,
-              bool isStreamHandler = traits::isStreamHandler,
               bool isNormal = std::is_same_v<typename traits::first_param_type,
                                              HttpRequestPtr>>
     typename traits::return_type callFunction(const HttpRequestPtr &req,
@@ -425,45 +452,18 @@ class HttpBinder : public HttpBinderBase
                 {
                     static auto &obj =
                         getControllerObj<typename traits::class_type>();
-                    if constexpr (isStreamHandler)
-                    {
-                        return (obj.*func_)(req,
-                                            StreamContext::fromRequest(req),
-                                            std::move(values)...);
-                    }
-                    else
-                    {
-                        return (obj.*func_)(req, std::move(values)...);
-                    }
+                    return (obj.*func_)(req, std::move(values)...);
                 }
                 else
                 {
                     static auto objPtr = DrClassMap::getSingleInstance<
                         typename traits::class_type>();
-                    if constexpr (isStreamHandler)
-                    {
-                        return (objPtr.*func_)(req,
-                                               StreamContext::fromRequest(req),
-                                               std::move(values)...);
-                    }
-                    else
-                    {
-                        return (objPtr.*func_)(req, std::move(values)...);
-                    }
+                    return (*objPtr.*func_)(req, std::move(values)...);
                 }
             }
             else
             {
-                if constexpr (isStreamHandler)
-                {
-                    return func_(req,
-                                 StreamContext::fromRequest(req),
-                                 std::move(values)...);
-                }
-                else
-                {
-                    return func_(req, std::move(values)...);
-                }
+                return func_(req, std::move(values)...);
             }
         }
         else

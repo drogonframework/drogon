@@ -1021,7 +1021,12 @@ void HttpRequestImpl::finishStream()
 {
     assert(loop_->isInLoopThread());
     assert(isStreamMode_);
+    assert(!isStreamFinished_);
     isStreamFinished_ = true;
+    if (streamFinishCb_)
+    {
+        streamFinishCb_();
+    }
     if (streamHandlerPtr_)
     {
         streamHandlerPtr_->onStreamFinish();
@@ -1038,4 +1043,21 @@ void HttpRequestImpl::streamError(std::exception_ptr ex)
     {
         streamExceptionPtr_ = std::move(ex);
     }
+    // TODO: call streamFinishCb_ ?
+}
+
+void HttpRequestImpl::waitForStreamFinish(std::function<void()> &&cb)
+{
+    assert(loop_->isInLoopThread());
+    if (!isStreamMode_)
+    {
+        cb();
+        return;
+    }
+    if (isStreamFinished_)
+    {
+        cb();
+        return;
+    }
+    streamFinishCb_ = std::move(cb);
 }
