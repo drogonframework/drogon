@@ -145,35 +145,39 @@ HttpStreamHandlerPtr HttpStreamHandler::newMultipartHandler(
 class StreamContextImpl : public StreamContext
 {
   public:
-    StreamContextImpl(HttpRequestImplPtr req) : req_(std::move(req))
+    StreamContextImpl(const HttpRequestImplPtr &req) : weakReq_(req)
     {
     }
 
     void setStreamHandler(HttpStreamHandlerPtr handler) override
     {
-        auto loop = req_->getLoop();
-        if (loop->isInLoopThread())
+        if (auto req = weakReq_.lock())
         {
-            req_->setStreamHandler(std::move(handler));
-        }
-        else
-        {
-            loop->queueInLoop(
-                [req = req_, handler = std::move(handler)]() mutable {
+            auto loop = req->getLoop();
+            if (loop->isInLoopThread())
+            {
+                req->setStreamHandler(std::move(handler));
+            }
+            else
+            {
+                loop->queueInLoop([req = std::move(req),
+                                   handler = std::move(handler)]() mutable {
                     req->setStreamHandler(std::move(handler));
                 });
+            }
         }
     }
 
   private:
-    HttpRequestImplPtr req_;
+    std::weak_ptr<HttpRequestImpl> weakReq_;
 };
 
 namespace internal
 {
 StreamContextPtr createStreamContext(const HttpRequestPtr &req)
 {
-    if (!static_cast<HttpRequestImpl *>(req.get())->isStreamMode())
+    auto reqImpl = std::static_pointer_cast<HttpRequestImpl>(req);
+    if (!reqImpl->isStreamMode())
     {
         return nullptr;
     }
