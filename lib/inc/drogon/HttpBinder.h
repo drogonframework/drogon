@@ -213,7 +213,30 @@ class HttpBinder : public HttpBinderBase
             }
             req->setRoutingParameters(std::move(args));
         }
-        run(pathArguments, req, std::move(callback));
+
+        if constexpr (traits::isStreamHandler)
+        {
+            run(pathArguments, req, std::move(callback));
+        }
+        else
+        {
+            if (isStreamMode(req))
+            {
+                waitForFullBody(req,
+                                [this,
+                                 req,
+                                 pathArguments = std::move(pathArguments),
+                                 callback = std::move(callback)]() mutable {
+                                    run(pathArguments,
+                                        req,
+                                        std::move(callback));
+                                });
+            }
+            else
+            {
+                run(pathArguments, req, std::move(callback));
+            }
+        }
     }
 
     size_t paramCount() override
@@ -357,22 +380,7 @@ class HttpBinder : public HttpBinderBase
                     }
                     else
                     {
-                        if (!isStreamMode(req))
-                        {
-                            callFunction(req, cb, std::move(values)...);
-                        }
-                        else
-                        {
-                            // TODO: we can not do this in c++17!!!
-                            waitForFullBody(
-                                req,
-                                [this,
-                                 req,
-                                 cb = std::move(cb),
-                                 ... values = std::move(values)]() mutable {
-                                    callFunction(req, cb, std::move(values)...);
-                                });
-                        }
+                        callFunction(req, cb, std::move(values)...);
                     }
                 }
                 catch (const std::exception &except)

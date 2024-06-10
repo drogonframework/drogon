@@ -50,6 +50,7 @@ void HttpControllerBinder::handleRequest(
 {
     auto &paramsVector = req->getRoutingParameters();
     std::deque<std::string> params(paramsVector.begin(), paramsVector.end());
+
     binderPtr_->handleHttpRequest(params, req, std::move(callback));
 }
 
