@@ -1053,7 +1053,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                         [TEST_CTX, req](ReqResult r,
                                         const HttpResponsePtr &resp) {
                             REQUIRE(r == ReqResult::Ok);
-                            CHECK(resp->body() == "123test321");
+                            CHECK(resp->body() == "1234test4321");
                         });
 
     req = HttpRequest::newHttpRequest();

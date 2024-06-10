@@ -14,6 +14,7 @@ class WebSocketChat : public drogon::WebSocketController<WebSocketChat>
                              const WebSocketConnectionPtr &) override;
     WS_PATH_LIST_BEGIN
     WS_PATH_ADD("/chat", Get);
+    WS_ADD_PATH_VIA_REGEX("/[^/]*", Get);
     WS_PATH_LIST_END
   private:
     PubSubService<std::string> chatRooms_;

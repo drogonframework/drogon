@@ -52,8 +52,16 @@ const SafeStringMap<std::string> &MultiPartParser::getParameters() const
 
 int MultiPartParser::parse(const HttpRequestPtr &req)
 {
-    if (req->method() != Post && req->method() != Put)
-        return -1;
+    switch (req->method())
+    {
+        case Post:
+        case Put:
+        case Patch:
+            break;
+        default:
+            return -1;
+    }
+
     const std::string &contentType =
         static_cast<HttpRequestImpl *>(req.get())->getHeaderBy("content-type");
     if (contentType.empty())

@@ -132,7 +132,8 @@ class MiddlewareTest : public drogon::HttpController<MiddlewareTest>
                   Get,
                   "Middleware1",
                   "Middleware2",
-                  "Middleware3");
+                  "Middleware3",
+                  "Middleware4");
     ADD_METHOD_TO(MiddlewareTest::handleRequest,
                   "/test-middleware-block",
                   Get,

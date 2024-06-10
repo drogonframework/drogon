@@ -618,6 +618,18 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &constraints = {}) = 0;
 
+    /// Register a WebSocketController into the framework.
+    /**
+     * The parameters of this method are the same as those in the
+     * registerHttpSimpleController() method but using regular
+     * expression string for path.
+     */
+    virtual HttpAppFramework &registerWebSocketControllerRegex(
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &constraints =
+            std::vector<internal::HttpConstraint>{}) = 0;
+
     /// Register controller objects created and initialized by the user
     /**
      * @details Drogon can only automatically create controllers using the
@@ -676,6 +688,24 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                       "automatically by drogon cannot be "
                       "registered here");
         DrClassMap::setSingleInstance(filterPtr);
+        return *this;
+    }
+
+    /// Register middleware objects created and initialized by the user
+    /**
+     * This method is similar to the above method.
+     */
+    template <typename T>
+    HttpAppFramework &registerMiddleware(
+        const std::shared_ptr<T> &middlewarePtr)
+    {
+        static_assert(std::is_base_of<HttpMiddlewareBase, T>::value,
+                      "Error! Only middleware objects can be registered here");
+        static_assert(!T::isAutoCreation,
+                      "Middleware created and initialized "
+                      "automatically by drogon cannot be "
+                      "registered here");
+        DrClassMap::setSingleInstance(middlewarePtr);
         return *this;
     }
 
