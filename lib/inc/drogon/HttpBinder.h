@@ -186,8 +186,9 @@ DROGON_EXPORT void handleException(
     const HttpRequestPtr &,
     std::function<void(const HttpResponsePtr &)> &&);
 
-bool isStreamMode(const HttpRequestPtr &);
-void waitForFullBody(const HttpRequestPtr &req, std::function<void()> &&cb);
+DROGON_EXPORT bool isStreamMode(const HttpRequestPtr &);
+DROGON_EXPORT void waitForFullBody(const HttpRequestPtr &req,
+                                   std::function<void()> &&cb);
 
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 
