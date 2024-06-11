@@ -14,8 +14,9 @@
 
 #include "MultipartStreamParser.h"
 
-drogon::MultipartStreamParser::MultipartStreamParser(
-    const std::string &contentType)
+using namespace drogon;
+
+MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
 {
     std::string::size_type pos = contentType.find(';');
     if (pos == std::string::npos)
@@ -115,23 +116,23 @@ void drogon::MultipartStreamParser::parse(
 {
     buffer_.append(data, length);
 
-    while (buffer_.readableBytes() > 0)
+    while (buffer_.size() > 0)
     {
         switch (status_)
         {
             case Status::kExpectFirstBoundary:
             {
-                std::string_view buf{buffer_.peek(), buffer_.readableBytes()};
-                auto pos = buf.find(dashBoundaryCrlf_);
+                std::string_view v = buffer_.view();
+                auto pos = v.find(dashBoundaryCrlf_);
                 // ignore everything before the first boundary
                 if (pos == std::string::npos)
                 {
-                    buffer_.retrieve(buffer_.readableBytes() -
-                                     dashBoundaryCrlf_.size() + 1);
+                    buffer_.eraseFront(buffer_.size() -
+                                       dashBoundaryCrlf_.size());
                     return;
                 }
                 // found
-                buffer_.retrieve(pos + dashBoundaryCrlf_.size());
+                buffer_.eraseFront(pos + dashBoundaryCrlf_.size());
                 status_ = Status::kExpectNewEntry;
                 continue;
             }
@@ -145,12 +146,12 @@ void drogon::MultipartStreamParser::parse(
             }
             case Status::kExpectHeader:
             {
-                std::string_view buf{buffer_.peek(), buffer_.readableBytes()};
-                auto pos = buf.find(crlf_);
+                std::string_view v = buffer_.view();
+                auto pos = v.find(crlf_);
                 if (pos == std::string::npos)
                 {
                     // same magic number in HttpRequestParser::parseRequest()
-                    if (buffer_.readableBytes() > 60 * 1024)
+                    if (buffer_.size() > 60 * 1024)
                     {
                         isValid_ = false;
                     }
@@ -159,16 +160,14 @@ void drogon::MultipartStreamParser::parse(
                 // empty line
                 if (pos == 0)
                 {
-                    buffer_.retrieve(crlf_.size());
+                    buffer_.eraseFront(crlf_.size());
                     status_ = Status::kExpectBody;
                     headerCb(currentHeader_);
                     continue;
                 }
-                // found header line
-                // parseHeaderLine(buf.substr(0, pos));
 
-                auto [keyView, valueView] =
-                    parseLine(buf.data(), buf.data() + pos);
+                // found header line
+                auto [keyView, valueView] = parseLine(v.data(), v.data() + pos);
                 if (keyView.empty() || valueView.empty())
                 {
                     // Bad header
@@ -176,17 +175,11 @@ void drogon::MultipartStreamParser::parse(
                     return;
                 }
 
-                std::string key(keyView);
-                std::transform(key.begin(),
-                               key.end(),
-                               key.begin(),
-                               [](unsigned char c) { return tolower(c); });
-
-                if (key == "content-type")
+                if (startsWithIgnoreCase(keyView, "content-type"))
                 {
                     currentHeader_.contentType = valueView;
                 }
-                else if (key == "content-disposition")
+                else if (startsWithIgnoreCase(keyView, "content-disposition"))
                 {
                     static const std::string_view nameKey = "name=";
                     static const std::string_view fileNameKey = "filename=";
@@ -240,59 +233,58 @@ void drogon::MultipartStreamParser::parse(
                     }
                 }
                 // ignore other headers
-                buffer_.retrieve(pos + crlf_.size());
+                buffer_.eraseFront(pos + crlf_.size());
                 continue;
             }
             case Status::kExpectBody:
             {
-                if (buffer_.readableBytes() < crlfDashBoundary_.size())
+                if (buffer_.size() < crlfDashBoundary_.size())
                 {
                     return;  // not enough data to check boundary
                 }
-                std::string_view buf(buffer_.peek(), buffer_.readableBytes());
-                auto pos = buf.find(crlfDashBoundary_);
+                std::string_view v = buffer_.view();
+                auto pos = v.find(crlfDashBoundary_);
                 if (pos == std::string::npos)
                 {
                     // boundary not found, leave potential partial boundary
-                    size_t len =
-                        buffer_.readableBytes() - crlfDashBoundary_.size();
+                    size_t len = v.size() - crlfDashBoundary_.size();
                     if (len > 0)
                     {
-                        dataCb(buffer_.peek(), len);
-                        buffer_.retrieve(len);
+                        dataCb(v.data(), len);
+                        buffer_.eraseFront(len);
                     }
                     return;
                 }
                 // found boundary
-                dataCb(buffer_.peek(), pos);
-                buffer_.retrieve(pos + crlfDashBoundary_.size());
+                dataCb(v.data(), pos);
+                buffer_.eraseFront(pos + crlfDashBoundary_.size());
                 status_ = Status::kExpectEndOrNewEntry;
                 continue;
             }
             case Status::kExpectEndOrNewEntry:
             {
-                if (buffer_.readableBytes() < crlf_.size())
+                std::string_view v = buffer_.view();
+                // Check new entry
+                if (v.size() < crlf_.size())
                 {
                     return;
                 }
-                // Check new entry
-                std::string_view buf(buffer_.peek(), buffer_.readableBytes());
-                if (startsWith(buf, crlf_))
+                if (startsWith(v, crlf_))
                 {
-                    buffer_.retrieve(crlf_.size());
+                    buffer_.eraseFront(crlf_.size());
                     status_ = Status::kExpectNewEntry;
                     continue;
                 }
 
                 // Check end
-                if (buffer_.readableBytes() < dash_.size())
+                if (v.size() < dash_.size())
                 {
                     return;
                 }
-                if (startsWith(buf, dash_))
+                if (startsWith(v, dash_))
                 {
                     isFinished_ = true;
-                    buffer_.retrieveAll();  // ignore epilogue
+                    buffer_.clear();  // ignore epilogue
                     return;
                 }
                 isValid_ = false;
@@ -300,4 +292,53 @@ void drogon::MultipartStreamParser::parse(
             }
         }
     }
+}
+
+std::string_view MultipartStreamParser::Buffer::view() const
+{
+    return {buffer_.data() + bufHead_, size()};
+}
+
+void MultipartStreamParser::Buffer::append(const char *data, size_t length)
+{
+    size_t remainSize = size();
+    // Move existing data to the front
+    if (remainSize > 0 && bufHead_ > 0)
+    {
+        for (size_t i = 0; i < remainSize; i++)
+        {
+            buffer_[i] = buffer_[bufHead_ + i];
+        }
+    }
+    bufHead_ = 0;
+    bufTail_ = remainSize;
+
+    if (remainSize + length > buffer_.size())
+    {
+        buffer_.resize(remainSize + length);
+    }
+
+    for (size_t i = 0; i < length; ++i)
+    {
+        buffer_[bufHead_ + i] = data[i];
+    }
+    bufTail_ += length;
+}
+
+size_t MultipartStreamParser::Buffer::size() const
+{
+    return bufTail_ - bufHead_;
+}
+
+void MultipartStreamParser::Buffer::eraseFront(size_t length)
+{
+    assert(length <= size());
+    bufHead_ += length;
+}
+
+void MultipartStreamParser::Buffer::clear()
+{
+    buffer_.clear();
+    bufHead_ = 0;
+    bufTail_ = 0;
 }

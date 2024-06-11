@@ -49,9 +49,20 @@ class MultipartStreamParser
     std::string dashBoundaryCrlf_;
     std::string crlfDashBoundary_;
 
-    // TODO: MsgBuffer is not suitable here. The underlying vector will keep
-    // growing.
-    trantor::MsgBuffer buffer_;
+    struct Buffer
+    {
+      public:
+        std::string_view view() const;
+        void append(const char *data, size_t length);
+        size_t size() const;
+        void eraseFront(size_t length);
+        void clear();
+
+      private:
+        std::vector<char> buffer_;
+        size_t bufHead_{0};
+        size_t bufTail_{0};
+    } buffer_;
 
     enum class Status
     {
