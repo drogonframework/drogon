@@ -45,6 +45,11 @@ class HttpRequestParser : public trantor::NonCopyable,
 
     int parseRequest(trantor::MsgBuffer *buf);
 
+    bool gotAll() const
+    {
+        return status_ == HttpRequestParseStatus::kGotAll;
+    }
+
     void reset();
 
     const HttpRequestImplPtr &requestImpl() const
