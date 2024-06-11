@@ -452,10 +452,13 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
     if (req->streamStatus() == HttpRequestImpl::StreamStatus::Open &&
         !pack.binderPtr->isStreamHandler())
     {
-        req->waitForStreamFinish(
-            [req, pack = std::forward<Pack>(pack)]() mutable {
+        req->waitForStreamFinish([weakReq = std::weak_ptr(req),
+                                  pack = std::forward<Pack>(pack)]() mutable {
+            if (auto req = weakReq.lock())
+            {
                 requestPostRouting(req, std::forward<Pack>(pack));
-            });
+            }
+        });
         return;
     }
 
