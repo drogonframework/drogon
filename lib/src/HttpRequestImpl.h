@@ -81,6 +81,11 @@ class HttpRequestImpl : public HttpRequest
         jsonParsingErrorPtr_.reset();
         peerCertificate_.reset();
         routingParams_.clear();
+        // stream
+        streamStatus_ = StreamStatus::None;
+        streamHandlerPtr_.reset();
+        streamFinishCb_ = nullptr;
+        streamExceptionPtr_ = nullptr;
     }
 
     trantor::EventLoop *getLoop()
