@@ -43,6 +43,17 @@ int main()
             }
             LOG_INFO << "Body: " << req->body();
 
+            if (!streamCtx)
+            {
+                LOG_ERROR << "Non-stream request enters stream handler, "
+                             "stream-mode may not be enabled";
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody("Stream mode error");
+                callback(resp);
+                return;
+            }
+
             HttpStreamHandlerPtr handler;
             LOG_INFO << "ContentTypeCode: " << req->contentType();
             if (req->contentType() != CT_MULTIPART_FORM_DATA)
