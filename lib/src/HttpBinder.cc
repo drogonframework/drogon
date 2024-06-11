@@ -32,16 +32,5 @@ bool isStreamMode(const HttpRequestPtr &req)
     return static_cast<HttpRequestImpl *>(req.get())->isStreamMode();
 }
 
-void waitForFullBody(const HttpRequestPtr &req, std::function<void()> &&cb)
-{
-    auto reqImpl = static_cast<HttpRequestImpl *>(req.get());
-    if (!reqImpl->isStreamMode())
-    {
-        cb();
-        return;
-    }
-    reqImpl->waitForStreamFinish(std::move(cb));
-}
-
 }  // namespace internal
 }  // namespace drogon

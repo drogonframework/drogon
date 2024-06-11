@@ -164,6 +164,7 @@ class HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual size_t paramCount() = 0;
     virtual const std::string &handlerName() const = 0;
+    virtual bool isStreamHandler() = 0;
 
     virtual ~HttpBinderBase()
     {
@@ -187,8 +188,6 @@ DROGON_EXPORT void handleException(
     std::function<void(const HttpResponsePtr &)> &&);
 
 DROGON_EXPORT bool isStreamMode(const HttpRequestPtr &);
-DROGON_EXPORT void waitForFullBody(const HttpRequestPtr &req,
-                                   std::function<void()> &&cb);
 
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 
@@ -214,35 +213,17 @@ class HttpBinder : public HttpBinderBase
             }
             req->setRoutingParameters(std::move(args));
         }
-
-        if constexpr (traits::isStreamHandler)
-        {
-            run(pathArguments, req, std::move(callback));
-        }
-        else
-        {
-            if (isStreamMode(req))
-            {
-                waitForFullBody(req,
-                                [this,
-                                 req,
-                                 pathArguments = std::move(pathArguments),
-                                 callback = std::move(callback)]() mutable {
-                                    run(pathArguments,
-                                        req,
-                                        std::move(callback));
-                                });
-            }
-            else
-            {
-                run(pathArguments, req, std::move(callback));
-            }
-        }
+        run(pathArguments, req, std::move(callback));
     }
 
     size_t paramCount() override
     {
         return traits::arity;
+    }
+
+    bool isStreamHandler() override
+    {
+        return traits::isStreamHandler;
     }
 
     HttpBinder(FUNCTION &&func) : func_(std::forward<FUNCTION>(func))
