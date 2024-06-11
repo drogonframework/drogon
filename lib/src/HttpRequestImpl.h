@@ -533,10 +533,22 @@ class HttpRequestImpl : public HttpRequest
     StreamDecompressStatus decompressBody();
 
     // Stream mode api
+    enum class StreamStatus
+    {
+        None = 0,
+        Open = 1,
+        Finish = 2,
+        Error = 3
+    };
     void setStreamHandler(HttpStreamHandlerPtr handler);
     void waitForStreamFinish(std::function<void()> &&cb);
     void finishStream();
     void streamError(std::exception_ptr ex);
+
+    StreamStatus streamStatus() const
+    {
+        return streamStatus_;
+    }
 
     bool isStreamMode() const
     {
@@ -644,13 +656,7 @@ class HttpRequestImpl : public HttpRequest
     bool passThrough_{false};
     std::vector<std::string> routingParams_;
 
-    enum class StreamStatus
-    {
-        None = 0,
-        Open = 1,
-        Finish = 2,
-        Error = 3
-    } streamStatus_{StreamStatus::None};
+    StreamStatus streamStatus_{StreamStatus::None};
     std::function<void()> streamFinishCb_;
     HttpStreamHandlerPtr streamHandlerPtr_;
     std::exception_ptr streamExceptionPtr_;

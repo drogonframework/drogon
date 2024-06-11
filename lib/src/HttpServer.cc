@@ -447,6 +447,18 @@ void HttpServer::httpRequestRouting(
 template <typename Pack>
 void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
 {
+    // Handle stream mode for non-stream handlers
+    // TODO: should stop processing if streamStatus is error?
+    if (req->streamStatus() == HttpRequestImpl::StreamStatus::Open &&
+        !pack.binderPtr->isStreamHandler())
+    {
+        req->waitForStreamFinish(
+            [req, pack = std::forward<Pack>(pack)]() mutable {
+                requestPostRouting(req, std::forward<Pack>(pack));
+            });
+        return;
+    }
+
     // post-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPostRoutingObservers(req);

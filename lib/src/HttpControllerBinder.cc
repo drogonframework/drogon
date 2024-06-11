@@ -50,22 +50,6 @@ void HttpControllerBinder::handleRequest(
 {
     auto &paramsVector = req->getRoutingParameters();
     std::deque<std::string> params(paramsVector.begin(), paramsVector.end());
-
-    if (req->isStreamMode() && !binderPtr_->isStreamHandler())
-    {
-        req->waitForStreamFinish([binderPtr = binderPtr_,
-                                  weakReq = std::weak_ptr<HttpRequestImpl>(req),
-                                  params = std::move(params),
-                                  callback = std::move(callback)]() mutable {
-            if (auto req = weakReq.lock())
-            {
-                binderPtr->handleHttpRequest(params,
-                                             weakReq.lock(),
-                                             std::move(callback));
-            }
-        });
-        return;
-    }
     binderPtr_->handleHttpRequest(params, req, std::move(callback));
 }
 
