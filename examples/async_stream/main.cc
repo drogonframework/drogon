@@ -54,6 +54,9 @@ int main()
                 return;
             }
 
+            auto callbackPtr =
+                std::make_shared<std::decay_t<decltype(callback)>>(
+                    std::move(callback));
             RequestStreamHandlerPtr handler;
             LOG_INFO << "ContentTypeCode: " << req->contentType();
             if (req->contentType() != CT_MULTIPART_FORM_DATA)
@@ -63,13 +66,13 @@ int main()
                         LOG_INFO << "piece[" << length
                                  << "]: " << std::string_view{data, length};
                     },
-                    [callback = std::move(callback)]() {
+                    [callbackPtr]() {
                         LOG_INFO << "stream finish";
                         auto resp = HttpResponse::newHttpResponse();
                         resp->setBody("success\n");
-                        callback(resp);
+                        (*callbackPtr)(resp);
                     },
-                    [](std::exception_ptr ex) {
+                    [callbackPtr](std::exception_ptr ex) {
                         try
                         {
                             std::rethrow_exception(std::move(ex));
@@ -78,6 +81,10 @@ int main()
                         {
                             LOG_ERROR << "stream error: " << e.what();
                         }
+                        auto resp = HttpResponse::newHttpResponse();
+                        resp->setStatusCode(k400BadRequest);
+                        resp->setBody("error\n");
+                        (*callbackPtr)(resp);
                     });
             }
             else
@@ -115,14 +122,14 @@ int main()
                             LOG_ERROR << "file not open";
                         }
                     },
-                    [files, callback = std::move(callback)]() {
+                    [files, callbackPtr]() {
                         LOG_INFO << "stream finish, received " << files->size()
                                  << " files";
                         auto resp = HttpResponse::newHttpResponse();
                         resp->setBody("success\n");
-                        callback(resp);
+                        (*callbackPtr)(resp);
                     },
-                    [](std::exception_ptr ex) {
+                    [callbackPtr](std::exception_ptr ex) {
                         try
                         {
                             std::rethrow_exception(std::move(ex));
@@ -131,6 +138,10 @@ int main()
                         {
                             LOG_ERROR << "stream error: " << e.what();
                         }
+                        auto resp = HttpResponse::newHttpResponse();
+                        resp->setStatusCode(k400BadRequest);
+                        resp->setBody("error\n");
+                        (*callbackPtr)(resp);
                     });
             }
             stream->setStreamHandler(std::move(handler));
