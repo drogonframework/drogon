@@ -917,21 +917,25 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             auto &f = std::get<WindowUpdateFrame>(frame);
             avaliableTxWindow += f.windowSizeIncrement;
 
-            if (currentDataSend.has_value() == false)
-                currentDataSend = pendingDataSend.begin();
-
-            auto it = *currentDataSend;
-            if (it == pendingDataSend.end())
+            // Find if we have a stream that can be resumed
+            if (currentDataSend.has_value() == false && pendingDataSend.empty())
                 continue;
 
-            do
+            auto it = currentDataSend.value_or(pendingDataSend.begin());
+            while (it != pendingDataSend.end())
             {
                 auto &stream = streams[it->first];
                 auto [sentOffset, done] = sendBodyForStream(stream, it->second);
                 if (done)
                 {
                     it = pendingDataSend.erase(it);
-                    currentDataSend = it;
+                    if (it != pendingDataSend.end())
+                        currentDataSend = it;
+                    else
+                    {
+                        currentDataSend = std::nullopt;
+                        break;
+                    }
                     continue;
                 }
                 it->second = sentOffset;
@@ -942,7 +946,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 }
                 else
                     break;
-            } while (it != pendingDataSend.end());
+            }
         }
         else if (std::holds_alternative<SettingsFrame>(frame))
         {
@@ -1300,9 +1304,14 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         {
             bool should_increment = currentDataSend.has_value() &&
                                     (*currentDataSend)->second == streamId;
-            auto next = pendingDataSend.erase(it);
             if (should_increment)
-                currentDataSend = next;
+            {
+                auto next = pendingDataSend.erase(it);
+                if (next != pendingDataSend.end())
+                    currentDataSend = next;
+                else
+                    currentDataSend = std::nullopt;
+            }
         }
         else
             it->second = sentOffset;
