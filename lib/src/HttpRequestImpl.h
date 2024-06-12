@@ -540,10 +540,6 @@ class HttpRequestImpl : public HttpRequest
         Finish = 2,
         Error = 3
     };
-    void setStreamHandler(RequestStreamHandlerPtr handler);
-    void waitForStreamFinish(std::function<void()> &&cb);
-    void finishStream();
-    void streamError(std::exception_ptr ex);
 
     StreamStatus streamStatus() const
     {
@@ -555,11 +551,13 @@ class HttpRequestImpl : public HttpRequest
         return streamStatus_ > StreamStatus::None;
     }
 
-    void enterStreamMode()
-    {
-        assert(streamStatus_ == StreamStatus::None);
-        streamStatus_ = StreamStatus::Open;
-    }
+    void streamStart();
+    void streamFinish();
+    void streamError(std::exception_ptr ex);
+    void streamRelease();
+
+    void setStreamHandler(RequestStreamHandlerPtr handler);
+    void waitForStreamFinish(std::function<void()> &&cb);
 
     ~HttpRequestImpl() override;
 

@@ -204,7 +204,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             assert(requestParser->gotAll());
             if (req->isStreamMode())
             {
-                req->finishStream();
+                req->streamFinish();
             }
             requestParser->reset();
         }

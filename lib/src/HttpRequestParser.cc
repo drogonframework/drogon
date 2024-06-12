@@ -353,7 +353,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // TODO: how to enable stream mode only for wanted requests?
                 if (app().isStreamRequestEnabled())
                 {
-                    request_->enterStreamMode();
+                    request_->streamStart();
                     return 2;
                 }
                 continue;

@@ -27,10 +27,5 @@ void handleException(const std::exception &e,
     app().getExceptionHandler()(e, req, std::move(callback));
 }
 
-bool isStreamMode(const HttpRequestPtr &req)
-{
-    return static_cast<HttpRequestImpl *>(req.get())->isStreamMode();
-}
-
 }  // namespace internal
 }  // namespace drogon

@@ -187,8 +187,6 @@ DROGON_EXPORT void handleException(
     const HttpRequestPtr &,
     std::function<void(const HttpResponsePtr &)> &&);
 
-DROGON_EXPORT bool isStreamMode(const HttpRequestPtr &);
-
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 
 template <typename FUNCTION>

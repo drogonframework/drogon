@@ -1023,7 +1023,13 @@ void HttpRequestImpl::setStreamHandler(RequestStreamHandlerPtr handler)
     }
 }
 
-void HttpRequestImpl::finishStream()
+void HttpRequestImpl::streamStart()
+{
+    assert(streamStatus_ == StreamStatus::None);
+    streamStatus_ = StreamStatus::Open;
+}
+
+void HttpRequestImpl::streamFinish()
 {
     assert(loop_->isInLoopThread());
     assert(streamStatus_ == StreamStatus::Open);
@@ -1059,6 +1065,11 @@ void HttpRequestImpl::streamError(std::exception_ptr ex)
     // TODO: call streamFinishCb_ ?
 }
 
+void HttpRequestImpl::streamRelease()
+{
+    // TODO
+}
+
 void HttpRequestImpl::waitForStreamFinish(std::function<void()> &&cb)
 {
     assert(loop_->isInLoopThread());
@@ -1066,6 +1077,7 @@ void HttpRequestImpl::waitForStreamFinish(std::function<void()> &&cb)
 
     if (streamStatus_ == StreamStatus::Open)
     {
+        assert(!streamFinishCb_);  // should only be called once
         streamFinishCb_ = std::move(cb);
     }
     else if (streamStatus_ == StreamStatus::Finish)
