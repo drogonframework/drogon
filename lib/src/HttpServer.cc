@@ -181,6 +181,14 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 req->streamError(
                     std::make_exception_ptr(std::runtime_error("Bad request")));
             }
+
+            HttpStatusCode code = requestParser->getErrorStatusCode();
+            conn->send(utils::formattedString(
+                "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
+                code,
+                statusCodeToString(code).data()));
+            conn->shutdown();
+
             requestParser->reset();
             conn->forceClose();
             return;

@@ -135,9 +135,14 @@ class HttpRequestParser : public trantor::NonCopyable,
         return *requestBuffer_;
     }
 
+    // Last parse error
+    HttpStatusCode getErrorStatusCode() const
+    {
+        return errorStatusCode_;
+    }
+
   private:
     HttpRequestImplPtr makeRequestForPool(HttpRequestImpl *p);
-    void shutdownConnection(HttpStatusCode code);
     bool processRequestLine(const char *begin, const char *end);
     HttpRequestParseStatus status_;
     trantor::EventLoop *loop_;
@@ -156,6 +161,7 @@ class HttpRequestParser : public trantor::NonCopyable,
     std::vector<HttpRequestImplPtr> requestsPool_;
     size_t currentChunkLength_{0};
     size_t currentContentLength_{0};
+    HttpStatusCode errorStatusCode_{HttpStatusCode::k500InternalServerError};
 };
 
 }  // namespace drogon
