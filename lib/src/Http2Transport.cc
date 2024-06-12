@@ -3,6 +3,7 @@
 #include "drogon/utils/Utilities.h"
 #include "hpack.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
@@ -1432,8 +1433,8 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
     bool sendEverything = maxSendSize == size;
 
-    size_t i = 0;
-    for (i = 0; i < maxSendSize; i += maxFrameSize)
+    size_t sent = 0;
+    for (size_t i = 0; i < maxSendSize; i += maxFrameSize)
     {
         size_t remaining = maxSendSize - i;
         size_t readSize = (std::min)(maxFrameSize, remaining);
@@ -1442,13 +1443,13 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
         DataFrame dataFrame(sendData, endStream);
         LOG_TRACE << "Sending data frame: size=" << readSize
                   << " endStream=" << dataFrame.endStream;
+        sent += readSize;
         sendFrame(dataFrame, streamId);
 
         stream.avaliableTxWindow -= readSize;
         avaliableTxWindow -= readSize;
     }
-    i = (std::min)(i, size);
-    return {i, sendEverything};
+    return {sent, sendEverything};
 }
 
 std::pair<size_t, bool> Http2Transport::sendBodyForStream(
