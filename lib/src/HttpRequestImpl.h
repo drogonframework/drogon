@@ -94,6 +94,7 @@ class HttpRequestImpl : public HttpRequest
         streamHandlerPtr_.reset();
         streamFinishCb_ = nullptr;
         streamExceptionPtr_ = nullptr;
+        startProcessing_ = false;
     }
 
     trantor::EventLoop *getLoop()
