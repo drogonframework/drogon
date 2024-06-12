@@ -268,10 +268,10 @@ set(DROGON_SOURCES
     lib/src/HttpFileUploadRequest.cc
     lib/src/HttpRequestImpl.cc
     lib/src/HttpRequestParser.cc
+    lib/src/RequestStream.cc
     lib/src/HttpResponseImpl.cc
     lib/src/HttpResponseParser.cc
     lib/src/HttpServer.cc
-    lib/src/HttpStreamHandler.cc
     lib/src/HttpUtils.cc
     lib/src/HttpViewData.cc
     lib/src/IntranetIpFilter.cc
@@ -562,9 +562,9 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpFilter.h
     lib/inc/drogon/HttpMiddleware.h
     lib/inc/drogon/HttpRequest.h
+    lib/inc/drogon/RequestStream.h
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h
-    lib/inc/drogon/HttpStreamHandler.h
     lib/inc/drogon/HttpTypes.h
     lib/inc/drogon/HttpViewData.h
     lib/inc/drogon/IntranetIpFilter.h

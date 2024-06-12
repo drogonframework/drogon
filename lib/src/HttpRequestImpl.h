@@ -18,7 +18,7 @@
 #include "CacheFile.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
-#include <drogon/HttpStreamHandler.h>
+#include <drogon/RequestStream.h>
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/InetAddress.h>
@@ -540,7 +540,7 @@ class HttpRequestImpl : public HttpRequest
         Finish = 2,
         Error = 3
     };
-    void setStreamHandler(HttpStreamHandlerPtr handler);
+    void setStreamHandler(RequestStreamHandlerPtr handler);
     void waitForStreamFinish(std::function<void()> &&cb);
     void finishStream();
     void streamError(std::exception_ptr ex);
@@ -658,7 +658,7 @@ class HttpRequestImpl : public HttpRequest
 
     StreamStatus streamStatus_{StreamStatus::None};
     std::function<void()> streamFinishCb_;
-    HttpStreamHandlerPtr streamHandlerPtr_;
+    RequestStreamHandlerPtr streamHandlerPtr_;
     std::exception_ptr streamExceptionPtr_;
 
   protected:

@@ -34,7 +34,7 @@ int main()
     app().registerHandler(
         "/stream_req",
         [](const HttpRequestPtr &req,
-           const StreamContextPtr &streamCtx,
+           RequestStreamPtr &&stream,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             LOG_INFO << "Headers:";
             for (auto &[k, v] : req->headers())
@@ -43,9 +43,9 @@ int main()
             }
             LOG_INFO << "Body: " << req->body();
 
-            if (!streamCtx)
+            if (!stream)
             {
-                LOG_INFO << "Empty StreamContext, the request does not have a "
+                LOG_INFO << "Empty RequestStream, the request does not have a "
                             "body, or stream-mode is not enabled";
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k400BadRequest);
@@ -54,11 +54,11 @@ int main()
                 return;
             }
 
-            HttpStreamHandlerPtr handler;
+            RequestStreamHandlerPtr handler;
             LOG_INFO << "ContentTypeCode: " << req->contentType();
             if (req->contentType() != CT_MULTIPART_FORM_DATA)
             {
-                handler = HttpStreamHandler::newHandler(
+                handler = RequestStreamHandler::newHandler(
                     [](const char *data, size_t length) {
                         LOG_INFO << "piece[" << length
                                  << "]: " << std::string_view{data, length};
@@ -89,7 +89,7 @@ int main()
                 };
 
                 auto files = std::make_shared<std::vector<File>>();
-                handler = HttpStreamHandler::newMultipartHandler(
+                handler = RequestStreamHandler::newMultipartHandler(
                     req,
                     [files](MultipartHeader &&header) {
                         LOG_INFO << "Multipart name: " << header.name
@@ -133,7 +133,7 @@ int main()
                         }
                     });
             }
-            streamCtx->setStreamHandler(std::move(handler));
+            stream->setStreamHandler(std::move(handler));
         },
         {Post});
 

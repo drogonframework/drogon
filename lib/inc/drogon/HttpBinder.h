@@ -356,7 +356,7 @@ class HttpBinder : public HttpBinderBase
                     if constexpr (isStreamHandler)
                     {
                         callFunction(req,
-                                     createStreamContext(req),
+                                     createRequestStream(req),
                                      cb,
                                      std::move(values)...);
                     }

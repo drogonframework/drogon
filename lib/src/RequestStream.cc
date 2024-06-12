@@ -1,6 +1,6 @@
 /**
  *
- *  @file HttpStreamHandler.cc
+ *  @file RequestStreamHandler.cc
  *  @author Nitromelon
  *
  *  Copyright 2024, Nitromelon.  All rights reserved.
@@ -15,7 +15,7 @@
 #include "MultipartStreamParser.h"
 #include "HttpRequestImpl.h"
 
-#include <drogon/HttpStreamHandler.h>
+#include <drogon/RequestStream.h>
 #include <variant>
 
 namespace drogon
@@ -23,7 +23,7 @@ namespace drogon
 /**
  * A default implementation for convenience
  */
-class DefaultStreamHandler : public HttpStreamHandler
+class DefaultStreamHandler : public RequestStreamHandler
 {
   public:
     DefaultStreamHandler(StreamDataCallback dataCb,
@@ -59,7 +59,7 @@ class DefaultStreamHandler : public HttpStreamHandler
 /**
  * Parse multipart data and return actual content
  */
-class MultipartStreamHandler : public HttpStreamHandler
+class MultipartStreamHandler : public RequestStreamHandler
 {
   public:
     MultipartStreamHandler(const std::string &contentType,
@@ -117,7 +117,7 @@ class MultipartStreamHandler : public HttpStreamHandler
     StreamErrorCallback errorCb_;
 };
 
-HttpStreamHandlerPtr HttpStreamHandler::newHandler(
+RequestStreamHandlerPtr RequestStreamHandler::newHandler(
     StreamDataCallback dataCb,
     StreamFinishCallback finishCb,
     StreamErrorCallback errorCb)
@@ -127,7 +127,7 @@ HttpStreamHandlerPtr HttpStreamHandler::newHandler(
                                                   std::move(errorCb));
 }
 
-HttpStreamHandlerPtr HttpStreamHandler::newMultipartHandler(
+RequestStreamHandlerPtr RequestStreamHandler::newMultipartHandler(
     const HttpRequestPtr &req,
     MultipartHeaderCallback headerCb,
     StreamDataCallback dataCb,
@@ -142,14 +142,14 @@ HttpStreamHandlerPtr HttpStreamHandler::newMultipartHandler(
                                                     std::move(errorCb));
 }
 
-class StreamContextImpl : public StreamContext
+class RequestStreamImpl : public RequestStream
 {
   public:
-    StreamContextImpl(const HttpRequestImplPtr &req) : weakReq_(req)
+    RequestStreamImpl(const HttpRequestImplPtr &req) : weakReq_(req)
     {
     }
 
-    void setStreamHandler(HttpStreamHandlerPtr handler) override
+    void setStreamHandler(RequestStreamHandlerPtr handler) override
     {
         if (auto req = weakReq_.lock())
         {
@@ -174,14 +174,14 @@ class StreamContextImpl : public StreamContext
 
 namespace internal
 {
-StreamContextPtr createStreamContext(const HttpRequestPtr &req)
+RequestStreamPtr createRequestStream(const HttpRequestPtr &req)
 {
     auto reqImpl = std::static_pointer_cast<HttpRequestImpl>(req);
     if (!reqImpl->isStreamMode())
     {
         return nullptr;
     }
-    return std::make_shared<StreamContextImpl>(
+    return std::make_shared<RequestStreamImpl>(
         std::static_pointer_cast<HttpRequestImpl>(req));
 }
 }  // namespace internal

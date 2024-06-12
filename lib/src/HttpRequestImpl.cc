@@ -986,7 +986,7 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyGzip() noexcept
     return status;
 }
 
-void HttpRequestImpl::setStreamHandler(HttpStreamHandlerPtr handler)
+void HttpRequestImpl::setStreamHandler(RequestStreamHandlerPtr handler)
 {
     assert(loop_->isInLoopThread());
     assert(!streamHandlerPtr_);

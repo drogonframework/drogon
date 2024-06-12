@@ -1,6 +1,6 @@
 /**
  *
- *  @file HttpStreamHandler.h
+ *  @file RequestStream.h
  *  @author Nitromelon
  *
  *  Copyright 2024, Nitromelon.  All rights reserved.
@@ -12,6 +12,7 @@
  *
  */
 #pragma once
+#include <drogon/exports.h>
 #include <memory>
 #include <functional>
 
@@ -20,8 +21,8 @@ namespace drogon
 class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 
-class HttpStreamHandler;
-using HttpStreamHandlerPtr = std::shared_ptr<HttpStreamHandler>;
+class RequestStreamHandler;
+using RequestStreamHandlerPtr = std::shared_ptr<RequestStreamHandler>;
 
 struct MultipartHeader
 {
@@ -30,18 +31,17 @@ struct MultipartHeader
     std::string contentType;
 };
 
-class StreamContext;
-using StreamContextPtr = std::shared_ptr<StreamContext>;
-
-class StreamContext
+class DROGON_EXPORT RequestStream
 {
   public:
-    virtual void setStreamHandler(HttpStreamHandlerPtr handler) = 0;
+    virtual void setStreamHandler(RequestStreamHandlerPtr handler) = 0;
 };
+
+using RequestStreamPtr = std::shared_ptr<RequestStream>;
 
 namespace internal
 {
-StreamContextPtr createStreamContext(const HttpRequestPtr &req);
+DROGON_EXPORT RequestStreamPtr createRequestStream(const HttpRequestPtr &req);
 }
 
 /**
@@ -55,12 +55,12 @@ StreamContextPtr createStreamContext(const HttpRequestPtr &req);
 
 /**
  * An interface for stream request handling.
- * User should create an implementation class.
+ * User should create an implementation class, or use built-in handlers
  */
-class HttpStreamHandler
+class RequestStreamHandler
 {
   public:
-    virtual ~HttpStreamHandler() = default;
+    virtual ~RequestStreamHandler() = default;
     virtual void onStreamData(const char *, size_t) = 0;
     virtual void onStreamFinish() = 0;
     virtual void onStreamError(std::exception_ptr) = 0;
@@ -70,13 +70,13 @@ class HttpStreamHandler
     using StreamErrorCallback = std::function<void(std::exception_ptr)>;
 
     // Create a handler with default implementation
-    static HttpStreamHandlerPtr newHandler(StreamDataCallback dataCb,
-                                           StreamFinishCallback finishCb,
-                                           StreamErrorCallback errorCb);
+    static RequestStreamHandlerPtr newHandler(StreamDataCallback dataCb,
+                                              StreamFinishCallback finishCb,
+                                              StreamErrorCallback errorCb);
 
     using MultipartHeaderCallback = std::function<void(MultipartHeader header)>;
 
-    static HttpStreamHandlerPtr newMultipartHandler(
+    static RequestStreamHandlerPtr newMultipartHandler(
         const HttpRequestPtr &req,
         MultipartHeaderCallback headerCb,
         StreamDataCallback dataCb,

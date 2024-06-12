@@ -15,7 +15,7 @@
 #pragma once
 
 #include <drogon/DrObject.h>
-#include <drogon/HttpStreamHandler.h>
+#include <drogon/RequestStream.h>
 #include <functional>
 #include <memory>
 #include <tuple>
@@ -110,7 +110,7 @@ struct FunctionTraits<
 template <typename ReturnType, typename... Arguments>
 struct FunctionTraits<
     ReturnType (*)(const HttpRequestPtr &req,
-                   const StreamContextPtr &streamCtx,
+                   RequestStreamPtr &&streamCtx,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {

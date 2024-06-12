@@ -18,7 +18,7 @@
 #include <deque>
 
 #include <trantor/utils/MsgBuffer.h>
-#include <drogon/HttpStreamHandler.h>  // TODO
+#include <drogon/RequestStream.h>  // TODO
 
 namespace drogon
 {
@@ -29,8 +29,8 @@ class MultipartStreamParser
 
     void parse(const char *data,
                size_t length,
-               const HttpStreamHandler::MultipartHeaderCallback &headerCb,
-               const HttpStreamHandler::StreamDataCallback &dataCb);
+               const RequestStreamHandler::MultipartHeaderCallback &headerCb,
+               const RequestStreamHandler::StreamDataCallback &dataCb);
 
     bool isFinished() const
     {
