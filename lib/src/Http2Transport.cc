@@ -1433,9 +1433,9 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     bool sendEverything = maxSendSize == size;
 
     size_t i = 0;
-    for (i = 0; i < size; i += maxFrameSize)
+    for (i = 0; i < maxSendSize; i += maxFrameSize)
     {
-        size_t remaining = size - i;
+        size_t remaining = maxSendSize - i;
         size_t readSize = (std::min)(maxFrameSize, remaining);
         bool endStream = sendEverything && i + maxFrameSize >= size;
         const std::string_view sendData((const char *)data + i, readSize);
