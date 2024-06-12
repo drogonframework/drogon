@@ -402,9 +402,13 @@ std::optional<PushPromiseFrame> PushPromiseFrame::parse(ByteStream &payload,
     auto [_, promisedStreamId] = payload.readBI31BE();
     frame.promisedStreamId = promisedStreamId;
     assert(payload.remaining() >= frame.padLength);
-    frame.headerBlockFragment.resize(payload.remaining() - frame.padLength);
-    payload.read(frame.headerBlockFragment.data(),
-                 frame.headerBlockFragment.size());
+    size_t payloadSize = payload.remaining() - frame.padLength;
+    if (payloadSize != 0)
+    {
+        frame.headerBlockFragment.resize(payloadSize);
+        payload.read(frame.headerBlockFragment.data(),
+                     frame.headerBlockFragment.size());
+    }
     payload.skip(frame.padLength);
     return frame;
 }

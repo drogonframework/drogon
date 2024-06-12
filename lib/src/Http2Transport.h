@@ -84,19 +84,6 @@ struct ByteStream
         offset += size;
     }
 
-    void read(std::vector<uint8_t> &buffer, size_t size)
-    {
-        buffer.resize(buffer.size() + size);
-        read(buffer.data(), size);
-    }
-
-    std::vector<uint8_t> read(size_t size)
-    {
-        std::vector<uint8_t> buffer;
-        read(buffer, size);
-        return buffer;
-    }
-
     void skip(size_t n)
     {
         assert((length >= n && offset <= length - n) || n == 0);
