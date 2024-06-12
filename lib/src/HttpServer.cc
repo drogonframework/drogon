@@ -134,6 +134,7 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
             }
             else if (requestParser->requestImpl()->isStreamMode())
             {
+                // TODO: use custom exception class
                 requestParser->requestImpl()->streamError(
                     std::make_exception_ptr(
                         std::runtime_error("Connection closed")));
@@ -175,22 +176,35 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         int parseRes = requestParser->parseRequest(buf);
         if (parseRes < 0)
         {
-            // TODO: we should let user send response in stream mode
-            if (req->isStreamMode())
+            if (req->isStreamMode() && req->isProcessingStarted())
             {
+                // After entering stream mode, if request matches a non-stream
+                // handler, stream error would be intercepted by the
+                // `waitForStreamFinish()` call.
+                // If request matches a stream handler, stream error should be
+                // captured by user provided StreamHandler, and response should
+                // also be sent by user.
+                // TODO: use custom exception class
                 req->streamError(
                     std::make_exception_ptr(std::runtime_error("Bad request")));
             }
-
-            HttpStatusCode code = requestParser->getErrorStatusCode();
-            conn->send(utils::formattedString(
-                "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
-                code,
-                statusCodeToString(code).data()));
+            else
+            {
+                // In non-stream mode, request won't be process until it's fully
+                // parsed. To keep the old behavior, we send response directly
+                // through conn. (This response won't go through pre-sending
+                // aop, maybe we should change this behavior).
+                HttpStatusCode code = requestParser->getErrorStatusCode();
+                conn->send(utils::formattedString(
+                    "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
+                    code,
+                    statusCodeToString(code).data()));
+            }
+            // NOTE: should we call conn->forceClose() instead?
+            // Calling shutdown() handles socket more elegantly (we should be
+            // sure that trantor send FIN correctly).
             conn->shutdown();
-
             requestParser->reset();
-            conn->forceClose();
             return;
         }
         if (parseRes == 0)
@@ -257,6 +271,7 @@ void HttpServer::onRequests(
         isWebSocket(requests[0]))
     {
         auto &req = requests[0];
+        req->startProcessing();
         if (passSyncAdvices(req,
                             requestParser,
                             false /* Not pipelined */,
@@ -322,6 +337,7 @@ void HttpServer::onRequests(
 
     for (auto &req : requests)
     {
+        req->startProcessing();
         bool isHeadMethod = (req->method() == Head);
         if (isHeadMethod)
         {
@@ -464,17 +480,16 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
         LOG_TRACE << "Wait for request stream finish";
         req->waitForStreamFinish([weakReq = std::weak_ptr(req),
                                   pack = std::forward<Pack>(pack)]() mutable {
-            if (auto req = weakReq.lock())
+            auto req = weakReq.lock();
+            if (!req)
+                return;
+            if (req->streamStatus() == ReqStreamStatus::Finish)
             {
-                if (req->streamStatus() == ReqStreamStatus::Finish)
-                {
-                    requestPostRouting(req, std::forward<Pack>(pack));
-                }
-                else
-                {
-                    LOG_DEBUG << "Stop processing request due to stream error";
-                }
+                requestPostRouting(req, std::forward<Pack>(pack));
+                return;
             }
+            LOG_DEBUG << "Stop processing request due to stream error";
+            pack.callback(app().getCustomErrorHandler()(k400BadRequest, req));
         });
         return;
     }

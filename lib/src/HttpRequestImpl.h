@@ -559,6 +559,16 @@ class HttpRequestImpl : public HttpRequest
     void setStreamHandler(RequestStreamHandlerPtr handler);
     void waitForStreamFinish(std::function<void()> &&cb);
 
+    void startProcessing()
+    {
+        startProcessing_ = true;
+    }
+
+    bool isProcessingStarted() const
+    {
+        return startProcessing_;
+    }
+
     ~HttpRequestImpl() override;
 
   protected:
@@ -658,6 +668,7 @@ class HttpRequestImpl : public HttpRequest
     std::function<void()> streamFinishCb_;
     RequestStreamHandlerPtr streamHandlerPtr_;
     std::exception_ptr streamExceptionPtr_;
+    bool startProcessing_{false};
 
   protected:
     std::string content_;
