@@ -278,11 +278,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         // request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
                         ++requestsCounter_;
-                        if (app().isStreamRequestEnabled())
-                        {
-                            request_->enterStreamMode();
-                            return 2;
-                        }
                         return 1;
                     }
                     else if (encode == "chunked")

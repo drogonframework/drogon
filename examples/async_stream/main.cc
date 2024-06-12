@@ -45,11 +45,11 @@ int main()
 
             if (!streamCtx)
             {
-                LOG_ERROR << "Non-stream request enters stream handler, "
-                             "stream-mode may not be enabled";
+                LOG_INFO << "Empty StreamContext, the request does not have a "
+                            "body, or stream-mode is not enabled";
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k500InternalServerError);
-                resp->setBody("Stream mode error");
+                resp->setStatusCode(k400BadRequest);
+                resp->setBody("no stream");
                 callback(resp);
                 return;
             }
@@ -138,5 +138,6 @@ int main()
         {Post});
 
     LOG_INFO << "Server running on 127.0.0.1:8848";
+    app().setLogLevel(trantor::Logger::kTrace);
     app().enableStreamRequest().addListener("127.0.0.1", 8848).run();
 }
