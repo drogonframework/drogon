@@ -457,15 +457,23 @@ template <typename Pack>
 void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
 {
     // Handle stream mode for non-stream handlers
-    // TODO: should stop processing if streamStatus is error?
-    if (req->streamStatus() == HttpRequestImpl::StreamStatus::Open &&
+    if (req->streamStatus() >= ReqStreamStatus::Open &&
+        req->streamStatus() != ReqStreamStatus::Finish &&
         !pack.binderPtr->isStreamHandler())
     {
+        LOG_TRACE << "Wait for request stream finish";
         req->waitForStreamFinish([weakReq = std::weak_ptr(req),
                                   pack = std::forward<Pack>(pack)]() mutable {
             if (auto req = weakReq.lock())
             {
-                requestPostRouting(req, std::forward<Pack>(pack));
+                if (req->streamStatus() == ReqStreamStatus::Finish)
+                {
+                    requestPostRouting(req, std::forward<Pack>(pack));
+                }
+                else
+                {
+                    LOG_DEBUG << "Stop processing request due to stream error";
+                }
             }
         });
         return;

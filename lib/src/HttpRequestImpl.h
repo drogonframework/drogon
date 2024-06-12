@@ -43,6 +43,14 @@ enum class StreamDecompressStatus
     Ok
 };
 
+enum class ReqStreamStatus
+{
+    None = 0,
+    Open = 1,
+    Finish = 2,
+    Error = 3
+};
+
 class HttpRequestImpl : public HttpRequest
 {
   public:
@@ -82,7 +90,7 @@ class HttpRequestImpl : public HttpRequest
         peerCertificate_.reset();
         routingParams_.clear();
         // stream
-        streamStatus_ = StreamStatus::None;
+        streamStatus_ = ReqStreamStatus::None;
         streamHandlerPtr_.reset();
         streamFinishCb_ = nullptr;
         streamExceptionPtr_ = nullptr;
@@ -533,22 +541,14 @@ class HttpRequestImpl : public HttpRequest
     StreamDecompressStatus decompressBody();
 
     // Stream mode api
-    enum class StreamStatus
-    {
-        None = 0,
-        Open = 1,
-        Finish = 2,
-        Error = 3
-    };
-
-    StreamStatus streamStatus() const
+    ReqStreamStatus streamStatus() const
     {
         return streamStatus_;
     }
 
     bool isStreamMode() const
     {
-        return streamStatus_ > StreamStatus::None;
+        return streamStatus_ > ReqStreamStatus::None;
     }
 
     void streamStart();
@@ -654,7 +654,7 @@ class HttpRequestImpl : public HttpRequest
     bool passThrough_{false};
     std::vector<std::string> routingParams_;
 
-    StreamStatus streamStatus_{StreamStatus::None};
+    ReqStreamStatus streamStatus_{ReqStreamStatus::None};
     std::function<void()> streamFinishCb_;
     RequestStreamHandlerPtr streamHandlerPtr_;
     std::exception_ptr streamExceptionPtr_;
