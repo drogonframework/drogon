@@ -201,9 +201,11 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                     statusCodeToString(code).data()));
             }
             // NOTE: should we call conn->forceClose() instead?
-            // Calling shutdown() handles socket more elegantly (we should be
-            // sure that trantor send FIN correctly).
+            // Calling shutdown() handles socket more elegantly.
             conn->shutdown();
+            // We have to call clearContext() here in order to ignore following
+            // illegal data from client
+            conn->clearContext();
             requestParser->reset();
             return;
         }
