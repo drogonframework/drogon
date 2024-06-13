@@ -1039,9 +1039,9 @@ char *getHttpFullDate(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    date.toCustomedFormattedString("%a, %d %b %Y %H:%M:%S GMT",
-                                   lastTimeString,
-                                   sizeof(lastTimeString));
+    date.toCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
+                                 lastTimeString,
+                                 sizeof(lastTimeString));
     return lastTimeString;
 }
 
