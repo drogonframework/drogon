@@ -88,7 +88,7 @@ DROGON_TEST(MultiPartStreamParser)
 
         auto entries = std::make_shared<std::vector<Entry>>();
         auto headerCb = [TEST_CTX, entries](drogon::MultipartHeader hdr) {
-            entries->emplace_back(std::move(hdr), "", "");
+            entries->emplace_back(Entry{std::move(hdr)});
         };
         auto dataCb = [TEST_CTX, entries](const char *data, size_t length) {
             MANDATE(!entries->empty());
