@@ -31,6 +31,58 @@ int main()
             callback(resp);
         });
 
+    class StreamEchoHandler : public RequestStreamHandler
+    {
+      public:
+        StreamEchoHandler(ResponseStreamPtr respStream)
+            : respStream_(std::move(respStream))
+        {
+        }
+
+        void onStreamData(const char *data, size_t length) override
+        {
+            LOG_INFO << "onStreamData[" << length << "]";
+            respStream_->send({data, length});
+        }
+
+        void onStreamFinish() override
+        {
+            LOG_INFO << "onStreamFinish";
+            respStream_->close();
+        }
+
+        void onStreamError(std::exception_ptr ptr) override
+        {
+            try
+            {
+                std::rethrow_exception(ptr);
+            }
+            catch (const std::exception &e)
+            {
+                LOG_ERROR << "onStreamError: " << e.what();
+            }
+            respStream_->close();
+        }
+
+      private:
+        ResponseStreamPtr respStream_;
+    };
+
+    app().registerHandler(
+        "/stream_echo",
+        [](const HttpRequestPtr &req,
+           RequestStreamPtr &&stream,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            auto resp = drogon::HttpResponse::newAsyncStreamResponse(
+                [stream](ResponseStreamPtr respStream) {
+                    auto reqStreamHandler = std::make_shared<StreamEchoHandler>(
+                        std::move(respStream));
+                    stream->setStreamHandler(reqStreamHandler);
+                });
+            callback(resp);
+        },
+        {Get, Post});
+
     app().registerHandler(
         "/stream_req",
         [](const HttpRequestPtr &req,
@@ -149,6 +201,5 @@ int main()
         {Post});
 
     LOG_INFO << "Server running on 127.0.0.1:8848";
-    app().setLogLevel(trantor::Logger::kTrace);
     app().enableStreamRequest().addListener("127.0.0.1", 8848).run();
 }
