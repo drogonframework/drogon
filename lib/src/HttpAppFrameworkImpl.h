@@ -197,6 +197,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return setSessionIdGenerator(idGeneratorCallback);
     }
 
+    void insertSession(const SessionPtr &session) override;
+
+    std::vector<SessionPtr> getAllSessions() const override;
+
     HttpAppFramework &setSessionIdGenerator(
         SessionManager::IdGeneratorCallback idGeneratorCallback = nullptr)
     {
@@ -450,7 +454,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     ~HttpAppFrameworkImpl() noexcept override;
 
-    bool isRunning() override
+    bool isRunning() const override
     {
         return running_;
     }

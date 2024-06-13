@@ -113,6 +113,17 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
     return sessionPtr;
 }
 
+void SessionManager::insertSession(const SessionPtr &sessionPtr)
+{
+    assert(!sessionPtr->sessionId().empty());
+    sessionMapPtr_->insert(sessionPtr->sessionId(), sessionPtr, timeout_);
+}
+
+std::vector<SessionPtr> SessionManager::getAllSessions() const
+{
+    return sessionMapPtr_->getAllValues();
+}
+
 void SessionManager::changeSessionId(const SessionPtr &sessionPtr)
 {
     auto oldId = sessionPtr->sessionId();
