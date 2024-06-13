@@ -18,6 +18,9 @@ using namespace drogon;
 
 MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
 {
+    static const std::string_view multipart = "multipart/form-data";
+    static const std::string_view boundaryEq = "boundary=";
+
     std::string::size_type pos = contentType.find(';');
     if (pos == std::string::npos)
     {
@@ -29,22 +32,33 @@ MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
     std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
         return tolower(c);
     });
-    if (type != "multipart/form-data")
+    if (type != multipart)
     {
         isValid_ = false;
         return;
     }
-    pos = contentType.find("boundary=");
+    pos = contentType.find(boundaryEq, pos);
     if (pos == std::string::npos)
     {
         isValid_ = false;
         return;
     }
-    auto pos2 = contentType.find(';', pos);
+
+    pos += boundaryEq.size();
+    size_t pos2;
+    if (contentType[pos] == '"')
+    {
+        ++pos;
+        pos2 = contentType.find('"', pos);
+    }
+    else
+    {
+        pos2 = contentType.find(';', pos);
+    }
     if (pos2 == std::string::npos)
         pos2 = contentType.size();
 
-    boundary_ = contentType.substr(pos + 9, pos2 - (pos + 9));
+    boundary_ = contentType.substr(pos, pos2 - pos);
     dashBoundaryCrlf_ = dash_ + boundary_ + crlf_;
     crlfDashBoundary_ = crlf_ + dash_ + boundary_;
 }
@@ -122,6 +136,10 @@ void drogon::MultipartStreamParser::parse(
         {
             case Status::kExpectFirstBoundary:
             {
+                if (buffer_.size() < dashBoundaryCrlf_.size())
+                {
+                    return;
+                }
                 std::string_view v = buffer_.view();
                 auto pos = v.find(dashBoundaryCrlf_);
                 // ignore everything before the first boundary
@@ -320,7 +338,7 @@ void MultipartStreamParser::Buffer::append(const char *data, size_t length)
 
     for (size_t i = 0; i < length; ++i)
     {
-        buffer_[bufHead_ + i] = data[i];
+        buffer_[bufTail_ + i] = data[i];
     }
     bufTail_ += length;
 }
