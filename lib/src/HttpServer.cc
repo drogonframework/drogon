@@ -184,7 +184,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 // If request matches a stream handler, stream error should be
                 // captured by user provided StreamHandler, and response should
                 // also be sent by user.
-                // TODO: use custom exception class
                 req->streamError(std::make_exception_ptr(
                     StreamError(StreamErrorCode::kBadRequest, "Bad request")));
             }
@@ -233,8 +232,11 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             requestParser->reset();
         }
     }
-    onRequests(conn, requests, requestParser);
-    requests.clear();
+    if (!requests.empty())
+    {
+        onRequests(conn, requests, requestParser);
+        requests.clear();
+    }
 }
 
 struct CallbackParamPack
@@ -265,8 +267,7 @@ void HttpServer::onRequests(
     const std::vector<HttpRequestImplPtr> &requests,
     const std::shared_ptr<HttpRequestParser> &requestParser)
 {
-    if (requests.empty())
-        return;
+    assert(!requests.empty());
 
     // will only be checked for the first request
     if (requestParser->firstReq() && requests.size() == 1 &&
