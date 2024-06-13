@@ -275,6 +275,10 @@ void drogon::MultipartStreamParser::parse(
                 }
                 // found boundary
                 dataCb(v.data(), pos);
+                if (pos > 0)
+                {
+                    dataCb(v.data() + pos, 0);  // notify end of file
+                }
                 buffer_.eraseFront(pos + crlfDashBoundary_.size());
                 status_ = Status::kExpectEndOrNewEntry;
                 continue;

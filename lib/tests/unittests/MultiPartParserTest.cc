@@ -92,6 +92,11 @@ DROGON_TEST(MultiPartStreamParser)
         };
         auto dataCb = [TEST_CTX, entries](const char *data, size_t length) {
             MANDATE(!entries->empty());
+            if (length == 0)
+            {
+                // Field finished
+                return;
+            }
             if (entries->back().header.filename.empty())
             {
                 entries->back().value.append(data, length);
