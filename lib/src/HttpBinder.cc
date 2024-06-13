@@ -14,7 +14,6 @@
 
 #include <drogon/HttpBinder.h>
 #include <drogon/HttpAppFramework.h>
-#include "HttpRequestImpl.h"
 
 namespace drogon
 {
@@ -26,6 +25,5 @@ void handleException(const std::exception &e,
 {
     app().getExceptionHandler()(e, req, std::move(callback));
 }
-
 }  // namespace internal
 }  // namespace drogon
