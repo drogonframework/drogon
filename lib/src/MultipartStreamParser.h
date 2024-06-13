@@ -56,7 +56,7 @@ class DROGON_EXPORT MultipartStreamParser
         void clear();
 
       private:
-        std::vector<char> buffer_;
+        std::string buffer_;
         size_t bufHead_{0};
         size_t bufTail_{0};
     } buffer_;

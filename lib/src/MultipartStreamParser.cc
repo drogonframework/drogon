@@ -17,53 +17,6 @@
 
 using namespace drogon;
 
-MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
-{
-    static const std::string_view multipart = "multipart/form-data";
-    static const std::string_view boundaryEq = "boundary=";
-
-    std::string::size_type pos = contentType.find(';');
-    if (pos == std::string::npos)
-    {
-        isValid_ = false;
-        return;
-    }
-
-    std::string type = contentType.substr(0, pos);
-    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
-    if (type != multipart)
-    {
-        isValid_ = false;
-        return;
-    }
-    pos = contentType.find(boundaryEq, pos);
-    if (pos == std::string::npos)
-    {
-        isValid_ = false;
-        return;
-    }
-
-    pos += boundaryEq.size();
-    size_t pos2;
-    if (contentType[pos] == '"')
-    {
-        ++pos;
-        pos2 = contentType.find('"', pos);
-    }
-    else
-    {
-        pos2 = contentType.find(';', pos);
-    }
-    if (pos2 == std::string::npos)
-        pos2 = contentType.size();
-
-    boundary_ = contentType.substr(pos, pos2 - pos);
-    dashBoundaryCrlf_ = dash_ + boundary_ + crlf_;
-    crlfDashBoundary_ = crlf_ + dash_ + boundary_;
-}
-
 static bool startsWith(const std::string_view &a, const std::string_view &b)
 {
     if (a.size() < b.size())
@@ -95,6 +48,42 @@ static bool startsWithIgnoreCase(const std::string_view &a,
         }
     }
     return true;
+}
+
+MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
+{
+    static const std::string_view multipart = "multipart/form-data";
+    static const std::string_view boundaryEq = "boundary=";
+
+    if (!startsWithIgnoreCase(contentType, multipart))
+    {
+        isValid_ = false;
+        return;
+    }
+    auto pos = contentType.find(boundaryEq, multipart.size());
+    if (pos == std::string::npos)
+    {
+        isValid_ = false;
+        return;
+    }
+
+    pos += boundaryEq.size();
+    size_t pos2;
+    if (contentType[pos] == '"')
+    {
+        ++pos;
+        pos2 = contentType.find('"', pos);
+    }
+    else
+    {
+        pos2 = contentType.find(';', pos);
+    }
+    if (pos2 == std::string::npos)
+        pos2 = contentType.size();
+
+    boundary_ = contentType.substr(pos, pos2 - pos);
+    dashBoundaryCrlf_ = dash_ + boundary_ + crlf_;
+    crlfDashBoundary_ = crlf_ + dash_ + boundary_;
 }
 
 // TODO: same function in HttpRequestParser.cc
