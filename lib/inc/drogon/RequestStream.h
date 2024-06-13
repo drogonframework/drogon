@@ -44,6 +44,43 @@ namespace internal
 DROGON_EXPORT RequestStreamPtr createRequestStream(const HttpRequestPtr &req);
 }
 
+enum class StreamErrorCode
+{
+    kNone = 0,
+    kBadRequest,
+    kConnectionBroken
+};
+
+class StreamError final : public std::exception
+{
+  public:
+    const char *what() const noexcept override
+    {
+        return message_.data();
+    }
+
+    StreamErrorCode code() const
+    {
+        return code_;
+    }
+
+    StreamError(StreamErrorCode code, const std::string &message)
+        : message_(message), code_(code)
+    {
+    }
+
+    StreamError(StreamErrorCode code, std::string &&message)
+        : message_(std::move(message)), code_(code)
+    {
+    }
+
+    StreamError() = delete;
+
+  private:
+    std::string message_;
+    StreamErrorCode code_;
+};
+
 /**
  * TODO-s:
  * - Too many callbacks

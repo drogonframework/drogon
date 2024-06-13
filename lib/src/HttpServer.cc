@@ -134,10 +134,10 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
             }
             else if (requestParser->requestImpl()->isStreamMode())
             {
-                // TODO: use custom exception class
                 requestParser->requestImpl()->streamError(
                     std::make_exception_ptr(
-                        std::runtime_error("Connection closed")));
+                        StreamError(StreamErrorCode::kConnectionBroken,
+                                    "Connection closed")));
             }
             conn->clearContext();
         }
@@ -185,8 +185,8 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 // captured by user provided StreamHandler, and response should
                 // also be sent by user.
                 // TODO: use custom exception class
-                req->streamError(
-                    std::make_exception_ptr(std::runtime_error("Bad request")));
+                req->streamError(std::make_exception_ptr(
+                    StreamError(StreamErrorCode::kBadRequest, "Bad request")));
             }
             else
             {

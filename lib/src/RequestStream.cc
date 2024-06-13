@@ -20,6 +20,50 @@
 
 namespace drogon
 {
+class RequestStreamImpl : public RequestStream
+{
+  public:
+    RequestStreamImpl(const HttpRequestImplPtr &req) : weakReq_(req)
+    {
+    }
+
+    void setStreamHandler(RequestStreamHandlerPtr handler) override
+    {
+        if (auto req = weakReq_.lock())
+        {
+            auto loop = req->getLoop();
+            if (loop->isInLoopThread())
+            {
+                req->setStreamHandler(std::move(handler));
+            }
+            else
+            {
+                loop->queueInLoop([req = std::move(req),
+                                   handler = std::move(handler)]() mutable {
+                    req->setStreamHandler(std::move(handler));
+                });
+            }
+        }
+    }
+
+  private:
+    std::weak_ptr<HttpRequestImpl> weakReq_;
+};
+
+namespace internal
+{
+RequestStreamPtr createRequestStream(const HttpRequestPtr &req)
+{
+    auto reqImpl = std::static_pointer_cast<HttpRequestImpl>(req);
+    if (!reqImpl->isStreamMode())
+    {
+        return nullptr;
+    }
+    return std::make_shared<RequestStreamImpl>(
+        std::static_pointer_cast<HttpRequestImpl>(req));
+}
+}  // namespace internal
+
 /**
  * A default implementation for convenience
  */
@@ -84,6 +128,7 @@ class MultipartStreamHandler : public RequestStreamHandler
         parser_.parse(data, length, headerCb_, dataCb_);
         if (!parser_.isValid())
         {
+            // TODO: should we mix stream error and user error?
             errorCb_(std::make_exception_ptr(
                 std::runtime_error("invalid multipart data")));
         }
@@ -141,49 +186,5 @@ RequestStreamHandlerPtr RequestStreamHandler::newMultipartHandler(
                                                     std::move(finishCb),
                                                     std::move(errorCb));
 }
-
-class RequestStreamImpl : public RequestStream
-{
-  public:
-    RequestStreamImpl(const HttpRequestImplPtr &req) : weakReq_(req)
-    {
-    }
-
-    void setStreamHandler(RequestStreamHandlerPtr handler) override
-    {
-        if (auto req = weakReq_.lock())
-        {
-            auto loop = req->getLoop();
-            if (loop->isInLoopThread())
-            {
-                req->setStreamHandler(std::move(handler));
-            }
-            else
-            {
-                loop->queueInLoop([req = std::move(req),
-                                   handler = std::move(handler)]() mutable {
-                    req->setStreamHandler(std::move(handler));
-                });
-            }
-        }
-    }
-
-  private:
-    std::weak_ptr<HttpRequestImpl> weakReq_;
-};
-
-namespace internal
-{
-RequestStreamPtr createRequestStream(const HttpRequestPtr &req)
-{
-    auto reqImpl = std::static_pointer_cast<HttpRequestImpl>(req);
-    if (!reqImpl->isStreamMode())
-    {
-        return nullptr;
-    }
-    return std::make_shared<RequestStreamImpl>(
-        std::static_pointer_cast<HttpRequestImpl>(req));
-}
-}  // namespace internal
 
 }  // namespace drogon
