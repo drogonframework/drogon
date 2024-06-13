@@ -280,6 +280,16 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     }
                 }
 
+                // Check max body size
+                if (currentContentLength_ >
+                    HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                {
+                    buf->retrieveAll();
+                    errorStatusCode_ = k413RequestEntityTooLarge;
+                    return -1;
+                }
+
+                // Check expect:100-continue
                 auto &expect = request_->expect();
                 if (expect == "100-continue" &&
                     request_->getVersion() >= Version::kHttp11)
@@ -291,26 +301,16 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         errorStatusCode_ = k400BadRequest;
                         return -1;
                     }
-                    // rfc2616-8.2.3
-                    auto connPtr = conn_.lock();
-                    if (!connPtr)
-                    {
-                        return -1;
-                    }
-                    auto resp = HttpResponse::newHttpResponse();
-                    if (currentContentLength_ >
-                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
-                    {
-                        resp->setStatusCode(k413RequestEntityTooLarge);
-                        auto httpString =
-                            static_cast<HttpResponseImpl *>(resp.get())
-                                ->renderToBuffer();
-                        reset();
-                        connPtr->send(std::move(*httpString));
-                        // TODO: missing logic here
-                    }
                     else
                     {
+                        // rfc2616-8.2.3
+                        // TODO: consider adding an AOP for expect header
+                        auto connPtr = conn_.lock();  // ugly
+                        if (!connPtr)
+                        {
+                            return -1;
+                        }
+                        auto resp = HttpResponse::newHttpResponse();
                         resp->setStatusCode(k100Continue);
                         auto httpString =
                             static_cast<HttpResponseImpl *>(resp.get())
@@ -323,14 +323,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     LOG_WARN << "417ExpectationFailed for \"" << expect << "\"";
                     buf->retrieveAll();
                     errorStatusCode_ = k417ExpectationFailed;
-                    return -1;
-                }
-                else if (currentContentLength_ >
-                         HttpAppFrameworkImpl::instance()
-                             .getClientMaxBodySize())
-                {
-                    buf->retrieveAll();
-                    errorStatusCode_ = k413RequestEntityTooLarge;
                     return -1;
                 }
                 request_->reserveBodySize(currentContentLength_);
