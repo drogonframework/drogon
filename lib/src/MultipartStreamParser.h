@@ -13,16 +13,15 @@
  */
 
 #pragma once
+#include <drogon/exports.h>
+#include <drogon/RequestStream.h>
+#include <deque>
 #include <string>
 #include <variant>
-#include <deque>
-
-#include <trantor/utils/MsgBuffer.h>
-#include <drogon/RequestStream.h>  // TODO
 
 namespace drogon
 {
-class MultipartStreamParser
+class DROGON_EXPORT MultipartStreamParser
 {
   public:
     MultipartStreamParser(const std::string &contentType);
