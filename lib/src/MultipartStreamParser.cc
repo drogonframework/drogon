@@ -13,6 +13,7 @@
  */
 
 #include "MultipartStreamParser.h"
+#include <cassert>
 
 using namespace drogon;
 

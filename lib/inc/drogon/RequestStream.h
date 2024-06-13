@@ -13,8 +13,9 @@
  */
 #pragma once
 #include <drogon/exports.h>
-#include <memory>
+#include <string>
 #include <functional>
+#include <memory>
 
 namespace drogon
 {
