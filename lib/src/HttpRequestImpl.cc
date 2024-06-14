@@ -1004,7 +1004,7 @@ void HttpRequestImpl::setStreamHandler(RequestStreamHandlerPtr handler)
     if (streamExceptionPtr_)
     {
         assert(streamStatus_ == ReqStreamStatus::Error);
-        handler->onStreamError(std::move(streamExceptionPtr_));
+        handler->onStreamFinish(std::move(streamExceptionPtr_));
         streamExceptionPtr_ = nullptr;
         return;
     }
@@ -1024,7 +1024,7 @@ void HttpRequestImpl::setStreamHandler(RequestStreamHandlerPtr handler)
     }
     if (streamStatus_ == ReqStreamStatus::Finish)
     {
-        handler->onStreamFinish();
+        handler->onStreamFinish({});
     }
     else
     {
@@ -1051,7 +1051,7 @@ void HttpRequestImpl::streamFinish()
     }
     if (streamHandlerPtr_)
     {
-        streamHandlerPtr_->onStreamFinish();
+        streamHandlerPtr_->onStreamFinish({});
         streamHandlerPtr_ = nullptr;
     }
 }
@@ -1066,7 +1066,7 @@ void HttpRequestImpl::streamError(std::exception_ptr ex)
     streamStatus_ = ReqStreamStatus::Error;
     if (streamHandlerPtr_)
     {
-        streamHandlerPtr_->onStreamError(std::move(ex));
+        streamHandlerPtr_->onStreamFinish(std::move(ex));
         streamHandlerPtr_ = nullptr;
     }
     else

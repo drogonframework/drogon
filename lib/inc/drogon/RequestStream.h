@@ -35,6 +35,7 @@ struct MultipartHeader
 class DROGON_EXPORT RequestStream
 {
   public:
+    virtual ~RequestStream() = default;
     virtual void setStreamHandler(RequestStreamHandlerPtr handler) = 0;
 };
 
@@ -100,17 +101,14 @@ class RequestStreamHandler
   public:
     virtual ~RequestStreamHandler() = default;
     virtual void onStreamData(const char *, size_t) = 0;
-    virtual void onStreamFinish() = 0;
-    virtual void onStreamError(std::exception_ptr) = 0;
+    virtual void onStreamFinish(std::exception_ptr) = 0;
 
     using StreamDataCallback = std::function<void(const char *, size_t)>;
-    using StreamFinishCallback = std::function<void()>;
-    using StreamErrorCallback = std::function<void(std::exception_ptr)>;
+    using StreamFinishCallback = std::function<void(std::exception_ptr)>;
 
     // Create a handler with default implementation
     static RequestStreamHandlerPtr newHandler(StreamDataCallback dataCb,
-                                              StreamFinishCallback finishCb,
-                                              StreamErrorCallback errorCb);
+                                              StreamFinishCallback finishCb);
 
     using MultipartHeaderCallback = std::function<void(MultipartHeader header)>;
 
@@ -118,8 +116,7 @@ class RequestStreamHandler
         const HttpRequestPtr &req,
         MultipartHeaderCallback headerCb,
         StreamDataCallback dataCb,
-        StreamFinishCallback finishCb,
-        StreamErrorCallback errorCb);
+        StreamFinishCallback finishCb);
 };
 
 }  // namespace drogon

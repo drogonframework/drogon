@@ -71,11 +71,8 @@ class DefaultStreamHandler : public RequestStreamHandler
 {
   public:
     DefaultStreamHandler(StreamDataCallback dataCb,
-                         StreamFinishCallback finishCb,
-                         StreamErrorCallback errorCb)
-        : dataCb_(std::move(dataCb)),
-          finishCb_(std::move(finishCb)),
-          errorCb_(std::move(errorCb))
+                         StreamFinishCallback finishCb)
+        : dataCb_(std::move(dataCb)), finishCb_(std::move(finishCb))
     {
     }
 
@@ -84,20 +81,14 @@ class DefaultStreamHandler : public RequestStreamHandler
         dataCb_(data, length);
     }
 
-    void onStreamFinish() override
+    void onStreamFinish(std::exception_ptr ex) override
     {
-        finishCb_();
-    }
-
-    void onStreamError(std::exception_ptr ex) override
-    {
-        errorCb_(std::move(ex));
+        finishCb_(std::move(ex));
     }
 
   private:
     StreamDataCallback dataCb_;
     StreamFinishCallback finishCb_;
-    StreamErrorCallback errorCb_;
 };
 
 /**
@@ -109,13 +100,11 @@ class MultipartStreamHandler : public RequestStreamHandler
     MultipartStreamHandler(const std::string &contentType,
                            MultipartHeaderCallback headerCb,
                            StreamDataCallback dataCb,
-                           StreamFinishCallback finishCb,
-                           StreamErrorCallback errorCb)
+                           StreamFinishCallback finishCb)
         : parser_(contentType),
           headerCb_(std::move(headerCb)),
           dataCb_(std::move(dataCb)),
-          finishCb_(std::move(finishCb)),
-          errorCb_(std::move(errorCb))
+          finishCb_(std::move(finishCb))
     {
     }
 
@@ -129,28 +118,30 @@ class MultipartStreamHandler : public RequestStreamHandler
         if (!parser_.isValid())
         {
             // TODO: should we mix stream error and user error?
-            errorCb_(std::make_exception_ptr(
+            finishCb_(std::make_exception_ptr(
                 std::runtime_error("invalid multipart data")));
         }
         else if (parser_.isFinished())
         {
-            finishCb_();
+            finishCb_({});
         }
     }
 
-    void onStreamFinish() override
+    void onStreamFinish(std::exception_ptr ex) override
     {
-        if (!parser_.isFinished())
+        if (!parser_.isValid() || parser_.isFinished())
         {
-            finishCb_();
+            return;
         }
-    }
 
-    void onStreamError(std::exception_ptr ex) override
-    {
-        if (parser_.isValid())
+        if (!ex)
         {
-            errorCb_(ex);
+            finishCb_(std::make_exception_ptr(
+                std::runtime_error("incomplete multipart data")));
+        }
+        else
+        {
+            finishCb_(std::move(ex));
         }
     }
 
@@ -159,32 +150,27 @@ class MultipartStreamHandler : public RequestStreamHandler
     MultipartHeaderCallback headerCb_;
     StreamDataCallback dataCb_;
     StreamFinishCallback finishCb_;
-    StreamErrorCallback errorCb_;
 };
 
 RequestStreamHandlerPtr RequestStreamHandler::newHandler(
     StreamDataCallback dataCb,
-    StreamFinishCallback finishCb,
-    StreamErrorCallback errorCb)
+    StreamFinishCallback finishCb)
 {
     return std::make_shared<DefaultStreamHandler>(std::move(dataCb),
-                                                  std::move(finishCb),
-                                                  std::move(errorCb));
+                                                  std::move(finishCb));
 }
 
 RequestStreamHandlerPtr RequestStreamHandler::newMultipartHandler(
     const HttpRequestPtr &req,
     MultipartHeaderCallback headerCb,
     StreamDataCallback dataCb,
-    StreamFinishCallback finishCb,
-    StreamErrorCallback errorCb)
+    StreamFinishCallback finishCb)
 {
     return std::make_shared<MultipartStreamHandler>(req->getHeader(
                                                         "content-type"),
                                                     std::move(headerCb),
                                                     std::move(dataCb),
-                                                    std::move(finishCb),
-                                                    std::move(errorCb));
+                                                    std::move(finishCb));
 }
 
 }  // namespace drogon
