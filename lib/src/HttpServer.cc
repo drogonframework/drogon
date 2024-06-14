@@ -481,6 +481,11 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
         !pack.binderPtr->isStreamHandler())
     {
         LOG_TRACE << "Wait for request stream finish";
+        auto contentLength = req->getContentLengthHeaderValue();
+        if (contentLength.has_value())
+        {
+            req->reserveBodySize(contentLength.value());
+        }
         req->waitForStreamFinish([weakReq = std::weak_ptr(req),
                                   pack = std::forward<Pack>(pack)]() mutable {
             auto req = weakReq.lock();

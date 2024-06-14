@@ -117,7 +117,7 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
 void HttpRequestParser::reset()
 {
     assert(loop_->isInLoopThread());
-    currentContentLength_ = 0;
+    remainContentLength_ = 0;
     errorStatusCode_ = HttpStatusCode::k500InternalServerError;
     status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
@@ -235,7 +235,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     try
                     {
-                        currentContentLength_ =
+                        remainContentLength_ =
                             static_cast<size_t>(std::stoull(len));
                     }
                     catch (...)
@@ -244,7 +244,8 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         errorStatusCode_ = k400BadRequest;
                         return -1;
                     }
-                    if (currentContentLength_ == 0)
+                    request_->contentLengthHeaderValue_ = remainContentLength_;
+                    if (remainContentLength_ == 0)
                     {
                         // content-length = 0, request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
@@ -281,7 +282,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
 
                 // Check max body size
-                if (currentContentLength_ >
+                if (remainContentLength_ >
                     HttpAppFrameworkImpl::instance().getClientMaxBodySize())
                 {
                     buf->retrieveAll();
@@ -294,7 +295,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (expect == "100-continue" &&
                     request_->getVersion() >= Version::kHttp11)
                 {
-                    if (currentContentLength_ == 0)
+                    if (remainContentLength_ == 0)
                     {
                         // error
                         buf->retrieveAll();
@@ -325,8 +326,13 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     errorStatusCode_ = k417ExpectationFailed;
                     return -1;
                 }
-                request_->reserveBodySize(currentContentLength_);
-
+                if (!request_->isStreamMode())
+                {
+                    // Reserve space for full body in non-stream mode.
+                    // For stream mode requests that match a non-stream handler,
+                    // we will reserve full body before waitForStreamFinish().
+                    request_->reserveBodySize(remainContentLength_);
+                }
                 assert(status_ == HttpRequestParseStatus::kExpectBody ||
                        status_ == HttpRequestParseStatus::kExpectChunkLen);
 
@@ -341,17 +347,17 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             case HttpRequestParseStatus::kExpectBody:
             {
                 size_t bytesToConsume =
-                    currentContentLength_ <= buf->readableBytes()
-                        ? currentContentLength_
+                    remainContentLength_ <= buf->readableBytes()
+                        ? remainContentLength_
                         : buf->readableBytes();
                 if (bytesToConsume)
                 {
                     request_->appendToBody(buf->peek(), bytesToConsume);
                     buf->retrieve(bytesToConsume);
-                    currentContentLength_ -= bytesToConsume;
+                    remainContentLength_ -= bytesToConsume;
                 }
 
-                if (currentContentLength_ == 0)
+                if (remainContentLength_ == 0)
                 {
                     status_ = HttpRequestParseStatus::kGotAll;
                     ++requestsCounter_;
@@ -379,7 +385,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 currentChunkLength_ = strtol(len.c_str(), &end, 16);
                 if (currentChunkLength_ != 0)
                 {
-                    if (currentChunkLength_ + currentContentLength_ >
+                    if (currentChunkLength_ + remainContentLength_ >
                         HttpAppFrameworkImpl::instance().getClientMaxBodySize())
                     {
                         buf->retrieveAll();
@@ -411,7 +417,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 request_->appendToBody(buf->peek(), currentChunkLength_);
                 buf->retrieve(currentChunkLength_ + CRLF_LEN);
-                currentContentLength_ += currentChunkLength_;
+                remainContentLength_ += currentChunkLength_;
                 currentChunkLength_ = 0;
                 status_ = HttpRequestParseStatus::kExpectChunkLen;
                 continue;
@@ -432,9 +438,29 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 buf->retrieve(CRLF_LEN);
                 status_ = HttpRequestParseStatus::kGotAll;
-                request_->addHeader("content-length",
-                                    std::to_string(request_->bodyLength()));
-                request_->removeHeaderBy("transfer-encoding");
+
+                if (!request_->isStreamMode())
+                {
+                    // Previously we only have non-stream mode, drogon handled
+                    // chunked encoding internally, and give user a regular
+                    // request as if it has a content-length header.
+                    //
+                    // We have to keep compatibility for non-stream mode.
+                    //
+                    // But I don't think it's a good implementation. We should
+                    // instead add an api to access real content-length of
+                    // requests.
+                    // Now HttpRequest::realContentLength() is added, and user
+                    // should no longer parse content-length header by
+                    // themselves.
+                    //
+                    // NOTE: request forward behavior may be infected in stream
+                    // mode, we should check it out.
+                    request_->addHeader("content-length",
+                                        std::to_string(
+                                            request_->realContentLength()));
+                    request_->removeHeaderBy("transfer-encoding");
+                }
                 ++requestsCounter_;
                 return 1;
             }

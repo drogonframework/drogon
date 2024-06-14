@@ -69,6 +69,8 @@ class HttpRequestImpl : public HttpRequest
         flagForParsingJson_ = false;
         headers_.clear();
         cookies_.clear();
+        contentLengthHeaderValue_.reset();
+        realContentLength_ = 0;
         flagForParsingParameters_ = false;
         path_.clear();
         originalPath_.clear();
@@ -364,6 +366,16 @@ class HttpRequestImpl : public HttpRequest
         return cookies_;
     }
 
+    std::optional<size_t> getContentLengthHeaderValue() const
+    {
+        return contentLengthHeaderValue_;
+    }
+
+    size_t realContentLength() const override
+    {
+        return realContentLength_;
+    }
+
     void setParameter(const std::string &key, const std::string &value) override
     {
         flagForParsingParameters_ = true;
@@ -555,7 +567,6 @@ class HttpRequestImpl : public HttpRequest
     void streamStart();
     void streamFinish();
     void streamError(std::exception_ptr ex);
-    void streamRelease();
 
     void setStreamHandler(RequestStreamHandlerPtr handler);
     void waitForStreamFinish(std::function<void()> &&cb);
@@ -649,6 +660,8 @@ class HttpRequestImpl : public HttpRequest
     std::string query_;
     SafeStringMap<std::string> headers_;
     SafeStringMap<std::string> cookies_;
+    std::optional<size_t> contentLengthHeaderValue_;
+    size_t realContentLength_{0};
     mutable SafeStringMap<std::string> parameters_;
     mutable std::shared_ptr<Json::Value> jsonPtr_;
     SessionPtr sessionPtr_;

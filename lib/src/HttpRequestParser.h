@@ -160,7 +160,7 @@ class HttpRequestParser : public trantor::NonCopyable,
     std::unique_ptr<std::vector<HttpRequestImplPtr>> requestBuffer_;
     std::vector<HttpRequestImplPtr> requestsPool_;
     size_t currentChunkLength_{0};
-    size_t currentContentLength_{0};
+    size_t remainContentLength_{0};
     HttpStatusCode errorStatusCode_{HttpStatusCode::k500InternalServerError};
 };
 

@@ -567,6 +567,8 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(query_, that.query_);
     swap(headers_, that.headers_);
     swap(cookies_, that.cookies_);
+    swap(contentLengthHeaderValue_, that.contentLengthHeaderValue_);
+    swap(realContentLength_, that.realContentLength_);
     swap(parameters_, that.parameters_);
     swap(jsonPtr_, that.jsonPtr_);
     swap(sessionPtr_, that.sessionPtr_);
@@ -729,6 +731,11 @@ HttpRequestImpl::~HttpRequestImpl()
 
 void HttpRequestImpl::reserveBodySize(size_t length)
 {
+    assert(loop_->isInLoopThread());
+    if (cacheFilePtr_)
+    {
+        return;
+    }
     if (length <= HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
     {
         content_.reserve(length);
@@ -743,6 +750,7 @@ void HttpRequestImpl::reserveBodySize(size_t length)
 void HttpRequestImpl::appendToBody(const char *data, size_t length)
 {
     assert(loop_->isInLoopThread());
+    realContentLength_ += length;
     if (streamHandlerPtr_)
     {
         assert(streamStatus_ == ReqStreamStatus::Open);
@@ -1074,27 +1082,17 @@ void HttpRequestImpl::streamError(std::exception_ptr ex)
     }
 }
 
-void HttpRequestImpl::streamRelease()
-{
-    // TODO
-}
-
 void HttpRequestImpl::waitForStreamFinish(std::function<void()> &&cb)
 {
     assert(loop_->isInLoopThread());
     assert(streamStatus_ > ReqStreamStatus::None);
 
-    if (streamStatus_ == ReqStreamStatus::Open)
+    if (streamStatus_ <= ReqStreamStatus::Open)
     {
         assert(!streamFinishCb_);  // should only be called once
         streamFinishCb_ = std::move(cb);
     }
-    else if (streamStatus_ == ReqStreamStatus::Finish)
-    {
-        cb();
-        return;
-    }
-    else if (streamStatus_ == ReqStreamStatus::Error)
+    else
     {
         cb();
         return;
