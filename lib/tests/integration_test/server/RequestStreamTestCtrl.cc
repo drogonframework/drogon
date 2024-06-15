@@ -10,6 +10,7 @@ class RequestStreamTestCtrl : public HttpController<RequestStreamTestCtrl>
   public:
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(RequestStreamTestCtrl::stream_status, "/stream_status", Get);
+    ADD_METHOD_TO(RequestStreamTestCtrl::stream_chunk, "/stream_chunk", Post);
     ADD_METHOD_TO(RequestStreamTestCtrl::stream_upload_echo,
                   "/stream_upload_echo",
                   Post);
@@ -29,6 +30,52 @@ class RequestStreamTestCtrl : public HttpController<RequestStreamTestCtrl>
             resp->setBody("not enabled");
         }
         callback(resp);
+    }
+
+    void stream_chunk(
+        const HttpRequestPtr &,
+        RequestStreamPtr &&stream,
+        std::function<void(const HttpResponsePtr &)> &&callback) const
+    {
+        if (!stream)
+        {
+            LOG_INFO << "Empty RequestStream, the request does not have a "
+                        "body, or stream-mode is not enabled";
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setStatusCode(k400BadRequest);
+            resp->setBody("no stream");
+            callback(resp);
+            return;
+        }
+
+        auto respBody = std::make_shared<std::string>();
+        auto handler = RequestStreamHandler::newHandler(
+            [respBody](const char *data, size_t length) {
+                respBody->append(data, length);
+            },
+            [respBody, callback = std::move(callback)](std::exception_ptr ex) {
+                auto resp = HttpResponse::newHttpResponse();
+                if (ex)
+                {
+                    try
+                    {
+                        std::rethrow_exception(std::move(ex));
+                    }
+                    catch (const std::exception &e)
+                    {
+                        LOG_ERROR << "stream error: " << e.what();
+                    }
+                    resp->setStatusCode(k400BadRequest);
+                    resp->setBody("stream error");
+                    callback(resp);
+                }
+                else
+                {
+                    resp->setBody(*respBody);
+                    callback(resp);
+                }
+            });
+        stream->setStreamHandler(std::move(handler));
     }
 
     void stream_upload_echo(

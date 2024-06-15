@@ -36,6 +36,8 @@ function do_integration_test()
 
     if [ "$1" = "stream_mode" ]; then
         sed -i -e "s/\"enable_request_stream.*$/\"enable_request_stream\": true\,/" config.example.json
+    else
+        sed -i -e "s/\"enable_request_stream.*$/\"enable_request_stream\": false\,/" config.example.json
     fi
 
     if [ ! -f "integration_test_client" ]; then
