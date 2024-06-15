@@ -115,8 +115,8 @@ static std::pair<std::string_view, std::string_view> parseLine(
 void drogon::MultipartStreamParser::parse(
     const char *data,
     size_t length,
-    const drogon::RequestStreamHandler::MultipartHeaderCallback &headerCb,
-    const drogon::RequestStreamHandler::StreamDataCallback &dataCb)
+    const drogon::RequestStreamReader::MultipartHeaderCallback &headerCb,
+    const drogon::RequestStreamReader::StreamDataCallback &dataCb)
 {
     buffer_.append(data, length);
 

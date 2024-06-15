@@ -26,8 +26,8 @@ class DROGON_EXPORT MultipartStreamParser
 
     void parse(const char *data,
                size_t length,
-               const RequestStreamHandler::MultipartHeaderCallback &headerCb,
-               const RequestStreamHandler::StreamDataCallback &dataCb);
+               const RequestStreamReader::MultipartHeaderCallback &headerCb,
+               const RequestStreamReader::StreamDataCallback &dataCb);
 
     bool isFinished() const
     {

@@ -588,7 +588,7 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(routingParams_, that.routingParams_);
     // stream
     swap(streamStatus_, that.streamStatus_);
-    swap(streamHandlerPtr_, that.streamHandlerPtr_);
+    swap(streamReaderPtr_, that.streamReaderPtr_);
     swap(streamFinishCb_, that.streamFinishCb_);
     swap(streamExceptionPtr_, that.streamExceptionPtr_);
     swap(startProcessing_, that.startProcessing_);
@@ -751,10 +751,10 @@ void HttpRequestImpl::appendToBody(const char *data, size_t length)
 {
     assert(loop_->isInLoopThread());
     realContentLength_ += length;
-    if (streamHandlerPtr_)
+    if (streamReaderPtr_)
     {
         assert(streamStatus_ == ReqStreamStatus::Open);
-        streamHandlerPtr_->onStreamData(data, length);
+        streamReaderPtr_->onStreamData(data, length);
     }
     else if (cacheFilePtr_)
     {
@@ -995,16 +995,16 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyGzip() noexcept
     return status;
 }
 
-void HttpRequestImpl::setStreamHandler(RequestStreamHandlerPtr handler)
+void HttpRequestImpl::setStreamReader(RequestStreamReaderPtr reader)
 {
     assert(loop_->isInLoopThread());
-    assert(!streamHandlerPtr_);
+    assert(!streamReaderPtr_);
     assert(streamStatus_ > ReqStreamStatus::None);
 
     if (streamExceptionPtr_)
     {
         assert(streamStatus_ == ReqStreamStatus::Error);
-        handler->onStreamFinish(std::move(streamExceptionPtr_));
+        reader->onStreamFinish(std::move(streamExceptionPtr_));
         streamExceptionPtr_ = nullptr;
         return;
     }
@@ -1014,21 +1014,21 @@ void HttpRequestImpl::setStreamHandler(RequestStreamHandlerPtr handler)
     {
         auto bodyPieceView = cacheFilePtr_->getStringView();
         if (!bodyPieceView.empty())
-            handler->onStreamData(bodyPieceView.data(), bodyPieceView.length());
+            reader->onStreamData(bodyPieceView.data(), bodyPieceView.length());
         cacheFilePtr_.reset();
     }
     else if (!content_.empty())
     {
-        handler->onStreamData(content_.data(), content_.length());
+        reader->onStreamData(content_.data(), content_.length());
         content_.clear();
     }
     if (streamStatus_ == ReqStreamStatus::Finish)
     {
-        handler->onStreamFinish({});
+        reader->onStreamFinish({});
     }
     else
     {
-        streamHandlerPtr_ = std::move(handler);
+        streamReaderPtr_ = std::move(reader);
     }
 }
 
@@ -1049,10 +1049,10 @@ void HttpRequestImpl::streamFinish()
         streamFinishCb_ = nullptr;
         cb();
     }
-    if (streamHandlerPtr_)
+    if (streamReaderPtr_)
     {
-        streamHandlerPtr_->onStreamFinish({});
-        streamHandlerPtr_ = nullptr;
+        streamReaderPtr_->onStreamFinish({});
+        streamReaderPtr_ = nullptr;
     }
 }
 
@@ -1064,10 +1064,10 @@ void HttpRequestImpl::streamError(std::exception_ptr ex)
     assert(loop_->isInLoopThread());
     assert(streamStatus_ == ReqStreamStatus::Open);
     streamStatus_ = ReqStreamStatus::Error;
-    if (streamHandlerPtr_)
+    if (streamReaderPtr_)
     {
-        streamHandlerPtr_->onStreamFinish(std::move(ex));
-        streamHandlerPtr_ = nullptr;
+        streamReaderPtr_->onStreamFinish(std::move(ex));
+        streamReaderPtr_ = nullptr;
     }
     else
     {

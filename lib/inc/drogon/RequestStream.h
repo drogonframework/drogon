@@ -22,8 +22,8 @@ namespace drogon
 class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 
-class RequestStreamHandler;
-using RequestStreamHandlerPtr = std::shared_ptr<RequestStreamHandler>;
+class RequestStreamReader;
+using RequestStreamReaderPtr = std::shared_ptr<RequestStreamReader>;
 
 struct MultipartHeader
 {
@@ -36,7 +36,7 @@ class DROGON_EXPORT RequestStream
 {
   public:
     virtual ~RequestStream() = default;
-    virtual void setStreamHandler(RequestStreamHandlerPtr handler) = 0;
+    virtual void setStreamReader(RequestStreamReaderPtr reader) = 0;
 };
 
 using RequestStreamPtr = std::shared_ptr<RequestStream>;
@@ -84,13 +84,13 @@ class StreamError final : public std::exception
 };
 
 /**
- * An interface for stream request handling.
+ * An interface for stream request reading.
  * User should create an implementation class, or use built-in handlers
  */
-class RequestStreamHandler
+class RequestStreamReader
 {
   public:
-    virtual ~RequestStreamHandler() = default;
+    virtual ~RequestStreamReader() = default;
     virtual void onStreamData(const char *, size_t) = 0;
     virtual void onStreamFinish(std::exception_ptr) = 0;
 
@@ -98,15 +98,15 @@ class RequestStreamHandler
     using StreamFinishCallback = std::function<void(std::exception_ptr)>;
 
     // Create a handler with default implementation
-    static RequestStreamHandlerPtr newHandler(StreamDataCallback dataCb,
-                                              StreamFinishCallback finishCb);
+    static RequestStreamReaderPtr newHandler(StreamDataCallback dataCb,
+                                             StreamFinishCallback finishCb);
 
     // A handler that drops all data
-    static RequestStreamHandlerPtr newNullHandler();
+    static RequestStreamReaderPtr newNullReader();
 
     using MultipartHeaderCallback = std::function<void(MultipartHeader header)>;
 
-    static RequestStreamHandlerPtr newMultipartHandler(
+    static RequestStreamReaderPtr newMultipartReader(
         const HttpRequestPtr &req,
         MultipartHeaderCallback headerCb,
         StreamDataCallback dataCb,

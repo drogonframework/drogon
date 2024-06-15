@@ -182,7 +182,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 // handler, stream error would be intercepted by the
                 // `waitForStreamFinish()` call.
                 // If request matches a stream handler, stream error should be
-                // captured by user provided StreamHandler, and response should
+                // captured by user provided StreamReader, and response should
                 // also be sent by user.
                 req->streamError(std::make_exception_ptr(
                     StreamError(StreamErrorCode::kBadRequest, "Bad request")));

@@ -1,6 +1,6 @@
 /**
  *
- *  @file RequestStreamHandler.cc
+ *  @file RequestStream.cc
  *  @author Nitromelon
  *
  *  Copyright 2024, Nitromelon.  All rights reserved.
@@ -37,11 +37,11 @@ class RequestStreamImpl : public RequestStream
         // Drop all data if no reader is set
         if (auto req = weakReq_.lock())
         {
-            setHandlerInLoop(req, RequestStreamHandler::newNullHandler());
+            setHandlerInLoop(req, RequestStreamReader::newNullReader());
         }
     }
 
-    void setStreamHandler(RequestStreamHandlerPtr handler) override
+    void setStreamReader(RequestStreamReaderPtr reader) override
     {
         if (isSet_.exchange(true))
         {
@@ -50,12 +50,12 @@ class RequestStreamImpl : public RequestStream
 
         if (auto req = weakReq_.lock())
         {
-            setHandlerInLoop(req, std::move(handler));
+            setHandlerInLoop(req, std::move(reader));
         }
     }
 
     void setHandlerInLoop(const HttpRequestImplPtr &req,
-                          RequestStreamHandlerPtr handler)
+                          RequestStreamReaderPtr reader)
     {
         if (!req->isStreamMode())
         {
@@ -64,13 +64,13 @@ class RequestStreamImpl : public RequestStream
         auto loop = req->getLoop();
         if (loop->isInLoopThread())
         {
-            req->setStreamHandler(std::move(handler));
+            req->setStreamReader(std::move(reader));
         }
         else
         {
             loop->queueInLoop(
-                [req = std::move(req), handler = std::move(handler)]() mutable {
-                    req->setStreamHandler(std::move(handler));
+                [req = std::move(req), reader = std::move(reader)]() mutable {
+                    req->setStreamReader(std::move(reader));
                 });
         }
     }
@@ -97,11 +97,11 @@ RequestStreamPtr createRequestStream(const HttpRequestPtr &req)
 /**
  * A default implementation for convenience
  */
-class DefaultStreamHandler : public RequestStreamHandler
+class DefaultStreamReader : public RequestStreamReader
 {
   public:
-    DefaultStreamHandler(StreamDataCallback dataCb,
-                         StreamFinishCallback finishCb)
+    DefaultStreamReader(StreamDataCallback dataCb,
+                        StreamFinishCallback finishCb)
         : dataCb_(std::move(dataCb)), finishCb_(std::move(finishCb))
     {
     }
@@ -124,7 +124,7 @@ class DefaultStreamHandler : public RequestStreamHandler
 /**
  * Drops all data
  */
-class NullStreamHandler : public RequestStreamHandler
+class NullStreamReader : public RequestStreamReader
 {
   public:
     void onStreamData(const char *, size_t length) override
@@ -139,13 +139,13 @@ class NullStreamHandler : public RequestStreamHandler
 /**
  * Parse multipart data and return actual content
  */
-class MultipartStreamHandler : public RequestStreamHandler
+class MultipartStreamReader : public RequestStreamReader
 {
   public:
-    MultipartStreamHandler(const std::string &contentType,
-                           MultipartHeaderCallback headerCb,
-                           StreamDataCallback dataCb,
-                           StreamFinishCallback finishCb)
+    MultipartStreamReader(const std::string &contentType,
+                          MultipartHeaderCallback headerCb,
+                          StreamDataCallback dataCb,
+                          StreamFinishCallback finishCb)
         : parser_(contentType),
           headerCb_(std::move(headerCb)),
           dataCb_(std::move(dataCb)),
@@ -197,30 +197,30 @@ class MultipartStreamHandler : public RequestStreamHandler
     StreamFinishCallback finishCb_;
 };
 
-RequestStreamHandlerPtr RequestStreamHandler::newHandler(
+RequestStreamReaderPtr RequestStreamReader::newHandler(
     StreamDataCallback dataCb,
     StreamFinishCallback finishCb)
 {
-    return std::make_shared<DefaultStreamHandler>(std::move(dataCb),
-                                                  std::move(finishCb));
+    return std::make_shared<DefaultStreamReader>(std::move(dataCb),
+                                                 std::move(finishCb));
 }
 
-RequestStreamHandlerPtr RequestStreamHandler::newNullHandler()
+RequestStreamReaderPtr RequestStreamReader::newNullReader()
 {
-    return std::make_shared<NullStreamHandler>();
+    return std::make_shared<NullStreamReader>();
 }
 
-RequestStreamHandlerPtr RequestStreamHandler::newMultipartHandler(
+RequestStreamReaderPtr RequestStreamReader::newMultipartReader(
     const HttpRequestPtr &req,
     MultipartHeaderCallback headerCb,
     StreamDataCallback dataCb,
     StreamFinishCallback finishCb)
 {
-    return std::make_shared<MultipartStreamHandler>(req->getHeader(
-                                                        "content-type"),
-                                                    std::move(headerCb),
-                                                    std::move(dataCb),
-                                                    std::move(finishCb));
+    return std::make_shared<MultipartStreamReader>(req->getHeader(
+                                                       "content-type"),
+                                                   std::move(headerCb),
+                                                   std::move(dataCb),
+                                                   std::move(finishCb));
 }
 
 }  // namespace drogon

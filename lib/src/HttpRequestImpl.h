@@ -93,7 +93,7 @@ class HttpRequestImpl : public HttpRequest
         routingParams_.clear();
         // stream
         streamStatus_ = ReqStreamStatus::None;
-        streamHandlerPtr_.reset();
+        streamReaderPtr_.reset();
         streamFinishCb_ = nullptr;
         streamExceptionPtr_ = nullptr;
         startProcessing_ = false;
@@ -568,7 +568,7 @@ class HttpRequestImpl : public HttpRequest
     void streamFinish();
     void streamError(std::exception_ptr ex);
 
-    void setStreamHandler(RequestStreamHandlerPtr handler);
+    void setStreamReader(RequestStreamReaderPtr reader);
     void waitForStreamFinish(std::function<void()> &&cb);
 
     void startProcessing()
@@ -680,7 +680,7 @@ class HttpRequestImpl : public HttpRequest
 
     ReqStreamStatus streamStatus_{ReqStreamStatus::None};
     std::function<void()> streamFinishCb_;
-    RequestStreamHandlerPtr streamHandlerPtr_;
+    RequestStreamReaderPtr streamReaderPtr_;
     std::exception_ptr streamExceptionPtr_;
     bool startProcessing_{false};
 

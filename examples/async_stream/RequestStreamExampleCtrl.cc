@@ -5,10 +5,10 @@
 
 using namespace drogon;
 
-class StreamEchoHandler : public RequestStreamHandler
+class StreamEchoReader : public RequestStreamReader
 {
   public:
-    StreamEchoHandler(ResponseStreamPtr respStream)
+    StreamEchoReader(ResponseStreamPtr respStream)
         : respStream_(std::move(respStream))
     {
     }
@@ -60,9 +60,8 @@ class RequestStreamExampleCtrl : public HttpController<RequestStreamExampleCtrl>
     {
         auto resp = drogon::HttpResponse::newAsyncStreamResponse(
             [stream](ResponseStreamPtr respStream) {
-                auto reqStreamHandler =
-                    std::make_shared<StreamEchoHandler>(std::move(respStream));
-                stream->setStreamHandler(reqStreamHandler);
+                stream->setStreamReader(
+                    std::make_shared<StreamEchoReader>(std::move(respStream)));
             });
         callback(resp);
     }
@@ -80,7 +79,7 @@ class RequestStreamExampleCtrl : public HttpController<RequestStreamExampleCtrl>
         };
 
         auto files = std::make_shared<std::vector<Entry>>();
-        auto handler = RequestStreamHandler::newMultipartHandler(
+        auto reader = RequestStreamReader::newMultipartReader(
             req,
             [files](MultipartHeader &&header) {
                 LOG_INFO << "Multipart name: " << header.name
@@ -163,6 +162,6 @@ class RequestStreamExampleCtrl : public HttpController<RequestStreamExampleCtrl>
                 }
             });
 
-        stream->setStreamHandler(std::move(handler));
+        stream->setStreamReader(std::move(reader));
     }
 };

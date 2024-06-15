@@ -49,7 +49,7 @@ class RequestStreamTestCtrl : public HttpController<RequestStreamTestCtrl>
         }
 
         auto respBody = std::make_shared<std::string>();
-        auto handler = RequestStreamHandler::newHandler(
+        auto reader = RequestStreamReader::newHandler(
             [respBody](const char *data, size_t length) {
                 respBody->append(data, length);
             },
@@ -75,7 +75,7 @@ class RequestStreamTestCtrl : public HttpController<RequestStreamTestCtrl>
                     callback(resp);
                 }
             });
-        stream->setStreamHandler(std::move(handler));
+        stream->setStreamReader(std::move(reader));
     }
 
     void stream_upload_echo(
@@ -112,7 +112,7 @@ class RequestStreamTestCtrl : public HttpController<RequestStreamTestCtrl>
         };
 
         auto ctx = std::make_shared<Context>();
-        auto handler = RequestStreamHandler::newMultipartHandler(
+        auto reader = RequestStreamReader::newMultipartReader(
             req,
             [ctx](MultipartHeader &&header) { ctx->currentFileIndex_++; },
             [ctx](const char *data, size_t length) {
@@ -147,6 +147,6 @@ class RequestStreamTestCtrl : public HttpController<RequestStreamTestCtrl>
                     callback(resp);
                 }
             });
-        stream->setStreamHandler(std::move(handler));
+        stream->setStreamReader(std::move(reader));
     }
 };
