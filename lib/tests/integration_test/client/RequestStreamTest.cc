@@ -1,7 +1,7 @@
-#include <drogon/HttpAppFramework.h>
 #include <drogon/HttpClient.h>
 #include <drogon/drogon_test.h>
 #include <trantor/net/TcpClient.h>
+#include <chrono>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -137,16 +137,13 @@ void checkStreamRequest(auto TEST_CTX,
                 return;
             }
             LOG_INFO << "Connected to server";
-            drogon::async_run([TEST_CTX, conn, dataToSend]() -> Task<> {
-                CHECK(conn->connected());
-                for (auto &data : dataToSend)
-                {
-                    conn->send(data.data(), data.size());
-                    co_await sleepCoro(conn->getLoop(), 1);
-                }
-                conn->shutdown();
-                co_return;
-            });
+            CHECK(conn->connected());
+            for (auto &data : dataToSend)
+            {
+                conn->send(data.data(), data.size());
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+            conn->shutdown();
         });
     tcpClient->connect();
 }
