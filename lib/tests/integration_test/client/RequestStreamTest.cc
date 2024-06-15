@@ -8,11 +8,46 @@
 
 using namespace drogon;
 
-void checkStreamRequest(auto TEST_CTX,
+template <typename T>
+void checkStreamRequest(T &&TEST_CTX,
                         trantor::EventLoop *loop,
                         const trantor::InetAddress &addr,
                         const std::vector<std::string_view> &dataToSend,
-                        std::string_view expectedResp);
+                        std::string_view expectedResp)
+{
+    auto tcpClient = std::make_shared<trantor::TcpClient>(loop, addr, "test");
+
+    auto respString = std::make_shared<std::string>();
+    tcpClient->setMessageCallback(
+        [respString](const trantor::TcpConnectionPtr &conn,
+                     trantor::MsgBuffer *buf) {
+            respString->append(buf->read(buf->readableBytes()));
+        });
+    tcpClient->setConnectionCallback(
+        [TEST_CTX,
+         tcpClient,  // hold self
+         respString,
+         dataToSend,
+         expectedResp](const trantor::TcpConnectionPtr &conn) {
+            if (conn->disconnected())
+            {
+                LOG_INFO << "Disconnected from server";
+                tcpClient->setConnectionCallback(nullptr);
+                CHECK(respString->substr(0, expectedResp.size()) ==
+                      expectedResp);
+                return;
+            }
+            LOG_INFO << "Connected to server";
+            CHECK(conn->connected());
+            for (auto &data : dataToSend)
+            {
+                conn->send(data.data(), data.size());
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+            conn->shutdown();
+        });
+    tcpClient->connect();
+}
 
 DROGON_TEST(RequestStreamTest)
 {
@@ -106,44 +141,4 @@ DROGON_TEST(RequestStreamTest)
                         "0\r\n\r\n"},
                        // Bad response
                        "HTTP/1.1 400 Bad Request\r\n");
-}
-
-void checkStreamRequest(auto TEST_CTX,
-                        trantor::EventLoop *loop,
-                        const trantor::InetAddress &addr,
-                        const std::vector<std::string_view> &dataToSend,
-                        std::string_view expectedResp)
-{
-    auto tcpClient = std::make_shared<trantor::TcpClient>(loop, addr, "test");
-
-    auto respString = std::make_shared<std::string>();
-    tcpClient->setMessageCallback(
-        [respString](const trantor::TcpConnectionPtr &conn,
-                     trantor::MsgBuffer *buf) {
-            respString->append(buf->read(buf->readableBytes()));
-        });
-    tcpClient->setConnectionCallback(
-        [TEST_CTX,
-         tcpClient,  // hold self
-         respString,
-         dataToSend,
-         expectedResp](const trantor::TcpConnectionPtr &conn) {
-            if (conn->disconnected())
-            {
-                LOG_INFO << "Disconnected from server";
-                tcpClient->setConnectionCallback(nullptr);
-                CHECK(respString->substr(0, expectedResp.size()) ==
-                      expectedResp);
-                return;
-            }
-            LOG_INFO << "Connected to server";
-            CHECK(conn->connected());
-            for (auto &data : dataToSend)
-            {
-                conn->send(data.data(), data.size());
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
-            conn->shutdown();
-        });
-    tcpClient->connect();
 }
