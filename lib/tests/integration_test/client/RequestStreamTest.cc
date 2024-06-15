@@ -16,6 +16,7 @@ void checkStreamRequest(T &&TEST_CTX,
                         std::string_view expectedResp)
 {
     auto tcpClient = std::make_shared<trantor::TcpClient>(loop, addr, "test");
+    std::promise<void> promise;
 
     auto respString = std::make_shared<std::string>();
     tcpClient->setMessageCallback(
@@ -24,17 +25,14 @@ void checkStreamRequest(T &&TEST_CTX,
             respString->append(buf->read(buf->readableBytes()));
         });
     tcpClient->setConnectionCallback(
-        [TEST_CTX,
-         tcpClient,  // hold self
-         respString,
-         dataToSend,
-         expectedResp](const trantor::TcpConnectionPtr &conn) {
+        [TEST_CTX, &promise, respString, dataToSend, expectedResp](
+            const trantor::TcpConnectionPtr &conn) {
             if (conn->disconnected())
             {
                 LOG_INFO << "Disconnected from server";
-                tcpClient->setConnectionCallback(nullptr);
                 CHECK(respString->substr(0, expectedResp.size()) ==
                       expectedResp);
+                promise.set_value();
                 return;
             }
             LOG_INFO << "Connected to server";
@@ -47,6 +45,7 @@ void checkStreamRequest(T &&TEST_CTX,
             conn->shutdown();
         });
     tcpClient->connect();
+    promise.get_future().wait();
 }
 
 DROGON_TEST(RequestStreamTest)
