@@ -27,27 +27,57 @@ class RequestStreamImpl : public RequestStream
     {
     }
 
-    void setStreamHandler(RequestStreamHandlerPtr handler) override
+    ~RequestStreamImpl() override
     {
+        if (isSet_.exchange(true))
+        {
+            return;
+        }
+
+        // Drop all data if no reader is set
         if (auto req = weakReq_.lock())
         {
-            auto loop = req->getLoop();
-            if (loop->isInLoopThread())
-            {
-                req->setStreamHandler(std::move(handler));
-            }
-            else
-            {
-                loop->queueInLoop([req = std::move(req),
-                                   handler = std::move(handler)]() mutable {
+            setHandlerInLoop(req, RequestStreamHandler::newNullHandler());
+        }
+    }
+
+    void setStreamHandler(RequestStreamHandlerPtr handler) override
+    {
+        if (isSet_.exchange(true))
+        {
+            return;
+        }
+
+        if (auto req = weakReq_.lock())
+        {
+            setHandlerInLoop(req, std::move(handler));
+        }
+    }
+
+    void setHandlerInLoop(const HttpRequestImplPtr &req,
+                          RequestStreamHandlerPtr handler)
+    {
+        if (!req->isStreamMode())
+        {
+            return;
+        }
+        auto loop = req->getLoop();
+        if (loop->isInLoopThread())
+        {
+            req->setStreamHandler(std::move(handler));
+        }
+        else
+        {
+            loop->queueInLoop(
+                [req = std::move(req), handler = std::move(handler)]() mutable {
                     req->setStreamHandler(std::move(handler));
                 });
-            }
         }
     }
 
   private:
     std::weak_ptr<HttpRequestImpl> weakReq_;
+    std::atomic_bool isSet_{false};
 };
 
 namespace internal
@@ -89,6 +119,21 @@ class DefaultStreamHandler : public RequestStreamHandler
   private:
     StreamDataCallback dataCb_;
     StreamFinishCallback finishCb_;
+};
+
+/**
+ * Drops all data
+ */
+class NullStreamHandler : public RequestStreamHandler
+{
+  public:
+    void onStreamData(const char *, size_t length) override
+    {
+    }
+
+    void onStreamFinish(std::exception_ptr) override
+    {
+    }
 };
 
 /**
@@ -158,6 +203,11 @@ RequestStreamHandlerPtr RequestStreamHandler::newHandler(
 {
     return std::make_shared<DefaultStreamHandler>(std::move(dataCb),
                                                   std::move(finishCb));
+}
+
+RequestStreamHandlerPtr RequestStreamHandler::newNullHandler()
+{
+    return std::make_shared<NullStreamHandler>();
 }
 
 RequestStreamHandlerPtr RequestStreamHandler::newMultipartHandler(

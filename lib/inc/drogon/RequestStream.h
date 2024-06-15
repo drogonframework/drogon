@@ -84,15 +84,6 @@ class StreamError final : public std::exception
 };
 
 /**
- * TODO-s:
- * - Too many callbacks
- * - Is `finishCb` necessary? Calling `dataCb` with null can be a replacement.
- * - Should we notify user on each multipart block finish?
- * - Is `errorCb` necessary? How does it act? Should user or framework send the
- *   error response?
- */
-
-/**
  * An interface for stream request handling.
  * User should create an implementation class, or use built-in handlers
  */
@@ -109,6 +100,9 @@ class RequestStreamHandler
     // Create a handler with default implementation
     static RequestStreamHandlerPtr newHandler(StreamDataCallback dataCb,
                                               StreamFinishCallback finishCb);
+
+    // A handler that drops all data
+    static RequestStreamHandlerPtr newNullHandler();
 
     using MultipartHeaderCallback = std::function<void(MultipartHeader header)>;
 
