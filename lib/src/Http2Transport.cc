@@ -263,8 +263,7 @@ std::optional<GoAwayFrame> GoAwayFrame::parse(ByteStream &payload,
     frame.lastStreamId = payload.readU32BE();
     frame.errorCode = payload.readU32BE();
     frame.additionalDebugData.resize(payload.remaining());
-    for (size_t i = 0; i < frame.additionalDebugData.size(); ++i)
-        frame.additionalDebugData[i] = payload.readU8();
+    payload.read(frame.additionalDebugData.data(), payload.remaining());
     return frame;
 }
 
