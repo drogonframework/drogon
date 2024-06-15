@@ -677,7 +677,10 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         connPtr->forceClose();
         return;
     }
-    const auto streamId = *sid;
+    // -2 because we are using the next stream id for the next request
+    // TODO: Clean interface to get the current highest stream id. Might need
+    // to keep tracking separately
+    const auto streamId = *sid - 2;
     assert(streamId % 2 == 1);
     LOG_TRACE << "Sending HTTP/2 request: streamId=" << streamId;
     if (streams.find(streamId) != streams.end())
@@ -1416,6 +1419,9 @@ void Http2Transport::connectionErrored(int32_t lastStreamId,
     sendFrame(
         GoAwayFrame(lastStreamId, (uint32_t)errorCode, std::move(errorMsg)), 0);
 
+    // TODO: GOAWAY should gracefully shutdown the connection. But we are
+    // force closing it for now. This is not ideal and we need to switch to
+    // RST_STREAM and leave GOAWAY for when we bother to gracefully shutdown
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);
     errorCallback(ReqResult::BadResponse);
