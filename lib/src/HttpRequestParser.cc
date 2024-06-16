@@ -306,13 +306,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     LOG_WARN << "417ExpectationFailed for \"" << expect << "\"";
                     return -k417ExpectationFailed;
                 }
-                if (!request_->isStreamMode())
-                {
-                    // Reserve space for full body in non-stream mode.
-                    // For stream mode requests that match a non-stream handler,
-                    // we will reserve full body before waitForStreamFinish().
-                    request_->reserveBodySize(remainContentLength_);
-                }
+
                 assert(status_ == HttpRequestParseStatus::kExpectBody ||
                        status_ == HttpRequestParseStatus::kExpectChunkLen);
 
@@ -321,6 +315,11 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     request_->streamStart();
                     return 2;
                 }
+
+                // Reserve space for full body in non-stream mode.
+                // For stream mode requests that match a non-stream handler,
+                // we will reserve full body before waitForStreamFinish().
+                request_->reserveBodySize(remainContentLength_);
                 continue;
             }
             case HttpRequestParseStatus::kExpectBody:
