@@ -118,7 +118,6 @@ void HttpRequestParser::reset()
 {
     assert(loop_->isInLoopThread());
     remainContentLength_ = 0;
-    errorStatusCode_ = HttpStatusCode::k500InternalServerError;
     status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
     {
@@ -134,7 +133,8 @@ void HttpRequestParser::reset()
 }
 
 /**
- * @return return -1 if encounters any error in request
+ * @return return -HttpStatusCode if encounters any http errors in request
+ * @return return -1 if encounters any other errors in request
  * @return return 0 if request is not ready
  * @return return 1 if request is ready
  * @return return 2 if request header is ready and entering stream mode
@@ -155,18 +155,14 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     if (buf->readableBytes() > METHOD_MAX_LEN)
                     {
-                        buf->retrieveAll();
-                        errorStatusCode_ = k400BadRequest;
-                        return -1;
+                        return -k400BadRequest;
                     }
                     return 0;
                 }
                 // try read method
                 if (!request_->setMethod(buf->peek(), space))
                 {
-                    buf->retrieveAll();
-                    errorStatusCode_ = k405MethodNotAllowed;
-                    return -1;
+                    return -k405MethodNotAllowed;
                 }
                 status_ = HttpRequestParseStatus::kExpectRequestLine;
                 buf->retrieveUntil(space + 1);
@@ -182,18 +178,14 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         /// The limit for request line is 64K bytes. response
                         /// k414RequestURITooLarge
                         /// TODO: Make this configurable?
-                        buf->retrieveAll();
-                        errorStatusCode_ = k414RequestURITooLarge;
-                        return -1;
+                        return -k414RequestURITooLarge;
                     }
                     return 0;
                 }
                 if (!processRequestLine(buf->peek(), crlf))
                 {
                     // error
-                    buf->retrieveAll();
-                    errorStatusCode_ = k400BadRequest;
-                    return -1;
+                    return -k400BadRequest;
                 }
                 buf->retrieveUntil(crlf + CRLF_LEN);
                 status_ = HttpRequestParseStatus::kExpectHeaders;
@@ -208,9 +200,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         /// The limit for every request header is 64K bytes;
                         /// TODO: Make this configurable?
-                        buf->retrieveAll();
-                        errorStatusCode_ = k400BadRequest;
-                        return -1;
+                        return -k400BadRequest;
                     }
                     return 0;
                 }
@@ -240,9 +230,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     }
                     catch (...)
                     {
-                        buf->retrieveAll();
-                        errorStatusCode_ = k400BadRequest;
-                        return -1;
+                        return -k400BadRequest;
                     }
                     request_->contentLengthHeaderValue_ = remainContentLength_;
                     if (remainContentLength_ == 0)
@@ -275,9 +263,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     }
                     else
                     {
-                        buf->retrieveAll();
-                        errorStatusCode_ = k501NotImplemented;
-                        return -1;
+                        return -k501NotImplemented;
                     }
                 }
 
@@ -285,9 +271,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (remainContentLength_ >
                     HttpAppFrameworkImpl::instance().getClientMaxBodySize())
                 {
-                    buf->retrieveAll();
-                    errorStatusCode_ = k413RequestEntityTooLarge;
-                    return -1;
+                    return -k413RequestEntityTooLarge;
                 }
 
                 // Check expect:100-continue
@@ -298,9 +282,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     if (remainContentLength_ == 0)
                     {
                         // error
-                        buf->retrieveAll();
-                        errorStatusCode_ = k400BadRequest;
-                        return -1;
+                        return -k400BadRequest;
                     }
                     else
                     {
@@ -322,9 +304,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 else if (!expect.empty())
                 {
                     LOG_WARN << "417ExpectationFailed for \"" << expect << "\"";
-                    buf->retrieveAll();
-                    errorStatusCode_ = k417ExpectationFailed;
-                    return -1;
+                    return -k417ExpectationFailed;
                 }
                 if (!request_->isStreamMode())
                 {
@@ -372,9 +352,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     if (buf->readableBytes() > TRUNK_LEN_MAX_LEN + CRLF_LEN)
                     {
-                        buf->retrieveAll();
-                        errorStatusCode_ = k400BadRequest;
-                        return -1;
+                        return -k400BadRequest;
                     }
                     return 0;
                 }
@@ -387,9 +365,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     if (currentChunkLength_ + remainContentLength_ >
                         HttpAppFrameworkImpl::instance().getClientMaxBodySize())
                     {
-                        buf->retrieveAll();
-                        errorStatusCode_ = k413RequestEntityTooLarge;
-                        return -1;
+                        return -k413RequestEntityTooLarge;
                     }
                     status_ = HttpRequestParseStatus::kExpectChunkBody;
                 }
@@ -410,9 +386,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     *(buf->peek() + currentChunkLength_ + 1) != '\n')
                 {
                     // error!
-                    buf->retrieveAll();
-                    errorStatusCode_ = k400BadRequest;
-                    return -1;
+                    return -k400BadRequest;
                 }
                 request_->appendToBody(buf->peek(), currentChunkLength_);
                 buf->retrieve(currentChunkLength_ + CRLF_LEN);
@@ -431,9 +405,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (*(buf->peek()) != '\r' || *(buf->peek() + 1) != '\n')
                 {
                     // error!
-                    buf->retrieveAll();
-                    errorStatusCode_ = k400BadRequest;
-                    return -1;
+                    return -k400BadRequest;
                 }
                 buf->retrieve(CRLF_LEN);
                 status_ = HttpRequestParseStatus::kGotAll;
@@ -469,7 +441,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             }
         }
     }
-    return -1;
+    return -1;  // won't reach here, just to make compiler happy
 }
 
 void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req,

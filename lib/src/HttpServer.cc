@@ -187,18 +187,19 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 req->streamError(std::make_exception_ptr(
                     StreamError(StreamErrorCode::kBadRequest, "Bad request")));
             }
-            else
+            else if (parseRes != -1)
             {
                 // In non-stream mode, request won't be process until it's fully
                 // parsed. To keep the old behavior, we send response directly
                 // through conn. (This response won't go through pre-sending
                 // aop, maybe we should change this behavior).
-                HttpStatusCode code = requestParser->getErrorStatusCode();
+                auto code = static_cast<HttpStatusCode>(-parseRes);
                 conn->send(utils::formattedString(
                     "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
                     code,
                     statusCodeToString(code).data()));
             }
+            buf->retrieveAll();
             // NOTE: should we call conn->forceClose() instead?
             // Calling shutdown() handles socket more elegantly.
             conn->shutdown();
