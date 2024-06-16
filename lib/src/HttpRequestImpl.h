@@ -665,7 +665,7 @@ class HttpRequestImpl : public HttpRequest
 #endif
     StreamDecompressStatus decompressBodyGzip() noexcept;
 
-    constexpr const static std::string_view emptySv_{""};
+    static constexpr const std::string_view emptySv_{""};
 
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};

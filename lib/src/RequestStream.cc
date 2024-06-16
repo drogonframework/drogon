@@ -68,10 +68,9 @@ class RequestStreamImpl : public RequestStream
         }
         else
         {
-            loop->queueInLoop(
-                [req = std::move(req), reader = std::move(reader)]() mutable {
-                    req->setStreamReader(std::move(reader));
-                });
+            loop->queueInLoop([req, reader = std::move(reader)]() mutable {
+                req->setStreamReader(std::move(reader));
+            });
         }
     }
 
