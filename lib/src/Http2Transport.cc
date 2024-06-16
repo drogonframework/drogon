@@ -1512,6 +1512,11 @@ void Http2Transport::sendFrame(const internal::H2Frame &frame, int32_t streamId)
     size_t oldSize = batchedSendBuffer.size();
     serializeFrame(batchedSendBuffer, frame, streamId);
     *bytesSent_ += batchedSendBuffer.size() - oldSize;
+
+    // proactively send the data if it's too large. Avoid potential reallocation
+    // of the send buffer
+    if (batchedSendBuffer.size() > 0x20000)
+        sendBufferedData();
 }
 
 void Http2Transport::sendBufferedData()
