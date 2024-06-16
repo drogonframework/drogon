@@ -477,29 +477,43 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
 {
     // Handle stream mode for non-stream handlers
     if (req->streamStatus() >= ReqStreamStatus::Open &&
-        req->streamStatus() != ReqStreamStatus::Finish &&
         !pack.binderPtr->isStreamHandler())
     {
         LOG_TRACE << "Wait for request stream finish";
-        auto contentLength = req->getContentLengthHeaderValue();
-        if (contentLength.has_value())
+        if (req->streamStatus() == ReqStreamStatus::Finish)
         {
-            req->reserveBodySize(contentLength.value());
+            req->quitStreamMode();
         }
-        req->waitForStreamFinish([weakReq = std::weak_ptr(req),
-                                  pack = std::forward<Pack>(pack)]() mutable {
-            auto req = weakReq.lock();
-            if (!req)
-                return;
-            if (req->streamStatus() == ReqStreamStatus::Finish)
+        else
+        {
+            auto contentLength = req->getContentLengthHeaderValue();
+            if (contentLength.has_value())
             {
-                requestPostRouting(req, std::forward<Pack>(pack));
-                return;
+                req->reserveBodySize(contentLength.value());
             }
-            LOG_DEBUG << "Stop processing request due to stream error";
-            pack.callback(app().getCustomErrorHandler()(k400BadRequest, req));
-        });
-        return;
+            req->waitForStreamFinish([weakReq = std::weak_ptr(req),
+                                      pack =
+                                          std::forward<Pack>(pack)]() mutable {
+                auto req = weakReq.lock();
+                if (!req)
+                    return;
+                if (req->streamStatus() == ReqStreamStatus::Finish)
+                {
+                    req->quitStreamMode();
+                    // call requestPostRouting again
+                    requestPostRouting(req, std::forward<Pack>(pack));
+                    return;
+                }
+                else
+                {
+                    req->quitStreamMode();
+                    LOG_DEBUG << "Stop processing request due to stream error";
+                    pack.callback(
+                        app().getCustomErrorHandler()(k400BadRequest, req));
+                }
+            });
+            return;
+        }
     }
 
     // post-routing aop

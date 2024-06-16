@@ -224,6 +224,10 @@ class HttpRequestImpl : public HttpRequest
 
     std::string_view bodyView() const
     {
+        if (isStreamMode())
+        {
+            return emptySv_;
+        }
         if (cacheFilePtr_)
         {
             return cacheFilePtr_->getStringView();
@@ -233,6 +237,10 @@ class HttpRequestImpl : public HttpRequest
 
     const char *bodyData() const override
     {
+        if (isStreamMode())
+        {
+            return emptySv_.data();
+        }
         if (cacheFilePtr_)
         {
             return cacheFilePtr_->getStringView().data();
@@ -242,6 +250,10 @@ class HttpRequestImpl : public HttpRequest
 
     size_t bodyLength() const override
     {
+        if (isStreamMode())
+        {
+            return emptySv_.length();
+        }
         if (cacheFilePtr_)
         {
             return cacheFilePtr_->getStringView().length();
@@ -260,6 +272,10 @@ class HttpRequestImpl : public HttpRequest
 
     std::string_view contentView() const
     {
+        if (isStreamMode())
+        {
+            return emptySv_;
+        }
         if (cacheFilePtr_)
             return cacheFilePtr_->getStringView();
         return content_;
@@ -570,6 +586,7 @@ class HttpRequestImpl : public HttpRequest
 
     void setStreamReader(RequestStreamReaderPtr reader);
     void waitForStreamFinish(std::function<void()> &&cb);
+    void quitStreamMode();
 
     void startProcessing()
     {
@@ -647,6 +664,8 @@ class HttpRequestImpl : public HttpRequest
     StreamDecompressStatus decompressBodyBrotli() noexcept;
 #endif
     StreamDecompressStatus decompressBodyGzip() noexcept;
+
+    constexpr const static std::string_view emptySv_{""};
 
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};

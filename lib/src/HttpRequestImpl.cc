@@ -1095,6 +1095,13 @@ void HttpRequestImpl::waitForStreamFinish(std::function<void()> &&cb)
     else
     {
         cb();
-        return;
     }
+}
+
+void HttpRequestImpl::quitStreamMode()
+{
+    assert(loop_->isInLoopThread());
+    assert(streamStatus_ >= ReqStreamStatus::Finish);
+    assert(!streamReaderPtr_);
+    streamStatus_ = ReqStreamStatus::None;
 }
