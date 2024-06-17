@@ -1,0 +1,104 @@
+{
+    //rdbms: server type, postgresql,mysql or sqlite3
+    "rdbms": "postgresql",
+    //filename: sqlite3 db file name
+    //"filename":"",
+    //host: server address,localhost by default;
+    "host": "127.0.0.1",
+    //port: server port, 5432 by default;
+    "port": 5432,
+    //dbname: Database name;
+    "dbname": "",
+    //schema: valid for postgreSQL, "public" by default;
+    "schema": "public",
+    //user: User name
+    "user": "",
+    //password or passwd: Password
+    "password": "",
+    //client_encoding: The character set used by drogon_ctl. it is empty string by default which 
+    //means use the default character set.
+    //"client_encoding": "",
+    //table: An array of tables to be modelized. if the array is empty, all revealed tables are modelized.
+    "tables": [],
+    //convert: the value can be changed by a function call before it is stored into database or
+    //after it is read from database
+    "convert": {
+      "enabled": false,
+      "items":[{
+          "table": "user",
+          "column": "password",
+          "method": {
+            //after_db_read: name of the method which is called after reading from database, signature: void([const] std::shared_ptr [&])
+            "after_db_read": "decrypt_password",
+            //before_db_write: name of the method which is called before writing to database, signature: void([const] std::shared_ptr [&])
+            "before_db_write": "encrypt_password"
+          },
+          "includes": [
+            "\"file_local_search_path.h\"","<file_in_global_search_path.h>"
+          ]
+      }]
+    },
+    "relationships": {
+        "enabled": false,
+        "items": [{
+                "type": "has one",
+                "original_table_name": "products",
+                "original_table_alias": "product",
+                "original_key": "id",
+                "target_table_name": "skus",
+                "target_table_alias": "SKU",
+                "target_key": "product_id",
+                "enable_reverse": true
+            },
+            {
+                "type": "has many",
+                "original_table_name": "products",
+                "original_table_alias": "product",
+                "original_key": "id",
+                "target_table_name": "reviews",
+                "target_table_alias": "",
+                "target_key": "product_id",
+                "enable_reverse": true
+            },
+            {
+                "type": "many to many",
+                "original_table_name": "products",
+                "original_table_alias": "",
+                "original_key": "id",
+                "pivot_table": {
+                    "table_name": "carts_products",
+                    "original_key": "product_id",
+                    "target_key": "cart_id"
+                },
+                "target_table_name": "carts",
+                "target_table_alias": "",
+                "target_key": "id",
+                "enable_reverse": true
+            }
+        ]
+    },
+    "restful_api_controllers": {
+        "enabled": false,
+        // resource_uri: The URI to access the resource, the default value 
+        // is '/*' in which the asterisk represents the table name.
+        // If this option is set to a empty string, the URI is composed of the namespaces and the class name.
+        "resource_uri": "/*",
+        // class_name: "Restful*Ctrl" by default, the asterisk represents the table name.
+        // This option can contain namespaces.
+        "class_name": "Restful*Ctrl",
+        // filters: an array of filter names.
+        "filters": [],
+        // db_client: the database client used by the controller. this option must be consistent with
+        // the configuration of the application.
+        "db_client": {
+            //name: Name of the client,'default' by default
+            "name": "default",
+            //is_fast: 
+            "is_fast": false
+        },
+        // directory: The directory where the controller source files are stored.
+        "directory": "controllers",
+        // generate_base_only: false by default. Set to true to avoid overwriting custom subclasses.
+        "generate_base_only": false
+    }
+}
