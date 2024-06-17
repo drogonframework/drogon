@@ -6,14 +6,20 @@
 
 #include "PromStat.h"
 #include <drogon/plugins/PromExporter.h>
+#include <drogon/utils/monitoring/Counter.h>
+#include <drogon/utils/monitoring/Histogram.h>
+#include <drogon/HttpAppFramework.h>
+#include <chrono>
+
+using namespace std::literals::chrono_literals;
 using namespace drogon;
 
-void Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
+Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
                                             MiddlewareNextAwaiter &&next)
 {
     auto path = req->path();
     auto method = req->methodString();
-    auto promExporter = app().getPlugin<plugin::PromExporter>();
+    auto promExporter = app().getPlugin<drogon::plugin::PromExporter>();
     if (promExporter)
     {
         auto collector =
@@ -36,7 +42,7 @@ void Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
                 "http_requests_duration");
         if (collector)
         {
-            collector->metric({method, path})->observe(duration);
+            collector->metric({method, path},std::vector<double>{1,2,3}, 1h, 6)->observe(duration);
         }
     }
     co_return resp;
