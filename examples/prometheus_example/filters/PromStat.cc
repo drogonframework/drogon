@@ -15,7 +15,7 @@ using namespace std::literals::chrono_literals;
 using namespace drogon;
 
 Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
-                                            MiddlewareNextAwaiter &&next)
+                                       MiddlewareNextAwaiter &&next)
 {
     auto path = req->path();
     auto method = req->methodString();
@@ -42,7 +42,9 @@ Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
                 "http_requests_duration");
         if (collector)
         {
-            collector->metric({method, path},std::vector<double>{1,2,3}, 1h, 6)->observe(duration);
+            collector
+                ->metric({method, path}, std::vector<double>{1, 2, 3}, 1h, 6)
+                ->observe(duration);
         }
     }
     co_return resp;

@@ -13,9 +13,15 @@ using namespace drogon;
 class PromStat : public HttpCoroMiddleware<PromStat>
 {
   public:
+    PromStat()
+    {
+        void(0);
+    }
 
-    PromStat(){void(0);}
-    virtual ~PromStat(){}
+    virtual ~PromStat()
+    {
+    }
+
     Task<HttpResponsePtr> invoke(const HttpRequestPtr &req,
                                  MiddlewareNextAwaiter &&next) override;
 };
