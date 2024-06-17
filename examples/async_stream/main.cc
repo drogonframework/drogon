@@ -39,8 +39,7 @@ int main()
            std::function<void(const HttpResponsePtr &)> &&callback) {
             if (!stream)
             {
-                LOG_INFO << "Empty RequestStream, the request does not have a "
-                            "body, or stream-mode is not enabled";
+                LOG_INFO << "stream mode is not enabled";
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k400BadRequest);
                 resp->setBody("no stream");

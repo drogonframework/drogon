@@ -137,7 +137,8 @@ void HttpRequestParser::reset()
  * @return return -1 if encounters any other errors in request
  * @return return 0 if request is not ready
  * @return return 1 if request is ready
- * @return return 2 if request header is ready and entering stream mode
+ * @return return 2 if request is ready and entering stream mode
+ * @return return 3 if request header is ready and entering stream mode
  */
 int HttpRequestParser::parseRequest(MsgBuffer *buf)
 {
@@ -237,8 +238,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         // content-length = 0, request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
-                        ++requestsCounter_;
-                        return 1;
                     }
                     else
                     {
@@ -254,8 +253,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         // no content-length and no transfer-encoding,
                         // request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
-                        ++requestsCounter_;
-                        return 1;
                     }
                     else if (encode == "chunked")
                     {
@@ -307,19 +304,31 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return -k417ExpectationFailed;
                 }
 
-                assert(status_ == HttpRequestParseStatus::kExpectBody ||
+                assert(status_ == HttpRequestParseStatus::kGotAll ||
+                       status_ == HttpRequestParseStatus::kExpectBody ||
                        status_ == HttpRequestParseStatus::kExpectChunkLen);
 
                 if (app().isRequestStreamEnabled())
                 {
                     request_->streamStart();
-                    return 2;
+                    if (status_ == HttpRequestParseStatus::kGotAll)
+                    {
+                        ++requestsCounter_;
+                        return 2;
+                    }
+                    else
+                    {
+                        return 3;
+                    }
                 }
 
                 // Reserve space for full body in non-stream mode.
                 // For stream mode requests that match a non-stream handler,
                 // we will reserve full body before waitForStreamFinish().
-                request_->reserveBodySize(remainContentLength_);
+                if (remainContentLength_)
+                {
+                    request_->reserveBodySize(remainContentLength_);
+                }
                 continue;
             }
             case HttpRequestParseStatus::kExpectBody:
@@ -407,7 +416,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return -k400BadRequest;
                 }
                 buf->retrieve(CRLF_LEN);
-                status_ = HttpRequestParseStatus::kGotAll;
 
                 if (!request_->isStreamMode())
                 {
@@ -431,11 +439,13 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                                             request_->realContentLength()));
                     request_->removeHeaderBy("transfer-encoding");
                 }
+                status_ = HttpRequestParseStatus::kGotAll;
                 ++requestsCounter_;
                 return 1;
             }
             case HttpRequestParseStatus::kGotAll:
             {
+                ++requestsCounter_;
                 return 1;
             }
         }

@@ -213,7 +213,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         {
             break;
         }
-        if (parseRes == 2 || parseRes == 1 && !req->isStreamMode())
+        if (parseRes >= 2 || parseRes == 1 && !req->isStreamMode())
         {
             req->setPeerAddr(conn->peerAddr());
             req->setLocalAddr(conn->localAddr());
@@ -223,7 +223,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             // TODO: maybe call onRequests() directly in stream mode
             requests.push_back(req);
         }
-        if (parseRes == 1)
+        if (parseRes == 1 || parseRes == 2)
         {
             assert(requestParser->gotAll());
             if (req->isStreamMode())
