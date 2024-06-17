@@ -48,7 +48,7 @@ class RequestStreamTestCtrl : public HttpController<RequestStreamTestCtrl>
         }
 
         auto respBody = std::make_shared<std::string>();
-        auto reader = RequestStreamReader::newHandler(
+        auto reader = RequestStreamReader::newReader(
             [respBody](const char *data, size_t length) {
                 respBody->append(data, length);
             },

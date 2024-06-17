@@ -47,7 +47,7 @@ int main()
                 return;
             }
 
-            auto reader = RequestStreamReader::newHandler(
+            auto reader = RequestStreamReader::newReader(
                 [](const char *data, size_t length) {
                     LOG_INFO << "piece[" << length
                              << "]: " << std::string_view{data, length};

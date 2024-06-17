@@ -196,7 +196,7 @@ class MultipartStreamReader : public RequestStreamReader
     StreamFinishCallback finishCb_;
 };
 
-RequestStreamReaderPtr RequestStreamReader::newHandler(
+RequestStreamReaderPtr RequestStreamReader::newReader(
     StreamDataCallback dataCb,
     StreamFinishCallback finishCb)
 {

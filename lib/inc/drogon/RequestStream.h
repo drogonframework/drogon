@@ -98,8 +98,8 @@ class RequestStreamReader
     using StreamFinishCallback = std::function<void(std::exception_ptr)>;
 
     // Create a handler with default implementation
-    static RequestStreamReaderPtr newHandler(StreamDataCallback dataCb,
-                                             StreamFinishCallback finishCb);
+    static RequestStreamReaderPtr newReader(StreamDataCallback dataCb,
+                                            StreamFinishCallback finishCb);
 
     // A handler that drops all data
     static RequestStreamReaderPtr newNullReader();
