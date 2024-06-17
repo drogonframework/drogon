@@ -1324,6 +1324,10 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     }
     else if (std::holds_alternative<RstStreamFrame>(frame))
     {
+        // WTF? RST_STREAM after response is already sent? Ignore as we
+        // already called the callback
+        if(stream.state == StreamState::Finished)
+            return;
         auto &f = std::get<RstStreamFrame>(frame);
         LOG_TRACE << "RST_STREAM frame received: errorCode=" << f.errorCode;
         streamErrored(streamId, ReqResult::BadResponse);
