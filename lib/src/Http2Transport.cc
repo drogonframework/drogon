@@ -1114,7 +1114,7 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
 
         // Anti request smuggling. We look for \r or \n in the header
         // name or value. If we find one, we abort the stream.
-        if (key.find_first_of("\r\n") != std::string::npos ||
+        if (key.find_first_of("\r\n: ") != std::string::npos ||
             value.find_first_of("\r\n") != std::string::npos)
         {
             streamErrored(streamId, ReqResult::BadResponse);
