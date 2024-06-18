@@ -4,6 +4,7 @@
 #include "HttpResponseImpl.h"
 #include "hpack.h"
 
+#include <cassert>
 #include <string_view>
 #include <variant>
 #include <climits>
@@ -77,21 +78,10 @@ struct ByteStream
     void read(uint8_t *buffer, size_t size)
     {
         assert((length >= size && offset <= length - size) || size == 0);
+        assert(buffer != nullptr);
+        assert(ptr != nullptr);
         memcpy(buffer, ptr + offset, size);
         offset += size;
-    }
-
-    void read(std::vector<uint8_t> &buffer, size_t size)
-    {
-        buffer.resize(buffer.size() + size);
-        read(buffer.data(), size);
-    }
-
-    std::vector<uint8_t> read(size_t size)
-    {
-        std::vector<uint8_t> buffer;
-        read(buffer, size);
-        return buffer;
     }
 
     void skip(size_t n)
