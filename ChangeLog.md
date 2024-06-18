@@ -9,11 +9,11 @@ All notable changes to this project will be documented in this file.
 ### Changes
 
 * Proactively send buffered HTTP/2 data if send queue is too large
-* Better tracking of in-flight streaming that needs data sending to improve round robbin latency
+* Better tracking of in-flight streaming that has body to sent for lower latency
 
 ### Fixes
 
-* Fix underflow un flow tracking when sending large body
+* Fix underflow on flow tracking when sending large body
 * Fix calling callback multiple times if a stream received multiple RST_STREAM frame
 
 ## [1.10.0-beta.1] - 2024-06-02
