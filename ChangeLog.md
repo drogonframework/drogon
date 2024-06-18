@@ -4,9 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0-beta.2] - 2024-06-18
+
+### Changes
+
+* Proactively send buffered HTTP/2 data if send queue is too large
+* Better tracking of in-flight streaming that needs data sending to improve round robbin latency
+
+### Fixes
+
+* Fix underflow un flow tracking when sending large body
+* Fix calling callback multiple times if a stream received multiple RST_STREAM frame
+
+## [1.10.0-beta.1] - 2024-06-02
+
+## Fixes
+
+* Fix bad request when request path is empty
+* Fix bad encoding/decoding when the server requests HPACK buffer size change
+
 ## [1.10.0-beta.0] - 2024-05-25
 
-## Changed
+### Changed
 
 * Add HTTP/2 Client
 
@@ -1693,6 +1712,10 @@ All notable changes to this project will be documented in this file.
 ## [1.0.0-beta1] - 2019-06-11
 
 [Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.5...HEAD
+
+[1.10.0-beta.2]: https://github.com/drogonframework/drogon/compare/v1.10.0-beta.1...v1.10.0-beta.2
+
+[1.10.0-beta.1]: https://github.com/drogonframework/drogon/compare/v1.10.0-beta.0...v1.10.0-beta.1
 
 [1.9.5]: https://github.com/an-tao/drogon/compare/v1.9.4...v1.9.5
 
