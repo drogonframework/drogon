@@ -367,12 +367,12 @@ void AccessLogger::outputDate(trantor::LogStream &stream,
     {
         if (useLocalTime_)
         {
-            stream << trantor::Date::now().toCustomedFormattedStringLocal(
+            stream << trantor::Date::now().toCustomFormattedStringLocal(
                 timeFormat_, showMicroseconds_);
         }
         else
         {
-            stream << trantor::Date::now().toCustomedFormattedString(
+            stream << trantor::Date::now().toCustomFormattedString(
                 timeFormat_, showMicroseconds_);
         }
     }
@@ -398,12 +398,12 @@ void AccessLogger::outputReqDate(trantor::LogStream &stream,
     {
         if (useLocalTime_)
         {
-            stream << req->creationDate().toCustomedFormattedStringLocal(
+            stream << req->creationDate().toCustomFormattedStringLocal(
                 timeFormat_, showMicroseconds_);
         }
         else
         {
-            stream << req->creationDate().toCustomedFormattedString(
+            stream << req->creationDate().toCustomFormattedString(
                 timeFormat_, showMicroseconds_);
         }
     }
