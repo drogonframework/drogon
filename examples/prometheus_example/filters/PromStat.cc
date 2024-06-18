@@ -32,9 +32,6 @@ Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
     }
     auto start = trantor::Date::date();
     auto resp = co_await next;
-    auto end = trantor::Date::date();
-    auto duration =
-        end.microSecondsSinceEpoch() - start.microSecondsSinceEpoch();
     if (promExporter)
     {
         auto collector =
@@ -42,12 +39,12 @@ Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
                 "http_request_duration_seconds");
         if (collector)
         {
-            collector
-                ->metric(
-                    {method, path},
-                    std::vector<double>{0.0001, 0.001, 0.01, 0.1, 0.5, 1, 2, 3},
-                    1h,
-                    6)
+            static const std::vector<double> boundaries{
+                0.0001, 0.001, 0.01, 0.1, 0.5, 1, 2, 3};
+            auto end = trantor::Date::date();
+            auto duration =
+                end.microSecondsSinceEpoch() - start.microSecondsSinceEpoch();
+            collector->metric({method, path}, boundaries, 1h, 6)
                 ->observe((double)duration / 1000000);
         }
     }
