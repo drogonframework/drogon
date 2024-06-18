@@ -39,12 +39,16 @@ Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
     {
         auto collector =
             promExporter->getCollector<drogon::monitoring::Histogram>(
-                "http_requests_duration");
+                "http_request_duration_seconds");
         if (collector)
         {
             collector
-                ->metric({method, path}, std::vector<double>{1, 2, 3}, 1h, 6)
-                ->observe(duration);
+                ->metric(
+                    {method, path},
+                    std::vector<double>{0.0001, 0.001, 0.01, 0.1, 0.5, 1, 2, 3},
+                    1h,
+                    6)
+                ->observe((double)duration / 1000000);
         }
     }
     co_return resp;

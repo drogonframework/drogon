@@ -21,8 +21,8 @@
                         "labels": ["method", "path"]
                     },
                     {
-                        "name": "http_requests_duration",
-                        "help": "The processing time of http requests, in milliseconds",
+                        "name": "http_request_duration_seconds",
+                        "help": "The processing time of http requests, in seconds",
                         "type": "histogram",
                         "labels": ["method", "path"]
                     }

@@ -130,7 +130,7 @@ static std::string exportCollector(
         auto const &samples = sampleGroup.samples;
         for (auto &sample : samples)
         {
-            res.append(metricPtr->name());
+            res.append(sample.name);
             if (!sample.exLabels.empty() || !metricPtr->labels().empty())
             {
                 res.append("{");
