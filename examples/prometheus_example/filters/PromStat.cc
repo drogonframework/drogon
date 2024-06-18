@@ -17,7 +17,7 @@ using namespace drogon;
 Task<HttpResponsePtr> PromStat::invoke(const HttpRequestPtr &req,
                                        MiddlewareNextAwaiter &&next)
 {
-    auto path = req->matchedPathPattern();
+    std::string path{req->matchedPathPattern()};
     auto method = req->methodString();
     auto promExporter = app().getPlugin<drogon::plugin::PromExporter>();
     if (promExporter)
