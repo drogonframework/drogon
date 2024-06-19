@@ -12,7 +12,7 @@ using namespace drogon::plugin;
 void PromExporter::initAndStart(const Json::Value &config)
 {
     path_ = config.get("path", path_).asString();
-    LOG_ERROR << path_;
+    LOG_TRACE << path_;
     auto &app = drogon::app();
     std::weak_ptr<PromExporter> weakPtr = shared_from_this();
     app.registerHandler(
@@ -130,7 +130,7 @@ static std::string exportCollector(
         auto const &samples = sampleGroup.samples;
         for (auto &sample : samples)
         {
-            res.append(metricPtr->name());
+            res.append(sample.name);
             if (!sample.exLabels.empty() || !metricPtr->labels().empty())
             {
                 res.append("{");
