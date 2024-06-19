@@ -21,6 +21,7 @@
 #include <cassert>
 #include <condition_variable>
 #include <coroutine>
+#include <cstddef>
 #include <exception>
 #include <future>
 #include <mutex>
@@ -54,26 +55,36 @@ auto getAwaiter(T &&value) noexcept(
 {
     return getAwaiterImpl(static_cast<T &&>(value));
 }
-
 }  // end namespace internal
 
+// Some concepts used in this file
+// * Coroutine - Something C++ generated for us. It has promise_type, etc..
+// * Awaiter - Something we wrote manually that has await_ready, await_suspend,
+// etc..
+template <typename T, typename = std::void_t<>>
+struct coroutine_result : std::false_type
+{
+};
+
 template <typename T>
-struct await_result
+struct coroutine_result<
+    T,
+    std::void_t<decltype(internal::getAwaiter(std::declval<T>()))>>
 {
     using awaiter_t = decltype(internal::getAwaiter(std::declval<T>()));
     using type = decltype(std::declval<awaiter_t>().await_resume());
 };
 
 template <typename T>
-using await_result_t = typename await_result<T>::type;
+using coroutine_result_t = typename coroutine_result<T>::type;
 
 template <typename T, typename = std::void_t<>>
-struct is_awaitable : std::false_type
+struct is_coroutine : std::false_type
 {
 };
 
 template <typename T>
-struct is_awaitable<
+struct is_coroutine<
     T,
     std::void_t<decltype(internal::getAwaiter(std::declval<T>()))>>
     : std::true_type
@@ -81,7 +92,63 @@ struct is_awaitable<
 };
 
 template <typename T>
+constexpr bool is_coroutine_v = is_coroutine<T>::value;
+
+template <typename T, typename = std::void_t<>>
+struct awaiter_result : std::false_type
+{
+};
+
+template <typename T>
+struct awaiter_result<T,
+                      std::void_t<decltype(std::declval<T>().await_ready()),
+                                  decltype(std::declval<T>().await_suspend(
+                                      std::declval<std::coroutine_handle<>>())),
+                                  decltype(std::declval<T>().await_resume())>>
+{
+    using type = decltype(std::declval<T>().await_resume());
+};
+
+template <typename T>
+using awaiter_result_t = typename awaiter_result<T>::type;
+
+template <typename T, typename = std::void_t<>>
+struct is_awaiter : std::false_type
+{
+};
+
+template <typename T>
+struct is_awaiter<T,
+                  std::void_t<decltype(std::declval<T>().await_ready()),
+                              decltype(std::declval<T>().await_suspend(
+                                  std::declval<std::coroutine_handle<>>())),
+                              decltype(std::declval<T>().await_resume())>>
+    : std::true_type
+{
+};
+
+template <typename T>
+constexpr bool is_awaiter_v = is_awaiter<T>::value;
+
+// More generic traits
+template <typename T>
+struct is_awaitable : std::bool_constant<is_awaiter_v<T> || is_coroutine_v<T>>
+{
+};
+
+template <typename T>
 constexpr bool is_awaitable_v = is_awaitable<T>::value;
+
+template <typename T>
+struct await_result
+{
+    using type = std::conditional_t<is_coroutine_v<T>,
+                                    coroutine_result_t<T>,
+                                    awaiter_result_t<T>>;
+};
+
+template <typename T>
+using await_result_t = typename await_result<T>::type;
 
 /**
  * @struct final_awaiter
@@ -798,6 +865,40 @@ struct [[nodiscard]] EventLoopAwaiter : public drogon::CallbackAwaiter<T>
     std::function<T()> task_;
     trantor::EventLoop *loop_;
 };
+
+struct WaitForNotify : public CallbackAwaiter<void>
+{
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        bool should_resume = false;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (notified)
+                should_resume = true;
+            else
+                handle_ = handle;
+        }
+        if (should_resume)
+            handle.resume();
+    }
+
+    void notify()
+    {
+        bool should_resume = false;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            notified = true;
+            if (handle_)
+                should_resume = true;
+        }
+        if (should_resume)
+            handle_.resume();
+    }
+
+    bool notified = false;
+    std::coroutine_handle<> handle_;
+    std::mutex mtx;
+};
 }  // namespace internal
 
 /**
@@ -809,6 +910,116 @@ inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
                                                      std::function<T()> task)
 {
     return internal::EventLoopAwaiter<T>(std::move(task), loop);
+}
+
+/**
+ * @brief Waits for all tasks to complete. Throws exception if any of the tasks
+ * throws. In such cases, all tasks are still waited for completion.
+ * @param tasks A list of tasks to wait for
+ * @param loop The event loop to switch to after all tasks are completed
+ * (default nullptr, which means to keep on whichever thread the last task is
+ * completed)
+ * @return A task that completes when all tasks are completed
+ */
+template <typename Awaiter,
+          typename = std::enable_if_t<std::is_void_v<await_result_t<Awaiter>>>>
+inline Task<> when_all(std::vector<Awaiter> tasks,
+                       trantor::EventLoop *loop = nullptr)
+{
+    static_assert(is_awaitable_v<Awaiter>);
+    std::exception_ptr eptr;
+    std::atomic_size_t counter = tasks.size();
+    internal::WaitForNotify waiter;
+    for (auto &&task : tasks)
+    {
+        [](std::exception_ptr &eptr,
+           std::atomic_size_t &counter,
+           internal::WaitForNotify &waiter,
+           Awaiter task) -> AsyncTask {
+            try
+            {
+                co_await task;
+            }
+            catch (...)
+            {
+                eptr = std::current_exception();
+            }
+
+            size_t c = counter.fetch_sub(1, std::memory_order_acq_rel) - 1;
+            if (c == 0)
+            {
+                waiter.notify();
+            }
+        }(eptr, counter, waiter, std::move(task));
+    }
+    // In case there's no task, we should still wait for the notify
+    if (tasks.empty())
+        waiter.notify();
+    co_await waiter;
+    if (loop)
+        co_await switchThreadCoro(loop);
+
+    if (eptr)
+        std::rethrow_exception(eptr);
+}
+
+/**
+ * @brief Waits for all tasks to complete. Throws exception if any of the tasks
+ * throws. In such cases, all tasks are still waited for completion.
+ * @param tasks A list of tasks to wait for
+ * @param loop The event loop to switch to after all tasks are completed
+ * (default nullptr, which means to keep on whichever thread the last task is
+ * completed)
+ * @return A task that completes when all tasks are completed and yields
+ * results of all tasks
+ */
+template <typename Awaiter,
+          typename = std::enable_if_t<!std::is_void_v<await_result_t<Awaiter>>>>
+inline Task<std::vector<await_result_t<Awaiter>>> when_all(
+    std::vector<Awaiter> tasks,
+    trantor::EventLoop *loop = nullptr)
+{
+    static_assert(is_awaitable_v<Awaiter>);
+    std::exception_ptr eptr;
+    std::vector<await_result_t<Awaiter>> results;
+    results.resize(tasks.size());
+    std::atomic_size_t counter = tasks.size();
+    internal::WaitForNotify waiter;
+    for (size_t i = 0; i < tasks.size(); ++i)
+    {
+        [](std::exception_ptr &eptr,
+           std::atomic_size_t &counter,
+           internal::WaitForNotify &waiter,
+           std::vector<await_result_t<Awaiter>> &results,
+           size_t i,
+           Awaiter task) -> AsyncTask {
+            try
+            {
+                results[i] = co_await task;
+            }
+            catch (...)
+            {
+                eptr = std::current_exception();
+            }
+
+            size_t c = counter.fetch_sub(1, std::memory_order_acq_rel) - 1;
+            if (c == 0)
+            {
+                waiter.notify();
+            }
+        }(eptr, counter, waiter, results, i, std::move(tasks[i]));
+    }
+    // In case there's no task, we should still wait for the notify
+    if (tasks.empty())
+        waiter.notify();
+    co_await waiter;
+    if (loop)
+        co_await switchThreadCoro(loop);
+
+    if (eptr)
+        std::rethrow_exception(eptr);
+
+    co_return results;
 }
 
 }  // namespace drogon
