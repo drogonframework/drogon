@@ -561,10 +561,6 @@ void HttpClientImpl::handleResponse(
         resp->brDecompress();
     }
 #endif
-    if (type.find("application/json") != std::string::npos)
-    {
-        resp->parseJson();
-    }
     auto cb = std::move(reqAndCb);
     pipeliningCallbacks_.pop();
     handleCookies(resp);
