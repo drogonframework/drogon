@@ -679,7 +679,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     // -2 because we are using the next stream id for the next request
     // TODO: Clean interface to get the current highest stream id. Might need
     // to keep tracking separately
-    const auto streamId = *sid - 2;
+    const auto streamId = *sid;
     assert(streamId % 2 == 1);
     LOG_TRACE << "Sending HTTP/2 request: streamId=" << streamId;
     if (streams.find(streamId) != streams.end())
