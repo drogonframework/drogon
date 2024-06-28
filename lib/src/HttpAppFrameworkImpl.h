@@ -658,6 +658,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &resp);
 
+    HttpAppFramework &setBeforeListenSockOptCallback(
+        std::function<void(int)> cb) override;
+    HttpAppFramework &setAfterAcceptSockOptCallback(
+        std::function<void(int)> cb) override;
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,

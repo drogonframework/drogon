@@ -1,3 +1,10 @@
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+#endif
+
 #include <drogon/drogon.h>
 using namespace drogon;
 
@@ -60,6 +67,23 @@ int main()
             callback(resp);
         },
         {Get});
+
+    app()
+        .setBeforeListenSockOptCallback([](int fd) {
+            LOG_INFO << "setBeforeListenSockOptCallback:" << fd;
+#ifdef _WIN32
+#elif __linux__
+            int enable = 1;
+            if (setsockopt(
+                    fd, IPPROTO_TCP, TCP_FASTOPEN, &enable, sizeof(enable)) ==
+                -1)
+            {
+                LOG_INFO << "setsockopt TCP_FASTOPEN failed";
+            }
+#else
+#endif
+        })
+        .setAfterAcceptSockOptCallback([](int) {});
 
     // Ask Drogon to listen on 127.0.0.1 port 8848. Drogon supports listening
     // on multiple IP addresses by adding multiple listeners. For example, if

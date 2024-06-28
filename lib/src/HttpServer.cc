@@ -85,6 +85,14 @@ HttpServer::~HttpServer() = default;
 
 void HttpServer::start()
 {
+    if (beforeListenSetSockOptCallback_)
+    {
+        server_.setBeforeListenSockOptCallback(beforeListenSetSockOptCallback_);
+    }
+    if (afterAcceptSetSockOptCallback_)
+    {
+        server_.setAfterAcceptSockOptCallback(afterAcceptSetSockOptCallback_);
+    }
     LOG_TRACE << "HttpServer[" << server_.name() << "] starts listening on "
               << server_.ipPort();
     server_.start();

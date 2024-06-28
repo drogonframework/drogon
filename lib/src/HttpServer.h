@@ -54,6 +54,16 @@ class HttpServer : trantor::NonCopyable
         return server_.address();
     }
 
+    void setBeforeListenSockOptCallback(std::function<void(int)> cb)
+    {
+        beforeListenSetSockOptCallback_ = std::move(cb);
+    }
+
+    void setAfterAcceptSockOptCallback(std::function<void(int)> cb)
+    {
+        afterAcceptSetSockOptCallback_ = std::move(cb);
+    }
+
   private:
     friend class HttpInternalForwardHelper;
 
@@ -126,6 +136,9 @@ class HttpServer : trantor::NonCopyable
         trantor::MsgBuffer &buffer);
 
     trantor::TcpServer server_;
+
+    std::function<void(int)> beforeListenSetSockOptCallback_;
+    std::function<void(int)> afterAcceptSetSockOptCallback_;
 };
 
 class HttpInternalForwardHelper
