@@ -1590,6 +1590,22 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual int64_t getConnectionCount() const = 0;
 
+    /**
+     * @brief Set the before listen setsockopt callback.
+     *
+     * @param cb This callback will be called before the listen
+     */
+    virtual HttpAppFramework &setBeforeListenSockOptCallback(
+        std::function<void(int)> cb) = 0;
+
+    /**
+     * @brief Set the after accept setsockopt callback.
+     *
+     * @param cb This callback will be called after accept
+     */
+    virtual HttpAppFramework &setAfterAcceptSockOptCallback(
+        std::function<void(int)> cb) = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,

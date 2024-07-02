@@ -1336,3 +1336,17 @@ HttpAppFramework &HttpAppFrameworkImpl::registerPreSendingAdvice(
     AopAdvice::instance().registerPreSendingAdvice(advice);
     return *this;
 }
+
+HttpAppFramework &HttpAppFrameworkImpl::setBeforeListenSockOptCallback(
+    std::function<void(int)> cb)
+{
+    listenerManagerPtr_->setBeforeListenSockOptCallback(std::move(cb));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setAfterAcceptSockOptCallback(
+    std::function<void(int)> cb)
+{
+    listenerManagerPtr_->setAfterAcceptSockOptCallback(std::move(cb));
+    return *this;
+}

@@ -111,6 +111,16 @@ void ListenerManager::createListeners(
                 std::make_shared<HttpServer>(ioLoops[i],
                                              listenAddress,
                                              "drogon");
+            if (beforeListenSetSockOptCallback_)
+            {
+                serverPtr->setBeforeListenSockOptCallback(
+                    beforeListenSetSockOptCallback_);
+            }
+            if (afterAcceptSetSockOptCallback_)
+            {
+                serverPtr->setAfterAcceptSockOptCallback(
+                    afterAcceptSetSockOptCallback_);
+            }
 
             if (listener.useSSL_ && utils::supportsTls())
             {
