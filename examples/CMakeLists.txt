@@ -31,7 +31,8 @@ add_executable(redis_simple redis/main.cc
 add_executable(redis_chat redis_chat/main.cc
                           redis_chat/controllers/Chat.cc)
 
-add_executable(async_stream async_stream/main.cc)
+add_executable(async_stream async_stream/main.cc
+                            async_stream/RequestStreamExampleCtrl.cc)
 
 set(example_targets
     benchmark

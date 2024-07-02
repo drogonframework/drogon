@@ -1246,6 +1246,17 @@ int64_t HttpAppFrameworkImpl::getConnectionCount() const
     return HttpConnectionLimit::instance().getConnectionNum();
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::enableRequestStream(bool enable)
+{
+    enableRequestStream_ = enable;
+    return *this;
+}
+
+bool HttpAppFrameworkImpl::isRequestStreamEnabled() const
+{
+    return enableRequestStream_;
+}
+
 // AOP registration methods
 
 HttpAppFramework &HttpAppFrameworkImpl::registerNewConnectionAdvice(

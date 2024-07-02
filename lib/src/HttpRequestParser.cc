@@ -36,19 +36,6 @@ HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
 {
 }
 
-void HttpRequestParser::shutdownConnection(HttpStatusCode code)
-{
-    auto connPtr = conn_.lock();
-    if (connPtr)
-    {
-        connPtr->send(utils::formattedString(
-            "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
-            code,
-            statusCodeToString(code).data()));
-        connPtr->shutdown();
-    }
-}
-
 bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
 {
     bool succeed = false;
@@ -130,7 +117,7 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
 void HttpRequestParser::reset()
 {
     assert(loop_->isInLoopThread());
-    currentContentLength_ = 0;
+    remainContentLength_ = 0;
     status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
     {
@@ -146,9 +133,12 @@ void HttpRequestParser::reset()
 }
 
 /**
- * @return return -1 if encounters any error in request
+ * @return return -HttpStatusCode if encounters any http errors in request
+ * @return return -1 if encounters any other errors in request
  * @return return 0 if request is not ready
  * @return return 1 if request is ready
+ * @return return 2 if request is ready and entering stream mode
+ * @return return 3 if request header is ready and entering stream mode
  */
 int HttpRequestParser::parseRequest(MsgBuffer *buf)
 {
@@ -166,18 +156,14 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     if (buf->readableBytes() > METHOD_MAX_LEN)
                     {
-                        buf->retrieveAll();
-                        shutdownConnection(k400BadRequest);
-                        return -1;
+                        return -k400BadRequest;
                     }
                     return 0;
                 }
                 // try read method
                 if (!request_->setMethod(buf->peek(), space))
                 {
-                    buf->retrieveAll();
-                    shutdownConnection(k405MethodNotAllowed);
-                    return -1;
+                    return -k405MethodNotAllowed;
                 }
                 status_ = HttpRequestParseStatus::kExpectRequestLine;
                 buf->retrieveUntil(space + 1);
@@ -193,18 +179,14 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         /// The limit for request line is 64K bytes. response
                         /// k414RequestURITooLarge
                         /// TODO: Make this configurable?
-                        buf->retrieveAll();
-                        shutdownConnection(k414RequestURITooLarge);
-                        return -1;
+                        return -k414RequestURITooLarge;
                     }
                     return 0;
                 }
                 if (!processRequestLine(buf->peek(), crlf))
                 {
                     // error
-                    buf->retrieveAll();
-                    shutdownConnection(k400BadRequest);
-                    return -1;
+                    return -k400BadRequest;
                 }
                 buf->retrieveUntil(crlf + CRLF_LEN);
                 status_ = HttpRequestParseStatus::kExpectHeaders;
@@ -219,9 +201,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         /// The limit for every request header is 64K bytes;
                         /// TODO: Make this configurable?
-                        buf->retrieveAll();
-                        shutdownConnection(k400BadRequest);
-                        return -1;
+                        return -k400BadRequest;
                     }
                     return 0;
                 }
@@ -246,21 +226,18 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     try
                     {
-                        currentContentLength_ =
+                        remainContentLength_ =
                             static_cast<size_t>(std::stoull(len));
                     }
                     catch (...)
                     {
-                        buf->retrieveAll();
-                        shutdownConnection(k400BadRequest);
-                        return -1;
+                        return -k400BadRequest;
                     }
-                    if (currentContentLength_ == 0)
+                    request_->contentLengthHeaderValue_ = remainContentLength_;
+                    if (remainContentLength_ == 0)
                     {
                         // content-length = 0, request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
-                        ++requestsCounter_;
-                        return 1;
                     }
                     else
                     {
@@ -276,8 +253,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         // no content-length and no transfer-encoding,
                         // request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
-                        ++requestsCounter_;
-                        return 1;
                     }
                     else if (encode == "chunked")
                     {
@@ -285,43 +260,37 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     }
                     else
                     {
-                        buf->retrieveAll();
-                        shutdownConnection(k501NotImplemented);
-                        return -1;
+                        return -k501NotImplemented;
                     }
                 }
 
+                // Check max body size
+                if (remainContentLength_ >
+                    HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                {
+                    return -k413RequestEntityTooLarge;
+                }
+
+                // Check expect:100-continue
                 auto &expect = request_->expect();
                 if (expect == "100-continue" &&
                     request_->getVersion() >= Version::kHttp11)
                 {
-                    if (currentContentLength_ == 0)
+                    if (remainContentLength_ == 0)
                     {
                         // error
-                        buf->retrieveAll();
-                        shutdownConnection(k400BadRequest);
-                        return -1;
-                    }
-                    // rfc2616-8.2.3
-                    auto connPtr = conn_.lock();
-                    if (!connPtr)
-                    {
-                        return -1;
-                    }
-                    auto resp = HttpResponse::newHttpResponse();
-                    if (currentContentLength_ >
-                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
-                    {
-                        resp->setStatusCode(k413RequestEntityTooLarge);
-                        auto httpString =
-                            static_cast<HttpResponseImpl *>(resp.get())
-                                ->renderToBuffer();
-                        reset();
-                        connPtr->send(std::move(*httpString));
-                        // TODO: missing logic here
+                        return -k400BadRequest;
                     }
                     else
                     {
+                        // rfc2616-8.2.3
+                        // TODO: consider adding an AOP for expect header
+                        auto connPtr = conn_.lock();  // ugly
+                        if (!connPtr)
+                        {
+                            return -1;
+                        }
+                        auto resp = HttpResponse::newHttpResponse();
                         resp->setStatusCode(k100Continue);
                         auto httpString =
                             static_cast<HttpResponseImpl *>(resp.get())
@@ -332,35 +301,50 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 else if (!expect.empty())
                 {
                     LOG_WARN << "417ExpectationFailed for \"" << expect << "\"";
-                    buf->retrieveAll();
-                    shutdownConnection(k417ExpectationFailed);
-                    return -1;
+                    return -k417ExpectationFailed;
                 }
-                else if (currentContentLength_ >
-                         HttpAppFrameworkImpl::instance()
-                             .getClientMaxBodySize())
+
+                assert(status_ == HttpRequestParseStatus::kGotAll ||
+                       status_ == HttpRequestParseStatus::kExpectBody ||
+                       status_ == HttpRequestParseStatus::kExpectChunkLen);
+
+                if (app().isRequestStreamEnabled())
                 {
-                    buf->retrieveAll();
-                    shutdownConnection(k413RequestEntityTooLarge);
-                    return -1;
+                    request_->streamStart();
+                    if (status_ == HttpRequestParseStatus::kGotAll)
+                    {
+                        ++requestsCounter_;
+                        return 2;
+                    }
+                    else
+                    {
+                        return 3;
+                    }
                 }
-                request_->reserveBodySize(currentContentLength_);
+
+                // Reserve space for full body in non-stream mode.
+                // For stream mode requests that match a non-stream handler,
+                // we will reserve full body before waitForStreamFinish().
+                if (remainContentLength_)
+                {
+                    request_->reserveBodySize(remainContentLength_);
+                }
                 continue;
             }
             case HttpRequestParseStatus::kExpectBody:
             {
                 size_t bytesToConsume =
-                    currentContentLength_ <= buf->readableBytes()
-                        ? currentContentLength_
+                    remainContentLength_ <= buf->readableBytes()
+                        ? remainContentLength_
                         : buf->readableBytes();
                 if (bytesToConsume)
                 {
                     request_->appendToBody(buf->peek(), bytesToConsume);
                     buf->retrieve(bytesToConsume);
-                    currentContentLength_ -= bytesToConsume;
+                    remainContentLength_ -= bytesToConsume;
                 }
 
-                if (currentContentLength_ == 0)
+                if (remainContentLength_ == 0)
                 {
                     status_ = HttpRequestParseStatus::kGotAll;
                     ++requestsCounter_;
@@ -376,9 +360,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     if (buf->readableBytes() > TRUNK_LEN_MAX_LEN + CRLF_LEN)
                     {
-                        buf->retrieveAll();
-                        shutdownConnection(k400BadRequest);
-                        return -1;
+                        return -k400BadRequest;
                     }
                     return 0;
                 }
@@ -388,12 +370,10 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 currentChunkLength_ = strtol(len.c_str(), &end, 16);
                 if (currentChunkLength_ != 0)
                 {
-                    if (currentChunkLength_ + currentContentLength_ >
+                    if (currentChunkLength_ + remainContentLength_ >
                         HttpAppFrameworkImpl::instance().getClientMaxBodySize())
                     {
-                        buf->retrieveAll();
-                        shutdownConnection(k413RequestEntityTooLarge);
-                        return -1;
+                        return -k413RequestEntityTooLarge;
                     }
                     status_ = HttpRequestParseStatus::kExpectChunkBody;
                 }
@@ -414,13 +394,11 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     *(buf->peek() + currentChunkLength_ + 1) != '\n')
                 {
                     // error!
-                    buf->retrieveAll();
-                    shutdownConnection(k400BadRequest);
-                    return -1;
+                    return -k400BadRequest;
                 }
                 request_->appendToBody(buf->peek(), currentChunkLength_);
                 buf->retrieve(currentChunkLength_ + CRLF_LEN);
-                currentContentLength_ += currentChunkLength_;
+                remainContentLength_ += currentChunkLength_;
                 currentChunkLength_ = 0;
                 status_ = HttpRequestParseStatus::kExpectChunkLen;
                 continue;
@@ -435,25 +413,44 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (*(buf->peek()) != '\r' || *(buf->peek() + 1) != '\n')
                 {
                     // error!
-                    buf->retrieveAll();
-                    shutdownConnection(k400BadRequest);
-                    return -1;
+                    return -k400BadRequest;
                 }
                 buf->retrieve(CRLF_LEN);
+
+                if (!request_->isStreamMode())
+                {
+                    // Previously we only have non-stream mode, drogon handled
+                    // chunked encoding internally, and give user a regular
+                    // request as if it has a content-length header.
+                    //
+                    // We have to keep compatibility for non-stream mode.
+                    //
+                    // But I don't think it's a good implementation. We should
+                    // instead add an api to access real content-length of
+                    // requests.
+                    // Now HttpRequest::realContentLength() is added, and user
+                    // should no longer parse content-length header by
+                    // themselves.
+                    //
+                    // NOTE: request forward behavior may be infected in stream
+                    // mode, we should check it out.
+                    request_->addHeader("content-length",
+                                        std::to_string(
+                                            request_->realContentLength()));
+                    request_->removeHeaderBy("transfer-encoding");
+                }
                 status_ = HttpRequestParseStatus::kGotAll;
-                request_->addHeader("content-length",
-                                    std::to_string(request_->bodyLength()));
-                request_->removeHeaderBy("transfer-encoding");
                 ++requestsCounter_;
                 return 1;
             }
             case HttpRequestParseStatus::kGotAll:
             {
+                ++requestsCounter_;
                 return 1;
             }
         }
     }
-    return -1;
+    return -1;  // won't reach here, just to make compiler happy
 }
 
 void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req,

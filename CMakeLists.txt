@@ -268,6 +268,7 @@ set(DROGON_SOURCES
     lib/src/HttpFileUploadRequest.cc
     lib/src/HttpRequestImpl.cc
     lib/src/HttpRequestParser.cc
+    lib/src/RequestStream.cc
     lib/src/HttpResponseImpl.cc
     lib/src/HttpResponseParser.cc
     lib/src/HttpServer.cc
@@ -278,6 +279,7 @@ set(DROGON_SOURCES
     lib/src/ListenerManager.cc
     lib/src/LocalHostFilter.cc
     lib/src/MultiPart.cc
+    lib/src/MultipartStreamParser.cc
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
     lib/src/PromExporter.cc
@@ -332,7 +334,8 @@ set(private_headers
     lib/src/ConfigAdapterManager.h
     lib/src/JsonConfigAdapter.h
     lib/src/YamlConfigAdapter.h
-    lib/src/ConfigAdapter.h)
+    lib/src/ConfigAdapter.h
+    lib/src/MultipartStreamParser.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES
@@ -559,6 +562,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpFilter.h
     lib/inc/drogon/HttpMiddleware.h
     lib/inc/drogon/HttpRequest.h
+    lib/inc/drogon/RequestStream.h
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h
     lib/inc/drogon/HttpTypes.h
