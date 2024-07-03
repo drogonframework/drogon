@@ -212,3 +212,102 @@ DROGON_TEST(SwitchThread)
     sync_wait(switch_thread());
     thread.wait();
 }
+
+DROGON_TEST(Cancellation)
+{
+    using namespace drogon::internal;
+
+    trantor::EventLoopThread thread;  // helper thread
+    thread.run();
+
+    auto testCancelTask = [TEST_CTX, loop = thread.getLoop()]() -> Task<> {
+        auto cancelHandle = CancelHandle::newHandle();
+
+        // wait coro for 10 seconds, but cancel after 1 second
+        loop->runAfter(1, [cancelHandle]() { cancelHandle->cancel(); });
+
+        int64_t start = time(nullptr);
+        try
+        {
+            LOG_INFO << "Waiting for 10 seconds...";
+            co_await sleepCoro(loop, 10, cancelHandle);
+            CHECK(false);  // should not reach here
+        }
+        catch (const TaskCancelledException &ex)
+        {
+            int64_t waitTime = time(nullptr) - start;
+            CHECK(waitTime < 2);
+            LOG_INFO << "Oops... only waited for " << waitTime << " second(s)";
+        }
+    };
+
+    sync_wait(testCancelTask());
+    thread.getLoop()->quit();
+    thread.wait();
+}
+
+DROGON_TEST(SharedCancellation)
+{
+    using namespace drogon::internal;
+
+    trantor::EventLoopThread thread;  // helper thread
+    thread.run();
+    auto loop = thread.getLoop();
+    auto sharedHandle = CancelHandle::newSharedHandle();
+
+    auto testSharedCancelTask1 = [TEST_CTX, sharedHandle, loop]() -> Task<> {
+        int64_t start = time(nullptr);
+        try
+        {
+            LOG_INFO << "Waiting for 10 seconds...";
+            co_await sleepCoro(loop, 10, sharedHandle);
+            CHECK(false);  // should not reach here
+        }
+        catch (const TaskCancelledException &ex)
+        {
+            int64_t waitTime = time(nullptr) - start;
+            CHECK(waitTime < 2);
+            LOG_INFO << "Oops... only waited for " << waitTime << " second(s)";
+        }
+    };
+
+    auto testSharedCancelTask2 = [TEST_CTX, sharedHandle, loop]() -> Task<> {
+        int64_t start = time(nullptr);
+        try
+        {
+            LOG_INFO << "Sleep forever...";
+            co_await sleepForeverCoro(loop, sharedHandle);
+            CHECK(false);  // should not reach here
+        }
+        catch (const TaskCancelledException &ex)
+        {
+            int64_t waitTime = time(nullptr) - start;
+            CHECK(waitTime < 2);
+            LOG_INFO << "Oops... only slept for " << waitTime << " second(s)";
+        }
+    };
+
+    auto testSharedCancelTask3 = [TEST_CTX, sharedHandle, loop]() -> Task<> {
+        co_await sleepCoro(loop, 1.5);
+        int64_t start = time(nullptr);
+        try
+        {
+            LOG_INFO << "Try sleep after cancel...";
+            co_await sleepForeverCoro(loop, sharedHandle);
+            CHECK(false);  // should not reach here
+        }
+        catch (const TaskCancelledException &ex)
+        {
+            int64_t waitTime = time(nullptr) - start;
+            CHECK(waitTime < 2);
+            LOG_INFO << "Oops... only slept for " << waitTime << " second(s)";
+        }
+    };
+    // cancel both tasks after 1 second
+    loop->runAfter(1, [sharedHandle]() { sharedHandle->cancel(); });
+    sync_wait(testSharedCancelTask1());
+    sync_wait(testSharedCancelTask2());
+    sync_wait(testSharedCancelTask3());
+    loop->quit();
+    thread.wait();
+}
