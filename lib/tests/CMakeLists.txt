@@ -52,7 +52,8 @@ if (BUILD_CTL)
       integration_test/client/main.cc
       integration_test/client/WebSocketTest.cc
       integration_test/client/MultipleWsTest.cc
-      integration_test/client/HttpPipeliningTest.cc)
+      integration_test/client/HttpPipeliningTest.cc
+      integration_test/client/RequestStreamTest.cc)
   add_executable(integration_test_client ${INTEGRATION_TEST_CLIENT_SOURCES})
 
   set(INTEGRATION_TEST_SERVER_SOURCES
@@ -75,6 +76,7 @@ if (BUILD_CTL)
       integration_test/server/RangeTestController.cc
       integration_test/server/BeginAdviceTest.cc
       integration_test/server/MiddlewareTest.cc
+      integration_test/server/RequestStreamTestCtrl.cc
       integration_test/server/main.cc)
 
   if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)

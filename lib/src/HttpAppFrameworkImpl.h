@@ -663,6 +663,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &setAfterAcceptSockOptCallback(
         std::function<void(int)> cb) override;
 
+    HttpAppFramework &enableRequestStream(bool enable) override;
+    bool isRequestStreamEnabled() const override;
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
@@ -753,6 +756,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     ExceptionHandler exceptionHandler_{defaultExceptionHandler};
     bool enableCompressedRequest_{false};
+
+    bool enableRequestStream_{false};
 };
 
 }  // namespace drogon
