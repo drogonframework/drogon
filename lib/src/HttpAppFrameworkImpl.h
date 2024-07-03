@@ -657,6 +657,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     void findSessionForRequest(const HttpRequestImplPtr &req);
     HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &resp);
+    HttpAppFramework &reset() override;
 
     HttpAppFramework &setBeforeListenSockOptCallback(
         std::function<void(int)> cb) override;
