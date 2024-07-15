@@ -1,0 +1,145 @@
+06/29/2024 - Learning C++ drogon
+
+1. conan is a c++ package manager
+conanfile.txt or conanfile if using python
+
+[requires]
+jsoncpp/1.9.4
+zlib/1.2.11
+gtest/1.10.0
+sqlite3/3.40.1
+#libpq/13.2
+openssl/1.1.1t
+hiredis/1.0.0
+brotli/1.0.9
+
+[generators]
+CMakeToolchain
+
+[options]
+
+[imports]
+
+2. cc is another file extention for cpp
+
+3. .github/workflows - yaml files to do tasks in github
+
+4. ODB - open source cross-platform and cross-database object-relational mapping (ORM) sytem for C++
+no need to worry about dealint with tables, columns, or sql 
+
+5. qualification to become a contributor is to merge a commit
+
+6. conan-center-index is the sourc eindex of recipes for the conan package repo
+
+7. conan seems to use better than vcpkg
+
+8. use c++20 standard
+
+9. unit testing - doctest, gtest, catch2, gmock
+
+10. keep to the standard library
+
+11. dockerfiles - docker/ubuntu/Dockerfile
+
+FROM ubuntu:22.04
+
+ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get update -yqq \
+    && apt-get install -yqq --no-install-recommends software-properties-common \
+    sudo curl wget cmake make pkg-config locales git gcc-11 g++-11 \
+    openssl libssl-dev libjsoncpp-dev uuid-dev zlib1g-dev libc-ares-dev\
+    postgresql-server-dev-all libmariadb-dev libsqlite3-dev libhiredis-dev\
+    && rm -rf /var/lib/apt/lists/* \
+    && locale-gen en_US.UTF-8
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
+    CC=gcc-11 \
+    CXX=g++-11 \
+    AR=gcc-ar-11 \
+    RANLIB=gcc-ranlib-11 \
+    IROOT=/install
+
+ENV DROGON_ROOT="$IROOT/drogon"
+
+ADD https://api.github.com/repos/drogonframework/drogon/git/refs/heads/master $IROOT/version.json
+RUN git clone https://github.com/drogonframework/drogon $DROGON_ROOT
+
+WORKDIR $DROGON_ROOT
+
+RUN ./build.sh
+
+12. brotli library s for lossless compression
+
+13. proper .gitignore file
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+build/
+cmake-build-debug/
+cmake-build-debug-visual-studio/
+.idea/
+lib/inc/drogon/version.h
+html/
+latex/
+.vscode
+*.kdev4
+.cproject
+.project
+.settings/
+.vs/
+CMakeSettings.json
+install
+trace.json
+.cache/
+14.  trantor is a non-blocking I/O cross-platform TCP network library using c++14
+
+15. git submodules in .gitmodules checks to see if there is a new commit, you can add "ignore = dirty" option to avoid untracked status
+[submodule "trantor"]
+        path = trantor
+        url = https://github.com/an-tao/trantor.git
+        branch = master
+        ignore = dirty
+
+16. git config --global core.autocrlf true // handles newline chars 
+
+17. git diff --ws-error-highlight=all // highlights white space errors
+
+-DCMAKE_INSTALL_INCLUDEDIR=C:\Users\Tristan\CLionProjects\drogon\vcpkg\installed\x64-mingw-dynamic\include
+-DCMAKE_INSTALL_LIBDIR=C:\Users\Tristan\CLionProjects\drogon\vcpkg\installed\x64-mingw-dynamic\bin
+
+18. how to know when to use debug vs release cmake profile?
+19. how to know when to use library in bin or debug directory
