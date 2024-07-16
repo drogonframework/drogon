@@ -34,6 +34,7 @@
 build/
 cmake-build-debug/
 cmake-build-debug-visual-studio/
+cmake-build*
 .idea/
 lib/inc/drogon/version.h
 html/
