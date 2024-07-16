@@ -143,3 +143,8 @@ trace.json
 
 18. how to know when to use debug vs release cmake profile?
 19. how to know when to use library in bin or debug directory
+
+20. use the vcpkg cmake script
+ # jsoncpp
+-include(/Users/trist007/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake)
++include(C:/Users/Tristan/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake)
