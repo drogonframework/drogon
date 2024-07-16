@@ -148,3 +148,7 @@ trace.json
  # jsoncpp
 -include(/Users/trist007/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake)
 +include(C:/Users/Tristan/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake)
+
+21. multi-line cmake comments
+#[[
+]]
