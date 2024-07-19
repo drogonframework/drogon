@@ -152,3 +152,11 @@ trace.json
 21. multi-line cmake comments
 #[[
 ]]
+
+22. declaration is telling the compiler about variables and functions, the basic parts
+    definition is the body of the function what executes
+    initialization is assigning a value to a variable
+
+23. lambda is a non formal function, whenever you have a function pointer you can use a lambda
+
+24. vector is a dynamic array, change grow in size

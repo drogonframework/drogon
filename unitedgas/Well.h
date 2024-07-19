@@ -13,6 +13,7 @@ class Well
         public:
             Well(int wellno, int dailyOil, int dailyWater, int dailyGas, int opPressureTubing, int opPressureCasing, int strokesPerMin, int strokeLength, int motorHp, float pumpingRatio, float unitGearRatio, std::string wellname, std::string dateOfRecentTest, std::string pumpingUnitSize, std::string casingSize, std::string depth, std::string tubingSize, std::string pumpSize, std::string firstCole, std::string secondCole, std::string thirdCole, std::string comments);
             void print();
+            std::string printResult();
         private:
             int m_wellno, m_dailyOil, m_dailyWater, m_dailyGas, m_opPressureTubing, m_opPressureCasing, m_strokesPerMin,
                     m_strokeLength, m_motorHp;

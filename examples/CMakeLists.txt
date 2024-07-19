@@ -10,8 +10,7 @@ add_executable(benchmark ${benchmark_sources})
 add_executable(helloworld helloworld/main.cc
                           helloworld/HelloController.cc
                           helloworld/HelloViewController.cc
-                          ../../unitedgas/Well.h
-                          ../../unitedgas/Well.cpp)
+                          ../unitedgas/Well.cc)
 drogon_create_views(helloworld
                     ${CMAKE_CURRENT_SOURCE_DIR}/helloworld
                     ${CMAKE_CURRENT_BINARY_DIR})

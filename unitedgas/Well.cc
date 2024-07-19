@@ -1,5 +1,7 @@
 #include "Well.h"
 #include <iostream>
+#include <sstream>
+#include <string>
 
 // constructor definition
 UnitedGas::Well::Well(int wellno, int dailyOil, int dailyWater, int dailyGas, int opPressureTubing, int opPressureCasing, int strokesPerMin, int strokeLength, int motorHp, float pumpingRatio, float unitGearRatio, std::string wellname, std::string dateOfRecentTest, std::string pumpingUnitSize, std::string casingSize, std::string depth, std::string tubingSize, std::string pumpSize, std::string firstCole, std::string secondCole, std::string thirdCole, std::string comments)
@@ -54,6 +56,23 @@ void UnitedGas::Well::print()
   std::cout << "comments: " << m_comments << std::endl;
 }
 
+std::string UnitedGas::Well::printResult()
+{
+  std::string buffer;
+  buffer = "wellno: " + std::to_string(m_wellno) + '\n' + "dailyOil: " + std::to_string(m_dailyOil) + '\n' + "dailyWater: " + std::to_string(m_dailyWater) + '\n'
+   + "dailyGas: " + std::to_string(m_dailyGas) + '\n' + "opPressureTubing: " + std::to_string(m_opPressureTubing) + '\n'
+   + "opPressureCasing: " + std::to_string(m_opPressureCasing) + '\n' + "strokesPerMin: " + std::to_string(m_strokesPerMin) + '\n'
+   + "strokeLength: " + std::to_string(m_strokeLength) + '\n' + "motorHp: " + std::to_string(m_motorHp) + '\n'
+   + "pumpingRatio: " + std::to_string(m_pumpingRatio) + '\n' + "unitGearRatio: " + std::to_string(m_unitGearRatio) + '\n'
+   + "wellname: " + m_wellname + '\n' + "dateOfRecentTest: " + m_dateOfRecentTest + '\n'
+   + "pumpingUnitSize: " + m_pumpingUnitSize + '\n' + "casingSize: " + m_casingSize + '\n'
+   + "depth: " + m_depth + '\n' + "tubingSize: " + m_tubingSize + '\n'
+   + "pumpSize: " + m_pumpSize + '\n' + "firstCole: " + m_firstCole + '\n'
+   + "secondCole: " + m_secondCole + '\n' + "thirdCole: " + m_thirdCole + '\n'
+   + "comments: " + m_comments + '\n';
+
+   return buffer;
+}
 /*
   : wellno(0), dailyOil(0), dailyWater(0), dailyGas(0), opPressureTubing(0), opPressureCasing(0), strokesPerMin(0),
     strokeLength(0), motorHp(0),
