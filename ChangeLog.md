@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.6] - 2024-07-20
+
+### API changes list
+
+- Add setsockopt to HttpServer.
+
+- Support request stream.
+
+### Changed
+
+- Allow MultiPartParser to parse PATCH requests.
+
+- Add an example of prometheus.
+
+- Delay parsing json for HttpClient.
+
+- Update README.md.
+
+### Fixed
+
+- Fix some compilation warnings.
+
+- Fix typo in yaml config.
+
 ## [1.9.5] - 2024-06-08
 
 ### API changes list
@@ -1673,7 +1697,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.5...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.6...HEAD
+
+[1.9.6]: https://github.com/an-tao/drogon/compare/v1.9.5...v1.9.6
 
 [1.9.5]: https://github.com/an-tao/drogon/compare/v1.9.4...v1.9.5
 
