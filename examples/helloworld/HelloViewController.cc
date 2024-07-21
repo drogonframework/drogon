@@ -22,6 +22,7 @@ class HelloViewController : public HttpSimpleController<HelloViewController>
         std::function<void(const HttpResponsePtr &)> &&callback) override
     {
         HttpViewData data;
+        // grabs name from browser
         data["name"] = req->getParameter("name");
         auto resp = HttpResponse::newHttpViewResponse("HelloView", data);
         callback(resp);

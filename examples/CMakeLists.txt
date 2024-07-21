@@ -9,11 +9,17 @@ add_executable(websocket_server websocket_server/WebSocketServer.cc)
 add_executable(benchmark ${benchmark_sources})
 add_executable(helloworld helloworld/main.cc
                           helloworld/HelloController.cc
-                          helloworld/HelloViewController.cc
-                          ../unitedgas/Well.cc)
+                          helloworld/HelloViewController.cc)
 drogon_create_views(helloworld
                     ${CMAKE_CURRENT_SOURCE_DIR}/helloworld
                     ${CMAKE_CURRENT_BINARY_DIR})
+add_executable(unitedgas unitedgas/main.cc
+                         unitedgas/UnitedGasController.cc
+                         unitedgas/UnitedGasViewController.cc
+                         unitedgas/Well.cc)
+drogon_create_views(helloworld
+        ${CMAKE_CURRENT_SOURCE_DIR}/unitedgas
+        ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(file_upload file_upload/file_upload.cc)
 drogon_create_views(file_upload
                     ${CMAKE_CURRENT_SOURCE_DIR}/file_upload
@@ -40,6 +46,7 @@ set(example_targets
     websocket_client
     websocket_server
     helloworld
+    unitedgas
     file_upload
     login_session
     jsonstore
