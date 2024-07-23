@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
 <%c++
-    auto name=@@.get<std::string>("name");
-	bool nameIsEmpty = name == "";
+    auto wellname=@@.get<std::string>("wellname");
+    auto wellno=@@.get<std::string>("wellno");
+	bool nameIsEmpty = wellname == "";
 	if (nameIsEmpty)
-		name = "anonymous";
-	auto message = "Hello, " + name + " from a CSP template from United Gas";
+		wellname = "anonymous";
+	auto message = "well no, " + wellno + " well name " + wellname + " from a CSP template from United Gas";
 %>
 <head>
     <meta charset="UTF-8">

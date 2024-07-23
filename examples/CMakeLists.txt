@@ -15,9 +15,8 @@ drogon_create_views(helloworld
                     ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(unitedgas unitedgas/main.cc
                          unitedgas/UnitedGasController.cc
-                         unitedgas/UnitedGasViewController.cc
-                         unitedgas/Well.cc)
-drogon_create_views(helloworld
+                         unitedgas/UnitedGasViewController.cc)
+drogon_create_views(unitedgas
         ${CMAKE_CURRENT_SOURCE_DIR}/unitedgas
         ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(file_upload file_upload/file_upload.cc)

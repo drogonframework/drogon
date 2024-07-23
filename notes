@@ -160,3 +160,7 @@ trace.json
 23. lambda is a non formal function, whenever you have a function pointer you can use a lambda
 
 24. vector is a dynamic array, change grow in size
+
+25. virtual keyword if specified on a class function means a derived class can override that class function
+
+26. simpleton method, one object throughout the life of the process, drogon uses this

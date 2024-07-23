@@ -1,41 +1,17 @@
 #include <drogon/drogon.h>
-#include <unitedgas/Well.h>
 using namespace drogon;
 
 int main()
 {
-    UnitedGas::Well myobj(2,
-                          1,
-                          295,
-                          0,
-                          0,
-                          0,
-                          10,
-                          48,
-                          20,
-                          0,
-                          0,
-                          "Number 2",
-                          "8/10/2016",
-                          "National 67B",
-                          std::string(),
-                          "1710??",
-                          "2 7/8",
-                          "2 3/4",
-                          "1697 - 1701",
-                          std::string(),
-                          std::string(),
-                          "Packer @600'");
-    const std::string result = myobj.printResult();
     // `registerHandler()` adds a handler to the desired path. The handler is
     // responsible for generating a HTTP response upon an HTTP request being
     // sent to Drogon
     app().registerHandler(
         "/",
-        [&result](const HttpRequestPtr &,
+        [](const HttpRequestPtr &,
                   std::function<void(const HttpResponsePtr &)> &&callback) {
             auto resp = HttpResponse::newHttpResponse();
-            resp->setBody(result);
+            resp->setBody("Hello");
             callback(resp);
         },
         {Get});
