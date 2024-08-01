@@ -438,9 +438,9 @@ class HttpRequestImpl : public HttpRequest
         headers_[std::move(field)] = std::move(value);
     }
 
-    void addCookie(const std::string &key, const std::string &value) override
+    void addCookie(std::string key, std::string value) override
     {
-        cookies_[key] = value;
+        cookies_[std::move(key)] = std::move(value);
     }
 
     void setPassThrough(bool flag) override

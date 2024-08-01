@@ -411,7 +411,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
              cookie.expiresDate() > trantor::Date::now()) &&
             (cookie.path().empty() || req->path().find(cookie.path()) == 0))
         {
-            req->addCookie(cookie.key(), cookie.value());
+            req->addCookie(std::string(cookie.key()),
+                           std::string(cookie.value()));
         }
     }
 

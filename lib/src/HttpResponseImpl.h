@@ -184,12 +184,12 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void addCookie(const Cookie &cookie) override
     {
-        cookies_[cookie.key()] = cookie;
+        cookies_[std::string(cookie.key())] = cookie;
     }
 
     void addCookie(Cookie &&cookie) override
     {
-        cookies_[cookie.key()] = std::move(cookie);
+        cookies_[std::string(cookie.key())] = std::move(cookie);
     }
 
     const Cookie &getCookie(const std::string &key) const override

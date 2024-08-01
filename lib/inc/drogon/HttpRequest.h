@@ -449,8 +449,7 @@ class DROGON_EXPORT HttpRequest
     virtual void setCustomContentTypeString(const std::string &type) = 0;
 
     /// Add a cookie
-    virtual void addCookie(const std::string &key,
-                           const std::string &value) = 0;
+    virtual void addCookie(std::string key, std::string value) = 0;
 
     /**
      * @brief Set the request object to the pass-through mode or not. It's not

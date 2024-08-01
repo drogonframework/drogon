@@ -19,9 +19,11 @@ using namespace drogon;
 
 std::string Cookie::cookieString() const
 {
-    std::string ret = "Set-Cookie: ";
+    constexpr std::string_view prefix = "Set-Cookie: ";
+    std::string ret;
     // reserve space to reduce frequency allocation
-    ret.reserve(ret.size() + key_.size() + value_.size() + 30);
+    ret.reserve(prefix.size() + key_.size() + value_.size() + 30);
+    ret = prefix;
     ret.append(key_).append("=").append(value_).append("; ");
     if (expiresDate_.microSecondsSinceEpoch() !=
             (std::numeric_limits<int64_t>::max)() &&
