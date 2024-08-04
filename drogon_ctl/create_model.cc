@@ -460,7 +460,7 @@ void create_model::createModelClassFromMysql(
     data["convertMethods"] = convertMethods;
     std::vector<ColumnInfo> cols;
     int i = 0;
-    *client << "desc " + tableName << Mode::Blocking >>
+    *client << "desc `" + tableName + "`" << Mode::Blocking >>
         [&i, &cols](bool isNull,
                     const std::string &field,
                     const std::string &type,
