@@ -245,7 +245,7 @@ inline unsigned int Field::as<unsigned int>() const
     if (isNull())
         return 0;
     return static_cast<unsigned int>(
-        std::stoi(result_.getValue(row_, column_)));
+        std::stoul(result_.getValue(row_, column_)));
 }
 
 template <>
