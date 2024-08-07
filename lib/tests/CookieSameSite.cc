@@ -44,8 +44,7 @@ DROGON_TEST(CookieSameSite)
         if (seq.sessionCookie.getValue() != "")
         {
             // add session cookie
-            req->addCookie(std::string(seq.sessionCookie.getKey()),
-                           std::string(seq.sessionCookie.getValue()));
+            req->addCookie(seq.sessionCookie.key(), seq.sessionCookie.value());
         }  // endif
 
         client->sendRequest(

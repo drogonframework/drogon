@@ -79,7 +79,15 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Set the domain of the cookie.
      */
-    void setDomain(std::string domain)
+    void setDomain(const std::string &domain)
+    {
+        domain_ = domain;
+    }
+
+    /**
+     * @brief Set the domain of the cookie.
+     */
+    void setDomain(std::string &&domain)
     {
         domain_ = std::move(domain);
     }
@@ -87,7 +95,15 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Set the path of the cookie.
      */
-    void setPath(std::string path)
+    void setPath(const std::string &path)
+    {
+        path_ = path;
+    }
+
+    /**
+     * @brief Set the path of the cookie.
+     */
+    void setPath(std::string &&path)
     {
         path_ = std::move(path);
     }
@@ -95,7 +111,15 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Set the key of the cookie.
      */
-    void setKey(std::string key)
+    void setKey(const std::string &key)
+    {
+        key_ = key;
+    }
+
+    /**
+     * @brief Set the key of the cookie.
+     */
+    void setKey(std::string &&key)
     {
         key_ = std::move(key);
     }
@@ -103,7 +127,15 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Set the value of the cookie.
      */
-    void setValue(std::string value)
+    void setValue(const std::string &value)
+    {
+        value_ = value;
+    }
+
+    /**
+     * @brief Set the value of the cookie.
+     */
+    void setValue(std::string &&value)
     {
         value_ = std::move(value);
     }
@@ -156,7 +188,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the domain of the cookie
      */
-    std::string_view domain() const
+    const std::string &domain() const
     {
         return domain_;
     }
@@ -164,7 +196,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the domain of the cookie
      */
-    std::string_view getDomain() const
+    const std::string &getDomain() const
     {
         return domain_;
     }
@@ -172,7 +204,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the path of the cookie
      */
-    std::string_view path() const
+    const std::string &path() const
     {
         return path_;
     }
@@ -180,7 +212,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the path of the cookie
      */
-    std::string_view getPath() const
+    const std::string &getPath() const
     {
         return path_;
     }
@@ -188,7 +220,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the keyword of the cookie
      */
-    std::string_view key() const
+    const std::string &key() const
     {
         return key_;
     }
@@ -196,7 +228,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the keyword of the cookie
      */
-    std::string_view getKey() const
+    const std::string &getKey() const
     {
         return key_;
     }
@@ -204,7 +236,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the value of the cookie
      */
-    std::string_view value() const
+    const std::string &value() const
     {
         return value_;
     }
@@ -212,7 +244,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the value of the cookie
      */
-    std::string_view getValue() const
+    const std::string &getValue() const
     {
         return value_;
     }

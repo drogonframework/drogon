@@ -854,7 +854,7 @@ void HttpResponseImpl::addHeader(const char *start,
         }
         if (!cookie.key().empty())
         {
-            cookies_[std::string(cookie.key())] = cookie;
+            cookies_[cookie.key()] = std::move(cookie);
         }
     }
     else
