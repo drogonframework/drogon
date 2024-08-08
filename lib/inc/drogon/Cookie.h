@@ -36,12 +36,7 @@ class DROGON_EXPORT Cookie
      * @param key key of the cookie
      * @param value value of the cookie
      */
-    Cookie(const std::string &key, const std::string &value)
-        : key_(key), value_(value)
-    {
-    }
-
-    Cookie(std::string &&key, std::string &&value)
+    Cookie(std::string key, std::string value)
         : key_(std::move(key)), value_(std::move(value))
     {
     }
@@ -89,6 +84,9 @@ class DROGON_EXPORT Cookie
         domain_ = domain;
     }
 
+    /**
+     * @brief Set the domain of the cookie.
+     */
     void setDomain(std::string &&domain)
     {
         domain_ = std::move(domain);
@@ -102,6 +100,9 @@ class DROGON_EXPORT Cookie
         path_ = path;
     }
 
+    /**
+     * @brief Set the path of the cookie.
+     */
     void setPath(std::string &&path)
     {
         path_ = std::move(path);
@@ -115,6 +116,9 @@ class DROGON_EXPORT Cookie
         key_ = key;
     }
 
+    /**
+     * @brief Set the key of the cookie.
+     */
     void setKey(std::string &&key)
     {
         key_ = std::move(key);
@@ -128,6 +132,9 @@ class DROGON_EXPORT Cookie
         value_ = value;
     }
 
+    /**
+     * @brief Set the value of the cookie.
+     */
     void setValue(std::string &&value)
     {
         value_ = std::move(value);
@@ -343,21 +350,15 @@ class DROGON_EXPORT Cookie
      * @brief Converts a string value to its associated enum class SameSite
      * value
      */
-    static SameSite convertString2SameSite(const std::string_view &sameSite)
+    static SameSite convertString2SameSite(std::string_view sameSite)
     {
         if (stricmp(sameSite, "lax"))
-        {
             return Cookie::SameSite::kLax;
-        }
-        else if (stricmp(sameSite, "strict"))
-        {
+        if (stricmp(sameSite, "strict"))
             return Cookie::SameSite::kStrict;
-        }
-        else if (stricmp(sameSite, "none"))
-        {
+        if (stricmp(sameSite, "none"))
             return Cookie::SameSite::kNone;
-        }
-        else if (!stricmp(sameSite, "null"))
+        if (!stricmp(sameSite, "null"))
         {
             LOG_WARN
                 << "'" << sameSite
@@ -372,34 +373,20 @@ class DROGON_EXPORT Cookie
      * @brief Converts an enum class SameSite value to its associated string
      * value
      */
-    static const std::string_view &convertSameSite2String(SameSite sameSite)
+    static std::string_view convertSameSite2String(SameSite sameSite)
     {
         switch (sameSite)
         {
             case SameSite::kLax:
-            {
-                static std::string_view sv{"Lax"};
-                return sv;
-            }
+                return "Lax";
             case SameSite::kStrict:
-            {
-                static std::string_view sv{"Strict"};
-                return sv;
-            }
+                return "Strict";
             case SameSite::kNone:
-            {
-                static std::string_view sv{"None"};
-                return sv;
-            }
+                return "None";
             case SameSite::kNull:
-            {
-                static std::string_view sv{"Null"};
-                return sv;
-            }
-        }
-        {
-            static std::string_view sv{"UNDEFINED"};
-            return sv;
+                return "Null";
+            default:
+                return "UNDEFINED";
         }
     }
 
