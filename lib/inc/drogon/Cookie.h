@@ -36,37 +36,7 @@ class DROGON_EXPORT Cookie
      * @param key key of the cookie
      * @param value value of the cookie
      */
-    Cookie(const std::string &key, const std::string &value)
-        : key_(key), value_(value)
-    {
-    }
-
-    /// Constructor
-    /**
-     * @param key key of the cookie
-     * @param value value of the cookie
-     */
-    Cookie(const std::string &key, std::string &&value)
-        : key_(key), value_(std::move(value))
-    {
-    }
-
-    /// Constructor
-    /**
-     * @param key key of the cookie
-     * @param value value of the cookie
-     */
-    Cookie(std::string &&key, const std::string &value)
-        : key_(std::move(key)), value_(value)
-    {
-    }
-
-    /// Constructor
-    /**
-     * @param key key of the cookie
-     * @param value value of the cookie
-     */
-    Cookie(std::string &&key, std::string &&value)
+    Cookie(std::string key, std::string value)
         : key_(std::move(key)), value_(std::move(value))
     {
     }
