@@ -13,6 +13,7 @@ option(BUILD_DOC "Build Doxygen documentation" OFF)
 option(BUILD_BROTLI "Build Brotli" ON)
 option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
+option(USE_STATIC_LIBS_ONLY "Use only static libraries as dependencies" OFF)
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
@@ -76,6 +77,10 @@ if (BUILD_SHARED_LIBS)
         endif ()
     endif ()
 endif (BUILD_SHARED_LIBS)
+
+if(USE_STATIC_LIBS_ONLY)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_STATIC_LIBRARY_SUFFIX}")
+endif(USE_STATIC_LIBS_ONLY)
 
 if(USE_SPDLOG)
   find_package(spdlog CONFIG)
