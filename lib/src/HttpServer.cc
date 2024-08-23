@@ -508,7 +508,7 @@ void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
                 else
                 {
                     req->quitStreamMode();
-                    LOG_DEBUG << "Stop processing request due to stream error";
+                    LOG_ERROR << "Stop processing request due to stream error";
                     pack.callback(
                         app().getCustomErrorHandler()(k400BadRequest, req));
                 }
