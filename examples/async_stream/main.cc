@@ -1,5 +1,6 @@
 #include <drogon/drogon.h>
 #include <chrono>
+#include <cstring>
 
 using namespace drogon;
 using namespace std::chrono_literals;
@@ -15,7 +16,16 @@ int main()
                     std::thread([stream =
                                      std::shared_ptr<drogon::ResponseStream>{
                                          std::move(stream)}]() mutable {
-                        std::cout << std::boolalpha << stream->send("hello ")
+                        static std::string str{"hello"};
+                        auto dest = new char[20]();
+                        memcpy(dest, str.c_str(), str.size());
+                        std::shared_ptr<char> auto_free(dest, [](char *p) {
+                            delete[] p;
+                        });
+                        std::cout << std::boolalpha
+                                  << stream->send(auto_free.get(), strlen(dest))
+                                  << std::endl;
+                        std::cout << std::boolalpha << stream->send(" ")
                                   << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                         std::cout << std::boolalpha << stream->send("world");

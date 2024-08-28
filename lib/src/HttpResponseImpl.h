@@ -231,6 +231,18 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
     }
 
+    void setBody(std::shared_ptr<char> ptr, size_t len) override
+    {
+        bodyBufferPtr_ = std::move(ptr);
+        bodyPtr_ =
+            std::make_shared<HttpMessageStringViewBody>(bodyBufferPtr_.get(),
+                                                        len);
+        if (passThrough_)
+        {
+            addHeader("content-length", std::to_string(bodyPtr_->length()));
+        }
+    }
+
     void redirect(const std::string &url)
     {
         headers_["location"] = url;
@@ -504,6 +516,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     trantor::Date creationDate_;
     Version version_{Version::kHttp11};
     bool closeConnection_{false};
+    std::shared_ptr<char> bodyBufferPtr_;
     mutable std::shared_ptr<HttpMessageBody> bodyPtr_;
     ssize_t expriedTime_{-1};
     std::string sendfileName_;

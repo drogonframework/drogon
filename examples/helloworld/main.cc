@@ -1,3 +1,7 @@
+#include <cstdio>
+#include <cstring>
+#include <memory>
+#include <new>
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #else
@@ -18,7 +22,15 @@ int main()
         [](const HttpRequestPtr &,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             auto resp = HttpResponse::newHttpResponse();
+#if 0
             resp->setBody("Hello, World!");
+#else
+            static std::string str{"Hello, World!"};
+            auto dest = new char[20]();
+            memcpy(dest, str.c_str(), str.size());
+            std::shared_ptr<char> auto_free(dest, [](char *p) { delete[] p; });
+            resp->setBody(std::move(auto_free), strlen(dest));
+#endif
             callback(resp);
         },
         {Get});

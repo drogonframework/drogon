@@ -873,6 +873,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(statusMessage_, that.statusMessage_);
     swap(closeConnection_, that.closeConnection_);
     bodyPtr_.swap(that.bodyPtr_);
+    bodyBufferPtr_.swap(that.bodyBufferPtr_);
     swap(contentType_, that.contentType_);
     swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(flagForParsingJson_, that.flagForParsingJson_);
@@ -908,6 +909,7 @@ void HttpResponseImpl::clear()
     headers_.clear();
     cookies_.clear();
     bodyPtr_.reset();
+    bodyBufferPtr_.reset();
     jsonPtr_.reset();
     expriedTime_ = -1;
     datePos_ = std::string::npos;

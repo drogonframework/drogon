@@ -96,6 +96,18 @@ class DROGON_EXPORT ResponseStream
         return asyncStream_->send(oss.str());
     }
 
+    bool send(const char *data, size_t len)
+    {
+        if (!asyncStream_)
+        {
+            return false;
+        }
+        std::ostringstream oss;
+        oss << std::hex << len << "\r\n";
+        oss << std::string_view{data, len} << "\r\n";
+        return asyncStream_->send(oss.str());
+    }
+
     void close()
     {
         if (asyncStream_)
@@ -302,6 +314,10 @@ class DROGON_EXPORT HttpResponse
         assert(strnlen(body, N) == N - 1);
         setBody(body, N - 1);
     }
+
+    /// Set the response body(content). automatically manage the life cycle of
+    /// requested memory
+    virtual void setBody(std::shared_ptr<char> ptr, size_t len) = 0;
 
     /// Get the response body.
     std::string_view body() const
