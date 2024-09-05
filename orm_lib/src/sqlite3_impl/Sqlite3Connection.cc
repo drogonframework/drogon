@@ -37,9 +37,9 @@ std::once_flag Sqlite3Connection::once_;
 void Sqlite3Connection::onError(
     const std::string_view &sql,
     const std::function<void(const std::exception_ptr &)> &exceptCallback,
-    const int &extended_errcode)
+    const int &extendedErrcode)
 {
-    int errcode = extended_errcode & 0xFF;  // low 8 bit
+    int errcode = extendedErrcode & 0xFF;  // low 8 bit
 #define ORM_ERR_CASE(code, type)                                    \
     case code:                                                      \
     {                                                               \
@@ -47,11 +47,11 @@ void Sqlite3Connection::onError(
             drogon::orm::type(sqlite3_errmsg(connectionPtr_.get()), \
                               std::string{sql},                     \
                               errcode,                              \
-                              extended_errcode));                   \
+                              extendedErrcode));                    \
         exceptCallback(exceptPtr);                                  \
         return;                                                     \
     };
-    switch (extended_errcode)
+    switch (extendedErrcode)
     {
         ORM_ERR_CASE(SQLITE_CONSTRAINT_NOTNULL, NotNullViolation)
         ORM_ERR_CASE(SQLITE_CONSTRAINT_FOREIGNKEY, ForeignKeyViolation)
@@ -74,7 +74,7 @@ void Sqlite3Connection::onError(
         std::make_exception_ptr(SqlError(sqlite3_errmsg(connectionPtr_.get()),
                                          std::string{sql},
                                          errcode,
-                                         extended_errcode));
+                                         extendedErrcode));
     exceptCallback(exceptPtr);
 }
 

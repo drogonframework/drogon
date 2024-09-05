@@ -46,19 +46,19 @@ SqlError::SqlError(const std::string &whatarg,
       query_(Q),
       sqlState_(sqlstate ? sqlstate : ""),
       errcode_(0),
-      extended_errcode_(0)
+      extendedErrcode_(0)
 {
 }
 
 SqlError::SqlError(const std::string &whatarg,
                    const std::string &Q,
                    const int errcode,
-                   const int extended_errcode)
+                   const int extendedErrcode)
     : Failure(whatarg),
       query_(Q),
       sqlState_(""),
       errcode_(errcode),
-      extended_errcode_(extended_errcode)
+      extendedErrcode_(extendedErrcode)
 {
 }
 
@@ -76,14 +76,14 @@ const std::string &SqlError::sqlState() const noexcept
     return sqlState_;
 }
 
-const int &SqlError::errcode() const noexcept
+int SqlError::errcode() const noexcept
 {
     return errcode_;
 }
 
-const int &SqlError::extended_errcode() const noexcept
+int SqlError::extendedErrcode() const noexcept
 {
-    return extended_errcode_;
+    return extendedErrcode_;
 }
 
 InDoubtError::InDoubtError(const std::string &whatarg) : Failure(whatarg)

@@ -76,7 +76,7 @@ class Sqlite3Connection : public DbConnection,
     void onError(
         const std::string_view &sql,
         const std::function<void(const std::exception_ptr &)> &exceptCallback,
-        const int &extended_errcode);
+        const int &extendedErrcode);
     int stmtStep(sqlite3_stmt *stmt,
                  const std::shared_ptr<Sqlite3ResultImpl> &resultPtr,
                  int columnNum);
