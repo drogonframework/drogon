@@ -806,6 +806,15 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
 
+    /// Reload the global cert file and private key file for https server
+    /// Note: The goal of this method is not to make the framework
+    /// use the new SSL path, but rather to reload the new content
+    /// from the old path while the framework is still running.
+    /// Typically, when our SSL is about to expire,
+    /// we need to reload the SSL. The purpose of this function
+    /// is to use the new SSL certificate without stopping the framework.
+    virtual HttpAppFramework &reloadSSLFiles() = 0;
+
     /// Add plugins
     /**
      * @param configs The plugins array

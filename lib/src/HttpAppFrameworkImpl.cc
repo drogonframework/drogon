@@ -511,6 +511,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
     return *this;
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::reloadSSLFiles()
+{
+    listenerManagerPtr_->reloadSSLFiles();
+    return *this;
+}
+
 void HttpAppFrameworkImpl::run()
 {
     if (!getLoop()->isInLoopThread())

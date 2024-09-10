@@ -61,6 +61,8 @@ class ListenerManager : public trantor::NonCopyable
         afterAcceptSetSockOptCallback_ = std::move(cb);
     }
 
+    void reloadSSLFiles();
+
   private:
     struct ListenerInfo
     {

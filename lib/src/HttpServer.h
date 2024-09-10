@@ -49,6 +49,11 @@ class HttpServer : trantor::NonCopyable
         server_.enableSSL(std::move(policy));
     }
 
+    void reloadSSL()
+    {
+        server_.reloadSSL();
+    }
+
     const trantor::InetAddress &address() const
     {
         return server_.address();
