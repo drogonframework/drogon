@@ -84,6 +84,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         override;
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
+
+    HttpAppFramework &reloadSSLFiles() override;
+
     void run() override;
     HttpAppFramework &registerWebSocketController(
         const std::string &pathName,

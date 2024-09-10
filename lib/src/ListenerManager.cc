@@ -214,3 +214,11 @@ void ListenerManager::stopListening()
         listeningThread_->wait();
     }
 }
+
+void ListenerManager::reloadSSLFiles()
+{
+    for (auto &server : servers_)
+    {
+        server->reloadSSL();
+    }
+}
