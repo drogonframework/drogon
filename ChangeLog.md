@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.7] - 2024-09-10
+
+### API changes list
+
+- Add coroutine mutex.
+
+- Add requestsBufferSize function.
+
+- Refine SQLite3 error types with new exception handling.
+
+- Add a new method to reload SSL files on the fly.
+
+### Changed
+
+- Allow MultiPartParser to be movable.
+
+- Add quotes to the table name in the ORM generator.
+
+- Change stoi to stoul in the Field class.
+
+- Modernize cookies.
+
+- Change a log level.
+
+### Fixed
+
+- Use correct libraries when compiling statically.
+
 ## [1.9.6] - 2024-07-20
 
 ### API changes list
@@ -1697,7 +1725,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.6...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.7...HEAD
+
+[1.9.7]: https://github.com/an-tao/drogon/compare/v1.9.6...v1.9.7
 
 [1.9.6]: https://github.com/an-tao/drogon/compare/v1.9.5...v1.9.6
 
