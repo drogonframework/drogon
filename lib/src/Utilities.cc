@@ -612,7 +612,7 @@ size_t base64Decode(const char *encoded_string,
 
         --i;
         for (int j = 0; (j < i); ++j, ++a)
-            output_buffer[a] += char_array_3[j];
+            output_buffer[a] = char_array_3[j];
     }
 
     return a;
