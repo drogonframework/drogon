@@ -440,19 +440,19 @@ std::string getUuid(bool lowercase)
 #endif
 }
 
-std::string base64Encode(const unsigned char *bytes_to_encode,
-                         size_t in_len,
-                         bool url_safe,
-                         bool padded)
+void base64Encode(const unsigned char *bytes_to_encode,
+                  size_t in_len,
+                  unsigned char *output_buffer,
+                  bool url_safe,
+                  bool padded)
 {
-    std::string ret;
-    ret.reserve(base64EncodedLength(in_len, padded));
     int i = 0;
     unsigned char char_array_3[3];
     unsigned char char_array_4[4];
 
     const std::string &charSet = url_safe ? urlBase64Chars : base64Chars;
 
+    size_t a = 0;
     while (in_len--)
     {
         char_array_3[i++] = *(bytes_to_encode++);
@@ -465,8 +465,8 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
                               ((char_array_3[2] & 0xc0) >> 6);
             char_array_4[3] = char_array_3[2] & 0x3f;
 
-            for (i = 0; (i < 4); ++i)
-                ret += charSet[char_array_4[i]];
+            for (i = 0; (i < 4); ++i, ++a)
+                output_buffer[a] = charSet[char_array_4[i]];
             i = 0;
         }
     }
@@ -483,14 +483,16 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
             ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
         char_array_4[3] = char_array_3[2] & 0x3f;
 
-        for (int j = 0; (j <= i); ++j)
-            ret += charSet[char_array_4[j]];
+        for (int j = 0; (j <= i); ++j, ++a)
+            output_buffer[a] = charSet[char_array_4[j]];
 
         if (padded)
             while ((++i < 4))
-                ret += '=';
+            {
+                output_buffer[a] = '=';
+                ++a;
+            }
     }
-    return ret;
 }
 
 std::vector<char> base64DecodeToVector(std::string_view encoded_string)
@@ -555,15 +557,15 @@ std::vector<char> base64DecodeToVector(std::string_view encoded_string)
     return ret;
 }
 
-std::string base64Decode(std::string_view encoded_string)
+size_t base64Decode(const char *encoded_string,
+                    size_t in_len,
+                    unsigned char *output_buffer)
 {
-    auto in_len = encoded_string.size();
     int i = 0;
     int in_{0};
     unsigned char char_array_4[4], char_array_3[3];
-    std::string ret;
-    ret.reserve(base64DecodedLength(in_len));
 
+    size_t a = 0;
     while (in_len-- && (encoded_string[in_] != '='))
     {
         if (!isBase64(encoded_string[in_]))
@@ -586,8 +588,8 @@ std::string base64Decode(std::string_view encoded_string)
                               ((char_array_4[2] & 0x3c) >> 2);
             char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-            for (i = 0; (i < 3); ++i)
-                ret += char_array_3[i];
+            for (i = 0; (i < 3); ++i, ++a)
+                output_buffer[a] = char_array_3[i];
             i = 0;
         }
     }
@@ -609,11 +611,11 @@ std::string base64Decode(std::string_view encoded_string)
         char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
         --i;
-        for (int j = 0; (j < i); ++j)
-            ret += char_array_3[j];
+        for (int j = 0; (j < i); ++j, ++a)
+            output_buffer[a] += char_array_3[j];
     }
 
-    return ret;
+    return a;
 }
 
 static std::string charToHex(char c)
