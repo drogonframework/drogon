@@ -105,6 +105,17 @@ void Hodor::initAndStart(const Json::Value &config)
             limitStrategies_.emplace_back(makeLimitStrategy(subLimit));
         }
     }
+
+    const Json::Value &trustIps = config["trust_ips"];
+    if (!trustIps.isNull() && !trustIps.isArray())
+    {
+        throw std::runtime_error("Invalid trusted_ips. Should be array.");
+    }
+    for (const auto &ipOrCidr : trustIps)
+    {
+        trustCIDRs_.emplace_back(ipOrCidr.asString());
+    }
+
     app().registerPreHandlingAdvice([this](const drogon::HttpRequestPtr &req,
                                            AdviceCallback &&acb,
                                            AdviceChainCallback &&accb) {
@@ -117,11 +128,27 @@ void Hodor::shutdown()
     LOG_TRACE << "Hodor plugin is shutdown!";
 }
 
+bool Hodor::matchCidr(const trantor::InetAddress &addr) const
+{
+    for (auto &cidr : trustCIDRs_)
+    {
+        if ((addr.ipNetEndian() & cidr.mask_) == cidr.addr_)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
                        const LimitStrategy &strategy,
-                       const std::string &ip,
+                       const trantor::InetAddress &ip,
                        const std::optional<std::string> &userId)
 {
+    if (matchCidr(ip))
+    {
+        return true;
+    }
     if (strategy.regexFlag)
     {
         if (!std::regex_match(req->path(), strategy.urlsRegex))
@@ -140,7 +167,7 @@ bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
     {
         RateLimiterPtr limiterPtr;
         strategy.ipLimiterMapPtr->modify(
-            ip,
+            ip.toIpNetEndian(),
             [this, &limiterPtr, &strategy](RateLimiterPtr &ptr) {
                 if (!ptr)
                 {
@@ -207,10 +234,9 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                           drogon::AdviceCallback &&adviceCallback,
                           drogon::AdviceChainCallback &&chainCallback)
 {
-    auto ip =
-        (useRealIpResolver_ ? drogon::plugin::RealIpResolver::GetRealAddr(req)
-                            : req->peerAddr())
-            .toIpNetEndian();
+    const trantor::InetAddress &ip =
+        useRealIpResolver_ ? drogon::plugin::RealIpResolver::GetRealAddr(req)
+                           : req->peerAddr();
     std::optional<std::string> userId;
     if (userIdGetter_)
     {

@@ -137,12 +137,15 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     std::function<HttpResponsePtr(const drogon::HttpRequestPtr &)>
         rejectResponseFactory_;
 
+    std::vector<RealIpResolver::CIDR> trustCIDRs_;
+    bool matchCidr(const trantor::InetAddress &addr) const;
+
     void onHttpRequest(const drogon::HttpRequestPtr &,
                        AdviceCallback &&,
                        AdviceChainCallback &&);
     bool checkLimit(const drogon::HttpRequestPtr &req,
                     const LimitStrategy &strategy,
-                    const std::string &ip,
+                    const trantor::InetAddress &ip,
                     const std::optional<std::string> &userId);
     HttpResponsePtr rejectResponse_;
 };

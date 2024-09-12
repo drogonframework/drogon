@@ -66,6 +66,7 @@ class DROGON_EXPORT RealIpResolver : public drogon::Plugin<RealIpResolver>
         in_addr_t mask_{32};
     };
 
+    friend class Hodor;
     std::vector<CIDR> trustCIDRs_;
     std::string fromHeader_;
     std::string attributeKey_;

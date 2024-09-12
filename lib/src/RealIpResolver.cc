@@ -96,14 +96,13 @@ void RealIpResolver::initAndStart(const Json::Value &config)
     }
 
     const Json::Value &trustIps = config["trust_ips"];
-    if (!trustIps.isArray())
+    if (!trustIps.isNull() && !trustIps.isArray())
     {
         throw std::runtime_error("Invalid trusted_ips. Should be array.");
     }
-    for (const auto &elem : trustIps)
+    for (const auto &ipOrCidr : trustIps)
     {
-        std::string ipOrCidr = elem.asString();
-        trustCIDRs_.emplace_back(ipOrCidr);
+        trustCIDRs_.emplace_back(ipOrCidr.asString());
     }
 
     drogon::app().registerPreRoutingAdvice([this](const HttpRequestPtr &req) {
