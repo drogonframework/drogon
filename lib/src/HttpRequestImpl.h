@@ -209,7 +209,9 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &getOriginalPath() const override
     {
-        return originalPath_.empty() ? path_ : originalPath_;
+        return originalPath_.empty()
+                   ? (originalPath_ = drogon::utils::urlEncode(path_))
+                   : originalPath_;
     }
 
     void setQuery(const char *start, const char *end)
@@ -673,7 +675,7 @@ class HttpRequestImpl : public HttpRequest
     HttpMethod previousMethod_{Invalid};
     Version version_{Version::kUnknown};
     std::string path_;
-    std::string originalPath_;
+    mutable std::string originalPath_;
     bool pathEncode_{true};
     std::string_view matchedPathPattern_{""};
     std::string query_;
