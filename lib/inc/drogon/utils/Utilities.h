@@ -134,86 +134,85 @@ constexpr size_t base64EncodedLength(size_t in_len, bool padded = true)
 }
 
 /// Encode the string to base64 format.
-DROGON_EXPORT void base64Encode(const unsigned char *bytes_to_encode,
-                                size_t in_len,
-                                unsigned char *output_buffer,
-                                bool url_safe = false,
+DROGON_EXPORT void base64Encode(const unsigned char *bytesToEncode,
+                                size_t inLen,
+                                unsigned char *outputBuffer,
+                                bool urlSafe = false,
                                 bool padded = true);
 
 /// Encode the string to base64 format.
-inline std::string base64Encode(const unsigned char *bytes_to_encode,
-                                size_t in_len,
-                                bool url_safe = false,
+inline std::string base64Encode(const unsigned char *bytesToEncode,
+                                size_t inLen,
+                                bool urlSafe = false,
                                 bool padded = true)
 {
     std::string ret;
-    ret.resize(base64EncodedLength(in_len, padded));
+    ret.resize(base64EncodedLength(inLen, padded));
     base64Encode(
-        bytes_to_encode, in_len, (unsigned char *)ret.data(), url_safe, padded);
+        bytesToEncode, inLen, (unsigned char *)ret.data(), urlSafe, padded);
     return ret;
 }
 
 /// Encode the string to base64 format.
 inline std::string base64Encode(std::string_view data,
-                                bool url_safe = false,
+                                bool urlSafe = false,
                                 bool padded = true)
 {
     return base64Encode((unsigned char *)data.data(),
                         data.size(),
-                        url_safe,
+                        urlSafe,
                         padded);
 }
 
 /// Encode the string to base64 format with no padding.
-inline void base64EncodeUnpadded(const unsigned char *bytes_to_encode,
-                                 size_t in_len,
-                                 unsigned char *output_buffer,
-                                 bool url_safe = false)
+inline void base64EncodeUnpadded(const unsigned char *bytesToEncode,
+                                 size_t inLen,
+                                 unsigned char *outputBuffer,
+                                 bool urlSafe = false)
 {
-    base64Encode(bytes_to_encode, in_len, output_buffer, url_safe, false);
+    base64Encode(bytesToEncode, inLen, outputBuffer, urlSafe, false);
 }
 
 /// Encode the string to base64 format with no padding.
-inline std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
-                                        size_t in_len,
-                                        bool url_safe = false)
+inline std::string base64EncodeUnpadded(const unsigned char *bytesToEncode,
+                                        size_t inLen,
+                                        bool urlSafe = false)
 {
-    return base64Encode(bytes_to_encode, in_len, url_safe, false);
+    return base64Encode(bytesToEncode, inLen, urlSafe, false);
 }
 
 /// Encode the string to base64 format with no padding.
 inline std::string base64EncodeUnpadded(std::string_view data,
-                                        bool url_safe = false)
+                                        bool urlSafe = false)
 {
-    return base64Encode(data, url_safe, false);
+    return base64Encode(data, urlSafe, false);
 }
 
 /// Get the decoded length of base64.
-constexpr size_t base64DecodedLength(size_t in_len)
+constexpr size_t base64DecodedLength(size_t inLen)
 {
-    return (in_len * 3) / 4;
+    return (inLen * 3) / 4;
 }
 
 /// Decode the base64 format string.
 /// Return the number of bytes written.
-DROGON_EXPORT size_t base64Decode(const char *encoded_string,
-                                  size_t in_len,
-                                  unsigned char *output_buffer);
+DROGON_EXPORT size_t base64Decode(const char *encodedString,
+                                  size_t inLen,
+                                  unsigned char *outputBuffer);
 
 /// Decode the base64 format string.
-inline std::string base64Decode(std::string_view encoded_string)
+inline std::string base64Decode(std::string_view encodedString)
 {
-    auto in_len = encoded_string.size();
+    auto inLen = encodedString.size();
     std::string ret;
-    ret.resize(base64DecodedLength(in_len));
-    ret.resize(base64Decode(encoded_string.data(),
-                            in_len,
-                            (unsigned char *)ret.data()));
+    ret.resize(base64DecodedLength(inLen));
+    ret.resize(
+        base64Decode(encodedString.data(), inLen, (unsigned char *)ret.data()));
     return ret;
 }
 
 DROGON_EXPORT std::vector<char> base64DecodeToVector(
-    std::string_view encoded_string);
+    std::string_view encodedString);
 
 /// Check if the string need decoding
 DROGON_EXPORT bool needUrlDecoding(const char *begin, const char *end);

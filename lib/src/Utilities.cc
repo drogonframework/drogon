@@ -83,12 +83,12 @@ namespace drogon
 {
 namespace utils
 {
-static const std::string base64Chars =
+static constexpr std::string_view base64Chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
 
-static const std::string urlBase64Chars =
+static constexpr std::string_view urlBase64Chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789-_";
@@ -440,33 +440,33 @@ std::string getUuid(bool lowercase)
 #endif
 }
 
-void base64Encode(const unsigned char *bytes_to_encode,
-                  size_t in_len,
-                  unsigned char *output_buffer,
-                  bool url_safe,
+void base64Encode(const unsigned char *bytesToEncode,
+                  size_t inLen,
+                  unsigned char *outputBuffer,
+                  bool urlSafe,
                   bool padded)
 {
     int i = 0;
-    unsigned char char_array_3[3];
-    unsigned char char_array_4[4];
+    unsigned char charArray3[3];
+    unsigned char charArray4[4];
 
-    const std::string &charSet = url_safe ? urlBase64Chars : base64Chars;
+    const std::string_view charSet = urlSafe ? urlBase64Chars : base64Chars;
 
     size_t a = 0;
-    while (in_len--)
+    while (inLen--)
     {
-        char_array_3[i++] = *(bytes_to_encode++);
+        charArray3[i++] = *(bytesToEncode++);
         if (i == 3)
         {
-            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) +
-                              ((char_array_3[1] & 0xf0) >> 4);
-            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) +
-                              ((char_array_3[2] & 0xc0) >> 6);
-            char_array_4[3] = char_array_3[2] & 0x3f;
+            charArray4[0] = (charArray3[0] & 0xfc) >> 2;
+            charArray4[1] =
+                ((charArray3[0] & 0x03) << 4) + ((charArray3[1] & 0xf0) >> 4);
+            charArray4[2] =
+                ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
+            charArray4[3] = charArray3[2] & 0x3f;
 
             for (i = 0; (i < 4); ++i, ++a)
-                output_buffer[a] = charSet[char_array_4[i]];
+                outputBuffer[a] = charSet[charArray4[i]];
             i = 0;
         }
     }
@@ -474,61 +474,61 @@ void base64Encode(const unsigned char *bytes_to_encode,
     if (i)
     {
         for (int j = i; j < 3; ++j)
-            char_array_3[j] = '\0';
+            charArray3[j] = '\0';
 
-        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-        char_array_4[1] =
-            ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-        char_array_4[2] =
-            ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-        char_array_4[3] = char_array_3[2] & 0x3f;
+        charArray4[0] = (charArray3[0] & 0xfc) >> 2;
+        charArray4[1] =
+            ((charArray3[0] & 0x03) << 4) + ((charArray3[1] & 0xf0) >> 4);
+        charArray4[2] =
+            ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
+        charArray4[3] = charArray3[2] & 0x3f;
 
         for (int j = 0; (j <= i); ++j, ++a)
-            output_buffer[a] = charSet[char_array_4[j]];
+            outputBuffer[a] = charSet[charArray4[j]];
 
         if (padded)
             while ((++i < 4))
             {
-                output_buffer[a] = '=';
+                outputBuffer[a] = '=';
                 ++a;
             }
     }
 }
 
-std::vector<char> base64DecodeToVector(std::string_view encoded_string)
+std::vector<char> base64DecodeToVector(std::string_view encodedString)
 {
-    auto in_len = encoded_string.size();
+    auto inLen = encodedString.size();
     int i = 0;
     int in_{0};
-    char char_array_4[4], char_array_3[3];
+    char charArray4[4], charArray3[3];
     std::vector<char> ret;
-    ret.reserve(base64DecodedLength(in_len));
+    ret.reserve(base64DecodedLength(inLen));
 
-    while (in_len-- && (encoded_string[in_] != '='))
+    while (inLen-- && (encodedString[in_] != '='))
     {
-        if (!isBase64(encoded_string[in_]))
+        if (!isBase64(encodedString[in_]))
         {
             ++in_;
             continue;
         }
 
-        char_array_4[i++] = encoded_string[in_];
+        charArray4[i++] = encodedString[in_];
         ++in_;
         if (i == 4)
         {
             for (i = 0; i < 4; ++i)
             {
-                char_array_4[i] = base64CharMap.getIndex(char_array_4[i]);
+                charArray4[i] = base64CharMap.getIndex(charArray4[i]);
             }
 
-            char_array_3[0] =
-                (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) +
-                              ((char_array_4[2] & 0x3c) >> 2);
-            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+            charArray3[0] =
+                (charArray4[0] << 2) + ((charArray4[1] & 0x30) >> 4);
+            charArray3[1] =
+                ((charArray4[1] & 0xf) << 4) + ((charArray4[2] & 0x3c) >> 2);
+            charArray3[2] = ((charArray4[2] & 0x3) << 6) + charArray4[3];
 
             for (i = 0; (i < 3); ++i)
-                ret.push_back(char_array_3[i]);
+                ret.push_back(charArray3[i]);
             i = 0;
         }
     }
@@ -536,60 +536,59 @@ std::vector<char> base64DecodeToVector(std::string_view encoded_string)
     if (i)
     {
         for (int j = i; j < 4; ++j)
-            char_array_4[j] = 0;
+            charArray4[j] = 0;
 
         for (int j = 0; j < 4; ++j)
         {
-            char_array_4[j] = base64CharMap.getIndex(char_array_4[j]);
+            charArray4[j] = base64CharMap.getIndex(charArray4[j]);
         }
 
-        char_array_3[0] =
-            (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-        char_array_3[1] =
-            ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+        charArray3[0] = (charArray4[0] << 2) + ((charArray4[1] & 0x30) >> 4);
+        charArray3[1] =
+            ((charArray4[1] & 0xf) << 4) + ((charArray4[2] & 0x3c) >> 2);
+        charArray3[2] = ((charArray4[2] & 0x3) << 6) + charArray4[3];
 
         --i;
         for (int j = 0; (j < i); ++j)
-            ret.push_back(char_array_3[j]);
+            ret.push_back(charArray3[j]);
     }
 
     return ret;
 }
 
-size_t base64Decode(const char *encoded_string,
-                    size_t in_len,
-                    unsigned char *output_buffer)
+size_t base64Decode(const char *encodedString,
+                    size_t inLen,
+                    unsigned char *outputBuffer)
 {
     int i = 0;
     int in_{0};
-    unsigned char char_array_4[4], char_array_3[3];
+    unsigned char charArray4[4], charArray3[3];
 
     size_t a = 0;
-    while (in_len-- && (encoded_string[in_] != '='))
+    while (inLen-- && (encodedString[in_] != '='))
     {
-        if (!isBase64(encoded_string[in_]))
+        if (!isBase64(encodedString[in_]))
         {
             ++in_;
             continue;
         }
 
-        char_array_4[i++] = encoded_string[in_];
+        charArray4[i++] = encodedString[in_];
         ++in_;
         if (i == 4)
         {
             for (i = 0; i < 4; ++i)
             {
-                char_array_4[i] = base64CharMap.getIndex(char_array_4[i]);
+                charArray4[i] = base64CharMap.getIndex(charArray4[i]);
             }
-            char_array_3[0] =
-                (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) +
-                              ((char_array_4[2] & 0x3c) >> 2);
-            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+            charArray3[0] =
+                (charArray4[0] << 2) + ((charArray4[1] & 0x30) >> 4);
+            charArray3[1] =
+                ((charArray4[1] & 0xf) << 4) + ((charArray4[2] & 0x3c) >> 2);
+            charArray3[2] = ((charArray4[2] & 0x3) << 6) + charArray4[3];
 
             for (i = 0; (i < 3); ++i, ++a)
-                output_buffer[a] = char_array_3[i];
+                outputBuffer[a] = charArray3[i];
             i = 0;
         }
     }
@@ -597,22 +596,21 @@ size_t base64Decode(const char *encoded_string,
     if (i)
     {
         for (int j = i; j < 4; ++j)
-            char_array_4[j] = 0;
+            charArray4[j] = 0;
 
         for (int j = 0; j < 4; ++j)
         {
-            char_array_4[j] = base64CharMap.getIndex(char_array_4[j]);
+            charArray4[j] = base64CharMap.getIndex(charArray4[j]);
         }
 
-        char_array_3[0] =
-            (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-        char_array_3[1] =
-            ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+        charArray3[0] = (charArray4[0] << 2) + ((charArray4[1] & 0x30) >> 4);
+        charArray3[1] =
+            ((charArray4[1] & 0xf) << 4) + ((charArray4[2] & 0x3c) >> 2);
+        charArray3[2] = ((charArray4[2] & 0x3) << 6) + charArray4[3];
 
         --i;
         for (int j = 0; (j < i); ++j, ++a)
-            output_buffer[a] = char_array_3[j];
+            outputBuffer[a] = charArray3[j];
     }
 
     return a;
