@@ -850,7 +850,6 @@ void HttpAppFrameworkImpl::forward(
     const std::string &hostString,
     double timeout)
 {
-    req->setPath(req->getOriginalPath());
     if (hostString.empty())
     {
         HttpInternalForwardHelper::forward(req, std::move(callback));
