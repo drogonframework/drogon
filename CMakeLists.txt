@@ -717,6 +717,7 @@ install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
 
 set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/coroutine.h
+    lib/inc/drogon/utils/HttpClientPool.h
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/HttpConstraint.h
     lib/inc/drogon/utils/OStringStream.h
