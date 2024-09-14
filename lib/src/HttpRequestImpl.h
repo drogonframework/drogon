@@ -673,6 +673,9 @@ class HttpRequestImpl : public HttpRequest
     HttpMethod previousMethod_{Invalid};
     Version version_{Version::kUnknown};
     std::string path_;
+    /// Contains the encoded `path_` if and only if `path_` is set in encoded
+    /// form. If path is in a normal form and needed no decoding, then this will
+    /// be empty, as we do not need to store a duplicate.
     std::string originalPath_;
     bool pathEncode_{true};
     std::string_view matchedPathPattern_{""};
