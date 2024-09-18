@@ -245,7 +245,7 @@ struct [[nodiscard]] Task
 
         std::optional<T> value;
         std::exception_ptr exception_;
-        std::coroutine_handle<> continuation_;
+        std::coroutine_handle<> continuation_{std::noop_coroutine()};
     };
 
     auto operator co_await() const noexcept
@@ -332,7 +332,7 @@ struct [[nodiscard]] Task<void>
         }
 
         std::exception_ptr exception_;
-        std::coroutine_handle<> continuation_;
+        std::coroutine_handle<> continuation_{std::noop_coroutine()};
     };
 
     auto operator co_await() const noexcept
