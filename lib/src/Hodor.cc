@@ -128,24 +128,12 @@ void Hodor::shutdown()
     LOG_TRACE << "Hodor plugin is shutdown!";
 }
 
-bool Hodor::matchCidr(const trantor::InetAddress &addr) const
-{
-    for (auto &cidr : trustCIDRs_)
-    {
-        if ((addr.ipNetEndian() & cidr.mask_) == cidr.addr_)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
                        const LimitStrategy &strategy,
                        const trantor::InetAddress &ip,
                        const std::optional<std::string> &userId)
 {
-    if (matchCidr(ip))
+    if (RealIpResolver::matchCidr(ip, trustCIDRs_))
     {
         return true;
     }

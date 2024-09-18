@@ -109,7 +109,7 @@ void RealIpResolver::initAndStart(const Json::Value &config)
         const auto &headers = req->headers();
         auto ipHeaderFind = headers.find(fromHeader_);
         const trantor::InetAddress &peerAddr = req->getPeerAddr();
-        if (ipHeaderFind == headers.end() || !matchCidr(peerAddr))
+        if (ipHeaderFind == headers.end() || !matchCidr(peerAddr, trustCIDRs_))
         {
             // Target header is empty, or
             // direct peer is already a non-proxy
@@ -138,7 +138,7 @@ void RealIpResolver::initAndStart(const Json::Value &config)
         while (!(ip = parser.getNext()).empty())
         {
             trantor::InetAddress addr = parseAddress(ip);
-            if (addr.isUnspecified() || matchCidr(addr))
+            if (addr.isUnspecified() || matchCidr(addr, trustCIDRs_))
             {
                 continue;
             }
@@ -176,9 +176,10 @@ const trantor::InetAddress &RealIpResolver::getRealAddr(
     return attributesPtr->get<trantor::InetAddress>(attributeKey_);
 }
 
-bool RealIpResolver::matchCidr(const trantor::InetAddress &addr) const
+bool RealIpResolver::matchCidr(const trantor::InetAddress &addr,
+                               const CIDRs &trustCIDRs)
 {
-    for (auto &cidr : trustCIDRs_)
+    for (const auto &cidr : trustCIDRs)
     {
         if ((addr.ipNetEndian() & cidr.mask_) == cidr.addr_)
         {
