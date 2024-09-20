@@ -64,15 +64,10 @@ void WebsocketControllerBinder::handleRequest(
     memcpy(accKey, &sha1, sizeof(sha1));
     auto base64Key = utils::base64Encode(accKey, sizeof(accKey));
     auto resp = HttpResponse::newHttpResponse();
-    resp->setPassThrough(true);
     resp->setStatusCode(k101SwitchingProtocols);
     resp->addHeader("Upgrade", "websocket");
     resp->addHeader("Connection", "Upgrade");
     resp->addHeader("Sec-WebSocket-Accept", base64Key);
-
-    std::string versionStr = "drogon/" + drogon::getVersion();
-    resp->addHeader("Server", versionStr);
-
     callback(resp);
 }
 

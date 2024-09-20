@@ -17,10 +17,9 @@ DROGON_TEST(WebsocketReponseTest)
 
     binder.handleRequest(reqPtr, [&](const HttpResponsePtr &resp) {
         CHECK(resp->statusCode() == k101SwitchingProtocols);
-        CHECK(resp->headers().size() == 4);
+        CHECK(resp->headers().size() == 3);
         CHECK(resp->getHeader("Upgrade") == "websocket");
         CHECK(resp->getHeader("Connection") == "Upgrade");
-        CHECK(resp->getHeader("Server") == "drogon/" + drogon::getVersion());
 
         // Value from rfc6455-1.3
         CHECK(resp->getHeader("Sec-WebSocket-Accept") ==
