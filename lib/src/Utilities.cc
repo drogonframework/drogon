@@ -446,34 +446,48 @@ void base64Encode(const unsigned char *bytesToEncode,
                   bool urlSafe,
                   bool padded)
 {
-    int i = 0;
+    // If buffers differ, or we are doing in-place encoding with an input of
+    // less than or equal to 12 bytes
+    assert(bytesToEncode != outputBuffer || inLen <= 12);
+
+    int i = 0, j = 1;
     unsigned char charArray3[3];
     unsigned char charArray4[4];
 
     const std::string_view charSet = urlSafe ? urlBase64Chars : base64Chars;
 
     size_t a = 0;
-    while (inLen--)
+    for (; inLen >= 3; inLen -= 3)
     {
-        charArray3[i++] = *(bytesToEncode++);
-        if (i == 3)
-        {
-            charArray4[0] = (charArray3[0] & 0xfc) >> 2;
-            charArray4[1] =
-                ((charArray3[0] & 0x03) << 4) + ((charArray3[1] & 0xf0) >> 4);
-            charArray4[2] =
-                ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
-            charArray4[3] = charArray3[2] & 0x3f;
+        for (; i < 3; ++i)
+            charArray3[i] = *(bytesToEncode++);
 
-            for (i = 0; (i < 4); ++i, ++a)
-                outputBuffer[a] = charSet[charArray4[i]];
-            i = 0;
-        }
+        charArray4[0] = (charArray3[0] & 0xfc) >> 2;
+        charArray4[1] =
+            ((charArray3[0] & 0x03) << 4) + ((charArray3[1] & 0xf0) >> 4);
+        charArray4[2] =
+            ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
+        charArray4[3] = charArray3[2] & 0x3f;
+
+        for (i = 0; i < j; ++i)
+            charArray3[i] = *(bytesToEncode++);
+
+        for (i = 0; (i < 4); ++i, ++a)
+            outputBuffer[a] = charSet[charArray4[i]];
+
+        i = j;
+        j = (j + 1) &
+            (4 - 1);  // This is to avoid an if statement: if(j == 4)j = 0;
     }
+
+    for (; i < inLen; ++i)
+        charArray3[i] = *(bytesToEncode++);
+    i = inLen;  // This is needed because in some cases `i` could be greater
+                // than `inLen`
 
     if (i)
     {
-        for (int j = i; j < 3; ++j)
+        for (j = i; j < 3; ++j)
             charArray3[j] = '\0';
 
         charArray4[0] = (charArray3[0] & 0xfc) >> 2;
@@ -483,7 +497,7 @@ void base64Encode(const unsigned char *bytesToEncode,
             ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
         charArray4[3] = charArray3[2] & 0x3f;
 
-        for (int j = 0; (j <= i); ++j, ++a)
+        for (j = 0; j <= i; ++j, ++a)
             outputBuffer[a] = charSet[charArray4[j]];
 
         if (padded)
