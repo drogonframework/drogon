@@ -78,6 +78,8 @@ inline std::string nameTransform(const std::string &origName, bool isType)
     return ret;
 }
 
+std::string escapeIdentifier(const std::string &identifier, const std::string &rdbms);
+
 class PivotTable
 {
   public:
