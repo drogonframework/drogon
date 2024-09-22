@@ -66,9 +66,11 @@ static std::string escapeConnString(const std::string &str)
     return escaped;
 }
 
-std::string drogon_ctl::escapeIdentifier(const std::string &identifier, const std::string &rdbms)
+std::string drogon_ctl::escapeIdentifier(const std::string &identifier,
+                                         const std::string &rdbms)
 {
-    if (rdbms != "postgresql") {
+    if (rdbms != "postgresql")
+    {
         return identifier;
     }
 
