@@ -516,6 +516,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                            statusCode_);
         }
     }
+
     buffer.hasWritten(len);
 
     if (!statusMessage_.empty())
@@ -537,7 +538,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
             }
             len = 0;
         }
-        else if (sendfileName_.empty())
+        else if (sendfileName_.empty() && contentLengthIsAllowed())
         {
             auto bodyLength = bodyPtr_ ? bodyPtr_->length() : 0;
             len = snprintf(buffer.beginWrite(),
@@ -545,7 +546,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                            contentLengthFormatString<decltype(bodyLength)>(),
                            bodyLength);
         }
-        else
+        else if (contentLengthIsAllowed())
         {
             auto bodyLength = sendfileRange_.second;
             len = snprintf(buffer.beginWrite(),

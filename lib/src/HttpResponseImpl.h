@@ -537,6 +537,16 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         statusMessage_ = message;
     }
+
+    bool contentLengthIsAllowed()
+    {
+        int statusCode =
+            customStatusCode_ >= 0 ? customStatusCode_ : statusCode_;
+
+        // return false if status code is 1xx or 204
+        return (statusCode >= k200OK || statusCode < k100Continue) &&
+               statusCode != k204NoContent;
+    }
 };
 
 using HttpResponseImplPtr = std::shared_ptr<HttpResponseImpl>;
