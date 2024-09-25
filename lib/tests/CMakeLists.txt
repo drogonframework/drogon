@@ -28,7 +28,6 @@ set(UNITTEST_SOURCES
     unittests/SlashRemoverTest.cc
     unittests/UtilitiesTest.cc
     unittests/UuidUnittest.cc
-    unittests/WebsocketResponseTest.cc
 )
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
@@ -43,7 +42,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS)
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc)
 else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
-                       unittests/HttpFileTest.cc)
+                       unittests/HttpFileTest.cc
+                       unittests/WebsocketResponseTest.cc)
 endif()
 
 add_executable(unittest ${UNITTEST_SOURCES})
