@@ -96,13 +96,15 @@ void HttpRequestImpl::parseParameters() const
                 while (cpos < key.length() &&
                        isspace(static_cast<unsigned char>(key[cpos])))
                     ++cpos;
-                key = key.substr(cpos);
+                key.remove_prefix(cpos);
                 auto pvalue = coo.substr(epos + 1);
-                std::string pdecode = utils::urlDecode(pvalue);
-                std::string keydecode = utils::urlDecode(key);
-                parameters_[keydecode] = pdecode;
+                parameters_[utils::urlDecode(key)] = utils::urlDecode(pvalue);
             }
-            value = value.substr(pos + 1);
+            else
+            {
+                parameters_[utils::urlDecode(coo)];
+            }
+            value.remove_prefix(pos + 1);
         }
         if (value.length() > 0)
         {
@@ -115,11 +117,13 @@ void HttpRequestImpl::parseParameters() const
                 while (cpos < key.length() &&
                        isspace(static_cast<unsigned char>(key[cpos])))
                     ++cpos;
-                key = key.substr(cpos);
+                key.remove_prefix(cpos);
                 auto pvalue = coo.substr(epos + 1);
-                std::string pdecode = utils::urlDecode(pvalue);
-                std::string keydecode = utils::urlDecode(key);
-                parameters_[keydecode] = pdecode;
+                parameters_[utils::urlDecode(key)] = utils::urlDecode(pvalue);
+            }
+            else
+            {
+                parameters_[utils::urlDecode(coo)];
             }
         }
     }
@@ -153,13 +157,15 @@ void HttpRequestImpl::parseParameters() const
                 while (cpos < key.length() &&
                        isspace(static_cast<unsigned char>(key[cpos])))
                     ++cpos;
-                key = key.substr(cpos);
+                key.remove_prefix(cpos);
                 auto pvalue = coo.substr(epos + 1);
-                std::string pdecode = utils::urlDecode(pvalue);
-                std::string keydecode = utils::urlDecode(key);
-                parameters_[keydecode] = pdecode;
+                parameters_[utils::urlDecode(key)] = utils::urlDecode(pvalue);
             }
-            value = value.substr(pos + 1);
+            else
+            {
+                parameters_[utils::urlDecode(coo)];
+            }
+            value.remove_prefix(pos + 1);
         }
         if (value.length() > 0)
         {
@@ -172,11 +178,13 @@ void HttpRequestImpl::parseParameters() const
                 while (cpos < key.length() &&
                        isspace(static_cast<unsigned char>(key[cpos])))
                     ++cpos;
-                key = key.substr(cpos);
+                key.remove_prefix(cpos);
                 auto pvalue = coo.substr(epos + 1);
-                std::string pdecode = utils::urlDecode(pvalue);
-                std::string keydecode = utils::urlDecode(key);
-                parameters_[keydecode] = pdecode;
+                parameters_[utils::urlDecode(key)] = utils::urlDecode(pvalue);
+            }
+            else
+            {
+                parameters_[utils::urlDecode(coo)];
             }
         }
     }
