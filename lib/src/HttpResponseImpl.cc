@@ -538,7 +538,11 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
             }
             len = 0;
         }
-        else if (sendfileName_.empty() && contentLengthIsAllowed())
+        else if (!contentLengthIsAllowed())
+        {
+            len = 0;
+        }
+        else if (sendfileName_.empty())
         {
             auto bodyLength = bodyPtr_ ? bodyPtr_->length() : 0;
             len = snprintf(buffer.beginWrite(),
@@ -546,7 +550,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                            contentLengthFormatString<decltype(bodyLength)>(),
                            bodyLength);
         }
-        else if (contentLengthIsAllowed())
+        else
         {
             auto bodyLength = sendfileRange_.second;
             len = snprintf(buffer.beginWrite(),
