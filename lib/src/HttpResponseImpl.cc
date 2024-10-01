@@ -529,7 +529,9 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         if (!contentLengthIsAllowed())
         {
             len = 0;
-            if ((bodyPtr_ && bodyPtr_->length() > 0) || !sendfileName_.empty())
+            if ((bodyPtr_ && bodyPtr_->length() > 0) ||
+                !sendfileName_.empty() || streamCallback_ ||
+                asyncStreamCallback_)
             {
                 LOG_ERROR << "The body should be empty when the content-length "
                              "is not allowed!";
