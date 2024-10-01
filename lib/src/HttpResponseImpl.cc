@@ -526,7 +526,16 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
     if (!passThrough_)
     {
         buffer.ensureWritableBytes(64);
-        if (streamCallback_ || asyncStreamCallback_)
+        if (!contentLengthIsAllowed())
+        {
+            len = 0;
+            if ((bodyPtr_ && bodyPtr_->length() > 0) || !sendfileName_.empty())
+            {
+                LOG_ERROR << "The body should be empty when the content-length "
+                             "is not allowed!";
+            }
+        }
+        else if (streamCallback_ || asyncStreamCallback_)
         {
             // When the headers are created, it is time to set the transfer
             // encoding to chunked if the contents size is not specified
@@ -536,10 +545,6 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                 LOG_DEBUG << "send stream with transfer-encoding chunked";
                 headers_["transfer-encoding"] = "chunked";
             }
-            len = 0;
-        }
-        else if (!contentLengthIsAllowed())
-        {
             len = 0;
         }
         else if (sendfileName_.empty())
@@ -633,7 +638,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     {
         buffer.append("\r\n");
     }
-    if (bodyPtr_)
+    if (bodyPtr_ && contentLengthIsAllowed())
         buffer.append(bodyPtr_->data(), bodyPtr_->length());
 }
 
@@ -962,7 +967,8 @@ bool HttpResponseImpl::shouldBeCompressed() const
 {
     if (streamCallback_ || asyncStreamCallback_ || !sendfileName_.empty() ||
         contentType() >= CT_APPLICATION_OCTET_STREAM ||
-        getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
+        getBody().length() < 1024 ||
+        !(getHeaderBy("content-encoding").empty()) || !contentLengthIsAllowed())
     {
         return false;
     }

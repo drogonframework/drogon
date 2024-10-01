@@ -966,6 +966,8 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
+        if (!respImplPtr->contentLengthIsAllowed())
+            return;
         auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
         if (asyncStreamCallback)
         {
@@ -1046,6 +1048,8 @@ void HttpServer::sendResponses(
         {
             // Not HEAD method
             respImplPtr->renderToBuffer(buffer);
+            if (!respImplPtr->contentLengthIsAllowed())
+                continue;
             auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
             if (asyncStreamCallback)
             {

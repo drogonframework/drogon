@@ -452,6 +452,16 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
     }
 
+    bool contentLengthIsAllowed() const
+    {
+        int statusCode =
+            customStatusCode_ >= 0 ? customStatusCode_ : statusCode_;
+
+        // return false if status code is 1xx or 204
+        return (statusCode >= k200OK || statusCode < k100Continue) &&
+               statusCode != k204NoContent;
+    }
+
   private:
     void setBody(const char *body, size_t len) override
     {
@@ -536,16 +546,6 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     void setStatusMessage(const std::string_view &message)
     {
         statusMessage_ = message;
-    }
-
-    bool contentLengthIsAllowed()
-    {
-        int statusCode =
-            customStatusCode_ >= 0 ? customStatusCode_ : statusCode_;
-
-        // return false if status code is 1xx or 204
-        return (statusCode >= k200OK || statusCode < k100Continue) &&
-               statusCode != k204NoContent;
     }
 };
 
