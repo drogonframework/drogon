@@ -165,12 +165,12 @@ std::string genRandomString(int length)
 {
     static const std::string_view char_space[] =
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    std::uniform_int_distribution<size_t> dist(0, char_space.size()-1);
+    std::uniform_int_distribution<size_t> dist(0, char_space.size() - 1);
     thread_local std::mt19937 rng(std::random_device{}());
 
     std::string str;
     str.resize(length);
-    for(char& ch : str)
+    for (char& ch : str)
     {
         ch = char_space[dist(rng)];
     }
