@@ -33,6 +33,7 @@
 #include <sstream>
 #include <string>
 #include <mutex>
+#include <random>
 #include <algorithm>
 #include <array>
 #include <locale>
@@ -162,28 +163,16 @@ bool isBase64(std::string_view str)
 
 std::string genRandomString(int length)
 {
-    static const char char_space[] =
+    static const std::string_view char_space[] =
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    static std::once_flag once;
-    static const size_t len = strlen(char_space);
-    static const int randMax = RAND_MAX - (RAND_MAX % len);
-    std::call_once(once, []() {
-        std::srand(static_cast<unsigned int>(time(nullptr)));
-    });
+    std::uniform_int_distribution<size_t> dist(0, char_space.size()-1);
+    thread_local std::mt19937 rng(std::random_device{}());
 
-    int i;
     std::string str;
     str.resize(length);
-
-    for (i = 0; i < length; ++i)
+    for(char& ch : str)
     {
-        int x = std::rand();
-        while (x >= randMax)
-        {
-            x = std::rand();
-        }
-        x = (x % len);
-        str[i] = char_space[x];
+        ch = char_space[dist(rng)];
     }
 
     return str;
