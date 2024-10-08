@@ -170,7 +170,7 @@ std::string genRandomString(int length)
 
     std::string str;
     str.resize(length);
-    for (char& ch : str)
+    for (char &ch : str)
     {
         ch = char_space[dist(rng)];
     }
