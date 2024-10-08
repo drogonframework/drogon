@@ -163,7 +163,7 @@ bool isBase64(std::string_view str)
 
 std::string genRandomString(int length)
 {
-    static const std::string_view char_space[] =
+    static const std::string_view char_space =
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     std::uniform_int_distribution<size_t> dist(0, char_space.size() - 1);
     thread_local std::mt19937 rng(std::random_device{}());
