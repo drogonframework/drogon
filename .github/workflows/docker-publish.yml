@@ -1,9 +1,8 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches:
-      - master  # 触发条件，可以根据需要调整分支
+  release:
+    types: [created]  # 当新版本被创建时触发
 
 jobs:
   build:
@@ -11,7 +10,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
