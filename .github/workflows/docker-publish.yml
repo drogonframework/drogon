@@ -26,4 +26,4 @@ jobs:
 
       - name: Push Docker image
         run: |
-          docker push -t drogonframework/drogon:latest
+          docker push drogonframework/drogon:latest
