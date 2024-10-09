@@ -1,0 +1,29 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - master  # 触发条件，可以根据需要调整分支
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: |
+          cd docker/ubuntu
+          docker build -t drogonframework/drogon:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push -t drogonframework/drogon:latest
