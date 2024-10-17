@@ -128,12 +128,14 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
 DROGON_EXPORT std::string getUuid(bool lowercase = true);
 
 /// Get the encoded length of base64.
-constexpr size_t base64EncodedLength(size_t in_len, bool padded = true)
+constexpr size_t base64EncodedLength(size_t inLen, bool padded = true)
 {
-    return padded ? ((in_len + 3 - 1) / 3) * 4 : (in_len * 8 + 6 - 1) / 6;
+    return padded ? ((inLen + 3 - 1) / 3) * 4 : (inLen * 8 + 6 - 1) / 6;
 }
 
 /// Encode the string to base64 format.
+/// Supports in-place encoding up to 12 input bytes.
+/// To encode more than 12 input bytes, use the `base64EncodeInPlace` overload.
 DROGON_EXPORT void base64Encode(const unsigned char *bytesToEncode,
                                 size_t inLen,
                                 unsigned char *outputBuffer,
@@ -141,13 +143,21 @@ DROGON_EXPORT void base64Encode(const unsigned char *bytesToEncode,
                                 bool padded = true);
 
 /// Encode the string to base64 format.
+/// Uses minimal dynamic allocation for encoding.
+/// TODO: To be implemented
+/*DROGON_EXPORT void base64EncodeInPlace(const unsigned char *bytesToEncode,
+                                size_t inLen,
+                                unsigned char *outputBuffer,
+                                bool urlSafe = false,
+                                bool padded = true);*/
+
+/// Encode the string to base64 format.
 inline std::string base64Encode(const unsigned char *bytesToEncode,
                                 size_t inLen,
                                 bool urlSafe = false,
                                 bool padded = true)
 {
-    std::string ret;
-    ret.resize(base64EncodedLength(inLen, padded));
+    std::string ret(base64EncodedLength(inLen, padded), uint8_t(0));
     base64Encode(
         bytesToEncode, inLen, (unsigned char *)ret.data(), urlSafe, padded);
     return ret;
@@ -204,8 +214,7 @@ DROGON_EXPORT size_t base64Decode(const char *encodedString,
 inline std::string base64Decode(std::string_view encodedString)
 {
     auto inLen = encodedString.size();
-    std::string ret;
-    ret.resize(base64DecodedLength(inLen));
+    std::string ret(base64DecodedLength(inLen), uint8_t(0));
     ret.resize(
         base64Decode(encodedString.data(), inLen, (unsigned char *)ret.data()));
     return ret;
