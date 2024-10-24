@@ -600,6 +600,7 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(streamFinishCb_, that.streamFinishCb_);
     swap(streamExceptionPtr_, that.streamExceptionPtr_);
     swap(startProcessing_, that.startProcessing_);
+    swap(connPtr_, that.connPtr_);
 }
 
 const char *HttpRequestImpl::versionString() const

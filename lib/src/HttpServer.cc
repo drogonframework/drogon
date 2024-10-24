@@ -220,6 +220,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             req->setCreationDate(trantor::Date::date());
             req->setSecure(conn->isSSLConnection());
             req->setPeerCertificate(conn->peerCertificate());
+            req->setConnectionPtr(conn);
             // TODO: maybe call onRequests() directly in stream mode
             requests.push_back(req);
         }
