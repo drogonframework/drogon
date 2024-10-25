@@ -1,3 +1,4 @@
+#include <trantor/utils/Logger.h>
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #else
@@ -15,8 +16,10 @@ int main()
     // sent to Drogon
     app().registerHandler(
         "/",
-        [](const HttpRequestPtr &,
+        [](const HttpRequestPtr &request,
            std::function<void(const HttpResponsePtr &)> &&callback) {
+            LOG_INFO << "connected:"
+                     << (request->connected() ? "true" : "false");
             auto resp = HttpResponse::newHttpResponse();
             resp->setBody("Hello, World!");
             callback(resp);

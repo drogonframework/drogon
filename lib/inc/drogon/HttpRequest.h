@@ -504,6 +504,8 @@ class DROGON_EXPORT HttpRequest
     virtual void setContentTypeString(const char *typeString,
                                       size_t typeStringLength) = 0;
 
+    virtual bool connected() const noexcept = 0;
+
     virtual ~HttpRequest()
     {
     }
