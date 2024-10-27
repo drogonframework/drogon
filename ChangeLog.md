@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.8] - 2024-10-27
+
+### API changes list
+
+- Add in-place base64 encode and decode.
+
+- Add check the client connection status.
+
+### Changed
+
+- Add Hodor whitelists.
+
+- Include exception header for std::exception_ptr.
+
+- Add support for escaped identifiers in Postgresql.
+
+- Remove content-length header from 101 Switching Protocols response.
+
+- Remove websocketResponseTest from windows shared library env.
+
+- Optimize query params and allow for empty values.
+
+- Replace rejection sampling and remove use of rand().
+
+- Add sending customized http requests to drogon_ctl.
+
+### Fixed
+
+- Fix coroutine continuation handle.
+
+- Fix some bugs in plugin PromExporter.
+
+- Fix a bug after removing content-length header in some responses.
+
 ## [1.9.7] - 2024-09-10
 
 ### API changes list
@@ -1725,7 +1759,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.7...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.8...HEAD
+
+[1.9.8]: https://github.com/an-tao/drogon/compare/v1.9.7...v1.9.8
 
 [1.9.7]: https://github.com/an-tao/drogon/compare/v1.9.6...v1.9.7
 
