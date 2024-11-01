@@ -1,0 +1,42 @@
+name: C++20
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  modules:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Drogon source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt-get install -y cmake ninja-build clang
+          sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
+          sudo apt-get install -y ninja-build libbrotli-dev
+          cmake --version
+          ninja --version
+          clang++ --version
+
+      - name: Clang Build Modules
+        run: |
+          mkdir build && cd build && pwd
+          CC=clang CXX=clang++ cmake ..     \
+          -DCMAKE_CXX_STANDARD=20           \
+          -GNinja                           \
+          -DDROGON_BUILD_MODULES=ON         \
+          -DDROGON_BUILD_MODULES_EXAMPLE=ON \
+          -DBUILD_TESTING=OFF
+          ninja -j 9

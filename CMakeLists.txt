@@ -54,6 +54,60 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif ()
 
 add_library(${PROJECT_NAME})
+
+option(DROGON_BUILD_MODULES "Build drogon library in C++20 Modules form" OFF)
+option(DROGON_BUILD_MODULES_EXAMPLE "Build drogon modules example" OFF)
+option(HAS_STD_MODULE "has c++ std module" OFF)
+
+if(${DROGON_BUILD_MODULES})
+    message("-- use c++20 module")
+
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.28)
+        cmake_policy(SET CMP0155 NEW)
+    elseif(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
+        set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API "aa1f7df0-828a-4fcd-9afc-2dc80491aca7")
+    elseif(CMAKE_VERSION VERSION_GREATER_EQUAL 3.26)
+        set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API "2182bf5c-ef0d-489a-91da-49dbc3090d2a")
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            set(CMake_TEST_CXXModules_UUID "a246741c-d067-4019-a8fb-3d16b0c9d1d3")
+            set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
+            string(CONCAT CMAKE_EXPERIMENTAL_CXX_SCANDEP_SOURCE
+            "${CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS}"
+            " -format=p1689"
+            " --"
+            " <CMAKE_CXX_COMPILER> <DEFINES> <INCLUDES> <FLAGS>"
+            " -x c++ <SOURCE> -c -o <OBJECT>"
+            " -MT <DYNDEP_FILE>"
+            " -MD -MF <DEP_FILE>"
+            " > <DYNDEP_FILE>")
+            set(CMAKE_EXPERIMENTAL_CXX_MODULE_MAP_FORMAT "clang")
+            set(CMAKE_EXPERIMENTAL_CXX_MODULE_MAP_FLAG "@<MODULE_MAP_FILE>")
+
+            set(CMAKE_CXX_EXTENSIONS OFF)
+        endif()
+        if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+            set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
+        endif()
+    endif()
+
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+    set(MODULES_SRCS "")
+    list(APPEND MODULES_SRCS ${PROJECT_SOURCE_DIR}/modules/drogon.cppm)
+    if (NOT ${HAS_STD_MODULE})
+      list(APPEND MODULES_SRCS ${PROJECT_SOURCE_DIR}/modules/std.mock.cppm)
+    endif()
+
+    message("${MODULES_SRCS}")
+
+    target_sources(${PROJECT_NAME} PUBLIC FILE_SET CXX_MODULES FILES ${MODULES_SRCS})
+    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+    # build modules example
+    if(${DROGON_BUILD_MODULES_EXAMPLE})
+        add_subdirectory(examples/cpp20_modules_example)
+    endif()
+endif()
+
 if (BUILD_SHARED_LIBS)
     find_package(Threads)
     # set(BUILD_EXAMPLES FALSE)
@@ -678,12 +732,20 @@ if (BUILD_TESTING)
 endif (BUILD_TESTING)
 
 # Installation
-
+if(${DROGON_BUILD_MODULES})
+install(TARGETS ${PROJECT_NAME}
+    EXPORT DrogonTargets
+    RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin
+    ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib
+    LIBRARY FILE_SET CXX_MODULES DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
+else()
 install(TARGETS ${PROJECT_NAME}
     EXPORT DrogonTargets
     RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin
     ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib
     LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
+endif()
+
 
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
