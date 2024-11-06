@@ -1367,3 +1367,10 @@ HttpAppFramework &HttpAppFrameworkImpl::setAfterAcceptSockOptCallback(
     listenerManagerPtr_->setAfterAcceptSockOptCallback(std::move(cb));
     return *this;
 }
+
+HttpAppFramework &HttpAppFrameworkImpl::setConnectionCallback(
+    std::function<void(const trantor::TcpConnectionPtr &)> cb)
+{
+    listenerManagerPtr_->setConnectionCallback(std::move(cb));
+    return *this;
+}

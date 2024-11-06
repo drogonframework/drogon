@@ -1615,6 +1615,15 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setAfterAcceptSockOptCallback(
         std::function<void(int)> cb) = 0;
 
+    /**
+     * @brief Set the client disconnect or connect callback.
+     *
+     * @param cb This callback will be called, when the client disconnect or
+     * connect
+     */
+    virtual HttpAppFramework &setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb) = 0;
+
     virtual HttpAppFramework &enableRequestStream(bool enable = true) = 0;
     virtual bool isRequestStreamEnabled() const = 0;
 
