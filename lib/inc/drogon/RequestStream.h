@@ -88,7 +88,7 @@ class StreamError final : public std::exception
  * An interface for stream request reading.
  * User should create an implementation class, or use built-in handlers
  */
-class RequestStreamReader
+class DROGON_EXPORT RequestStreamReader
 {
   public:
     virtual ~RequestStreamReader() = default;
