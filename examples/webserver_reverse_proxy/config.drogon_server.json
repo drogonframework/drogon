@@ -1,0 +1,204 @@
+{
+    "custom_config": {
+        "name": "drogon_server"
+    },
+    "listeners": [
+        {
+            "address": "0.0.0.0",
+            "port": 9999,
+            "https": false
+        }
+    ],
+    "mime": {
+        "text/markdown": "md",
+        "text/gemini": [
+            "gmi", "gemini"
+        ],
+        "text/css": [
+            "css", "css.map"
+        ],
+        "text/javascript": [
+            "js", "mjs", "js.map", "framework.js", "loader.js",
+            "audio.worklet.js",
+            "data", "pck",
+            "wasm", "side.wasm",
+            "worker.js"
+        ]
+    },
+    "app": {
+        "number_of_threads": 2,
+        "document_root": "../public",
+        "enable_session": false,
+        "session_timeout": 604800,
+        "session_same_site" : "Strict",
+        "session_cookie_key": "_drogon_server-session-id",
+        "max_connections": 262144,
+        "max_connections_per_ip": 0,
+        "client_max_body_size": "5M",
+        "client_max_memory_body_size": "5M",
+        "client_max_websocket_message_size": "5M",
+        "log": {
+            "use_spdlog": false,
+            "log_path": "../logs/info",
+            "logfile_base_name": "drogon_server.info",
+            "log_size_limit": 100000000,
+            "max_files": 30,
+            "log_level": "INFO"
+        },
+        "run_as_daemon": false,
+        "relaunch_on_error": false,
+        "upload_path": "m",
+        "use_sendfile": true,
+        "use_gzip": true,
+        "use_brotli": true,
+        "static_files_cache_time": -1,
+        "idle_connection_timeout": 600,
+        "enable_server_header": true,
+        "server_header_field": "Drogon Framework",
+        "enable_date_header": false,
+        "keepalive_requests": 0,
+        "br_static": true,
+        "reuse_port": false,
+        "file_types": [
+            "gif",
+            "png",
+            "jpg",
+            "map",
+            "js",
+            "framework.js",
+            "loader.js",
+            "bundle.js",
+            "min.js",
+            "js.map",
+            "js.flow",
+            "module.js",
+            "cjs",
+            "mjs",
+            "css",
+            "css.map",
+            "min.css",
+            "min.css.map",
+            "rtl.css.map",
+            "rtl.min.css.map",
+            "scss",
+            "html",
+            "ico",
+            "swf",
+            "svg",
+            "xap",
+            "apk",
+            "cur",
+            "xml",
+            "ttf",
+            "woff",
+            "woff2",
+            "text",
+            "txt",
+            "json",
+            "audio.worklet.js",
+            "data",
+            "pck",
+            "wasm",
+            "side.wasm",
+            "worker.js"
+        ]
+    },
+    "plugins": [
+        {
+            "name": "drogon::plugin::AccessLogger",
+            "dependencies": [],
+            "config": {
+                "log_path": "../logs/access",
+                "log_format": "$request_date $method $url [$body_bytes_received] ($remote_addr - $local_addr) $status $body_bytes_sent $processing_time",
+                "log_file": "drogon_server.access.log",
+                "log_size_limit": 100000000,
+                "use_local_time": true,
+                "log_index": 0
+            }
+        },
+        {
+            "name": "ReverseProxy",
+            "dependencies": [],
+            "config": {
+                "backends": [
+                    {
+                        "host": "localhost.com:9999",
+                        "redirect": false,
+                        "redirect_to": "",
+                        "header_add": false,
+                        "header_add_list": [
+                            ["x-frame-options", "sameorigin"]
+                        ],
+                        "document_root": "../public",
+                        "check_origin_whitelist": false,
+                        "check_origin_whitelist_data": "http://localhost.com:9999 http://api.localhost.com:9999 http://www.localhost.com:9999",
+                        "internal_proxies": [
+                            "http://127.0.0.1:9101",
+                            "http://127.0.0.1:9102",
+                            "http://127.0.0.1:9103"
+                        ],
+                        "ssl": false,
+                        "ssl_conf": {
+                            "cert": "",
+                            "key": "",
+                            "use_old_tls": false,
+                            "configurations": []
+                        }
+                    },
+                    {
+                        "host": "www.localhost.com:9999",
+                        "redirect": true,
+                        "redirect_to": "http://localhost.com:9999",
+                        "header_add": false,
+                        "header_add_list": [
+                            ["x-frame-options", "sameorigin"]
+                        ],
+                        "document_root": "../public",
+                        "check_origin_whitelist": false,
+                        "check_origin_whitelist_data": "http://localhost.com:9999 http://api.localhost.com:9999 http://www.localhost.com:9999",
+                        "internal_proxies": [
+                            "http://127.0.0.1:9101",
+                            "http://127.0.0.1:9102",
+                            "http://127.0.0.1:9103"
+                        ],
+                        "ssl": false,
+                        "ssl_conf": {
+                            "cert": "",
+                            "key": "",
+                            "use_old_tls": false,
+                            "configurations": []
+                        }
+                    },
+                    {
+                        "host": "api.localhost.com:9999",
+                        "redirect": false,
+                        "redirect_to": "",
+                        "header_add": false,
+                        "header_add_list": [
+                            ["x-frame-options", "sameorigin"]
+                        ],
+                        "document_root": "../public",
+                        "check_origin_whitelist": false,
+                        "check_origin_whitelist_data": "http://localhost.com:9999 http://api.localhost.com:9999 http://www.localhost.com:9999",
+                        "internal_proxies": [
+                            "http://127.0.0.1:9104",
+                            "http://127.0.0.1:9105",
+                            "http://127.0.0.1:9106"
+                        ],
+                        "ssl": false,
+                        "ssl_conf": {
+                            "cert": "",
+                            "key": "",
+                            "use_old_tls": false,
+                            "configurations": []
+                        }
+                    }
+                ],
+                "pipelining": 16,
+                "connection_factor": 1,
+                "default_document_root": "../public",
+                "same_client_to_same_backend": false
+            }
+        }
+    ]
+}
