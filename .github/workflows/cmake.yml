@@ -170,9 +170,16 @@ jobs:
           # Installing packages might fail as the github image becomes outdated
           sudo apt update
           # These aren't available or don't work well in vcpkg
-          sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
+          sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev locales
           sudo apt-get install -y ninja-build libbrotli-dev
           sudo apt-get install -y libspdlog-dev
+    
+      - name: Install locales
+        run: |
+          sudo apt-get install -y locales
+          sudo locale-gen en_US
+          sudo locale-gen en_US.UTF-8
+          sudo locale-gen en_US.UTF-8
 
       - name: Install postgresql
         run: |
