@@ -30,7 +30,7 @@ std::string Cookie::cookieString() const
         expiresDate_.microSecondsSinceEpoch() >= 0)
     {
         ret.append("Expires=")
-            .append(utils::getHttpFullDate(expiresDate_))
+            .append(utils::getHttpFullDateStr(expiresDate_))
             .append("; ");
     }
     if (maxAge_.has_value())

@@ -632,8 +632,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         buffer.append("date: ");
-        buffer.append(utils::getHttpFullDate(trantor::Date::date()),
-                      httpFullDateStringLength);
+        buffer.append(utils::getHttpFullDateStr(trantor::Date::date()));
         buffer.append("\r\n\r\n");
     }
     else
@@ -706,8 +705,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
     {
         httpString->append("date: ");
         auto datePos = httpString->readableBytes();
-        httpString->append(utils::getHttpFullDate(trantor::Date::date()),
-                           httpFullDateStringLength);
+        httpString->append(utils::getHttpFullDateStr(trantor::Date::date()));
         httpString->append("\r\n\r\n");
         datePos_ = datePos;
     }
