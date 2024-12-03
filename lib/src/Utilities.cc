@@ -1034,7 +1034,7 @@ char *getHttpFullDate(const trantor::Date &date)
     return lastTimeString;
 }
 
-void datetoCustomFormattedString(const std::string &fmtStr,
+void dateToCustomFormattedString(const std::string &fmtStr,
                                  std::string &str,
                                  const trantor::Date &date)
 {
@@ -1047,7 +1047,7 @@ void datetoCustomFormattedString(const std::string &fmtStr,
     str = Out.str();
 }
 
-std::string getHttpFullDateStr(const trantor::Date &date)
+const std::string getHttpFullDateStr(const trantor::Date &date)
 {
     static thread_local int64_t lastSecond = 0;
     static thread_local std::string lastTimeString(128, 0);
@@ -1057,7 +1057,7 @@ std::string getHttpFullDateStr(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    datetoCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
+    dateToCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
                                 lastTimeString,
                                 date);
     return lastTimeString;
