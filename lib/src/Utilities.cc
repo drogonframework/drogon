@@ -1057,7 +1057,9 @@ std::string getHttpFullDateStr(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    datetoCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT", lastTimeString, date);
+    datetoCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
+                                lastTimeString,
+                                date);
     return lastTimeString;
 }
 

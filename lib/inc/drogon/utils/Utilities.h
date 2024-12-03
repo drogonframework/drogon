@@ -302,11 +302,11 @@ DROGON_EXPORT char *getHttpFullDate(
     const trantor::Date &date = trantor::Date::now());
 
 DROGON_EXPORT std::string getHttpFullDateStr(
-		const trantor::Date &date = trantor::Date::now());
+    const trantor::Date &date = trantor::Date::now());
 
 DROGON_EXPORT void datetoCustomFormattedString(const std::string &fmtStr,
-																							 std::string &str,
-																							 const trantor::Date &date);
+                                               std::string &str,
+                                               const trantor::Date &date);
 /// Get the trantor::Date object according to the http full date string
 /**
  * Returns trantor::Date(std::numeric_limits<int64_t>::max()) upon failure.
