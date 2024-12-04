@@ -301,7 +301,7 @@ DROGON_EXPORT std::string brotliDecompress(const char *data,
 DROGON_EXPORT char *getHttpFullDate(
     const trantor::Date &date = trantor::Date::now());
 
-DROGON_EXPORT const std::string getHttpFullDateStr(
+DROGON_EXPORT const std::string &getHttpFullDateStr(
     const trantor::Date &date = trantor::Date::now());
 
 DROGON_EXPORT void dateToCustomFormattedString(const std::string &fmtStr,
