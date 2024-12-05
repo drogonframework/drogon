@@ -1034,6 +1034,35 @@ char *getHttpFullDate(const trantor::Date &date)
     return lastTimeString;
 }
 
+void dateToCustomFormattedString(const std::string &fmtStr,
+                                 std::string &str,
+                                 const trantor::Date &date)
+{
+    auto nowSecond = date.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+    time_t seconds = static_cast<time_t>(nowSecond);
+    struct tm tm_LValue = date.tmStruct();
+    std::stringstream Out;
+    Out.imbue(std::locale{"en_US"});
+    Out << std::put_time(&tm_LValue, fmtStr.c_str());
+    str = Out.str();
+}
+
+const std::string &getHttpFullDateStr(const trantor::Date &date)
+{
+    static thread_local int64_t lastSecond = 0;
+    static thread_local std::string lastTimeString(128, 0);
+    auto nowSecond = date.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+    if (nowSecond == lastSecond)
+    {
+        return lastTimeString;
+    }
+    lastSecond = nowSecond;
+    dateToCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
+                                lastTimeString,
+                                date);
+    return lastTimeString;
+}
+
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
     static const std::array<const char *, 4> formats = {
