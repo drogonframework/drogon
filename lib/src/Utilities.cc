@@ -1042,7 +1042,7 @@ void dateToCustomFormattedString(const std::string &fmtStr,
     time_t seconds = static_cast<time_t>(nowSecond);
     struct tm tm_LValue = date.tmStruct();
     std::stringstream Out;
-    Out.imbue(std::locale{"en_US"});
+    Out.imbue(std::locale{"C"});
     Out << std::put_time(&tm_LValue, fmtStr.c_str());
     str = Out.str();
 }
