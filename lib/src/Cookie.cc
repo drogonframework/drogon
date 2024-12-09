@@ -69,13 +69,17 @@ std::string Cookie::cookieString() const
                 ret.append("SameSite=Lax; ");
         }
     }
-    if (secure_ && sameSite_ != SameSite::kNone)
+    if ((secure_ && sameSite_ != SameSite::kNone) || partitioned_)
     {
         ret.append("Secure; ");
     }
     if (httpOnly_)
     {
         ret.append("HttpOnly; ");
+    }
+    if (partitioned_)
+    {
+        ret.append("Partitioned; ");
     }
     ret.resize(ret.length() - 2);  // delete last semicolon
     ret.append("\r\n");
