@@ -157,6 +157,18 @@ class DROGON_EXPORT Cookie
     }
 
     /**
+     *  @brief Set the partitioned status of the cookie
+     */
+    void setPartitioned(bool partitioned)
+    {
+        partitioned_ = partitioned;
+        if (partitioned)
+        {
+            setSecure(true);
+        }
+    }
+
+    /**
      * @brief Get the string value of the cookie
      */
     std::string cookieString() const;
@@ -283,6 +295,17 @@ class DROGON_EXPORT Cookie
     }
 
     /**
+     * @brief Check if the cookie is partitioned.
+     *
+     * @return true means the cookie is partitioned.
+     * @return false means the cookie is not partitioned.
+     */
+    bool isPartitioned() const
+    {
+        return partitioned_;
+    }
+
+    /**
      * @brief Get the max-age of the cookie
      */
     std::optional<int> maxAge() const
@@ -394,6 +417,7 @@ class DROGON_EXPORT Cookie
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
     bool httpOnly_{true};
     bool secure_{false};
+    bool partitioned_{false};
     std::string domain_;
     std::string path_;
     std::string key_;
