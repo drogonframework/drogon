@@ -73,7 +73,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        osver: [12, 13]
+        osver: [13, 14, 15]
     steps:
       - name: Checkout Drogon source code
         uses: actions/checkout@v4
