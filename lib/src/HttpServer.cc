@@ -30,6 +30,7 @@
 #include "HttpControllersRouter.h"
 #include "StaticFileRouter.h"
 #include "WebSocketConnectionImpl.h"
+#include "impl_forwards.h"
 
 #if COZ_PROFILING
 #include <coz.h>
@@ -75,7 +76,12 @@ HttpServer::HttpServer(EventLoop *loop,
     : server_(loop, listenAddr, std::move(name), true, app().reusePort())
 #endif
 {
-    server_.setConnectionCallback(onConnection);
+    server_.setConnectionCallback(
+        [this](const trantor::TcpConnectionPtr &conn) {
+            onConnection(conn);
+            if (connectionCallback_)
+                connectionCallback_(conn);
+        });
     server_.setRecvMessageCallback(onMessage);
     server_.kickoffIdleConnections(
         HttpAppFrameworkImpl::instance().getIdleConnectionTimeout());

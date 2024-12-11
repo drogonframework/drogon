@@ -1,15 +1,33 @@
 #include <drogon/drogon.h>
 #include <chrono>
+#include <functional>
+#include <mutex>
+#include <unordered_map>
+#include <trantor/utils/Logger.h>
+#include <trantor/net/callbacks.h>
+#include <trantor/net/TcpConnection.h>
 
 using namespace drogon;
 using namespace std::chrono_literals;
+
+std::mutex mutex;
+std::unordered_map<trantor::TcpConnectionPtr, std::function<void()>>
+    connMapping;
 
 int main()
 {
     app().registerHandler(
         "/stream",
-        [](const HttpRequestPtr &,
+        [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback) {
+            const auto &weakConnPtr = req->getConnectionPtr();
+            if (auto connPtr = weakConnPtr.lock())
+            {
+                std::lock_guard lk(mutex);
+                connMapping.emplace(std::move(connPtr), [] {
+                    LOG_INFO << "call stop or other options!!!!";
+                });
+            }
             auto resp = drogon::HttpResponse::newAsyncStreamResponse(
                 [](drogon::ResponseStreamPtr stream) {
                     std::thread([stream =
@@ -79,5 +97,17 @@ int main()
 
     LOG_INFO << "Server running on 127.0.0.1:8848";
     app().enableRequestStream();  // This is for request stream.
+    app().setConnectionCallback([](const trantor::TcpConnectionPtr &conn) {
+        if (conn->disconnected())
+        {
+            std::lock_guard lk(mutex);
+            if (auto it = connMapping.find(conn); it != connMapping.end())
+            {
+                LOG_INFO << "disconnect";
+                connMapping[conn]();
+                connMapping.erase(conn);
+            }
+        }
+    });
     app().addListener("127.0.0.1", 8848).run();
 }
