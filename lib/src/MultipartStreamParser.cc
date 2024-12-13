@@ -252,23 +252,37 @@ void drogon::MultipartStreamParser::parse(
                 }
                 std::string_view v = buffer_.view();
                 auto pos = v.find(crlfDashBoundary_);
+
+                const auto callDataCB = [&dataCb, this](const char * _data, std::size_t _len) {
+                    if(!dataCb(_data, _len)) {
+                        isValid_ = false;
+                        isFinished_ = true;
+                        exception_type_ = ExceptionType::kServerCancel;
+                    }
+                };
+
                 if (pos == std::string::npos)
                 {
                     // boundary not found, leave potential partial boundary
-                    size_t len = v.size() - crlfDashBoundary_.size();
+                    const size_t len = v.size() - crlfDashBoundary_.size();
                     if (len > 0)
                     {
-                        dataCb(v.data(), len);
+                        callDataCB(v.data(), len);
                         buffer_.eraseFront(len);
                     }
                     return;
                 }
                 // found boundary
-                dataCb(v.data(), pos);
-                if (pos > 0)
-                {
-                    dataCb(v.data() + pos, 0);  // notify end of file
+                if(!isFinished() && isValid()) {
+                    callDataCB(v.data(), pos);
+
+                    if (pos > 0)
+                    {
+                        // notify end of file
+                        callDataCB(v.data() + pos, 0);
+                    }
                 }
+
                 buffer_.eraseFront(pos + crlfDashBoundary_.size());
                 status_ = Status::kExpectEndOrNewEntry;
                 continue;
