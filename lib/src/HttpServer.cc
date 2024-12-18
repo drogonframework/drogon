@@ -85,6 +85,14 @@ HttpServer::~HttpServer() = default;
 
 void HttpServer::start()
 {
+    if (beforeListenSetSockOptCallback_)
+    {
+        server_.setBeforeListenSockOptCallback(beforeListenSetSockOptCallback_);
+    }
+    if (afterAcceptSetSockOptCallback_)
+    {
+        server_.setAfterAcceptSockOptCallback(afterAcceptSetSockOptCallback_);
+    }
     LOG_TRACE << "HttpServer[" << server_.name() << "] starts listening on "
               << server_.ipPort();
     server_.start();
@@ -124,6 +132,13 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
             {
                 requestParser->webSocketConn()->onClose();
             }
+            else if (requestParser->requestImpl()->isStreamMode())
+            {
+                requestParser->requestImpl()->streamError(
+                    std::make_exception_ptr(
+                        StreamError(StreamErrorCode::kConnectionBroken,
+                                    "Connection closed")));
+            }
             conn->clearContext();
         }
     }
@@ -154,28 +169,76 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             buf->retrieveAll();
             return;
         }
+
+        auto &req = requestParser->requestImpl();
+        // if stream mode enabled, parseRequest() may return >0 multiple times
+        // for the same request
         int parseRes = requestParser->parseRequest(buf);
         if (parseRes < 0)
         {
+            if (req->isStreamMode() && req->isProcessingStarted())
+            {
+                // After entering stream mode, if request matches a non-stream
+                // handler, stream error would be intercepted by the
+                // `waitForStreamFinish()` call.
+                // If request matches a stream handler, stream error should be
+                // captured by user provided StreamReader, and response should
+                // also be sent by user.
+                req->streamError(std::make_exception_ptr(
+                    StreamError(StreamErrorCode::kBadRequest, "Bad request")));
+            }
+            else if (parseRes != -1)
+            {
+                // In non-stream mode, request won't be process until it's fully
+                // parsed. To keep the old behavior, we send response directly
+                // through conn. (This response won't go through pre-sending
+                // aop, maybe we should change this behavior).
+                auto code = static_cast<HttpStatusCode>(-parseRes);
+                conn->send(utils::formattedString(
+                    "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
+                    code,
+                    statusCodeToString(code).data()));
+            }
+            buf->retrieveAll();
+            // NOTE: should we call conn->forceClose() instead?
+            // Calling shutdown() handles socket more elegantly.
+            conn->shutdown();
+            // We have to call clearContext() here in order to ignore following
+            // illegal data from client
+            conn->clearContext();
             requestParser->reset();
-            conn->forceClose();
             return;
         }
         if (parseRes == 0)
         {
             break;
         }
-        auto &req = requestParser->requestImpl();
-        req->setPeerAddr(conn->peerAddr());
-        req->setLocalAddr(conn->localAddr());
-        req->setCreationDate(trantor::Date::date());
-        req->setSecure(conn->isSSLConnection());
-        req->setPeerCertificate(conn->peerCertificate());
-        requests.push_back(req);
-        requestParser->reset();
+        if (parseRes >= 2 || parseRes == 1 && !req->isStreamMode())
+        {
+            req->setPeerAddr(conn->peerAddr());
+            req->setLocalAddr(conn->localAddr());
+            req->setCreationDate(trantor::Date::date());
+            req->setSecure(conn->isSSLConnection());
+            req->setPeerCertificate(conn->peerCertificate());
+            req->setConnectionPtr(conn);
+            // TODO: maybe call onRequests() directly in stream mode
+            requests.push_back(req);
+        }
+        if (parseRes == 1 || parseRes == 2)
+        {
+            assert(requestParser->gotAll());
+            if (req->isStreamMode())
+            {
+                req->streamFinish();
+            }
+            requestParser->reset();
+        }
     }
-    onRequests(conn, requests, requestParser);
-    requests.clear();
+    if (!requests.empty())
+    {
+        onRequests(conn, requests, requestParser);
+        requests.clear();
+    }
 }
 
 struct CallbackParamPack
@@ -206,14 +269,14 @@ void HttpServer::onRequests(
     const std::vector<HttpRequestImplPtr> &requests,
     const std::shared_ptr<HttpRequestParser> &requestParser)
 {
-    if (requests.empty())
-        return;
+    assert(!requests.empty());
 
     // will only be checked for the first request
     if (requestParser->firstReq() && requests.size() == 1 &&
         isWebSocket(requests[0]))
     {
         auto &req = requests[0];
+        req->startProcessing();
         if (passSyncAdvices(req,
                             requestParser,
                             false /* Not pipelined */,
@@ -279,6 +342,7 @@ void HttpServer::onRequests(
 
     for (auto &req : requests)
     {
+        req->startProcessing();
         bool isHeadMethod = (req->method() == Head);
         if (isHeadMethod)
         {
@@ -413,6 +477,47 @@ void HttpServer::httpRequestRouting(
 template <typename Pack>
 void HttpServer::requestPostRouting(const HttpRequestImplPtr &req, Pack &&pack)
 {
+    // Handle stream mode for non-stream handlers
+    if (req->streamStatus() >= ReqStreamStatus::Open &&
+        !pack.binderPtr->isStreamHandler())
+    {
+        LOG_TRACE << "Wait for request stream finish";
+        if (req->streamStatus() == ReqStreamStatus::Finish)
+        {
+            req->quitStreamMode();
+        }
+        else
+        {
+            auto contentLength = req->getContentLengthHeaderValue();
+            if (contentLength.has_value())
+            {
+                req->reserveBodySize(contentLength.value());
+            }
+            req->waitForStreamFinish([weakReq = std::weak_ptr(req),
+                                      pack =
+                                          std::forward<Pack>(pack)]() mutable {
+                auto req = weakReq.lock();
+                if (!req)
+                    return;
+                if (req->streamStatus() == ReqStreamStatus::Finish)
+                {
+                    req->quitStreamMode();
+                    // call requestPostRouting again
+                    requestPostRouting(req, std::forward<Pack>(pack));
+                    return;
+                }
+                else
+                {
+                    req->quitStreamMode();
+                    LOG_ERROR << "Stop processing request due to stream error";
+                    pack.callback(
+                        app().getCustomErrorHandler()(k400BadRequest, req));
+                }
+            });
+            return;
+        }
+    }
+
     // post-routing aop
     auto &aop = AopAdvice::instance();
     aop.passPostRoutingObservers(req);
@@ -862,6 +967,8 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
+        if (!respImplPtr->contentLengthIsAllowed())
+            return;
         auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
         if (asyncStreamCallback)
         {
@@ -942,6 +1049,8 @@ void HttpServer::sendResponses(
         {
             // Not HEAD method
             respImplPtr->renderToBuffer(buffer);
+            if (!respImplPtr->contentLengthIsAllowed())
+                continue;
             auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
             if (asyncStreamCallback)
             {

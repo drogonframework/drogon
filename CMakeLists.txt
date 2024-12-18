@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.31)
 
 project(drogon)
 
@@ -13,6 +13,7 @@ option(BUILD_DOC "Build Doxygen documentation" OFF)
 option(BUILD_BROTLI "Build Brotli" ON)
 option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
+option(USE_STATIC_LIBS_ONLY "Use only static libraries as dependencies" OFF)
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
@@ -24,7 +25,7 @@ CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 9)
-set(DROGON_PATCH_VERSION 5)
+set(DROGON_PATCH_VERSION 8)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
@@ -76,6 +77,10 @@ if (BUILD_SHARED_LIBS)
         endif ()
     endif ()
 endif (BUILD_SHARED_LIBS)
+
+if(USE_STATIC_LIBS_ONLY)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_STATIC_LIBRARY_SUFFIX}")
+endif(USE_STATIC_LIBS_ONLY)
 
 if(USE_SPDLOG)
   find_package(spdlog CONFIG)
@@ -268,6 +273,7 @@ set(DROGON_SOURCES
     lib/src/HttpFileUploadRequest.cc
     lib/src/HttpRequestImpl.cc
     lib/src/HttpRequestParser.cc
+    lib/src/RequestStream.cc
     lib/src/HttpResponseImpl.cc
     lib/src/HttpResponseParser.cc
     lib/src/HttpServer.cc
@@ -278,6 +284,7 @@ set(DROGON_SOURCES
     lib/src/ListenerManager.cc
     lib/src/LocalHostFilter.cc
     lib/src/MultiPart.cc
+    lib/src/MultipartStreamParser.cc
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
     lib/src/PromExporter.cc
@@ -332,7 +339,8 @@ set(private_headers
     lib/src/ConfigAdapterManager.h
     lib/src/JsonConfigAdapter.h
     lib/src/YamlConfigAdapter.h
-    lib/src/ConfigAdapter.h)
+    lib/src/ConfigAdapter.h
+    lib/src/MultipartStreamParser.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES
@@ -559,6 +567,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpFilter.h
     lib/inc/drogon/HttpMiddleware.h
     lib/inc/drogon/HttpRequest.h
+    lib/inc/drogon/RequestStream.h
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h
     lib/inc/drogon/HttpTypes.h

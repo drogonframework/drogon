@@ -35,4 +35,29 @@ DROGON_TEST(CookieTest)
           drogon::Cookie::convertString2SameSite("Strict"));
     CHECK(drogon::Cookie::SameSite::kNone ==
           drogon::Cookie::convertString2SameSite("None"));
+
+    // Test for Partitioned attribute
+    drogon::Cookie cookie6("test", "6");
+    cookie6.setPartitioned(true);
+    CHECK(cookie6.cookieString() ==
+          "Set-Cookie: test=6; Secure; HttpOnly; Partitioned\r\n");
+    // Test that partitioned attribute  automatically sets secure
+    drogon::Cookie cookie7("test", "7");
+    cookie7.setPartitioned(true);
+    CHECK(cookie7.isSecure() == true);
+    // Test other attributes
+    drogon::Cookie cookie8("test", "8");
+    cookie8.setPartitioned(true);
+    cookie8.setDomain("drogon.org");
+    cookie8.setMaxAge(3600);
+    CHECK(cookie8.cookieString() ==
+          "Set-Cookie: test=8; Max-Age=3600; Domain=drogon.org; Secure; "
+          "HttpOnly; Partitioned\r\n");
+    // Teset Partitioned and SameSite can coexist
+    drogon::Cookie cookie9("test", "9");
+    cookie9.setPartitioned(true);
+    cookie9.setSameSite(drogon::Cookie::SameSite::kLax);
+    CHECK(
+        cookie9.cookieString() ==
+        "Set-Cookie: test=9; SameSite=Lax; Secure; HttpOnly; Partitioned\r\n");
 }

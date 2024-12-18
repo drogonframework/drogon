@@ -66,6 +66,17 @@ static std::string escapeConnString(const std::string &str)
     return escaped;
 }
 
+std::string drogon_ctl::escapeIdentifier(const std::string &identifier,
+                                         const std::string &rdbms)
+{
+    if (rdbms != "postgresql")
+    {
+        return identifier;
+    }
+
+    return "\\\"" + identifier + "\\\"";
+}
+
 static std::map<std::string, std::vector<ConvertMethod>> getConvertMethods(
     const Json::Value &convertColumns)
 {
@@ -166,7 +177,7 @@ void create_model::createModelClassFromPG(
     auto className = nameTransform(tableName, true);
     HttpViewData data;
     data["className"] = className;
-    data["tableName"] = toLower(tableName);
+    data["tableName"] = tableName;
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = dbname_;
@@ -460,7 +471,7 @@ void create_model::createModelClassFromMysql(
     data["convertMethods"] = convertMethods;
     std::vector<ColumnInfo> cols;
     int i = 0;
-    *client << "desc " + tableName << Mode::Blocking >>
+    *client << "desc `" + tableName + "`" << Mode::Blocking >>
         [&i, &cols](bool isNull,
                     const std::string &field,
                     const std::string &type,

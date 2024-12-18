@@ -137,15 +137,24 @@ class SqlError : public Failure
     /// SQLSTATE string describing the error type, if known; or empty string.
     const std::string sqlState_;
 
+    const int errcode_{0};
+    const int extendedErrcode_{0};
+
   public:
     DROGON_EXPORT explicit SqlError(const std::string &msg = "",
                                     const std::string &Q = "",
                                     const char sqlstate[] = nullptr);
+    DROGON_EXPORT explicit SqlError(const std::string &msg,
+                                    const std::string &Q,
+                                    const int errcode,
+                                    const int extendedErrcode);
     DROGON_EXPORT virtual ~SqlError() noexcept;
 
     /// The query whose execution triggered the exception
     DROGON_EXPORT const std::string &query() const noexcept;
     DROGON_EXPORT const std::string &sqlState() const noexcept;
+    DROGON_EXPORT int errcode() const noexcept;
+    DROGON_EXPORT int extendedErrcode() const noexcept;
 };
 
 /// "Help, I don't know whether transaction was committed successfully!"
@@ -293,6 +302,14 @@ class FeatureNotSupported : public SqlError
         : SqlError(err, Q, sqlstate)
     {
     }
+
+    explicit FeatureNotSupported(const std::string &msg,
+                                 const std::string &Q,
+                                 const int errcode,
+                                 const int extendedErrcode)
+        : SqlError(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 /// Error in data provided to SQL statement
@@ -303,6 +320,14 @@ class DataException : public SqlError
                            const std::string &Q = "",
                            const char sqlstate[] = nullptr)
         : SqlError(err, Q, sqlstate)
+    {
+    }
+
+    explicit DataException(const std::string &msg,
+                           const std::string &Q,
+                           const int errcode,
+                           const int extendedErrcode)
+        : SqlError(msg, Q, errcode, extendedErrcode)
     {
     }
 };
@@ -316,6 +341,14 @@ class IntegrityConstraintViolation : public SqlError
         : SqlError(err, Q, sqlstate)
     {
     }
+
+    explicit IntegrityConstraintViolation(const std::string &msg,
+                                          const std::string &Q,
+                                          const int errcode,
+                                          const int extendedErrcode)
+        : SqlError(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class RestrictViolation : public IntegrityConstraintViolation
@@ -325,6 +358,14 @@ class RestrictViolation : public IntegrityConstraintViolation
                                const std::string &Q = "",
                                const char sqlstate[] = nullptr)
         : IntegrityConstraintViolation(err, Q, sqlstate)
+    {
+    }
+
+    explicit RestrictViolation(const std::string &msg,
+                               const std::string &Q,
+                               const int errcode,
+                               const int extendedErrcode)
+        : IntegrityConstraintViolation(msg, Q, errcode, extendedErrcode)
     {
     }
 };
@@ -338,6 +379,14 @@ class NotNullViolation : public IntegrityConstraintViolation
         : IntegrityConstraintViolation(err, Q, sqlstate)
     {
     }
+
+    explicit NotNullViolation(const std::string &msg,
+                              const std::string &Q,
+                              const int errcode,
+                              const int extendedErrcode)
+        : IntegrityConstraintViolation(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class ForeignKeyViolation : public IntegrityConstraintViolation
@@ -347,6 +396,14 @@ class ForeignKeyViolation : public IntegrityConstraintViolation
                                  const std::string &Q = "",
                                  const char sqlstate[] = nullptr)
         : IntegrityConstraintViolation(err, Q, sqlstate)
+    {
+    }
+
+    explicit ForeignKeyViolation(const std::string &msg,
+                                 const std::string &Q,
+                                 const int errcode,
+                                 const int extendedErrcode)
+        : IntegrityConstraintViolation(msg, Q, errcode, extendedErrcode)
     {
     }
 };
@@ -360,6 +417,14 @@ class UniqueViolation : public IntegrityConstraintViolation
         : IntegrityConstraintViolation(err, Q, sqlstate)
     {
     }
+
+    explicit UniqueViolation(const std::string &msg,
+                             const std::string &Q,
+                             const int errcode,
+                             const int extendedErrcode)
+        : IntegrityConstraintViolation(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class CheckViolation : public IntegrityConstraintViolation
@@ -369,6 +434,14 @@ class CheckViolation : public IntegrityConstraintViolation
                             const std::string &Q = "",
                             const char sqlstate[] = nullptr)
         : IntegrityConstraintViolation(err, Q, sqlstate)
+    {
+    }
+
+    explicit CheckViolation(const std::string &msg,
+                            const std::string &Q,
+                            const int errcode,
+                            const int extendedErrcode)
+        : IntegrityConstraintViolation(msg, Q, errcode, extendedErrcode)
     {
     }
 };
@@ -382,6 +455,14 @@ class InvalidCursorState : public SqlError
         : SqlError(err, Q, sqlstate)
     {
     }
+
+    explicit InvalidCursorState(const std::string &msg,
+                                const std::string &Q,
+                                const int errcode,
+                                const int extendedErrcode)
+        : SqlError(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class InvalidSqlStatementName : public SqlError
@@ -393,6 +474,14 @@ class InvalidSqlStatementName : public SqlError
         : SqlError(err, Q, sqlstate)
     {
     }
+
+    explicit InvalidSqlStatementName(const std::string &msg,
+                                     const std::string &Q,
+                                     const int errcode,
+                                     const int extendedErrcode)
+        : SqlError(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class InvalidCursorName : public SqlError
@@ -402,6 +491,14 @@ class InvalidCursorName : public SqlError
                                const std::string &Q = "",
                                const char sqlstate[] = nullptr)
         : SqlError(err, Q, sqlstate)
+    {
+    }
+
+    explicit InvalidCursorName(const std::string &msg,
+                               const std::string &Q,
+                               const int errcode,
+                               const int extendedErrcode)
+        : SqlError(msg, Q, errcode, extendedErrcode)
     {
     }
 };
@@ -419,6 +516,15 @@ class SyntaxError : public SqlError
         : SqlError(err, Q, sqlstate), errorPosition_(pos)
     {
     }
+
+    explicit SyntaxError(const std::string &msg,
+                         const std::string &Q,
+                         const int errcode,
+                         const int extendedErrcode,
+                         int pos = -1)
+        : SqlError(msg, Q, errcode, extendedErrcode), errorPosition_(pos)
+    {
+    }
 };
 
 class UndefinedColumn : public SyntaxError
@@ -428,6 +534,14 @@ class UndefinedColumn : public SyntaxError
                              const std::string &Q = "",
                              const char sqlstate[] = nullptr)
         : SyntaxError(err, Q, sqlstate)
+    {
+    }
+
+    explicit UndefinedColumn(const std::string &msg,
+                             const std::string &Q,
+                             const int errcode,
+                             const int extendedErrcode)
+        : SyntaxError(msg, Q, errcode, extendedErrcode)
     {
     }
 };
@@ -441,6 +555,14 @@ class UndefinedFunction : public SyntaxError
         : SyntaxError(err, Q, sqlstate)
     {
     }
+
+    explicit UndefinedFunction(const std::string &msg,
+                               const std::string &Q,
+                               const int errcode,
+                               const int extendedErrcode)
+        : SyntaxError(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class UndefinedTable : public SyntaxError
@@ -452,6 +574,14 @@ class UndefinedTable : public SyntaxError
         : SyntaxError(err, Q, sqlstate)
     {
     }
+
+    explicit UndefinedTable(const std::string &msg,
+                            const std::string &Q,
+                            const int errcode,
+                            const int extendedErrcode)
+        : SyntaxError(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class InsufficientPrivilege : public SqlError
@@ -461,6 +591,14 @@ class InsufficientPrivilege : public SqlError
                                    const std::string &Q = "",
                                    const char sqlstate[] = nullptr)
         : SqlError(err, Q, sqlstate)
+    {
+    }
+
+    explicit InsufficientPrivilege(const std::string &msg,
+                                   const std::string &Q,
+                                   const int errcode,
+                                   const int extendedErrcode)
+        : SqlError(msg, Q, errcode, extendedErrcode)
     {
     }
 };
@@ -475,6 +613,14 @@ class InsufficientResources : public SqlError
         : SqlError(err, Q, sqlstate)
     {
     }
+
+    explicit InsufficientResources(const std::string &msg,
+                                   const std::string &Q,
+                                   const int errcode,
+                                   const int extendedErrcode)
+        : SqlError(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class DiskFull : public InsufficientResources
@@ -486,6 +632,14 @@ class DiskFull : public InsufficientResources
         : InsufficientResources(err, Q, sqlstate)
     {
     }
+
+    explicit DiskFull(const std::string &msg,
+                      const std::string &Q,
+                      const int errcode,
+                      const int extendedErrcode)
+        : InsufficientResources(msg, Q, errcode, extendedErrcode)
+    {
+    }
 };
 
 class OutOfMemory : public InsufficientResources
@@ -495,6 +649,14 @@ class OutOfMemory : public InsufficientResources
                          const std::string &Q = "",
                          const char sqlstate[] = nullptr)
         : InsufficientResources(err, Q, sqlstate)
+    {
+    }
+
+    explicit OutOfMemory(const std::string &msg,
+                         const std::string &Q,
+                         const int errcode,
+                         const int extendedErrcode)
+        : InsufficientResources(msg, Q, errcode, extendedErrcode)
     {
     }
 };

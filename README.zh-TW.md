@@ -186,7 +186,7 @@ class User : public drogon::HttpController<User>
 
 另外，你可以發現前面所有的處理函數接口都是異步的，處理器的回應是通過回調對象回傳的。這種設計是出於對高性能的考慮，因為在異步模式下，可以使用少量的執行序（比如和處理器核心數相等的執行序）處理大量的並發請求。
 
-編譯上述的所有源文件後，我們得到了一個非常簡單的web應用程式，這是一個不錯的開始。 **請瀏覽[wiki](https://github.com/an-tao/drogon/wiki/CHN-01-概述)**
+編譯上述的所有源文件後，我們得到了一個非常簡單的web應用程式，這是一個不錯的開始。 **請瀏覽GitHub上的[文檔](https://drogonframework.github.io/drogon-docs/#/CHN/CHN-01-%E6%A6%82%E8%BF%B0)**
 
 ## 貢獻方式
 

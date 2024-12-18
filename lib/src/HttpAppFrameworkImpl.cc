@@ -511,6 +511,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
     return *this;
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::reloadSSLFiles()
+{
+    listenerManagerPtr_->reloadSSLFiles();
+    return *this;
+}
+
 void HttpAppFrameworkImpl::run()
 {
     if (!getLoop()->isInLoopThread())
@@ -1246,6 +1252,17 @@ int64_t HttpAppFrameworkImpl::getConnectionCount() const
     return HttpConnectionLimit::instance().getConnectionNum();
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::enableRequestStream(bool enable)
+{
+    enableRequestStream_ = enable;
+    return *this;
+}
+
+bool HttpAppFrameworkImpl::isRequestStreamEnabled() const
+{
+    return enableRequestStream_;
+}
+
 // AOP registration methods
 
 HttpAppFramework &HttpAppFrameworkImpl::registerNewConnectionAdvice(
@@ -1334,5 +1351,19 @@ HttpAppFramework &HttpAppFrameworkImpl::registerPreSendingAdvice(
         &advice)
 {
     AopAdvice::instance().registerPreSendingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setBeforeListenSockOptCallback(
+    std::function<void(int)> cb)
+{
+    listenerManagerPtr_->setBeforeListenSockOptCallback(std::move(cb));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setAfterAcceptSockOptCallback(
+    std::function<void(int)> cb)
+{
+    listenerManagerPtr_->setAfterAcceptSockOptCallback(std::move(cb));
     return *this;
 }

@@ -186,7 +186,7 @@ class User : public drogon::HttpController<User>
 
 另外，你可以发现前面所有的处理函数接口都是异步的，处理器的响应是通过回调对象返回的。这种设计是出于对高性能的考虑，因为在异步模式下，可以使用少量的线程（比如和处理器核心数相等的线程）处理大量的并发请求。
 
-编译上述的所有源文件后，我们得到了一个非常简单的web应用程序，这是一个不错的开始。**请访问[wiki](https://github.com/an-tao/drogon/wiki/CHN-01-概述)**
+编译上述的所有源文件后，我们得到了一个非常简单的web应用程序，这是一个不错的开始。**请访问GitHub上的[文档](https://drogonframework.github.io/drogon-docs/#/CHN/CHN-01-%E6%A6%82%E8%BF%B0)**
 
 ## 贡献方式
 
