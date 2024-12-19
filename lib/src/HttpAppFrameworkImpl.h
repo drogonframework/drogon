@@ -665,6 +665,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         std::function<void(int)> cb) override;
     HttpAppFramework &setAfterAcceptSockOptCallback(
         std::function<void(int)> cb) override;
+    HttpAppFramework &setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb) override;
 
     HttpAppFramework &enableRequestStream(bool enable) override;
     bool isRequestStreamEnabled() const override;
