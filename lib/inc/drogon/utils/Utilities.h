@@ -584,7 +584,8 @@ namespace trantor
 {
 inline LogStream &operator<<(LogStream &ls, const std::string_view &v)
 {
-    ls.append(v.data(), v.length());
+    if (!v.empty())
+        ls.append(v.data(), v.length());
     return ls;
 }
 
