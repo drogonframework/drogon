@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <optional>
 #include <string_view>
+#include <trantor/net/TcpConnection.h>
 
 namespace drogon
 {
@@ -505,6 +506,9 @@ class DROGON_EXPORT HttpRequest
                                       size_t typeStringLength) = 0;
 
     virtual bool connected() const noexcept = 0;
+
+    virtual const std::weak_ptr<trantor::TcpConnection> &getConnectionPtr()
+        const noexcept = 0;
 
     virtual ~HttpRequest()
     {

@@ -61,6 +61,12 @@ class ListenerManager : public trantor::NonCopyable
         afterAcceptSetSockOptCallback_ = std::move(cb);
     }
 
+    void setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb)
+    {
+        connectionCallback_ = std::move(cb);
+    }
+
     void reloadSSLFiles();
 
   private:
@@ -101,6 +107,7 @@ class ListenerManager : public trantor::NonCopyable
     std::unique_ptr<trantor::EventLoopThread> listeningThread_;
     std::function<void(int)> beforeListenSetSockOptCallback_;
     std::function<void(int)> afterAcceptSetSockOptCallback_;
+    std::function<void(const trantor::TcpConnectionPtr &)> connectionCallback_;
 };
 
 }  // namespace drogon
