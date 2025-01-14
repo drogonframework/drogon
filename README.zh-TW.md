@@ -19,8 +19,8 @@ Drogon 是一個跨平台框架，支援 Linux、macOS、FreeBSD/OpenBSD、Haiku
 * 支援 HTTP 1.0/1.1（伺服器端和用戶端）；
 * 基於樣板（template）實作的簡單反射機制，使主程式框架、控制器（controller）和視圖（view）完全解耦；
 * 支援 cookies 和內建的 session；
-* 支援後端算繪，將控制器產生的資料交給檢視產生 HTML 頁面，檢視由 CSP 樣板檔案描述，透過 CSP 標籤將 C++ 程式碼嵌入 HTML 頁面，由 drogon 的命令列工具在編譯階段自動產生 C++ 程式碼並編譯；
-* 支援執行期的檢視頁面動態載入（動態編譯和載入 so 檔案）；
+* 支援後端算繪，將控制器產生的資料交給視圖產生 HTML 頁面，視圖由 CSP 樣板檔案描述，透過 CSP 標籤將 C++ 程式碼嵌入 HTML 頁面，由 drogon 的命令列工具在編譯階段自動產生 C++ 程式碼並編譯；
+* 支援執行期的視圖頁面動態載入（動態編譯和載入 so 檔案）；
 * 非常方便靈活的路徑（path）到控制器處理函式（handler）的對應方案；
 * 支援過濾器（filter）鏈，方便在控制器之前執行統一的邏輯（如登入驗證、HTTP Method 限制驗證等）；
 * 支援 HTTPS（基於 OpenSSL）；
@@ -29,7 +29,7 @@ Drogon 是一個跨平台框架，支援 Linux、macOS、FreeBSD/OpenBSD、Haiku
 * 支援檔案下載和上傳，支援 `sendfile` 系統呼叫；
 * 支援 Gzip/Brotli 壓縮傳輸；
 * 支援 pipelining；
-* 提供輕量的命令列工具 `drogon_ctl`，幫助簡化各種類的建立和檢視程式碼的產生過程；
+* 提供輕量的命令列工具 `drogon_ctl`，幫助簡化各種類別的建立和視圖程式碼的產生過程；
 * 非同步的讀寫資料庫，目前支援 PostgreSQL 和 MySQL（MariaDB）資料庫；
 * 支援非同步讀寫 Redis；
 * 基於執行緒池實作 sqlite3 資料庫的非同步讀寫，提供與上述資料庫相同的介面；
