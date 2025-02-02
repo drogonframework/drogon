@@ -1033,7 +1033,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
 
 void HttpAppFrameworkImpl::quit()
 {
-    if (getLoop()->isRunning())
+    if (getLoop()->isRunning() && running_.exchange(false))
     {
         getLoop()->queueInLoop([this]() {
             // Release members in the reverse order of initialization
@@ -1044,7 +1044,6 @@ void HttpAppFrameworkImpl::quit()
             pluginsManagerPtr_.reset();
             redisClientManagerPtr_.reset();
             dbClientManagerPtr_.reset();
-            running_ = false;
             getLoop()->quit();
             for (trantor::EventLoop *loop : ioLoopThreadPool_->getLoops())
             {
