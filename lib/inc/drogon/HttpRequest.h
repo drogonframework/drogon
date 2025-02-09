@@ -25,6 +25,8 @@
 #include <trantor/net/InetAddress.h>
 #include <trantor/net/Certificate.h>
 #include <trantor/utils/Date.h>
+#include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -36,6 +38,32 @@ namespace drogon
 {
 class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
+
+class DROGON_EXPORT ResponseChunk
+{
+  public:
+    ResponseChunk() = default;
+
+    ResponseChunk(const char *s, std::size_t count)
+    {
+        data_.append(s, count);
+    }
+
+    ~ResponseChunk() = default;
+
+    ResponseChunk(const ResponseChunk &other) = default;
+    ResponseChunk(ResponseChunk &&other) noexcept = default;
+    ResponseChunk &operator=(const ResponseChunk &other) noexcept = default;
+    ResponseChunk &operator=(ResponseChunk &&other) noexcept = default;
+
+    auto &data()
+    {
+        return data_;
+    }
+
+  private:
+    std::string data_;
+};
 
 /**
  * @brief This template is used to convert a request object to a custom
@@ -508,6 +536,12 @@ class DROGON_EXPORT HttpRequest
     virtual bool connected() const noexcept = 0;
 
     virtual const std::weak_ptr<trantor::TcpConnection> &getConnectionPtr()
+        const noexcept = 0;
+
+    virtual void setChunkCallback(
+        std::function<void(ResponseChunk)>) noexcept = 0;
+
+    virtual const std::function<void(ResponseChunk)> &getChunkCallback()
         const noexcept = 0;
 
     virtual ~HttpRequest()

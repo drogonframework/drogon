@@ -14,6 +14,7 @@ int nth_resp = 0;
 
 int main()
 {
+#if 1
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     {
         auto client = HttpClient::newHttpClient("http://www.baidu.com");
@@ -75,6 +76,28 @@ int main()
         std::cout << "requestsBufferSize:" << client->requestsBufferSize()
                   << std::endl;
     }
+#else
+    {
+        auto client = HttpClient::newHttpClient("http://127.0.0.1:8848/stream");
 
+        auto req = HttpRequest::newHttpRequest();
+        req->setMethod(drogon::Get);
+        req->setPath("/stream");
+        req->setChunkCallback([](ResponseChunk ch) {
+            std::cout << "recv chunk:" << ch.data() << std::endl;
+        });
+        client->sendRequest(
+            req, [](ReqResult result, const HttpResponsePtr &response) {
+                if (result != ReqResult::Ok)
+                {
+                    std::cout
+                        << "error while sending request to server! result: "
+                        << result << std::endl;
+                    return;
+                }
+                std::cout << "recv chunk done" << std::endl;
+            });
+    }
+#endif
     app().run();
 }
