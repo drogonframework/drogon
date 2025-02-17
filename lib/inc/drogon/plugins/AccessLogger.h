@@ -36,6 +36,7 @@ namespace plugin
             // "show_microseconds": true,
             // "custom_time_format": "",
             // "use_real_ip": false
+            // "path_exempt": ""
       }
    }
    @endcode
@@ -98,6 +99,10 @@ namespace plugin
  * Enable the plugin by adding the configuration to the list of plugins in the
  * configuration file.
  *
+ * path_exempt: must be a string or a string array, present a regular expression
+ * (for matching the path of a request) or a regular expression list for URLs
+ * that don't have to be logged.
+ *
  */
 class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
 {
@@ -117,6 +122,8 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     bool useCustomTimeFormat_{false};
     std::string timeFormat_;
     static bool useRealIp_;
+    std::regex exemptRegex_;
+    bool regexFlag_{false};
 
     using LogFunction = std::function<void(trantor::LogStream &,
                                            const drogon::HttpRequestPtr &,
