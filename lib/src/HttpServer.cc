@@ -313,7 +313,7 @@ void HttpServer::onRequests(
             return;
         }
 
-        // flush response for not passing sync advices
+        // flush response for not passing sync advice
         if (conn->connected() && !requestParser->getResponseBuffer().empty())
         {
             sendResponses(conn,
@@ -1202,7 +1202,7 @@ static inline HttpResponsePtr tryDecompressRequest(
  * @brief Check request against each sync advice, generate response if request
  * is rejected by any one of them.
  *
- * @return true if all sync advices are passed.
+ * @return true if all sync advice are passed.
  * @return false if rejected by any sync advice.
  */
 static inline bool passSyncAdvices(
