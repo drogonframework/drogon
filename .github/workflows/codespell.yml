@@ -11,5 +11,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - run: apt install -y codespell
+    - run: sudo apt-get install -y codespell
     - run: codespell --ignore-words-list="coo,folx,ot,statics,xwindows,NotIn," --skip="*.csp"
