@@ -11,5 +11,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - run: pip install --user codespell[toml]
+    - run: apt install -y codespell
     - run: codespell --ignore-words-list="coo,folx,ot,statics,xwindows,NotIn," --skip="*.csp"
