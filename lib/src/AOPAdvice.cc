@@ -23,7 +23,7 @@ namespace drogon
 static void doAdvicesChain(
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
-                                         AdviceChainCallback &&)>> &advices,
+                                         AdviceChainCallback &&)>> &advice,
     size_t index,
     const HttpRequestImplPtr &req,
     std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
@@ -164,29 +164,29 @@ void AopAdvice::passPreSendingAdvices(const HttpRequestImplPtr &req,
 static void doAdvicesChain(
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
-                                         AdviceChainCallback &&)>> &advices,
+                                         AdviceChainCallback &&)>> &advice,
     size_t index,
     const HttpRequestImplPtr &req,
     std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &&callbackPtr)
 {
-    if (index < advices.size())
+    if (index < advice.size())
     {
-        auto &advice = advices[index];
+        auto &advice = advice[index];
         advice(
             req,
             [/*copy*/ callbackPtr](const HttpResponsePtr &resp) {
                 (*callbackPtr)(resp);
             },
-            [index, req, callbackPtr, &advices]() mutable {
+            [index, req, callbackPtr, &advice]() mutable {
                 auto ioLoop = req->getLoop();
                 if (ioLoop && !ioLoop->isInLoopThread())
                 {
                     ioLoop->queueInLoop([index,
                                          req,
                                          callbackPtr = std::move(callbackPtr),
-                                         &advices]() mutable {
-                        doAdvicesChain(advices,
+                                         &advice]() mutable {
+                        doAdvicesChain(advice,
                                        index + 1,
                                        req,
                                        std::move(callbackPtr));
@@ -194,7 +194,7 @@ static void doAdvicesChain(
                 }
                 else
                 {
-                    doAdvicesChain(advices,
+                    doAdvicesChain(advice,
                                    index + 1,
                                    req,
                                    std::move(callbackPtr));

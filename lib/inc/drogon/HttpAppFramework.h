@@ -349,7 +349,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 
     /// Register an advice called before routing
     /**
-     * @param advice is called after all the synchronous advices return
+     * @param advice is called after all the synchronous advice return
      * nullptr and before the request is routed to any handler. The parameters
      * of the advice are same as those of the doFilter method of the Filter
      * class.

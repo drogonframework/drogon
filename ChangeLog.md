@@ -461,7 +461,7 @@ All notable changes to this project will be documented in this file.
 
 - Remove unused CI files and Jekyll config.
 
-- Ensure that all filters, AOP advices, and handlers are executed within the IO threads.
+- Ensure that all filters, AOP advice, and handlers are executed within the IO threads.
 
 - Update test.sh and build.sh by appending prefix "X" to string variable comparisons.
 
@@ -793,7 +793,7 @@ All notable changes to this project will be documented in this file.
 
 - Check HTTP client is not sending requests in sync mode on the same event loop.
 
-- Start listening after beginning advices.
+- Start listening after beginning advice.
 
 - Allow using json_cpp in other sublibraries.
 
