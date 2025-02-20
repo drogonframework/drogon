@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.10] - 2025-02-20
+
+### API changes list
+
+- Add setConnectionCallback.
+
+### Changed
+
+- ORM:Avoid unnecessary copies when returning search results.
+
+- Improve the zh-TW README translation.
+
+- Make quit function thread safe.
+
+- Added path_exempt in AccessLogger plugin config to exclude desired paths.
+
+### Fixed
+
+- Fix the issue in view generation by including the missing header file.
+
+- Fix ci: codespell.
+
 ## [1.9.9] - 2025-01-01
 
 ### API changes list
@@ -1783,7 +1805,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.9...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.10...HEAD
+
+[1.9.10]: https://github.com/an-tao/drogon/compare/v1.9.9...v1.9.10
 
 [1.9.9]: https://github.com/an-tao/drogon/compare/v1.9.8...v1.9.9
 
