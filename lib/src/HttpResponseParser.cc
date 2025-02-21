@@ -17,6 +17,7 @@
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <algorithm>
+#include <string>
 
 using namespace trantor;
 using namespace drogon;
@@ -84,7 +85,9 @@ bool HttpResponseParser::parseResponseOnClose()
 }
 
 // return false if any error
-bool HttpResponseParser::parseResponse(MsgBuffer *buf)
+bool HttpResponseParser::parseResponse(
+    MsgBuffer *buf,
+    const std::function<void(ResponseChunk)> &chunkCallback)
 {
     bool ok = true;
     bool hasMore = true;
@@ -276,6 +279,11 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     {
                         responsePtr_->bodyPtr_ =
                             std::make_shared<HttpMessageStringBody>();
+                    }
+                    if (chunkCallback)
+                    {
+                        chunkCallback(
+                            ResponseChunk(buf->peek(), currentChunkLength_));
                     }
                     responsePtr_->bodyPtr_->append(buf->peek(),
                                                    currentChunkLength_);
