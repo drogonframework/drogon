@@ -21,6 +21,7 @@
 #include <drogon/HttpRequest.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <future>
@@ -177,6 +178,12 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
        @endcode
      */
     virtual void setSockOptCallback(std::function<void(int)> cb) = 0;
+
+    /**
+     * @brief Return the number of unsent http requests in the current http
+     * client cache buffer
+     */
+    virtual std::size_t requestsBufferSize() = 0;
 
     /// Set the pipelining depth, which is the number of requests that are not
     /// responding.

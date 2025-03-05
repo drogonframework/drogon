@@ -20,10 +20,10 @@
 namespace drogon
 {
 
-static void doAdvicesChain(
+static void doAdviceChain(
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
-                                         AdviceChainCallback &&)>> &advices,
+                                         AdviceChainCallback &&)>> &adviceChain,
     size_t index,
     const HttpRequestImplPtr &req,
     std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
@@ -88,7 +88,7 @@ void AopAdvice::passPreRoutingAdvices(
 
     auto callbackPtr =
         std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
-    doAdvicesChain(preRoutingAdvices_, 0, req, std::move(callbackPtr));
+    doAdviceChain(preRoutingAdvices_, 0, req, std::move(callbackPtr));
 }
 
 void AopAdvice::passPostRoutingObservers(const HttpRequestImplPtr &req) const
@@ -114,7 +114,7 @@ void AopAdvice::passPostRoutingAdvices(
 
     auto callbackPtr =
         std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
-    doAdvicesChain(postRoutingAdvices_, 0, req, std::move(callbackPtr));
+    doAdviceChain(postRoutingAdvices_, 0, req, std::move(callbackPtr));
 }
 
 void AopAdvice::passPreHandlingObservers(const HttpRequestImplPtr &req) const
@@ -140,7 +140,7 @@ void AopAdvice::passPreHandlingAdvices(
 
     auto callbackPtr =
         std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
-    doAdvicesChain(preHandlingAdvices_, 0, req, std::move(callbackPtr));
+    doAdviceChain(preHandlingAdvices_, 0, req, std::move(callbackPtr));
 }
 
 void AopAdvice::passPostHandlingAdvices(const HttpRequestImplPtr &req,
@@ -161,43 +161,43 @@ void AopAdvice::passPreSendingAdvices(const HttpRequestImplPtr &req,
     }
 }
 
-static void doAdvicesChain(
+static void doAdviceChain(
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
-                                         AdviceChainCallback &&)>> &advices,
+                                         AdviceChainCallback &&)>> &adviceChain,
     size_t index,
     const HttpRequestImplPtr &req,
     std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &&callbackPtr)
 {
-    if (index < advices.size())
+    if (index < adviceChain.size())
     {
-        auto &advice = advices[index];
+        auto &advice = adviceChain[index];
         advice(
             req,
             [/*copy*/ callbackPtr](const HttpResponsePtr &resp) {
                 (*callbackPtr)(resp);
             },
-            [index, req, callbackPtr, &advices]() mutable {
+            [index, req, callbackPtr, &adviceChain]() mutable {
                 auto ioLoop = req->getLoop();
                 if (ioLoop && !ioLoop->isInLoopThread())
                 {
                     ioLoop->queueInLoop([index,
                                          req,
                                          callbackPtr = std::move(callbackPtr),
-                                         &advices]() mutable {
-                        doAdvicesChain(advices,
-                                       index + 1,
-                                       req,
-                                       std::move(callbackPtr));
+                                         &adviceChain]() mutable {
+                        doAdviceChain(adviceChain,
+                                      index + 1,
+                                      req,
+                                      std::move(callbackPtr));
                     });
                 }
                 else
                 {
-                    doAdvicesChain(advices,
-                                   index + 1,
-                                   req,
-                                   std::move(callbackPtr));
+                    doAdviceChain(adviceChain,
+                                  index + 1,
+                                  req,
+                                  std::move(callbackPtr));
                 }
             });
     }

@@ -91,7 +91,7 @@ class Gauge : public Metric
 
     static std::string_view type()
     {
-        return "counter";
+        return "gauge";
     }
 
     void setToCurrentTime()

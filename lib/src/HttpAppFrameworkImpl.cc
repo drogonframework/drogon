@@ -511,6 +511,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
     return *this;
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::reloadSSLFiles()
+{
+    listenerManagerPtr_->reloadSSLFiles();
+    return *this;
+}
+
 void HttpAppFrameworkImpl::run()
 {
     if (!getLoop()->isInLoopThread())
@@ -1027,7 +1033,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
 
 void HttpAppFrameworkImpl::quit()
 {
-    if (getLoop()->isRunning())
+    if (getLoop()->isRunning() && running_.exchange(false))
     {
         getLoop()->queueInLoop([this]() {
             // Release members in the reverse order of initialization
@@ -1038,7 +1044,6 @@ void HttpAppFrameworkImpl::quit()
             pluginsManagerPtr_.reset();
             redisClientManagerPtr_.reset();
             dbClientManagerPtr_.reset();
-            running_ = false;
             getLoop()->quit();
             for (trantor::EventLoop *loop : ioLoopThreadPool_->getLoops())
             {
@@ -1246,6 +1251,17 @@ int64_t HttpAppFrameworkImpl::getConnectionCount() const
     return HttpConnectionLimit::instance().getConnectionNum();
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::enableRequestStream(bool enable)
+{
+    enableRequestStream_ = enable;
+    return *this;
+}
+
+bool HttpAppFrameworkImpl::isRequestStreamEnabled() const
+{
+    return enableRequestStream_;
+}
+
 // AOP registration methods
 
 HttpAppFramework &HttpAppFrameworkImpl::registerNewConnectionAdvice(
@@ -1334,5 +1350,26 @@ HttpAppFramework &HttpAppFrameworkImpl::registerPreSendingAdvice(
         &advice)
 {
     AopAdvice::instance().registerPreSendingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setBeforeListenSockOptCallback(
+    std::function<void(int)> cb)
+{
+    listenerManagerPtr_->setBeforeListenSockOptCallback(std::move(cb));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setAfterAcceptSockOptCallback(
+    std::function<void(int)> cb)
+{
+    listenerManagerPtr_->setAfterAcceptSockOptCallback(std::move(cb));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setConnectionCallback(
+    std::function<void(const trantor::TcpConnectionPtr &)> cb)
+{
+    listenerManagerPtr_->setConnectionCallback(std::move(cb));
     return *this;
 }

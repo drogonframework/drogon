@@ -76,7 +76,7 @@ else
 
 <%c++for(auto col:cols){
 %>
-const std::string [[className]]::Cols::_{%col.colName_%} = "{%col.colName_%}";
+const std::string [[className]]::Cols::_{%col.colName_%} = "{%escapeIdentifier(col.colName_, rdbms)%}";
 <%c++
 }%>
 <%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
@@ -102,7 +102,7 @@ if(!schema.empty())
 {
     $$<<schema<<".";
 }
-%>[[tableName]]";
+%>{%escapeIdentifier(@@.get<std::string>("tableName"), rdbms)%}";
 
 const std::vector<typename [[className]]::MetaData> [[className]]::metaData_={
 <%c++for(size_t i=0;i<cols.size();i++){

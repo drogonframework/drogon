@@ -19,6 +19,9 @@
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/TcpClient.h>
+#include <cstddef>
+#include <functional>
+#include <future>
 #include <list>
 #include <mutex>
 #include <queue>
@@ -124,6 +127,21 @@ class HttpClientImpl final : public HttpClient,
     std::optional<Version> protocolVersion() const override
     {
         return httpVersion_;
+    }
+
+    std::size_t requestsBufferSize() override
+    {
+        if (loop_->isInLoopThread())
+        {
+            return requestsBuffer_.size();
+        }
+        else
+        {
+            std::promise<std::size_t> bufferSize;
+            loop_->queueInLoop(
+                [&] { bufferSize.set_value(requestsBuffer_.size()); });
+            return bufferSize.get_future().get();
+        }
     }
 
   private:

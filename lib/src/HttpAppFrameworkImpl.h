@@ -84,6 +84,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         override;
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
+
+    HttpAppFramework &reloadSSLFiles() override;
+
     void run() override;
     HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
@@ -658,6 +661,16 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &resp);
 
+    HttpAppFramework &setBeforeListenSockOptCallback(
+        std::function<void(int)> cb) override;
+    HttpAppFramework &setAfterAcceptSockOptCallback(
+        std::function<void(int)> cb) override;
+    HttpAppFramework &setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb) override;
+
+    HttpAppFramework &enableRequestStream(bool enable) override;
+    bool isRequestStreamEnabled() const override;
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
@@ -748,6 +761,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     ExceptionHandler exceptionHandler_{defaultExceptionHandler};
     bool enableCompressedRequest_{false};
+
+    bool enableRequestStream_{false};
 };
 
 }  // namespace drogon

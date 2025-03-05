@@ -30,16 +30,16 @@ void Redirector::initAndStart(const Json::Value &config)
             }
             std::string protocol, host;
             bool pathChanged{false};
+            for (auto &handler : thisPtr->pathRewriteHandlers_)
+            {
+                pathChanged |= handler(req);
+            }
             for (auto &handler : thisPtr->handlers_)
             {
                 if (!handler(req, protocol, host, pathChanged))
                 {
                     return HttpResponse::newNotFoundResponse(req);
                 }
-            }
-            for (auto &handler : thisPtr->pathRewriteHandlers_)
-            {
-                pathChanged |= handler(req);
             }
             if (!protocol.empty() || !host.empty() || pathChanged)
             {

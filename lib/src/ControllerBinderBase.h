@@ -41,6 +41,11 @@ struct ControllerBinderBase
     virtual void handleRequest(
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) const = 0;
+
+    virtual bool isStreamHandler() const
+    {
+        return false;
+    }
 };
 
 struct RouteResult

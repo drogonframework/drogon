@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <optional>
 #include <string_view>
+#include <trantor/net/TcpConnection.h>
 
 namespace drogon
 {
@@ -177,6 +178,17 @@ class DROGON_EXPORT HttpRequest
     const SafeStringMap<std::string> &getCookies() const
     {
         return cookies();
+    }
+
+    /**
+     * @brief Return content length parsed from the Content-Length header
+     * If no Content-Length header, return null.
+     */
+    virtual size_t realContentLength() const = 0;
+
+    size_t getRealContentLength() const
+    {
+        return realContentLength();
     }
 
     /// Get the query string of the request.
@@ -439,8 +451,7 @@ class DROGON_EXPORT HttpRequest
     virtual void setCustomContentTypeString(const std::string &type) = 0;
 
     /// Add a cookie
-    virtual void addCookie(const std::string &key,
-                           const std::string &value) = 0;
+    virtual void addCookie(std::string key, std::string value) = 0;
 
     /**
      * @brief Set the request object to the pass-through mode or not. It's not
@@ -494,6 +505,11 @@ class DROGON_EXPORT HttpRequest
     virtual bool isOnSecureConnection() const noexcept = 0;
     virtual void setContentTypeString(const char *typeString,
                                       size_t typeStringLength) = 0;
+
+    virtual bool connected() const noexcept = 0;
+
+    virtual const std::weak_ptr<trantor::TcpConnection> &getConnectionPtr()
+        const noexcept = 0;
 
     virtual ~HttpRequest()
     {
