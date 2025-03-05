@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.10] - 2025-02-20
+
+### API changes list
+
+- Add setConnectionCallback.
+
+### Changed
+
+- ORM:Avoid unnecessary copies when returning search results.
+
+- Improve the zh-TW README translation.
+
+- Make quit function thread safe.
+
+- Added path_exempt in AccessLogger plugin config to exclude desired paths.
+
+### Fixed
+
+- Fix the issue in view generation by including the missing header file.
+
+- Fix ci: codespell.
+
+## [1.9.9] - 2025-01-01
+
+### API changes list
+
+- Added Partitioned flag for cookies.
+
+### Changed
+
+- Update FindFilesystem.cmake to check for GNU instead of GCC for CMAKE_CXX_COMPILER_ID.
+
+- Update README.
+
+- Chore(workflow/cmake.yml): upgrade macos runner.
+
+- Add emptiness check to the LogStream &operator<< with std::string_view.
+
+### Fixed
+
+- Fix a bug in plugin Redirector.
+
+- Fix CMAKE issues mentioned in #2144 and a linking problem which manifest with gcc12.3 when building with shared libs.
+
+- Fix: Remove dependency on locales being installed on the system.
+
 ## [1.9.8] - 2024-10-27
 
 ### API changes list
@@ -437,7 +483,7 @@ All notable changes to this project will be documented in this file.
 
 - Remove unused CI files and Jekyll config.
 
-- Ensure that all filters, AOP advices, and handlers are executed within the IO threads.
+- Ensure that all filters, AOP advice, and handlers are executed within the IO threads.
 
 - Update test.sh and build.sh by appending prefix "X" to string variable comparisons.
 
@@ -769,7 +815,7 @@ All notable changes to this project will be documented in this file.
 
 - Check HTTP client is not sending requests in sync mode on the same event loop.
 
-- Start listening after beginning advices.
+- Start listening after beginning advice.
 
 - Allow using json_cpp in other sublibraries.
 
@@ -1759,7 +1805,11 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.8...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.10...HEAD
+
+[1.9.10]: https://github.com/an-tao/drogon/compare/v1.9.9...v1.9.10
+
+[1.9.9]: https://github.com/an-tao/drogon/compare/v1.9.8...v1.9.9
 
 [1.9.8]: https://github.com/an-tao/drogon/compare/v1.9.7...v1.9.8
 

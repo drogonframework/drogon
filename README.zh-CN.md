@@ -1,6 +1,6 @@
 ![](https://github.com/an-tao/drogon/wiki/images/drogon-white17.jpg)
 
-[![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)](https://github.com/drogonframework/drogon/actions)
+[![Build Status](https://github.com/drogonframework/drogon/actions/workflows/cmake.yml/badge.svg?branch=master)](https://github.com/drogonframework/drogon/actions)
 [![Conan Center](https://img.shields.io/conan/v/drogon)](https://conan.io/center/recipes/drogon)
 [![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
 [![Join our Discord](https://dcbadge.vercel.app/api/server/3DvHY6Ewuj?style=flat)](https://discord.gg/3DvHY6Ewuj)

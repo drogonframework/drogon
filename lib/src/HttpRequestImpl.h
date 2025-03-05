@@ -16,6 +16,7 @@
 
 #include "HttpUtils.h"
 #include "CacheFile.h"
+#include "impl_forwards.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/RequestStream.h>
@@ -570,6 +571,12 @@ class HttpRequestImpl : public HttpRequest
             return conn->connected();
         }
         return false;
+    }
+
+    const std::weak_ptr<trantor::TcpConnection> &getConnectionPtr()
+        const noexcept override
+    {
+        return connPtr_;
     }
 
     bool isOnSecureConnection() const noexcept override

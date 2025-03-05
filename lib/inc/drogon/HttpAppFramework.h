@@ -349,7 +349,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 
     /// Register an advice called before routing
     /**
-     * @param advice is called after all the synchronous advices return
+     * @param advice is called after all the synchronous advice return
      * nullptr and before the request is routed to any handler. The parameters
      * of the advice are same as those of the doFilter method of the Filter
      * class.
@@ -1614,6 +1614,15 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &setAfterAcceptSockOptCallback(
         std::function<void(int)> cb) = 0;
+
+    /**
+     * @brief Set the client disconnect or connect callback.
+     *
+     * @param cb This callback will be called, when the client disconnect or
+     * connect
+     */
+    virtual HttpAppFramework &setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb) = 0;
 
     virtual HttpAppFramework &enableRequestStream(bool enable = true) = 0;
     virtual bool isRequestStreamEnabled() const = 0;

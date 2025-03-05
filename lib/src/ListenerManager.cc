@@ -121,6 +121,10 @@ void ListenerManager::createListeners(
                 serverPtr->setAfterAcceptSockOptCallback(
                     afterAcceptSetSockOptCallback_);
             }
+            if (connectionCallback_)
+            {
+                serverPtr->setConnectionCallback(connectionCallback_);
+            }
 
             if (listener.useSSL_ && utils::supportsTls())
             {

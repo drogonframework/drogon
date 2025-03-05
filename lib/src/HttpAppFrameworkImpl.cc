@@ -1033,7 +1033,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
 
 void HttpAppFrameworkImpl::quit()
 {
-    if (getLoop()->isRunning())
+    if (getLoop()->isRunning() && running_.exchange(false))
     {
         getLoop()->queueInLoop([this]() {
             // Release members in the reverse order of initialization
@@ -1044,7 +1044,6 @@ void HttpAppFrameworkImpl::quit()
             pluginsManagerPtr_.reset();
             redisClientManagerPtr_.reset();
             dbClientManagerPtr_.reset();
-            running_ = false;
             getLoop()->quit();
             for (trantor::EventLoop *loop : ioLoopThreadPool_->getLoops())
             {
@@ -1365,5 +1364,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setAfterAcceptSockOptCallback(
     std::function<void(int)> cb)
 {
     listenerManagerPtr_->setAfterAcceptSockOptCallback(std::move(cb));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setConnectionCallback(
+    std::function<void(const trantor::TcpConnectionPtr &)> cb)
+{
+    listenerManagerPtr_->setConnectionCallback(std::move(cb));
     return *this;
 }

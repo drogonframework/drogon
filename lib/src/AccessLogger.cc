@@ -113,6 +113,46 @@ void AccessLogger::initAndStart(const Json::Value &config)
     }
     createLogFunctions(format);
     auto logPath = config.get("log_path", "").asString();
+
+    if (config.isMember("path_exempt"))
+    {
+        if (config["path_exempt"].isArray())
+        {
+            const auto &exempts = config["path_exempt"];
+            size_t exemptsCount = exempts.size();
+            if (exemptsCount)
+            {
+                std::string regexString;
+                size_t len = 0;
+                for (const auto &exempt : exempts)
+                {
+                    assert(exempt.isString());
+                    len += exempt.size();
+                }
+                regexString.reserve((exemptsCount * (1 + 2)) - 1 + len);
+
+                const auto last = --exempts.end();
+                for (auto exempt = exempts.begin(); exempt != last; ++exempt)
+                    regexString.append("(")
+                        .append(exempt->asString())
+                        .append(")|");
+                regexString.append("(").append(last->asString()).append(")");
+
+                exemptRegex_ = std::regex(regexString);
+                regexFlag_ = true;
+            }
+        }
+        else if (config["path_exempt"].isString())
+        {
+            exemptRegex_ = std::regex(config["path_exempt"].asString());
+            regexFlag_ = true;
+        }
+        else
+        {
+            LOG_ERROR << "path_exempt must be a string or string array!";
+        }
+    }
+
 #ifdef DROGON_SPDLOG_SUPPORT
     auto logWithSpdlog = trantor::Logger::hasSpdLogSupport() &&
                          config.get("use_spdlog", false).asBool();
@@ -228,7 +268,17 @@ void AccessLogger::initAndStart(const Json::Value &config)
     drogon::app().registerPreSendingAdvice(
         [this](const drogon::HttpRequestPtr &req,
                const drogon::HttpResponsePtr &resp) {
-            logging(LOG_RAW_TO(logIndex_), req, resp);
+            if (regexFlag_)
+            {
+                if (!std::regex_match(req->path(), exemptRegex_))
+                {
+                    logging(LOG_RAW_TO(logIndex_), req, resp);
+                }
+            }
+            else
+            {
+                logging(LOG_RAW_TO(logIndex_), req, resp);
+            }
         });
 }
 

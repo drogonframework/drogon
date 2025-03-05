@@ -1053,9 +1053,9 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
         std::vector<T> ret;
         for (auto const &row : r)
         {
-            ret.push_back(T(row));
+            ret.emplace_back(row);
         }
-        rcb(ret);
+        rcb(std::move(ret));
     };
     binder >> ecb;
 }
