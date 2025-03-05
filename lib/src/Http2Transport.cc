@@ -263,12 +263,7 @@ std::optional<GoAwayFrame> GoAwayFrame::parse(ByteStream &payload,
     frame.lastStreamId = payload.readU32BE();
     frame.errorCode = payload.readU32BE();
     frame.additionalDebugData.resize(payload.remaining());
-<<<<<<< HEAD
     payload.read(frame.additionalDebugData.data(), payload.remaining());
-=======
-    for (size_t i = 0; i < frame.additionalDebugData.size(); ++i)
-        frame.additionalDebugData[i] = payload.readU8();
->>>>>>> merge-master-http2
     return frame;
 }
 
@@ -406,7 +401,6 @@ std::optional<PushPromiseFrame> PushPromiseFrame::parse(ByteStream &payload,
     auto [_, promisedStreamId] = payload.readBI31BE();
     frame.promisedStreamId = promisedStreamId;
     assert(payload.remaining() >= frame.padLength);
-<<<<<<< HEAD
     size_t payloadSize = payload.remaining() - frame.padLength;
     if (payloadSize != 0)
     {
@@ -414,11 +408,6 @@ std::optional<PushPromiseFrame> PushPromiseFrame::parse(ByteStream &payload,
         payload.read(frame.headerBlockFragment.data(),
                      frame.headerBlockFragment.size());
     }
-=======
-    frame.headerBlockFragment.resize(payload.remaining() - frame.padLength);
-    payload.read(frame.headerBlockFragment.data(),
-                 frame.headerBlockFragment.size());
->>>>>>> merge-master-http2
     payload.skip(frame.padLength);
     return frame;
 }
@@ -687,12 +676,9 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         connPtr->forceClose();
         return;
     }
-<<<<<<< HEAD
     // -2 because we are using the next stream id for the next request
     // TODO: Clean interface to get the current highest stream id. Might need
     // to keep tracking separately
-=======
->>>>>>> merge-master-http2
     const auto streamId = *sid;
     assert(streamId % 2 == 1);
     LOG_TRACE << "Sending HTTP/2 request: streamId=" << streamId;
@@ -713,17 +699,10 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     vec.emplace_back(":method", req->methodString());
     const auto &params = req->parameters();
     if (params.empty())
-<<<<<<< HEAD
         vec.emplace_back(":path", req->path().empty() ? "/" : req->path());
     else
     {
         std::string path = (req->path().empty() ? "/" : req->path()) + "?";
-=======
-        vec.emplace_back(":path", req->path());
-    else
-    {
-        std::string path = req->path() + "?";
->>>>>>> merge-master-http2
         for (auto const &[key, value] : params)
         {
             path += utils::urlEncodeComponent(key) + "=" +
@@ -733,11 +712,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         vec.emplace_back(":path", path);
     }
     std::string scheme = connPtr->isSSLConnection() ? "https" : "http";
-<<<<<<< HEAD
     if (static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
-=======
-    if (!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
->>>>>>> merge-master-http2
         scheme = (req->isOnSecureConnection()) ? "https" : "http";
     vec.emplace_back(":scheme", scheme);
     if (auto host = req->getHeader("host"); !host.empty())
@@ -948,30 +923,18 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             auto &f = std::get<WindowUpdateFrame>(frame);
             avaliableTxWindow += f.windowSizeIncrement;
 
-<<<<<<< HEAD
             // Find if we have a stream that can be resumed
             if (currentDataSend.has_value() == false && pendingDataSend.empty())
                 continue;
 
             auto it = currentDataSend.value_or(pendingDataSend.begin());
             while (it != pendingDataSend.end())
-=======
-            if (currentDataSend.has_value() == false)
-                currentDataSend = pendingDataSend.begin();
-
-            auto it = *currentDataSend;
-            if (it == pendingDataSend.end())
-                continue;
-
-            do
->>>>>>> merge-master-http2
             {
                 auto &stream = streams[it->first];
                 auto [sentOffset, done] = sendBodyForStream(stream, it->second);
                 if (done)
                 {
                     it = pendingDataSend.erase(it);
-<<<<<<< HEAD
                     if (it != pendingDataSend.end())
                         currentDataSend = it;
                     else
@@ -979,9 +942,6 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                         currentDataSend = std::nullopt;
                         break;
                     }
-=======
-                    currentDataSend = it;
->>>>>>> merge-master-http2
                     continue;
                 }
                 it->second = sentOffset;
@@ -992,11 +952,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 }
                 else
                     break;
-<<<<<<< HEAD
             }
-=======
-            } while (it != pendingDataSend.end());
->>>>>>> merge-master-http2
         }
         else if (std::holds_alternative<SettingsFrame>(frame))
         {
@@ -1158,11 +1114,7 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
 
         // Anti request smuggling. We look for \r or \n in the header
         // name or value. If we find one, we abort the stream.
-<<<<<<< HEAD
         if (key.find_first_of("\r\n: ") != std::string::npos ||
-=======
-        if (key.find_first_of("\r\n") != std::string::npos ||
->>>>>>> merge-master-http2
             value.find_first_of("\r\n") != std::string::npos)
         {
             streamErrored(streamId, ReqResult::BadResponse);
@@ -1358,7 +1310,6 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         {
             bool should_increment = currentDataSend.has_value() &&
                                     (*currentDataSend)->second == streamId;
-<<<<<<< HEAD
             if (should_increment)
             {
                 auto next = pendingDataSend.erase(it);
@@ -1367,24 +1318,16 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 else
                     currentDataSend = std::nullopt;
             }
-=======
-            auto next = pendingDataSend.erase(it);
-            if (should_increment)
-                currentDataSend = next;
->>>>>>> merge-master-http2
         }
         else
             it->second = sentOffset;
     }
     else if (std::holds_alternative<RstStreamFrame>(frame))
     {
-<<<<<<< HEAD
         // WTF? RST_STREAM after response is already sent? Ignore as we
         // already called the callback
         if (stream.state == StreamState::Finished)
             return;
-=======
->>>>>>> merge-master-http2
         auto &f = std::get<RstStreamFrame>(frame);
         LOG_TRACE << "RST_STREAM frame received: errorCode=" << f.errorCode;
         streamErrored(streamId, ReqResult::BadResponse);
@@ -1479,12 +1422,9 @@ void Http2Transport::connectionErrored(int32_t lastStreamId,
     sendFrame(
         GoAwayFrame(lastStreamId, (uint32_t)errorCode, std::move(errorMsg)), 0);
 
-<<<<<<< HEAD
     // TODO: GOAWAY should gracefully shutdown the connection. But we are
     // force closing it for now. This is not ideal and we need to switch to
     // RST_STREAM and leave GOAWAY for when we bother to gracefully shutdown
-=======
->>>>>>> merge-master-http2
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);
     errorCallback(ReqResult::BadResponse);
@@ -1515,38 +1455,23 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
     bool sendEverything = maxSendSize == size;
 
-<<<<<<< HEAD
     size_t sent = 0;
     for (size_t i = 0; i < maxSendSize; i += maxFrameSize)
     {
         size_t remaining = maxSendSize - i;
-=======
-    size_t i = 0;
-    for (i = 0; i < size; i += maxFrameSize)
-    {
-        size_t remaining = size - i;
->>>>>>> merge-master-http2
         size_t readSize = (std::min)(maxFrameSize, remaining);
         bool endStream = sendEverything && i + maxFrameSize >= size;
         const std::string_view sendData((const char *)data + i, readSize);
         DataFrame dataFrame(sendData, endStream);
         LOG_TRACE << "Sending data frame: size=" << readSize
                   << " endStream=" << dataFrame.endStream;
-<<<<<<< HEAD
         sent += readSize;
-=======
->>>>>>> merge-master-http2
         sendFrame(dataFrame, streamId);
 
         stream.avaliableTxWindow -= readSize;
         avaliableTxWindow -= readSize;
     }
-<<<<<<< HEAD
     return {sent, sendEverything};
-=======
-    i = (std::min)(i, size);
-    return {i, sendEverything};
->>>>>>> merge-master-http2
 }
 
 std::pair<size_t, bool> Http2Transport::sendBodyForStream(
@@ -1591,14 +1516,11 @@ void Http2Transport::sendFrame(const internal::H2Frame &frame, int32_t streamId)
     size_t oldSize = batchedSendBuffer.size();
     serializeFrame(batchedSendBuffer, frame, streamId);
     *bytesSent_ += batchedSendBuffer.size() - oldSize;
-<<<<<<< HEAD
 
     // proactively send the data if it's too large. Avoid potential reallocation
     // of the send buffer
     if (batchedSendBuffer.size() > 0x20000)
         sendBufferedData();
-=======
->>>>>>> merge-master-http2
 }
 
 void Http2Transport::sendBufferedData()
