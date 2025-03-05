@@ -41,6 +41,10 @@ add_executable(conn_options_test
 		conn_options_test.cc
         )
 
+add_executable(db_api_test
+		db_api_test.cc
+        )
+
 set_property(TARGET db_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET db_test PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET db_test PROPERTY CXX_EXTENSIONS OFF)
@@ -56,3 +60,7 @@ set_property(TARGET db_listener_test PROPERTY CXX_EXTENSIONS OFF)
 set_property(TARGET conn_options_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET conn_options_test PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET conn_options_test PROPERTY CXX_EXTENSIONS OFF)
+
+set_property(TARGET db_api_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET db_api_test PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET db_api_test PROPERTY CXX_EXTENSIONS OFF)

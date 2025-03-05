@@ -524,6 +524,9 @@ static void loadApp(const Json::Value &app)
     bool enableCompressedRequests =
         app.get("enabled_compressed_request", false).asBool();
     drogon::app().enableCompressedRequest(enableCompressedRequests);
+
+    drogon::app().enableRequestStream(
+        app.get("enable_request_stream", false).asBool());
 }
 
 static void loadDbClients(const Json::Value &dbClients)
@@ -584,8 +587,8 @@ static void loadDbClients(const Json::Value &dbClients)
                                                      user,
                                                      password,
                                                      connNum,
-                                                     name,
                                                      filename,
+                                                     name,
                                                      isFast,
                                                      characterSet,
                                                      timeout,

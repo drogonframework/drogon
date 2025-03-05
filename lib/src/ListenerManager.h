@@ -51,6 +51,24 @@ class ListenerManager : public trantor::NonCopyable
     void startListening();
     void stopListening();
 
+    void setBeforeListenSockOptCallback(std::function<void(int)> cb)
+    {
+        beforeListenSetSockOptCallback_ = std::move(cb);
+    }
+
+    void setAfterAcceptSockOptCallback(std::function<void(int)> cb)
+    {
+        afterAcceptSetSockOptCallback_ = std::move(cb);
+    }
+
+    void setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb)
+    {
+        connectionCallback_ = std::move(cb);
+    }
+
+    void reloadSSLFiles();
+
   private:
     struct ListenerInfo
     {
@@ -87,6 +105,9 @@ class ListenerManager : public trantor::NonCopyable
     // should have value when and only when on OS that one port can only be
     // listened by one thread
     std::unique_ptr<trantor::EventLoopThread> listeningThread_;
+    std::function<void(int)> beforeListenSetSockOptCallback_;
+    std::function<void(int)> afterAcceptSetSockOptCallback_;
+    std::function<void(const trantor::TcpConnectionPtr &)> connectionCallback_;
 };
 
 }  // namespace drogon

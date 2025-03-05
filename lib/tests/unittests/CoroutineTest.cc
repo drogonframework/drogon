@@ -2,6 +2,10 @@
 #include <drogon/utils/coroutine.h>
 #include <drogon/HttpAppFramework.h>
 #include <trantor/net/EventLoopThread.h>
+#include <trantor/net/EventLoopThreadPool.h>
+#include <chrono>
+#include <cstdint>
+#include <future>
 #include <type_traits>
 
 using namespace drogon;
@@ -211,4 +215,33 @@ DROGON_TEST(SwitchThread)
     };
     sync_wait(switch_thread());
     thread.wait();
+}
+
+DROGON_TEST(Mutex)
+{
+    trantor::EventLoopThreadPool pool{3};
+    pool.start();
+    Mutex mutex;
+    async_run([&]() -> Task<> {
+        co_await switchThreadCoro(pool.getLoop(0));
+        auto guard = co_await mutex.scoped_lock();
+        co_await sleepCoro(pool.getLoop(1), std::chrono::seconds(2));
+        co_return;
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::promise<void> done;
+    async_run([&]() -> Task<> {
+        co_await switchThreadCoro(pool.getLoop(2));
+        auto id = std::this_thread::get_id();
+        co_await mutex.lock();
+        CHECK(id == std::this_thread::get_id());
+        mutex.unlock();
+        CHECK(id == std::this_thread::get_id());
+        done.set_value();
+        co_return;
+    });
+    done.get_future().wait();
+    for (int16_t i = 0; i < 3; i++)
+        pool.getLoop(i)->quit();
+    pool.wait();
 }

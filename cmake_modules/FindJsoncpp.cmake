@@ -51,7 +51,9 @@ if(Jsoncpp_FOUND)
       COMMAND awk "{ printf \$3 }"
       COMMAND sed -e "s/\"//g"
       OUTPUT_VARIABLE jsoncpp_ver)
-    message(STATUS "jsoncpp version:" ${jsoncpp_ver})
+    if(NOT Jsoncpp_FIND_QUIETLY)
+      message(STATUS "jsoncpp version:" ${jsoncpp_ver})
+    endif()
     if(jsoncpp_ver LESS 1.7)
       message(
         FATAL_ERROR

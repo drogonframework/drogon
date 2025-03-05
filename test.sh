@@ -34,6 +34,12 @@ function do_integration_test()
     sed -i -e "s/\"threads_num.*$/\"threads_num\": 0\,/" config.example.json
     sed -i -e "s/\"use_brotli.*$/\"use_brotli\": true\,/" config.example.json
 
+    if [ "$1" = "stream_mode" ]; then
+        sed -i -e "s/\"enable_request_stream.*$/\"enable_request_stream\": true\,/" config.example.json
+    else
+        sed -i -e "s/\"enable_request_stream.*$/\"enable_request_stream\": false\,/" config.example.json
+    fi
+
     if [ ! -f "integration_test_client" ]; then
         echo "Build failed"
         exit -1
@@ -48,11 +54,11 @@ function do_integration_test()
 
     sleep 4
 
-    echo "Running the integration test"
+    echo "Running the integration test $1"
     ./integration_test_client -s
 
     if [ $? -ne 0 ]; then
-        echo "Integration test failed"
+        echo "Integration test failed $1"
         exit -1
     fi
 
@@ -222,6 +228,14 @@ function do_db_test()
             exit -1
         fi
     fi
+    if [ -f "./orm_lib/tests/db_api_test" ]; then
+        echo "Test getDbClient() api"
+        ./orm_lib/tests/db_api_test -s
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
+        fi
+    fi
     if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
         echo "Test redis"
         ./nosql_lib/redis/tests/redis_test -s
@@ -237,6 +251,7 @@ then
     echo "Warning: No drogon_ctl, skip integration test and drogon_ctl test"
 else
     do_integration_test
+    do_integration_test stream_mode
     do_drogon_ctl_test
 fi
 
