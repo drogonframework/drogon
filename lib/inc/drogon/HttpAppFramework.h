@@ -349,7 +349,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 
     /// Register an advice called before routing
     /**
-     * @param advice is called after all the synchronous advices return
+     * @param advice is called after all the synchronous advice return
      * nullptr and before the request is routed to any handler. The parameters
      * of the advice are same as those of the doFilter method of the Filter
      * class.
@@ -805,6 +805,15 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setSSLConfigCommands(
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
+
+    /// Reload the global cert file and private key file for https server
+    /// Note: The goal of this method is not to make the framework
+    /// use the new SSL path, but rather to reload the new content
+    /// from the old path while the framework is still running.
+    /// Typically, when our SSL is about to expire,
+    /// we need to reload the SSL. The purpose of this function
+    /// is to use the new SSL certificate without stopping the framework.
+    virtual HttpAppFramework &reloadSSLFiles() = 0;
 
     /// Add plugins
     /**
@@ -1589,6 +1598,34 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @brief get the number of active connections.
      */
     virtual int64_t getConnectionCount() const = 0;
+
+    /**
+     * @brief Set the before listen setsockopt callback.
+     *
+     * @param cb This callback will be called before the listen
+     */
+    virtual HttpAppFramework &setBeforeListenSockOptCallback(
+        std::function<void(int)> cb) = 0;
+
+    /**
+     * @brief Set the after accept setsockopt callback.
+     *
+     * @param cb This callback will be called after accept
+     */
+    virtual HttpAppFramework &setAfterAcceptSockOptCallback(
+        std::function<void(int)> cb) = 0;
+
+    /**
+     * @brief Set the client disconnect or connect callback.
+     *
+     * @param cb This callback will be called, when the client disconnect or
+     * connect
+     */
+    virtual HttpAppFramework &setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb) = 0;
+
+    virtual HttpAppFramework &enableRequestStream(bool enable = true) = 0;
+    virtual bool isRequestStreamEnabled() const = 0;
 
   private:
     virtual void registerHttpController(

@@ -164,6 +164,7 @@ class HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual size_t paramCount() = 0;
     virtual const std::string &handlerName() const = 0;
+    virtual bool isStreamHandler() = 0;
 
     virtual ~HttpBinderBase()
     {
@@ -218,6 +219,11 @@ class HttpBinder : public HttpBinderBase
         return traits::arity;
     }
 
+    bool isStreamHandler() override
+    {
+        return traits::isStreamHandler;
+    }
+
     HttpBinder(FUNCTION &&func) : func_(std::forward<FUNCTION>(func))
     {
         static_assert(traits::isHTTPFunction,
@@ -266,6 +272,7 @@ class HttpBinder : public HttpBinderBase
 
     template <typename... Values,
               std::size_t Boundary = argument_count,
+              bool isStreamHandler = traits::isStreamHandler,
               bool isCoroutine = traits::isCoroutine>
     void run(std::deque<std::string> &pathArguments,
              const HttpRequestPtr &req,
@@ -344,7 +351,17 @@ class HttpBinder : public HttpBinderBase
                 {
                     // Explicit copy because `callFunction` moves it
                     auto cb = callback;
-                    callFunction(req, cb, std::move(values)...);
+                    if constexpr (isStreamHandler)
+                    {
+                        callFunction(req,
+                                     createRequestStream(req),
+                                     cb,
+                                     std::move(values)...);
+                    }
+                    else
+                    {
+                        callFunction(req, cb, std::move(values)...);
+                    }
                 }
                 catch (const std::exception &except)
                 {
@@ -359,6 +376,7 @@ class HttpBinder : public HttpBinderBase
 #ifdef __cpp_impl_coroutine
             else
             {
+                static_assert(!isStreamHandler);
                 [this](HttpRequestPtr req,
                        std::function<void(const HttpResponsePtr &)> callback,
                        Values &&...values) -> AsyncTask {

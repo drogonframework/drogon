@@ -408,8 +408,7 @@ int main()
     app().registerCustomExtensionMime("md", "text/markdown");
     app().setFileTypes({"md", "html", "jpg", "cc", "txt"});
     std::cout << "Date: "
-              << std::string{drogon::utils::getHttpFullDate(
-                     trantor::Date::now())}
+              << drogon::utils::getHttpFullDateStr(trantor::Date::now())
               << std::endl;
 
     app().registerBeginningAdvice(

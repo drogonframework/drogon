@@ -30,7 +30,7 @@ jobs:
           CLANG_FORMAT: clang-format-17
 
   cpplint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 

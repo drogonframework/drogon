@@ -402,6 +402,16 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
+
+    bool contentLengthIsAllowed() const
+    {
+        int statusCode =
+            customStatusCode_ >= 0 ? customStatusCode_ : statusCode_;
+
+        // return false if status code is 1xx or 204
+        return (statusCode >= k200OK || statusCode < k100Continue) &&
+               statusCode != k204NoContent;
+    }
 #ifdef USE_BROTLI
     void brDecompress()
     {

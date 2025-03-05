@@ -519,6 +519,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                            statusCode_);
         }
     }
+
     buffer.hasWritten(len);
 
     if (!statusMessage_.empty())
@@ -528,7 +529,18 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
     if (!passThrough_)
     {
         buffer.ensureWritableBytes(64);
-        if (streamCallback_ || asyncStreamCallback_)
+        if (!contentLengthIsAllowed())
+        {
+            len = 0;
+            if ((bodyPtr_ && bodyPtr_->length() > 0) ||
+                !sendfileName_.empty() || streamCallback_ ||
+                asyncStreamCallback_)
+            {
+                LOG_ERROR << "The body should be empty when the content-length "
+                             "is not allowed!";
+            }
+        }
+        else if (streamCallback_ || asyncStreamCallback_)
         {
             // When the headers are created, it is time to set the transfer
             // encoding to chunked if the contents size is not specified
@@ -623,15 +635,14 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         buffer.append("date: ");
-        buffer.append(utils::getHttpFullDate(trantor::Date::date()),
-                      httpFullDateStringLength);
+        buffer.append(utils::getHttpFullDateStr(trantor::Date::date()));
         buffer.append("\r\n\r\n");
     }
     else
     {
         buffer.append("\r\n");
     }
-    if (bodyPtr_)
+    if (bodyPtr_ && contentLengthIsAllowed())
         buffer.append(bodyPtr_->data(), bodyPtr_->length());
 }
 
@@ -697,8 +708,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
     {
         httpString->append("date: ");
         auto datePos = httpString->readableBytes();
-        httpString->append(utils::getHttpFullDate(trantor::Date::date()),
-                           httpFullDateStringLength);
+        httpString->append(utils::getHttpFullDateStr(trantor::Date::date()));
         httpString->append("\r\n\r\n");
         datePos_ = datePos;
     }
@@ -857,7 +867,7 @@ void HttpResponseImpl::addHeader(const char *start,
         }
         if (!cookie.key().empty())
         {
-            cookies_[cookie.key()] = cookie;
+            cookies_[cookie.key()] = std::move(cookie);
         }
     }
     else
@@ -960,7 +970,8 @@ bool HttpResponseImpl::shouldBeCompressed() const
 {
     if (streamCallback_ || asyncStreamCallback_ || !sendfileName_.empty() ||
         contentType() >= CT_APPLICATION_OCTET_STREAM ||
-        getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
+        getBody().length() < 1024 ||
+        !(getHeaderBy("content-encoding").empty()) || !contentLengthIsAllowed())
     {
         return false;
     }
