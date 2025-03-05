@@ -128,6 +128,7 @@ class HttpClientImpl final : public HttpClient,
     {
         return httpVersion_;
     }
+
     std::size_t requestsBufferSize() override
     {
         if (loop_->isInLoopThread())
