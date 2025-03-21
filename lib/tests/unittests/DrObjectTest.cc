@@ -41,3 +41,29 @@ DROGON_TEST(DrObjectNamespaceTest)
     CHECK(objPtr2.get() != nullptr);
     CHECK(objPtr == objPtr2);
 }
+
+class TestC : public DrObject<TestC>
+{
+  public:
+    static constexpr bool isAutoCreation = true;
+};
+
+class TestD : public DrObject<TestD>
+{
+  public:
+    static constexpr bool isAutoCreation = false;
+};
+
+class TestE : public DrObject<TestE>
+{
+  public:
+    static constexpr double isAutoCreation = 3.0;
+};
+
+DROGON_TEST(IsAutoCreationClassTest)
+{
+    CHECK(isAutoCreationClass<TestA>::value == false);
+    CHECK(isAutoCreationClass<TestC>::value == true);
+    CHECK(isAutoCreationClass<TestD>::value == false);
+    CHECK(isAutoCreationClass<TestE>::value == false);
+}
