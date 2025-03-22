@@ -1,5 +1,6 @@
 #include <drogon/DrObject.h>
 #include <drogon/drogon_test.h>
+#include <drogon/HttpController.h>
 
 using namespace drogon;
 
@@ -40,4 +41,46 @@ DROGON_TEST(DrObjectNamespaceTest)
     auto objPtr2 = DrClassMap::getSingleInstance<::test::TestB>();
     CHECK(objPtr2.get() != nullptr);
     CHECK(objPtr == objPtr2);
+}
+
+class TestC : public DrObject<TestC>
+{
+  public:
+    static constexpr bool isAutoCreation = true;
+};
+
+class TestD : public DrObject<TestD>
+{
+  public:
+    static constexpr bool isAutoCreation = false;
+};
+
+class TestE : public DrObject<TestE>
+{
+  public:
+    static constexpr double isAutoCreation = 3.0;
+};
+
+class CtrlA : public HttpController<CtrlA>
+{
+  public:
+    METHOD_LIST_BEGIN
+    METHOD_LIST_END
+};
+
+class CtrlB : public HttpController<CtrlB, false>
+{
+  public:
+    METHOD_LIST_BEGIN
+    METHOD_LIST_END
+};
+
+DROGON_TEST(IsAutoCreationClassTest)
+{
+    STATIC_REQUIRE(isAutoCreationClass<TestA>::value == false);
+    STATIC_REQUIRE(isAutoCreationClass<TestC>::value == true);
+    STATIC_REQUIRE(isAutoCreationClass<TestD>::value == false);
+    STATIC_REQUIRE(isAutoCreationClass<TestE>::value == false);
+    STATIC_REQUIRE(isAutoCreationClass<CtrlA>::value == true);
+    STATIC_REQUIRE(isAutoCreationClass<CtrlB>::value == false);
 }
