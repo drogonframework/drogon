@@ -62,8 +62,8 @@ class TestE : public DrObject<TestE>
 
 DROGON_TEST(IsAutoCreationClassTest)
 {
-    CHECK(isAutoCreationClass<TestA>::value == false);
-    CHECK(isAutoCreationClass<TestC>::value == true);
-    CHECK(isAutoCreationClass<TestD>::value == false);
-    CHECK(isAutoCreationClass<TestE>::value == false);
+    STATIC_REQUIRE(isAutoCreationClass<TestA>::value == false);
+    STATIC_REQUIRE(isAutoCreationClass<TestC>::value == true);
+    STATIC_REQUIRE(isAutoCreationClass<TestD>::value == false);
+    STATIC_REQUIRE(isAutoCreationClass<TestE>::value == false);
 }
