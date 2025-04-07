@@ -65,11 +65,14 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
                                   [](PGconn *conn) { PQfinish(conn); })),
       channel_(loop, PQsocket(connectionPtr_.get()))
 {
+    if (channel_.fd() < 0)
+    {
+        LOG_ERROR << "Failed to create Postgres connection";
+    }
 }
 
 void PgConnection::init()
 {
-    PQsetnonblocking(connectionPtr_.get(), 1);
     if (channel_.fd() < 0)
     {
         LOG_ERROR << "Connection with Postgres could not be established";
@@ -80,6 +83,8 @@ void PgConnection::init()
         }
         return;
     }
+
+    PQsetnonblocking(connectionPtr_.get(), 1);
     channel_.setReadCallback([this]() {
         if (status_ == ConnectStatus::Bad)
         {
@@ -142,8 +147,11 @@ void PgConnection::disconnect()
     auto thisPtr = shared_from_this();
     loop_->runInLoop([thisPtr, &pro]() {
         thisPtr->status_ = ConnectStatus::Bad;
-        thisPtr->channel_.disableAll();
-        thisPtr->channel_.remove();
+        if (thisPtr->channel_.fd() >= 0)
+        {
+            thisPtr->channel_.disableAll();
+            thisPtr->channel_.remove();
+        }
         thisPtr->connectionPtr_.reset();
         pro.set_value(1);
     });
@@ -400,7 +408,8 @@ void PgConnection::handleFatalError()
 {
     auto exceptPtr =
         std::make_exception_ptr(Failure(PQerrorMessage(connectionPtr_.get())));
-    exceptionCallback_(exceptPtr);
+    if (exceptionCallback_)
+        exceptionCallback_(exceptPtr);
     exceptionCallback_ = nullptr;
 }
 
