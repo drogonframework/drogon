@@ -121,6 +121,7 @@ endif()
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/lib/inc>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/nosql_lib/redis/inc>
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
@@ -510,7 +511,7 @@ execute_process(COMMAND "git" rev-parse HEAD
     OUTPUT_VARIABLE GIT_SHA1
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/version.h.in"
-    "${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h" @ONLY)
+    "${CMAKE_CURRENT_BINARY_DIR}/lib/inc/drogon/version.h" @ONLY)
 
 if (DROGON_CXX_STANDARD EQUAL 20)
     option(USE_COROUTINE "Enable C++20 coroutine support" ON)
@@ -583,7 +584,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/WebSocketConnection.h
     lib/inc/drogon/WebSocketController.h
     lib/inc/drogon/drogon.h
-    lib/inc/drogon/version.h
+    ${CMAKE_CURRENT_BINARY_DIR}/lib/inc/drogon/version.h
     lib/inc/drogon/drogon_callbacks.h
     lib/inc/drogon/PubSubService.h
     lib/inc/drogon/drogon_test.h
