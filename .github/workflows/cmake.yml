@@ -102,7 +102,6 @@ jobs:
 
       - name: Prepare for testing
         run: |
-          brew tap homebrew/services
           brew services restart postgresql@14
           brew services start mariadb
           brew services start redis
