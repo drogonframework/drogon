@@ -1,10 +1,11 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/drogon_test.h>
 #include <string>
+#include <string_view>
 
 DROGON_TEST(Base64)
 {
-    std::string in{"drogon framework"};
+    constexpr std::string_view in = "drogon framework";
     auto encoded = drogon::utils::base64Encode(in);
     auto decoded = drogon::utils::base64Decode(encoded);
     CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw==");
@@ -26,11 +27,29 @@ DROGON_TEST(Base64)
 
     SUBSECTION(Unpadded)
     {
-        std::string in{"drogon framework"};
         auto encoded = drogon::utils::base64EncodeUnpadded(in);
         auto decoded = drogon::utils::base64Decode(encoded);
         CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw");
         CHECK(decoded == in);
+    }
+
+    SUBSECTION(InPlace12)
+    {
+        constexpr std::string_view in = "base64encode";
+        std::string encoded(drogon::utils::base64EncodedLength(in.size()),
+                            '\0');
+        std::memcpy(encoded.data(), in.data(), in.size());
+        drogon::utils::base64Encode((const unsigned char *)encoded.data(),
+                                    in.size(),
+                                    (unsigned char *)encoded.data());
+        auto decoded = drogon::utils::base64Decode(encoded);
+        CHECK(encoded == "YmFzZTY0ZW5jb2Rl");
+        CHECK(decoded == in);
+
+        // In-place decoding
+        encoded.resize(drogon::utils::base64Decode(
+            encoded.data(), encoded.size(), (unsigned char *)encoded.data()));
+        CHECK(encoded == in);
     }
 
     SUBSECTION(LongString)
@@ -50,7 +69,6 @@ DROGON_TEST(Base64)
 
     SUBSECTION(URLSafe)
     {
-        std::string in{"drogon framework"};
         auto encoded = drogon::utils::base64Encode(in, true);
         auto decoded = drogon::utils::base64Decode(encoded);
         CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw==");
@@ -59,7 +77,6 @@ DROGON_TEST(Base64)
 
     SUBSECTION(UnpaddedURLSafe)
     {
-        std::string in{"drogon framework"};
         auto encoded = drogon::utils::base64EncodeUnpadded(in, true);
         auto decoded = drogon::utils::base64Decode(encoded);
         CHECK(encoded == "ZHJvZ29uIGZyYW1ld29yaw");
