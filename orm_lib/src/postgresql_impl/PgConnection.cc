@@ -136,7 +136,7 @@ void PgConnection::handleClosed()
 
     if (isWorking_)
     {
-        // Connection was closed unexpectedly during isWorking_ while were true.
+        // Connection was closed unexpectedly while isWorking_ were true.
         isWorking_ = false;
         handleFatalError();
         callback_ = nullptr;

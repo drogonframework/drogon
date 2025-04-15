@@ -118,7 +118,7 @@ class DbConnection : public trantor::NonCopyable
 
     virtual ~DbConnection()
     {
-        LOG_TRACE << "Destruct DbConn" << this;
+        LOG_TRACE << "Destruct DbConn " << this;
     }
 
     ConnectStatus status() const
