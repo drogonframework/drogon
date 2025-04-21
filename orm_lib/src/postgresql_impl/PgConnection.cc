@@ -133,6 +133,15 @@ void PgConnection::handleClosed()
     if (status_ == ConnectStatus::Bad)
         return;
     status_ = ConnectStatus::Bad;
+
+    if (isWorking_)
+    {
+        // Connection was closed unexpectedly while isWorking_ was true.
+        isWorking_ = false;
+        handleFatalError();
+        callback_ = nullptr;
+    }
+
     channel_.disableAll();
     channel_.remove();
     assert(closeCallback_);
@@ -406,10 +415,13 @@ void PgConnection::doAfterPreparing()
 
 void PgConnection::handleFatalError()
 {
-    auto exceptPtr =
-        std::make_exception_ptr(Failure(PQerrorMessage(connectionPtr_.get())));
     if (exceptionCallback_)
+    {
+        auto exceptPtr = std::make_exception_ptr(
+            Failure(PQerrorMessage(connectionPtr_.get())));
         exceptionCallback_(exceptPtr);
+    }
+
     exceptionCallback_ = nullptr;
 }
 
