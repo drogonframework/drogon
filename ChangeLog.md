@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- dg_ctl create models new command line option -o | --output
+
 ## [1.9.10] - 2025-02-20
 
 ### API changes list
