@@ -826,6 +826,7 @@ void create_model::createModel(const std::string &path,
     auto restfulApiConfig = config["restful_api_controllers"];
     auto relationships = getRelationships(config["relationships"]);
     auto convertMethods = getConvertMethods(config["convert"]);
+    drogon::utils::createPath(path);
     if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
@@ -1173,7 +1174,9 @@ void create_model::createModel(const std::string &path,
         try
         {
             infile >> configJsonRoot;
-            createModel(path, configJsonRoot, singleModelName);
+            createModel(outputPath_.empty() ? path : outputPath_,
+                        configJsonRoot,
+                        singleModelName);
         }
         catch (const std::exception &exception)
         {
@@ -1211,6 +1214,21 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
             break;
         }
     }
+    for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
+    {
+        auto &file = *iter;
+        if (file == "-o" || file == "--output")
+        {
+            iter = parameters.erase(iter);
+            if (iter != parameters.end())
+            {
+                outputPath_ = *iter;
+                iter = parameters.erase(iter);
+            }
+            continue;
+        }
+    }
+
     for (auto const &path : parameters)
     {
         createModel(path, singleModelName);
