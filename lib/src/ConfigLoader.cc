@@ -383,7 +383,7 @@ static void loadApp(const Json::Value &app)
     {
         drogon::app().setMaxConnectionNumPerIP(maxConnsPerIP);
     }
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     // dynamic views
     auto enableDynamicViews = app.get("load_dynamic_views", false).asBool();
     if (enableDynamicViews)

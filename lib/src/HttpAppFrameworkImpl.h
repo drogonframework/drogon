@@ -267,7 +267,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &setUploadPath(const std::string &uploadPath) override;
     HttpAppFramework &setFileTypes(
         const std::vector<std::string> &types) override;
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     HttpAppFramework &enableDynamicViewsLoading(
         const std::vector<std::string> &libPaths,
         const std::string &outputPath) override;
@@ -709,7 +709,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t threadNum_{1};
     std::unique_ptr<trantor::EventLoopThreadPool> ioLoopThreadPool_;
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     std::vector<std::string> libFilePaths_;
     std::string libFileOutputPath_;
     std::unique_ptr<SharedLibManager> sharedLibManagerPtr_;
