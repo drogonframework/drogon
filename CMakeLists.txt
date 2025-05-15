@@ -343,21 +343,21 @@ set(private_headers
     lib/src/ConfigAdapter.h
     lib/src/MultipartStreamParser.h)
 
-if (NOT WIN32)
+if (NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(DROGON_SOURCES
         ${DROGON_SOURCES}
         lib/src/SharedLibManager.cc)
     set(private_headers
         ${private_headers}
         lib/src/SharedLibManager.h)
-else (NOT WIN32)
+elseif(WIN32)
     set(DROGON_SOURCES
         ${DROGON_SOURCES}
         third_party/mman-win32/mman.c)
     set(private_headers
         ${private_headers}
         third_party/mman-win32/mman.h)
-endif (NOT WIN32)
+endif()
 
 if (BUILD_POSTGRESQL)
     # find postgres
