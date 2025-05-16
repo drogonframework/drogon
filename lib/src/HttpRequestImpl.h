@@ -579,6 +579,18 @@ class HttpRequestImpl : public HttpRequest
         return connPtr_;
     }
 
+    void setChunkCallback(
+        std::function<void(ResponseChunk)> cb) noexcept override
+    {
+        chunkCb_ = std::move(cb);
+    }
+
+    const std::function<void(ResponseChunk)> &getChunkCallback()
+        const noexcept override
+    {
+        return chunkCb_;
+    }
+
     bool isOnSecureConnection() const noexcept override
     {
         return isOnSecureConnection_;
@@ -731,6 +743,7 @@ class HttpRequestImpl : public HttpRequest
     std::exception_ptr streamExceptionPtr_;
     bool startProcessing_{false};
     std::weak_ptr<trantor::TcpConnection> connPtr_;
+    std::function<void(ResponseChunk)> chunkCb_;
 
   protected:
     std::string content_;
