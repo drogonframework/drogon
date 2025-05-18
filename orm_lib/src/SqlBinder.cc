@@ -259,7 +259,9 @@ SqlBinder &SqlBinder::operator<<(double f)
         parameters_.push_back((char *)(obj.get()));
         return *this;
     }
-    return operator<<(std::to_string(f));
+    std::stringstream ss;
+    ss << std::setprecision(17) << f;
+    return operator<<(ss.str());
 }
 
 SqlBinder &SqlBinder::operator<<(std::nullptr_t)
