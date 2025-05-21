@@ -214,6 +214,17 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
             (binder << std::forward<Arguments>(args), 0)...};
         return internal::SqlAwaiter(std::move(binder));
     }
+
+    template <typename T>
+    internal::SqlAwaiter execSqlCoro(const std::string &sql,
+                                     std::vector<T> &args) noexcept
+    {
+        auto binder = *this << sql;
+        for (const auto &arg : args) {
+            binder << arg;
+        }
+        return internal::SqlAwaiter(std::move(binder));
+    }
 #endif
 
     /// Streaming-like method for sql execution. For more information, see the
