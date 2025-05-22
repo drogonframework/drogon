@@ -217,7 +217,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
 
     template <typename T>
     internal::SqlAwaiter execSqlCoro(const std::string &sql,
-                                     std::vector<T> &args) noexcept
+                                     const std::vector<T> &args) noexcept
     {
         auto binder = *this << sql;
         for (const auto &arg : args) {
