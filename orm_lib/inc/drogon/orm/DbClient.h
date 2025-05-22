@@ -214,6 +214,28 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
             (binder << std::forward<Arguments>(args), 0)...};
         return internal::SqlAwaiter(std::move(binder));
     }
+
+    /**
+     * @brief Execute a SQL query asynchronously using coroutine support.
+     *        This overload accepts a vector of arguments to bind to the query.
+     * @tparam T The type of the elements in the vector.
+     * @param sql The SQL query string to execute.
+     * @param args A vector of arguments to bind to the query.
+     * @return A SqlAwaiter object that can be co_awaited to retrieve the query
+     * result.
+     * @note This method is only available when coroutine support is enabled.
+     */
+    template <typename T>
+    internal::SqlAwaiter execSqlCoro(const std::string &sql,
+                                     const std::vector<T> &args) noexcept
+    {
+        auto binder = *this << sql;
+        for (const auto &arg : args)
+        {
+            binder << arg;
+        }
+        return internal::SqlAwaiter(std::move(binder));
+    }
 #endif
 
     /// Streaming-like method for sql execution. For more information, see the
