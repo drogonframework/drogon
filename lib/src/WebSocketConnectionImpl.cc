@@ -275,7 +275,7 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         switch (opcode)
         {
             case 0:
-                // continuation frame
+                LOG_TRACE << "continuation frame";
                 break;
             case 1:
                 type_ = WebSocketMessageType::Text;
@@ -383,7 +383,16 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
                 if (isFin)
                     gotAll_ = true;
                 buffer->retrieve(indexFirstMask + 4 + length);
-                return true;
+                if (!isFin && buffer->readableBytes() >= 2)
+                {
+                    // Keep parsing if FIN was not reached but bytes are available still.
+                    // It might be a continuation frame.
+                    return parse(buffer);
+                }
+                else
+                {
+                    return true;
+                }
             }
         }
         else
