@@ -268,7 +268,7 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
 {
     // According to the rfc6455
     gotAll_ = false;
-    if (buffer->readableBytes() >= 2)
+    while (buffer->readableBytes() >= 2)
     {
         unsigned char opcode = (*buffer)[0] & 0x0f;
         bool isControlFrame = false;
@@ -380,17 +380,10 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
                 {
                     message_[oldLen + i] = (rawData[i] ^ masks[i % 4]);
                 }
-                if (isFin)
-                    gotAll_ = true;
                 buffer->retrieve(indexFirstMask + 4 + length);
-                if (!isFin && buffer->readableBytes() >= 2)
+                if (isFin)
                 {
-                    // Keep parsing if FIN was not reached but bytes are available still.
-                    // It might be a continuation frame.
-                    return parse(buffer);
-                }
-                else
-                {
+                    gotAll_ = true;
                     return true;
                 }
             }
@@ -401,10 +394,12 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             {
                 auto rawData = buffer->peek() + indexFirstMask;
                 message_.append(rawData, length);
+                buffer->retrieve(indexFirstMask + 4 + length);
                 if (isFin)
+                {
                     gotAll_ = true;
-                buffer->retrieve(indexFirstMask + length);
-                return true;
+                    return true;
+                }
             }
         }
     }
