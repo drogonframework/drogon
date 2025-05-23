@@ -394,7 +394,7 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             {
                 auto rawData = buffer->peek() + indexFirstMask;
                 message_.append(rawData, length);
-                buffer->retrieve(indexFirstMask + 4 + length);
+                buffer->retrieve(indexFirstMask + length);
                 if (isFin)
                 {
                     gotAll_ = true;
