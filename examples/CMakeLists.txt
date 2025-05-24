@@ -34,6 +34,8 @@ add_executable(redis_chat redis_chat/main.cc
 add_executable(async_stream async_stream/main.cc
                             async_stream/RequestStreamExampleCtrl.cc)
 
+add_executable(cors cors/main.cc)
+
 set(example_targets
     benchmark
     client
@@ -45,7 +47,8 @@ set(example_targets
     jsonstore
     redis_simple
     redis_chat
-    async_stream)
+    async_stream
+    cors)
 
 # Add warnings for our example targets--some warnings (such as -Wunused-parameter) only appear
 # when the templated functions are instantiated at their point of use.
