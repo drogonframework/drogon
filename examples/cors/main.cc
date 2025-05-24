@@ -84,14 +84,14 @@ void setupCors()
  *  You can test with curl to test the CORS support:
  * 
 ```
-    curl -i -X OPTIONS http://localhost:8080/echo \
+    curl -i -X OPTIONS http://localhost:8000/echo \
         -H "Origin: http://localhost:3000" \
         -H "Access-Control-Request-Method: POST" \
         -H "Access-Control-Request-Headers: Content-Type"
 ```
 or
 ```
-    curl -i -X POST http://localhost:8080/echo \
+    curl -i -X POST http://localhost:8000/echo \
         -H "Origin: http://localhost:3000" \
         -H "Content-Type: application/json" \
         -d '{"key":"value"}'
