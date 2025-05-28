@@ -245,3 +245,32 @@ DROGON_TEST(Mutex)
         pool.getLoop(i)->quit();
     pool.wait();
 }
+
+DROGON_TEST(SpinLock)
+{
+    trantor::EventLoopThreadPool pool{3};
+    pool.start();
+    SpinLock spin_lock;
+    async_run([&]() -> Task<> {
+        co_await switchThreadCoro(pool.getLoop(0));
+        auto guard = co_await spin_lock.scoped_lock();
+        co_await sleepCoro(pool.getLoop(1), std::chrono::seconds(2));
+        co_return;
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::promise<void> done;
+    async_run([&]() -> Task<> {
+        co_await switchThreadCoro(pool.getLoop(2));
+        auto id = std::this_thread::get_id();
+        co_await spin_lock.coro_lock();
+        CHECK(id == std::this_thread::get_id());
+        spin_lock.unlock();
+        CHECK(id == std::this_thread::get_id());
+        done.set_value();
+        co_return;
+    });
+    done.get_future().wait();
+    for (int16_t i = 0; i < 3; i++)
+        pool.getLoop(i)->quit();
+    pool.wait();
+}
