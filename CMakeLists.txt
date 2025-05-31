@@ -188,7 +188,7 @@ endif()
 
 # jsoncpp
 find_package(Jsoncpp REQUIRED)
-target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
+target_link_libraries(${PROJECT_NAME} PUBLIC JsonCpp::JsonCpp)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
 # yamlcpp
