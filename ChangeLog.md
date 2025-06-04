@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+
+### Fixed
+
+- dg_ctl fix segfault when create models is called with --output
+
 ### Added
 
 - dg_ctl create models new command line option -o | --output

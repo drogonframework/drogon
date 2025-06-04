@@ -1214,7 +1214,7 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
             break;
         }
     }
-    for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
+    for (auto iter = parameters.begin(); iter != parameters.end();)
     {
         auto &file = *iter;
         if (file == "-o" || file == "--output")
@@ -1227,6 +1227,7 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
             }
             continue;
         }
+        ++iter;
     }
 
     for (auto const &path : parameters)
