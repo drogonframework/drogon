@@ -19,6 +19,7 @@
 #include <functional>
 #include <memory>
 #include <utility>
+#include <unordered_map>
 #include "AOPAdvice.h"
 #include "MiddlewaresFunction.h"
 #include "HttpAppFrameworkImpl.h"
@@ -165,6 +166,15 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
     }
 
     auto &requests = requestParser->getRequestBuffer();
+    requests.reserve(8);  // 预分配空间，减少动态扩容
+
+    // 缓存连接相关信息，避免重复获取
+    const auto &peerAddr = conn->peerAddr();
+    const auto &localAddr = conn->localAddr();
+    const auto creationDate = trantor::Date::date();
+    const bool isSSL = conn->isSSLConnection();
+    const auto peerCert = conn->peerCertificate();
+
     // With the pipelining feature or web socket, it is possible to receive
     // multiple messages at once, so the while loop is necessary
     while (buf->readableBytes() > 0)
@@ -200,10 +210,21 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 // through conn. (This response won't go through pre-sending
                 // aop, maybe we should change this behavior).
                 auto code = static_cast<HttpStatusCode>(-parseRes);
-                conn->send(utils::formattedString(
-                    "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
-                    code,
-                    statusCodeToString(code).data()));
+
+                // 使用预构建的错误响应模板，避免重复字符串格式化
+                static thread_local std::unordered_map<int, std::string>
+                    errorResponseCache;
+                auto it = errorResponseCache.find(code);
+                if (it == errorResponseCache.end())
+                {
+                    auto response = utils::formattedString(
+                        "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
+                        code,
+                        statusCodeToString(code).data());
+                    it = errorResponseCache.emplace(code, std::move(response))
+                             .first;
+                }
+                conn->send(it->second);
             }
             buf->retrieveAll();
             // NOTE: should we call conn->forceClose() instead?
@@ -221,11 +242,12 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         }
         if (parseRes >= 2 || parseRes == 1 && !req->isStreamMode())
         {
-            req->setPeerAddr(conn->peerAddr());
-            req->setLocalAddr(conn->localAddr());
-            req->setCreationDate(trantor::Date::date());
-            req->setSecure(conn->isSSLConnection());
-            req->setPeerCertificate(conn->peerCertificate());
+            // 使用缓存的连接信息，避免重复调用
+            req->setPeerAddr(peerAddr);
+            req->setLocalAddr(localAddr);
+            req->setCreationDate(creationDate);
+            req->setSecure(isSSL);
+            req->setPeerCertificate(peerCert);
             req->setConnectionPtr(conn);
             // TODO: maybe call onRequests() directly in stream mode
             requests.push_back(req);
@@ -1140,22 +1162,49 @@ static inline bool isWebSocket(const HttpRequestImplPtr &req)
         return false;
 
     auto &headers = req->headers();
-    if (headers.find("upgrade") == headers.end() ||
-        headers.find("connection") == headers.end())
+    auto upgradeIt = headers.find("upgrade");
+    auto connectionIt = headers.find("connection");
+    if (upgradeIt == headers.end() || connectionIt == headers.end())
         return false;
 
-    auto connectionField = req->getHeaderBy("connection");
-    std::transform(connectionField.begin(),
-                   connectionField.end(),
-                   connectionField.begin(),
-                   [](unsigned char c) { return tolower(c); });
-    auto upgradeField = req->getHeaderBy("upgrade");
-    std::transform(upgradeField.begin(),
-                   upgradeField.end(),
-                   upgradeField.begin(),
-                   [](unsigned char c) { return tolower(c); });
-    if (connectionField.find("upgrade") != std::string::npos &&
-        upgradeField == "websocket")
+    // 使用 case-insensitive 比较，避免字符串拷贝和转换
+    const auto &connectionField = connectionIt->second;
+    const auto &upgradeField = upgradeIt->second;
+
+    // 使用更高效的字符串比较
+    auto toLowerCompare = [](const std::string &str, const char *target) {
+        if (str.length() != strlen(target))
+            return false;
+        for (size_t i = 0; i < str.length(); ++i)
+        {
+            if (tolower(str[i]) != target[i])
+                return false;
+        }
+        return true;
+    };
+
+    auto findCaseInsensitive = [](const std::string &haystack,
+                                  const char *needle) {
+        const size_t needleLen = strlen(needle);
+        for (size_t i = 0; i <= haystack.length() - needleLen; ++i)
+        {
+            bool match = true;
+            for (size_t j = 0; j < needleLen; ++j)
+            {
+                if (tolower(haystack[i + j]) != needle[j])
+                {
+                    match = false;
+                    break;
+                }
+            }
+            if (match)
+                return true;
+        }
+        return false;
+    };
+
+    if (findCaseInsensitive(connectionField, "upgrade") &&
+        toLowerCompare(upgradeField, "websocket"))
     {
         LOG_TRACE << "new websocket request";
         return true;
@@ -1241,9 +1290,13 @@ static inline HttpResponsePtr getCompressedResponse(
     {
         return response;
     }
+
+    // 缓存 accept-encoding 头，避免重复查找
+    const auto &acceptEncoding = req->getHeaderBy("accept-encoding");
+
 #ifdef USE_BROTLI
     if (app().isBrotliEnabled() &&
-        req->getHeaderBy("accept-encoding").find("br") != std::string::npos)
+        acceptEncoding.find("br") != std::string::npos)
     {
         auto newResp = response;
         auto strCompress =
@@ -1269,7 +1322,7 @@ static inline HttpResponsePtr getCompressedResponse(
     }
 #endif
     if (app().isGzipEnabled() &&
-        req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos)
+        acceptEncoding.find("gzip") != std::string::npos)
     {
         auto newResp = response;
         auto strCompress =
