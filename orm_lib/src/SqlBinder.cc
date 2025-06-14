@@ -137,6 +137,26 @@ SqlBinder::~SqlBinder()
     }
 }
 
+SqlBinder &SqlBinder::operator<<(const RawParameter &param)
+{
+    objs_.push_back(param.obj);
+    parameters_.push_back(param.parameter);
+    lengths_.push_back(param.length);
+    formats_.push_back(param.format);
+    ++parametersNumber_;
+    return *this;
+}
+
+SqlBinder &SqlBinder::operator<<(RawParameter &&param)
+{
+    objs_.push_back(std::move(param.obj));
+    parameters_.push_back(std::move(param.parameter));
+    lengths_.push_back(std::move(param.length));
+    formats_.push_back(std::move(param.format));
+    ++parametersNumber_;
+    return *this;
+}
+
 SqlBinder &SqlBinder::operator<<(const std::string_view &str)
 {
     auto obj = std::make_shared<std::string>(str.data(), str.length());
