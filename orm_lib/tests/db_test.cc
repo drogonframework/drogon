@@ -3317,7 +3317,8 @@ DROGON_TEST(SQLite3Test)
     }
     catch (const DrogonDbException &e)
     {
-        FAULT("sqlite3 - DbClient future interface(4) what():", e.base().what());
+        FAULT("sqlite3 - DbClient future interface(4) what():",
+              e.base().what());
     }
     /// 4.6 clean up
     f = clientPtr->execSqlAsyncFuture("delete from users");
