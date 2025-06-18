@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cassert>
+#include <chrono>
 #include <condition_variable>
 #include <coroutine>
 #include <exception>
@@ -985,6 +986,71 @@ class Mutex final
 
     std::atomic<void *> state_;
     CoroMutexAwaiter *waiters_;
+};
+
+class SpinLock final
+{
+  public:
+    explicit SpinLock(std::int32_t count = 1024) noexcept
+        : spinCount_(count), locked_(false)
+    {
+    }
+
+    bool try_lock() noexcept
+    {
+        return !locked_.exchange(true, std::memory_order_acquire);
+    }
+
+    Task<> coro_lock() noexcept
+    {
+        auto counter = spinCount_;
+        while (!try_lock())
+        {
+            while (locked_.load(std::memory_order_relaxed))
+            {
+                if (counter-- <= 0)
+                {
+                    trantor::EventLoop *loop =
+                        trantor::EventLoop::getEventLoopOfCurrentThread();
+                    assert(loop != nullptr);
+                    co_await sleepCoro(loop, std::chrono::milliseconds(1));
+                    counter = spinCount_;
+                }
+            }
+        }
+        co_return;
+    }
+
+    void lock() noexcept
+    {
+        auto counter = spinCount_;
+        while (!try_lock())
+        {
+            while (locked_.load(std::memory_order_relaxed))
+            {
+                if (counter-- <= 0)
+                {
+                    std::this_thread::yield();
+                    counter = spinCount_;
+                }
+            }
+        }
+    }
+
+    void unlock() noexcept
+    {
+        locked_.store(false, std::memory_order_release);
+    }
+
+    Task<std::unique_lock<SpinLock>> scoped_lock() noexcept
+    {
+        co_await coro_lock();
+        co_return std::unique_lock<SpinLock>{*this, std::adopt_lock};
+    }
+
+  private:
+    int32_t spinCount_;
+    std::atomic_bool locked_;
 };
 
 }  // namespace drogon
