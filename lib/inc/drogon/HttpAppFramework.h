@@ -44,7 +44,7 @@
 #include <chrono>
 
 #if defined(__APPLE__) && defined(__MACH__) && \
-    (defined(__ENVIRONMENT_IPHONE_OS__) || \
+    (defined(__ENVIRONMENT_IPHONE_OS__) ||     \
      defined(__IPHONE_OS_VERSION_MIN_REQUIRED))
 // iOS
 #define TARGET_OS_IOS 1
