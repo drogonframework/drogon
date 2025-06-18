@@ -43,14 +43,14 @@
 #include <vector>
 #include <chrono>
 
-#if defined(__APPLE__) && defined(__MACH__)
-#if defined(__ENVIRONMENT_IPHONE_OS__) || \
-    defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
+#if defined(__APPLE__) && defined(__MACH__) && \
+    (defined(__ENVIRONMENT_IPHONE_OS__) || \
+     defined(__IPHONE_OS_VERSION_MIN_REQUIRED))
 // iOS
 #define TARGET_OS_IOS 1
-#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
-// macOS
-#endif
+#else
+// not iOS
+#define TARGET_OS_IOS 0
 #endif
 
 namespace drogon
