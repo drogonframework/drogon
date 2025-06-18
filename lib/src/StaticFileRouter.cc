@@ -44,7 +44,7 @@ void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
                    size_t i) {
             assert(i == ioLoops[i]->index());
             mapPtr = std::make_unique<CacheMap<std::string, char>>(ioLoops[i],
-                                                                   1.0,
+                                                                   1.0f,
                                                                    4,
                                                                    50);
         });
