@@ -17,7 +17,7 @@ env:
 jobs:
   windows:
     name: windows/msvc - ${{ matrix.link }}
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -44,9 +44,6 @@ jobs:
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
-        # For unknown reasons, we fail to create file in windows ci environment.
-        # So examples, drogon_ctl and integration tests can not be built in windows ci.
-        # We should try to enable them again in the future.
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
           cmake ..                                         \
@@ -54,8 +51,8 @@ jobs:
             -DBUILD_TESTING=on                             \
             -DBUILD_SHARED_LIBS=$shared                    \
             -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
-            -DBUILD_CTL=OFF                                \
-            -DBUILD_EXAMPLES=OFF                           \
+            -DBUILD_CTL=ON                                 \
+            -DBUILD_EXAMPLES=ON                            \
             -DUSE_SPDLOG=ON                                \
             -DCMAKE_INSTALL_PREFIX=../install              \
             -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             \
