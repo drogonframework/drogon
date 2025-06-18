@@ -17,7 +17,7 @@ env:
 jobs:
   windows:
     name: windows/msvc - ${{ matrix.link }}
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
