@@ -4,14 +4,42 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.11] - 2025-06-20
+
+### API changes list
+
+- Add a new overload for execSqlCoro.
+
+### Changed
+
+- Do not write to source directory during build.
+
+- Improve Postgres connection stability.
+
+- Add handleFatalError in handleClosed.
+
+- Add -o|--output option to drogon_ctl create models.
+
+- Add qrcode for WeChat official account to the README file.
+
+- Support for iOS compiling.
+
+- Add cors example to demonstrate cross-origin support in drogon.
+
+- Add support for continuation frame in WebSocketMessageParser.
+
+- Add RawParameter API to pass raw SQL parameters.
+
+- Upgrade Windows image and re-enable tests on Windows.
 
 ### Fixed
 
-- dg_ctl fix segfault when create models is called with --output
+- Fix a bug in isAutoCreationClass<T>.
 
-### Added
+- Fix CI on MacOS.
 
-- dg_ctl create models new command line option -o | --output
+- Fix issue with precision loss of double-type parameters in ORM inputs.
+
 
 ## [1.9.10] - 2025-02-20
 
@@ -1814,7 +1842,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.10...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.11...HEAD
+
+[1.9.11]: https://github.com/an-tao/drogon/compare/v1.9.10...v1.9.11
 
 [1.9.10]: https://github.com/an-tao/drogon/compare/v1.9.9...v1.9.10
 
