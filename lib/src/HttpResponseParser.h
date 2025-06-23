@@ -15,9 +15,11 @@
 #pragma once
 
 #include "impl_forwards.h"
+#include <drogon/HttpRequest.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <functional>
 #include <list>
 #include <mutex>
 
@@ -43,7 +45,10 @@ class HttpResponseParser : public trantor::NonCopyable
     // default copy-ctor, dtor and assignment are fine
 
     // return false if any error
-    bool parseResponse(trantor::MsgBuffer *buf);
+    bool parseResponse(
+        trantor::MsgBuffer *buf,
+        const std::function<void(ResponseChunk)> &chunkCallback = nullptr);
+
     bool parseResponseOnClose();
 
     bool gotAll() const
