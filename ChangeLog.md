@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+
+### Changed
+
+- Add toString method to all models
+
 ## [1.9.11] - 2025-06-20
 
 ### API changes list
