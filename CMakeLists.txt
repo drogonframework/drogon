@@ -20,6 +20,9 @@ CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUIL
 CMAKE_DEPENDENT_OPTION(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON "BUILD_POSTGRESQL" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_MYSQL "Build with mysql support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" OFF)
+# Add DuckDB support
+CMAKE_DEPENDENT_OPTION(BUILD_DUCKDB "Build with duckdb support" ON "BUILD_ORM" OFF)
+
 CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "USE_SUBMODULE" OFF)
 
@@ -460,6 +463,47 @@ if (BUILD_SQLITE)
         message(STATUS "sqlite3 was not found.")
     endif (DROGON_FOUND_SQLite3)
 endif (BUILD_SQLITE)
+
+# Add DuckDB support
+if (BUILD_DUCKDB)
+    # Find DuckDB library
+    find_package(DuckDB QUIET)
+    if(NOT DuckDB_FOUND)
+        # Try to find DuckDB manually
+        find_library(DUCKDB_LIBRARY
+            NAMES duckdb
+            PATHS /usr/lib /usr/local/lib /opt/homebrew/lib
+        )
+        find_path(DUCKDB_INCLUDE_DIR
+            NAMES duckdb.h
+            PATHS /usr/include /usr/local/include /opt/homebrew/include
+        )
+        
+        if(DUCKDB_LIBRARY AND DUCKDB_INCLUDE_DIR)
+            set(DuckDB_LIBRARIES ${DUCKDB_LIBRARY})
+            set(DuckDB_INCLUDE_DIRS ${DUCKDB_INCLUDE_DIR})
+            set(DuckDB_FOUND TRUE)
+        endif()
+    endif()
+
+    if (DuckDB_FOUND)
+        message(STATUS "Ok! We find DuckDB!")
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${DuckDB_LIBRARIES})
+        target_include_directories(${PROJECT_NAME} PRIVATE ${DuckDB_INCLUDE_DIRS})
+        add_subdirectory(orm_lib/src/duckdb_wrapper_impl/sqlite3_api_wrapper)
+        set(DROGON_FOUND_DUCKDB TRUE)
+        # 链接duckdb_wrapper_impl/sqlite3_api_wrapper的对象文件
+        target_sources(${PROJECT_NAME} PRIVATE ${ALL_OBJECT_FILES})
+        # set(DROGON_SOURCES ...)
+        # set(private_headers ...)
+    else (DuckDB_FOUND)
+        message(STATUS "DuckDB was not found.")
+        set(DROGON_FOUND_DUCKDB FALSE)
+    endif (DuckDB_FOUND)
+else (BUILD_DUCKDB)
+    set(DROGON_FOUND_DUCKDB FALSE)
+endif (BUILD_DUCKDB)
+
 
 if (BUILD_REDIS)
     find_package(Hiredis)
