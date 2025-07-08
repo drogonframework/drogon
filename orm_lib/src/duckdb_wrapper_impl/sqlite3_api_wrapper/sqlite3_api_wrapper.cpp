@@ -30,6 +30,16 @@
 #include <thread>
 #include <time.h>
 
+#ifndef DUCKDB_UNSIGNED_EXTENSIONS
+#define DUCKDB_UNSIGNED_EXTENSIONS 0
+#endif
+#ifndef DUCKDB_UNREDACTED_SECRETS
+#define DUCKDB_UNREDACTED_SECRETS 0
+#endif
+#ifndef DUCKDB_LATEST_STORAGE_VERSION
+#define DUCKDB_LATEST_STORAGE_VERSION 0
+#endif
+
 using namespace duckdb;
 using namespace std;
 
