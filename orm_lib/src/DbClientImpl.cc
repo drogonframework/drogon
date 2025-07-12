@@ -26,6 +26,9 @@
 #if USE_SQLITE3
 #include "sqlite3_impl/Sqlite3Connection.h"
 #endif
+#if USE_DUCKDB
+#include "duckdb_wrapper_impl/DuckdbConnection.h"
+#endif
 #include "TransactionImpl.h"
 #include <drogon/drogon.h>
 #include <drogon/orm/DbClient.h>
@@ -59,7 +62,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
 #if LIBPQ_SUPPORTS_BATCH_MODE
       autoBatch_(autoBatch),
 #endif
-      loops_(type == ClientType::Sqlite3
+      loops_(type == ClientType::Sqlite3 || type == ClientType::DuckDB
                  ? 1
                  : (connNum < std::thread::hardware_concurrency()
                         ? connNum
@@ -84,7 +87,7 @@ void DbClientImpl::init()
             loop->runInLoop([this, loop]() { newConnection(loop); });
         }
     }
-    else if (type_ == ClientType::Sqlite3)
+    else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         sharedMutexPtr_ = std::make_shared<SharedMutex>();
         assert(sharedMutexPtr_);
@@ -126,6 +129,19 @@ void DbClientImpl::execSql(
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
+    // 打印参数信息 dq 2025-07-01
+    if (!(paraNum == parameters.size() && paraNum == length.size() && paraNum == format.size())) {
+        std::cerr << "[DEBUG][DbClientImpl] paraNum=" << paraNum
+                  << ", parameters.size()=" << parameters.size()
+                  << ", length.size()=" << length.size()
+                  << ", format.size()=" << format.size() << std::endl;
+        for (size_t i = 0; i < parameters.size(); ++i) {
+            std::cerr << "  param[" << i << "]: ptr=" << (void*)parameters[i];
+            if (parameters[i]) std::cerr << ", str='" << parameters[i] << "'";
+            std::cerr << ", len=" << (length.size() > i ? length[i] : -1)
+                      << ", fmt=" << (format.size() > i ? format[i] : -1) << std::endl;
+        }
+    }
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
     assert(paraNum == format.size());
@@ -408,6 +424,16 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
         return nullptr;
 #endif
     }
+    else if (type_ == ClientType::DuckDB)
+    {
+#if USE_DUCKDB
+        connPtr = std::make_shared<DuckdbConnection>(loop,
+                                                     connectionInfo_,
+                                                     sharedMutexPtr_);
+#else
+        return nullptr;
+#endif
+    }
     else
     {
         return nullptr;
@@ -429,8 +455,6 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
         }
         // Reconnect after 1 second
         auto loop = closeConnPtr->loop();
-        // closeConnPtr may be not valid. Close the connection file descriptor.
-        closeConnPtr->disconnect();
         loop->runAfter(1, [weakPtr, loop, closeConnPtr] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)

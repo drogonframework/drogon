@@ -1,6 +1,7 @@
 #采用DcukDb的sqltie兼容接口的实现
 # 于 2025-7-3 添加与沙特吉达
 嵌入DuckDB的[sqlite3_api_wrapper](https://github.com/weidqi/duckdb/tree/main/tools/sqlite3_api_wrapper)的官方实现代码,然后像连接SQLite一样连接DuckDB.这适用于SQLITE的既有用户,但无法获得DUCKDB的全部特性.
+
 ## 1 嵌入代码
 由于Drogon同时使用了sqlite3,因此采用调用外部动态库的十分容易造成混淆`sqlite3.h`
 1. 修改主cmakelist,引入DuckDB标准库

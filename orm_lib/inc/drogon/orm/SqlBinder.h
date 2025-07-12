@@ -92,7 +92,8 @@ enum class ClientType
 {
     PostgreSQL = 0,
     Mysql,
-    Sqlite3
+    Sqlite3,
+    DuckDB
 };
 
 enum Sqlite3Type

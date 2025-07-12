@@ -496,6 +496,16 @@ if (BUILD_DUCKDB)
         target_sources(${PROJECT_NAME} PRIVATE ${ALL_OBJECT_FILES})
         # set(DROGON_SOURCES ...)
         # set(private_headers ...)
+        #include_directories(orm_lib/src/duckdb_wrapper_impl/inc)
+        set(DROGON_SOURCES
+            ${DROGON_SOURCES}
+            orm_lib/src/duckdb_wrapper_impl/DuckdbConnection.cc
+            orm_lib/src/duckdb_wrapper_impl/DuckdbResultImpl.cc)
+        set(private_headers
+            ${private_headers}
+            #orm_lib/src/duckdb_wrapper_impl/sqlite3_api_wrapper/inc/sqlite3_duck.h
+            orm_lib/src/duckdb_wrapper_impl/DuckdbConnection.h
+            orm_lib/src/duckdb_wrapper_impl/DuckdbResultImpl.h)
     else (DuckDB_FOUND)
         message(STATUS "DuckDB was not found.")
         set(DROGON_FOUND_DUCKDB FALSE)
@@ -657,7 +667,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Drogon)
 
-if (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
+# 'OR DROGON_FOUND_DUCKDB' add by dq 
+if (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3 OR DROGON_FOUND_DUCKDB) 
     if (pg_FOUND)
         option(USE_POSTGRESQL "Enable PostgreSQL" ON)
     else (pg_FOUND)
@@ -675,7 +686,15 @@ if (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
     else (DROGON_FOUND_SQLite3)
         option(USE_SQLITE3 "Disable Sqlite3" OFF)
     endif (DROGON_FOUND_SQLite3)
-endif (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
+    # add by dq
+    if (DROGON_FOUND_DUCKDB)
+        message(STATUS "DuckDB was found.")
+        option(USE_DUCKDB "Enable DuckDB" ON)
+    else (DROGON_FOUND_DUCKDB)
+        message(STATUS "DuckDB was not found.")
+        option(USE_DUCKDB "Disable DuckDB" OFF)
+    endif (DROGON_FOUND_DUCKDB)
+endif (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3 OR DROGON_FOUND_DUCKDB)
 
 get_filename_component(COMPILER_COMMAND ${CMAKE_CXX_COMPILER} NAME)
 set(COMPILER_ID ${CMAKE_CXX_COMPILER_ID})
@@ -719,6 +738,10 @@ if (BUILD_TESTING)
     if (DROGON_FOUND_SQLite3)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
     endif (DROGON_FOUND_SQLite3)
+    # Add DuckDB test 
+    if (DROGON_FOUND_DUCKDB)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/duckdb_wrapper_impl/test)
+    endif (DROGON_FOUND_DUCKDB)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
 endif (BUILD_TESTING)
 
