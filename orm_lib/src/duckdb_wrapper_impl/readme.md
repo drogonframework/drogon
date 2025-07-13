@@ -55,3 +55,16 @@ endif (BUILD_DUCKDB)
 
 ```
 2. 该实现依赖第三方库`utf8proc`,需引入,嵌入?
+
+3. SqlBinder.h, SqlBinder.cc的改动
+首先ClientTpye增加一个值:
+```
+enum class ClientType
+{
+    ...
+    DuckDB
+};
+```
+其次,在所有:
+`if (type_ == ClientType::Sqlite3)`的地方改为:
+`if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)`

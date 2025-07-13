@@ -67,42 +67,44 @@ int main(int argc, char *argv[])
     
     client->execSqlAsync("INSERT INTO test_table VALUES (1, 'test1'), (2, 'test2')",
                         [](const Result &result) {
-                            std::cout << "Data inserted successfully" << std::endl;
+                            LOG_INFO << "Data inserted successfully";
                         },
                         [](const std::exception_ptr &e) {
                             std::cout << "Failed to insert data" << std::endl;
                         });
     
-    client->execSqlAsync("SELECT * FROM test_table",
+    
+    client->execSqlAsync("SELECT * FROM test_table WHERE id = ?",
                         [](const Result &result) {
-                            std::cout << "Query executed successfully" << std::endl;
-                            std::cout << "Rows: " << result.size() << std::endl;
+                            LOG_INFO << "Query executed successfully" ;
+                            LOG_INFO << "Rows: " << result.size();
                             for (auto const &row : result)
                             {
-                                std::cout << "ID: " << row[0].as<int>() 
-                                         << ", Name: " << row[1].as<std::string>() << std::endl;
+                                LOG_INFO << "ID: " << row[0].as<int>() 
+                                         << ", Name: " << row[1].as<std::string>();
                             }
-                            app().quit();
+                            //app().quit();
                         },
                         [](const std::exception_ptr &e) {
                             std::cout << "Failed to query data" << std::endl;
-                            app().quit();
+                        }, 1);
+    
+    //Test JSON column
+    
+    std::cout << "Running Test JSON column." << std::endl;
+    client->execSqlAsync("CREATE TABLE IF NOT EXISTS test_json1 (id INTEGER, data JSON)",
+                        [](const Result &result) {
+                            std::cout << "JSON table created successfully" << std::endl;
+                        },
+                        [](const std::exception_ptr &e) {
+                            std::cout << "Failed to create JSON table" << std::endl;
                         });
-    
-    // Test JSON column
-    // client->execSqlAsync("CREATE TABLE IF NOT EXISTS test_json1 (id INTEGER, data JSON)",
-    //                     [](const Result &result) {
-    //                         std::cout << "JSON table created successfully" << std::endl;
-    //                     },
-    //                     [](const std::exception_ptr &e) {
-    //                         std::cout << "Failed to create JSON table" << std::endl;
-    //                     });
-
+    //std::cout << "Running Test JSON column." << std::endl;
+    std::cout << "JSON table created successfully" << std::endl;
     // 使用 SqlBinder 显式绑定参数插入 JSON
-    
     {
         auto binder = (*client) << "INSERT INTO test_json1 VALUES (?, ?)";
-        binder << std::string("1") << std::string(R"({\"name\": \"Alice\", \"age\": 30})");
+        binder << 1 << std::string(R"({\"name\": \"Alice\", \"age\": 30})");
         binder >> [](const Result &result) {
             std::cout << "JSON data inserted successfully" << std::endl;
         };
@@ -111,6 +113,8 @@ int main(int argc, char *argv[])
         };
         binder.exec();
     }
+
+    std::cout << " insert JSON data done. " << std::endl;
 
     client->execSqlAsync("SELECT id, data FROM test_json1",
                         [](const Result &result) {
@@ -125,6 +129,8 @@ int main(int argc, char *argv[])
                             std::cout << "Failed to select JSON data" << std::endl;
                         });
     
+    
     app().run();
+    app().quit();
     return 0;
-} 
+}

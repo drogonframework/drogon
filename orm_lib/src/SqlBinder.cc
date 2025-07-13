@@ -172,7 +172,7 @@ SqlBinder &SqlBinder::operator<<(const std::string_view &str)
     {
         formats_.push_back(MySqlString);
     }
-    else if (type_ == ClientType::Sqlite3)
+    else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         formats_.push_back(Sqlite3TypeText);
     }
@@ -194,7 +194,7 @@ SqlBinder &SqlBinder::operator<<(const std::string &str)
     {
         formats_.push_back(MySqlString);
     }
-    else if (type_ == ClientType::Sqlite3)
+    else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         formats_.push_back(Sqlite3TypeText);
     }
@@ -217,7 +217,7 @@ SqlBinder &SqlBinder::operator<<(std::string &&str)
     {
         formats_.push_back(MySqlString);
     }
-    else if (type_ == ClientType::Sqlite3)
+    else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         formats_.push_back(Sqlite3TypeText);
     }
@@ -240,7 +240,7 @@ SqlBinder &SqlBinder::operator<<(const std::vector<char> &v)
     {
         formats_.push_back(MySqlString);
     }
-    else if (type_ == ClientType::Sqlite3)
+    else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         formats_.push_back(Sqlite3TypeBlob);
     }
@@ -263,7 +263,7 @@ SqlBinder &SqlBinder::operator<<(std::vector<char> &&v)
     {
         formats_.push_back(MySqlString);
     }
-    else if (type_ == ClientType::Sqlite3)
+    else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         formats_.push_back(Sqlite3TypeBlob);
     }
@@ -272,7 +272,7 @@ SqlBinder &SqlBinder::operator<<(std::vector<char> &&v)
 
 SqlBinder &SqlBinder::operator<<(double f)
 {
-    if (type_ == ClientType::Sqlite3)
+    if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         ++parametersNumber_;
         auto obj = std::make_shared<double>(f);
@@ -305,7 +305,7 @@ SqlBinder &SqlBinder::operator<<(std::nullptr_t)
     {
         formats_.push_back(MySqlNull);
     }
-    else if (type_ == ClientType::Sqlite3)
+    else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         formats_.push_back(Sqlite3TypeNull);
     }
@@ -347,7 +347,7 @@ SqlBinder &SqlBinder::operator<<(DefaultValue dv)
         lengths_.push_back(0);
         formats_.push_back(DrogonDefaultValue);
     }
-    else if (type_ == ClientType::Sqlite3)
+    else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)
     {
         LOG_FATAL << "default not supported in sqlite3";
         exit(1);
