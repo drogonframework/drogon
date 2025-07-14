@@ -433,7 +433,14 @@ void MysqlConnection::execSqlInLoop(
     assert(rcb);
     assert(!isWorking_);
     assert(!sql.empty());
-
+    if (status_ != ConnectStatus::Ok)
+    {
+        LOG_ERROR << "MySQL connection is not ready";
+        auto exceptPtr =
+            std::make_exception_ptr(drogon::orm::BrokenConnection());
+        exceptCallback(exceptPtr);
+        return;
+    }
     callback_ = std::move(rcb);
     isWorking_ = true;
     exceptionCallback_ = std::move(exceptCallback);
