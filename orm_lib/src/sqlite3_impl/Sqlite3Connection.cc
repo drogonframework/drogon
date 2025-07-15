@@ -128,6 +128,7 @@ void Sqlite3Connection::init()
         else
         {
             sqlite3_extended_result_codes(tmp, true);
+            status_ = ConnectStatus::Ok;
             okCallback_(thisPtr);
         }
     });
