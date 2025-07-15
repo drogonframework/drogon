@@ -230,6 +230,14 @@ void PgConnection::execSqlInLoop(
     assert(rcb);
     assert(!isWorking_);
     assert(!sql.empty());
+    if (status_ != ConnectStatus::Ok)
+    {
+        LOG_ERROR << "Connection is not ready";
+        auto exceptPtr =
+            std::make_exception_ptr(drogon::orm::BrokenConnection());
+        exceptCallback(exceptPtr);
+        return;
+    }
     sql_ = std::move(sql);
     callback_ = std::move(rcb);
     isWorking_ = true;

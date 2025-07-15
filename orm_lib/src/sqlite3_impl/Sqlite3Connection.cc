@@ -128,6 +128,7 @@ void Sqlite3Connection::init()
         else
         {
             sqlite3_extended_result_codes(tmp, true);
+            status_ = ConnectStatus::Ok;
             okCallback_(thisPtr);
         }
     });
@@ -167,6 +168,14 @@ void Sqlite3Connection::execSqlInQueue(
     const std::function<void(const std::exception_ptr &)> &exceptCallback)
 {
     LOG_TRACE << "sql:" << sql;
+    if (status_ != ConnectStatus::Ok)
+    {
+        LOG_ERROR << "Connection is not ready";
+        auto exceptPtr =
+            std::make_exception_ptr(drogon::orm::BrokenConnection());
+        exceptCallback(exceptPtr);
+        return;
+    }
     std::shared_ptr<sqlite3_stmt> stmtPtr;
     bool newStmt = false;
     if (paraNum > 0)
@@ -375,6 +384,7 @@ void Sqlite3Connection::disconnect()
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
+            thisPtr->status_ = ConnectStatus::Bad;
             thisPtr->connectionPtr_.reset();
         }
         pro.set_value(1);

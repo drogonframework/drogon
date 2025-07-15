@@ -241,6 +241,14 @@ void PgConnection::execSqlInLoop(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
+    if (status_ != ConnectStatus::Ok)
+    {
+        LOG_ERROR << "Connection is not ready";
+        auto exceptPtr =
+            std::make_exception_ptr(drogon::orm::BrokenConnection());
+        exceptCallback(exceptPtr);
+        return;
+    }
     isWorking_ = true;
     batchSqlCommands_.emplace_back(
         std::make_shared<SqlCmd>(std::move(sql),
