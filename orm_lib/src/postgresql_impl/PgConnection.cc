@@ -232,7 +232,7 @@ void PgConnection::execSqlInLoop(
     assert(!sql.empty());
     if (status_ != ConnectStatus::Ok)
     {
-        LOG_ERROR << "MySQL connection is not ready";
+        LOG_ERROR << "Connection is not ready";
         auto exceptPtr =
             std::make_exception_ptr(drogon::orm::BrokenConnection());
         exceptCallback(exceptPtr);
