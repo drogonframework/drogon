@@ -712,6 +712,10 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
         bool needSetSessionid = false;
         if (sessionId.empty())
         {
+            if (sessionMode_ != SessionMode::kAuto)
+            {
+                return;
+            }
             sessionId = sessionIdGeneratorCallback_();
             needSetSessionid = true;
         }
