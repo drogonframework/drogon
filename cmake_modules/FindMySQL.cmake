@@ -136,6 +136,12 @@ if(MySQL_FOUND)
                                    "${MYSQL_INCLUDE_DIRS}"
                                    INTERFACE_LINK_LIBRARIES
                                    "${MYSQL_LIBRARIES}")
+  find_package(OpenSSL QUIET)  # try to find openssl
+  if(OpenSSL_FOUND)
+    target_link_libraries(MySQL_lib INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+  else()
+    message(STATUS "OpenSSL missing")
+  endif()
 else(MySQL_FOUND)
   set(MYSQL_LIBRARIES)
   set(MYSQL_INCLUDE_DIRS)
