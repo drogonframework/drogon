@@ -22,7 +22,7 @@ DROGON_TEST(HttpHeaderRequest)
     auto it = req->headers().find("def");
     const std::string *original_ptr = &it->second;
 
-    //clearing header, but reusing memory
+    // clearing header, but reusing memory
     req->clearHeader("Def");
     CHECK(req->getHeader("def") == "");
     CHECK(&req->getHeader("def") == original_ptr);
