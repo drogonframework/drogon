@@ -1114,3 +1114,12 @@ void HttpRequestImpl::quitStreamMode()
     assert(!streamReaderPtr_);
     streamStatus_ = ReqStreamStatus::None;
 }
+
+const SessionPtr &HttpRequestImpl::getOrCreateSession()
+{
+    if (sessionPtr_)
+        return sessionPtr_;
+
+    HttpAppFrameworkImpl::instance().createSessionForRequest(this);
+    return sessionPtr_;
+}

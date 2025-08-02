@@ -292,6 +292,9 @@ class DROGON_EXPORT HttpRequest
         return session();
     }
 
+    /// Get the session to which the request belongs, create if not exists
+    virtual const SessionPtr &getOrCreateSession() = 0;
+
     /// Get the attributes store, users can add/get any type of data to/from
     /// this store
     virtual const AttributesPtr &attributes() const = 0;

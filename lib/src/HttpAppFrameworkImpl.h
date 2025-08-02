@@ -661,8 +661,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     // should return unsigned type!
     int64_t getConnectionCount() const override;
 
-    // TODO: move session related codes to its own singleton class
     void findSessionForRequest(const HttpRequestImplPtr &req);
+    void createSessionForRequest(HttpRequestImpl *req);
     HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &resp);
 

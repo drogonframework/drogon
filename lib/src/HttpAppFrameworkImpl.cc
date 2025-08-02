@@ -724,6 +724,15 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
     }
 }
 
+void HttpAppFrameworkImpl::createSessionForRequest(HttpRequestImpl *req)
+{
+    if (useSession_)
+    {
+        std::string sessionId = sessionIdGeneratorCallback_();
+        req->setSession(sessionManagerPtr_->getSession(sessionId, true));
+    }
+}
+
 std::vector<HttpHandlerInfo> HttpAppFrameworkImpl::getHandlersInfo() const
 {
     return HttpControllersRouter::instance().getHandlersInfo();
