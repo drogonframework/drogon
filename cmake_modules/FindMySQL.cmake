@@ -130,12 +130,17 @@ find_package_handle_standard_args(MySQL
                                   MYSQL_INCLUDE_DIRS)
 # Copy the results to the output variables.
 if(MySQL_FOUND)
-  add_library(MySQL_lib INTERFACE IMPORTED)
-  set_target_properties(MySQL_lib
-                        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                   "${MYSQL_INCLUDE_DIRS}"
-                                   INTERFACE_LINK_LIBRARIES
-                                   "${MYSQL_LIBRARIES}")
+  add_library(MySQL_lib UNKNOWN IMPORTED)
+  set_target_properties(MySQL_lib PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${MYSQL_INCLUDE_DIRS}"
+  IMPORTED_LOCATION "${MYSQL_LIBRARIES}")
+  find_package(OpenSSL QUIET)  # try to find openssl
+  if(OpenSSL_FOUND)
+    target_link_libraries(MySQL_lib INTERFACE $<LINK_ONLY:OpenSSL::SSL> $<LINK_ONLY:OpenSSL::Crypto>)
+    message(STATUS "mysql: OpenSSL found!")
+  else()
+    message(STATUS "mysql: OpenSSL missing!")
+  endif()
 else(MySQL_FOUND)
   set(MYSQL_LIBRARIES)
   set(MYSQL_INCLUDE_DIRS)
