@@ -59,6 +59,12 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
     static MysqlEnv env;
     static thread_local MysqlThreadEnv threadEnv;
     mysql_init(mysqlPtr_.get());
+    mysql_ssl_set(mysqlPtr_.get(),
+                  nullptr,   // key
+                  nullptr,   // cert
+                  nullptr,   // CA
+                  nullptr,   // CApath
+                  nullptr);  // cipher
     mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, nullptr);
 #ifdef HAS_MYSQL_OPTIONSV
     mysql_optionsv(mysqlPtr_.get(), MYSQL_OPT_RECONNECT, &reconnect_);
