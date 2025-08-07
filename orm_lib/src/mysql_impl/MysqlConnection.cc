@@ -59,12 +59,47 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
     static MysqlEnv env;
     static thread_local MysqlThreadEnv threadEnv;
     mysql_init(mysqlPtr_.get());
+    // Parse SSL parameters from connection string
+    std::string ssl_key, ssl_cert, ssl_ca, ssl_capath, ssl_cipher;
+    auto connParams = parseConnString(connInfo);
+    for (auto const &kv : connParams)
+    {
+        auto key = kv.first;
+        auto value = kv.second;
+        std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return tolower(c); });
+        if (key == "ssl_key")
+        {
+            ssl_key = value;
+        }
+        else if (key == "ssl_cert")
+        {
+            ssl_cert = value;
+        }
+        else if (key == "ssl_ca")
+        {
+            ssl_ca = value;
+        }
+        else if (key == "ssl_capath")
+        {
+            ssl_capath = value;
+        }
+        else if (key == "ssl_cipher")
+        {
+            ssl_cipher = value;
+        }
+    }
+    // If all SSL parameters are empty, log a warning about certificate verification
+    if (ssl_key.empty() && ssl_cert.empty() && ssl_ca.empty() && ssl_capath.empty() && ssl_cipher.empty())
+    {
+        LOG_WARN << "SSL is enabled for MySQL connection, but no certificate parameters are set. "
+                 << "This disables certificate verification and may allow man-in-the-middle attacks.";
+    }
     mysql_ssl_set(mysqlPtr_.get(),
-                  nullptr,   // key
-                  nullptr,   // cert
-                  nullptr,   // CA
-                  nullptr,   // CApath
-                  nullptr);  // cipher
+                  ssl_key.empty() ? nullptr : ssl_key.c_str(),
+                  ssl_cert.empty() ? nullptr : ssl_cert.c_str(),
+                  ssl_ca.empty() ? nullptr : ssl_ca.c_str(),
+                  ssl_capath.empty() ? nullptr : ssl_capath.c_str(),
+                  ssl_cipher.empty() ? nullptr : ssl_cipher.c_str());
     mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, nullptr);
 #ifdef HAS_MYSQL_OPTIONSV
     mysql_optionsv(mysqlPtr_.get(), MYSQL_OPT_RECONNECT, &reconnect_);
