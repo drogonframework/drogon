@@ -217,15 +217,14 @@ void DbClientManager::addDbClient(const DbConfig &config)
                                     cfg.characterSet);
         if (!cfg.connectOptions.empty())
         {
-            std::string optionStr = " options='";
+            std::string optionStr;
             for (auto const &[key, value] : cfg.connectOptions)
             {
-                optionStr += " -c ";
+                optionStr += " ";
                 optionStr += escapeConnString(key);
                 optionStr += "=";
                 optionStr += escapeConnString(value);
             }
-            optionStr += "'";
             connStr += optionStr;
         }
         dbInfos_.emplace_back(DbInfo{connStr, config});
