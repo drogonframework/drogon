@@ -24,19 +24,19 @@ void printTestResult(const std::string& testName, bool success) {
     testCounter++;
     if (success) {
         successCounter++;
-        std::cout << "✓ " << testName << " - PASSED" << std::endl;
+        LOG_INFO << "✓ " << testName << " - PASSED";
     } else {
         failureCounter++;
-        std::cout << "✗ " << testName << " - FAILED" << std::endl;
+        LOG_INFO << "✗ " << testName << " - FAILED";
     }
 }
 
 void printTestSummary() {
-    std::cout << "\n=== 测试总结 ===" << std::endl;
-    std::cout << "总测试数: " << testCounter.load() << std::endl;
-    std::cout << "成功: " << successCounter.load() << std::endl;
-    std::cout << "失败: " << failureCounter.load() << std::endl;
-    std::cout << "成功率: " << (testCounter.load() > 0 ? (successCounter.load() * 100.0 / testCounter.load()) : 0) << "%" << std::endl;
+    LOG_INFO << "\n=== 测试总结 ===";
+    LOG_INFO << "总测试数: " << testCounter.load();
+    LOG_INFO << "成功: " << successCounter.load();
+    LOG_INFO << "失败: " << failureCounter.load();
+    LOG_INFO << "成功率: " << (testCounter.load() > 0 ? (successCounter.load() * 100.0 / testCounter.load()) : 0) << "%";
 }
 
 #ifdef __cpp_impl_coroutine
@@ -44,7 +44,7 @@ Task<> comprehensiveCoroTest(DbClientPtr client)
 {
     try
     {
-        std::cout << "\n=== 协程模式测试 ===" << std::endl;
+        LOG_INFO << "\n=== 协程模式测试 ===";
         
         // 1. 基本表操作
         auto result = co_await client->execSqlCoro("CREATE TABLE IF NOT EXISTS coro_test (id INTEGER PRIMARY KEY, name VARCHAR, value DOUBLE)");
@@ -77,7 +77,7 @@ Task<> comprehensiveCoroTest(DbClientPtr client)
     }
     catch(const DrogonDbException &e)
     {
-        std::cerr << "协程测试失败: " << e.base().what() << std::endl;
+        std::cerr << "协程测试失败: " << e.base().what();
         printTestResult("协程测试", false);
     }
 }
@@ -85,7 +85,7 @@ Task<> comprehensiveCoroTest(DbClientPtr client)
 
 // 基本功能测试
 void testBasicOperations(DbClientPtr client) {
-    std::cout << "\n=== 基本功能测试 ===" << std::endl;
+    LOG_INFO << "\n=== 基本功能测试 ===";
     
     // 1. 创建表
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS basic_test (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER, salary DOUBLE)",
@@ -138,7 +138,7 @@ void testBasicOperations(DbClientPtr client) {
 
 // JSON功能测试
 void testJsonOperations(DbClientPtr client) {
-    std::cout << "\n=== JSON功能测试 ===" << std::endl;
+    LOG_INFO << "\n=== JSON功能测试 ===";
     
     // 1. 创建JSON表
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS json_test (id INTEGER PRIMARY KEY, data JSON, metadata JSON)",
@@ -200,7 +200,7 @@ void testJsonOperations(DbClientPtr client) {
 
 // 数据类型测试
 void testDataTypes(DbClientPtr client) {
-    std::cout << "\n=== 数据类型测试 ===" << std::endl;
+    LOG_INFO << "\n=== 数据类型测试 ===";
     
     // 1. 创建包含各种数据类型的表
     client->execSqlAsync(R"(
@@ -267,7 +267,7 @@ void testDataTypes(DbClientPtr client) {
 
 // 错误处理测试
 void testErrorHandling(DbClientPtr client) {
-    std::cout << "\n=== 错误处理测试 ===" << std::endl;
+    LOG_INFO << "\n=== 错误处理测试 ===";
     
     // 1. 语法错误
     client->execSqlAsync("SELECT * FROM non_existent_table",
@@ -316,7 +316,7 @@ void testErrorHandling(DbClientPtr client) {
 
 // 并发测试
 void testConcurrency(DbClientPtr client) {
-    std::cout << "\n=== 并发测试 ===" << std::endl;
+    LOG_INFO << "\n=== 并发测试 ===";
     
     // 创建测试表
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS concurrency_test (id INTEGER PRIMARY KEY, value INTEGER)",
@@ -383,7 +383,7 @@ void testConcurrency(DbClientPtr client) {
 
 // 性能测试
 void testPerformance(DbClientPtr client) {
-    std::cout << "\n=== 性能测试 ===" << std::endl;
+    LOG_INFO << "\n=== 性能测试 ===";
     
     // 创建性能测试表
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS performance_test (id INTEGER PRIMARY KEY, name VARCHAR, value DOUBLE)",
@@ -433,7 +433,7 @@ void testPerformance(DbClientPtr client) {
 
 // 高级功能测试
 void testAdvancedFeatures(DbClientPtr client) {
-    std::cout << "\n=== 高级功能测试 ===" << std::endl;
+    LOG_INFO << "\n=== 高级功能测试 ===";
     
     // 1. 视图测试
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS view_source (id INTEGER, name VARCHAR, category VARCHAR)",
@@ -525,7 +525,7 @@ int main(int argc, char *argv[])
 #ifdef __cpp_impl_coroutine
     if (argc > 1 && std::string_view(argv[1]) == "--coro")
     {
-        std::cout << "运行协程模式测试" << std::endl;
+        LOG_INFO << "运行协程模式测试";
         app().getLoop()->queueInLoop([client]() { comprehensiveCoroTest(client); });
         app().run();
         printTestSummary();
@@ -533,7 +533,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    std::cout << "运行全面测试套件" << std::endl;
+    LOG_INFO << "运行全面测试套件";
     
     // 运行各种测试
     testBasicOperations(client);

@@ -24,24 +24,24 @@ void printTestResult(const std::string& testName, bool success) {
     testCounter++;
     if (success) {
         successCounter++;
-        std::cout << "✓ " << testName << " - PASSED" << std::endl;
+        LOG_INFO << "✓ " << testName << " - PASSED";
     } else {
         failureCounter++;
-        std::cout << "✗ " << testName << " - FAILED" << std::endl;
+        LOG_INFO << "✗ " << testName << " - FAILED";
     }
 }
 
 void printTestSummary() {
-    std::cout << "\n=== DuckDB特有功能测试总结 ===" << std::endl;
-    std::cout << "总测试数: " << testCounter.load() << std::endl;
-    std::cout << "成功: " << successCounter.load() << std::endl;
-    std::cout << "失败: " << failureCounter.load() << std::endl;
-    std::cout << "成功率: " << (testCounter.load() > 0 ? (successCounter.load() * 100.0 / testCounter.load()) : 0) << "%" << std::endl;
+    LOG_INFO << "\n=== DuckDB特有功能测试总结 ===";
+    LOG_INFO << "总测试数: " << testCounter.load();
+    LOG_INFO << "成功: " << successCounter.load();
+    LOG_INFO << "失败: " << failureCounter.load();
+    LOG_INFO << "成功率: " << (testCounter.load() > 0 ? (successCounter.load() * 100.0 / testCounter.load()) : 0) << "%";
 }
 
 // 向量化操作测试
 void testVectorizedOperations(DbClientPtr client) {
-    std::cout << "\n=== 向量化操作测试 ===" << std::endl;
+    LOG_INFO << "\n=== 向量化操作测试 ===";
     
     // 创建测试表
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS vector_test (id INTEGER, value DOUBLE, category VARCHAR)",
@@ -118,7 +118,7 @@ void testVectorizedOperations(DbClientPtr client) {
 
 // 分析函数测试
 void testAnalyticalFunctions(DbClientPtr client) {
-    std::cout << "\n=== 分析函数测试 ===" << std::endl;
+    LOG_INFO << "\n=== 分析函数测试 ===";
     
     // 创建时间序列数据
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS time_series (date DATE, value DOUBLE, category VARCHAR)",
@@ -184,7 +184,7 @@ void testAnalyticalFunctions(DbClientPtr client) {
 
 // 复杂JSON操作测试
 void testComplexJsonOperations(DbClientPtr client) {
-    std::cout << "\n=== 复杂JSON操作测试 ===" << std::endl;
+    LOG_INFO << "\n=== 复杂JSON操作测试 ===";
     
     // 创建复杂JSON表
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS complex_json_test (id INTEGER, data JSON)",
@@ -313,7 +313,7 @@ void testComplexJsonOperations(DbClientPtr client) {
 
 // 数据类型和函数测试
 void testDataTypesAndFunctions(DbClientPtr client) {
-    std::cout << "\n=== 数据类型和函数测试 ===" << std::endl;
+    LOG_INFO << "\n=== 数据类型和函数测试 ===";
     
     // 创建数据类型测试表
     client->execSqlAsync(R"(
@@ -412,7 +412,7 @@ void testDataTypesAndFunctions(DbClientPtr client) {
 
 // 性能优化测试
 void testPerformanceOptimizations(DbClientPtr client) {
-    std::cout << "\n=== 性能优化测试 ===" << std::endl;
+    LOG_INFO << "\n=== 性能优化测试 ===";
     
     // 创建大表进行性能测试
     client->execSqlAsync("CREATE TABLE IF NOT EXISTS performance_large (id INTEGER PRIMARY KEY, name VARCHAR, value DOUBLE, category VARCHAR, created_date DATE)",
@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
     // 创建DuckDB客户端
     auto client = drogon::orm::DbClient::newDuckDbClient("filename=duckdb_specific_test.db", 1);
     
-    std::cout << "运行DuckDB特有功能测试套件" << std::endl;
+    LOG_INFO << "运行DuckDB特有功能测试套件";
     
     // 运行各种测试
     testVectorizedOperations(client);
