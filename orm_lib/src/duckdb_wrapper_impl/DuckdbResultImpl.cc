@@ -66,7 +66,7 @@ bool DuckdbResultImpl::isNull(SizeType row, RowSizeType column) const
 }
 
 Result::FieldSizeType DuckdbResultImpl::getLength(SizeType row,
-                                                   RowSizeType column) const
+                                                  RowSizeType column) const
 {
     auto col = result_[row][column];
     return col ? col->length() : 0;

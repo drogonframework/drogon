@@ -98,10 +98,8 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
 #endif
 }
 
-
-std::shared_ptr<DbClient> DbClient::newDuckDbClient(
-    const std::string &connInfo,
-    size_t connNum)
+std::shared_ptr<DbClient> DbClient::newDuckDbClient(const std::string &connInfo,
+                                                    size_t connNum)
 {
 #if USE_DUCKDB
     auto client = std::make_shared<DbClientImpl>(connInfo,

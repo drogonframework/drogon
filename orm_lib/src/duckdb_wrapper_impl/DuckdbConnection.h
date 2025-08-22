@@ -38,12 +38,12 @@ class DuckdbConnection;
 using DuckdbConnectionPtr = std::shared_ptr<DuckdbConnection>;
 
 class DuckdbConnection : public DbConnection,
-                          public std::enable_shared_from_this<DuckdbConnection>
+                         public std::enable_shared_from_this<DuckdbConnection>
 {
   public:
     DuckdbConnection(trantor::EventLoop *loop,
-                      const std::string &connInfo,
-                      const std::shared_ptr<SharedMutex> &sharedMutex);
+                     const std::string &connInfo,
+                     const std::shared_ptr<SharedMutex> &sharedMutex);
 
     void init() override;
 

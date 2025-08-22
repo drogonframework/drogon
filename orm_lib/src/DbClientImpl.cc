@@ -130,16 +130,21 @@ void DbClientImpl::execSql(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     // 打印参数信息 dq 2025-07-01
-    if (!(paraNum == parameters.size() && paraNum == length.size() && paraNum == format.size())) {
+    if (!(paraNum == parameters.size() && paraNum == length.size() &&
+          paraNum == format.size()))
+    {
         std::cerr << "[DEBUG][DbClientImpl] paraNum=" << paraNum
                   << ", parameters.size()=" << parameters.size()
                   << ", length.size()=" << length.size()
                   << ", format.size()=" << format.size() << std::endl;
-        for (size_t i = 0; i < parameters.size(); ++i) {
-            std::cerr << "  param[" << i << "]: ptr=" << (void*)parameters[i];
-            if (parameters[i]) std::cerr << ", str='" << parameters[i] << "'";
+        for (size_t i = 0; i < parameters.size(); ++i)
+        {
+            std::cerr << "  param[" << i << "]: ptr=" << (void *)parameters[i];
+            if (parameters[i])
+                std::cerr << ", str='" << parameters[i] << "'";
             std::cerr << ", len=" << (length.size() > i ? length[i] : -1)
-                      << ", fmt=" << (format.size() > i ? format[i] : -1) << std::endl;
+                      << ", fmt=" << (format.size() > i ? format[i] : -1)
+                      << std::endl;
         }
     }
     assert(paraNum == parameters.size());

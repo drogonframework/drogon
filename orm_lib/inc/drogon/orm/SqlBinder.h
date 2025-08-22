@@ -417,7 +417,8 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             lengths_.push_back(0);
             formats_.push_back(getMysqlTypeBySize(sizeof(T)));
         }
-        else if (type_ == ClientType::Sqlite3 || type_ == ClientType::DuckDB)  // add by dq 2025-7-12
+        else if (type_ == ClientType::Sqlite3 ||
+                 type_ == ClientType::DuckDB)  // add by dq 2025-7-12
         {
             objs_.push_back(obj);
             parameters_.push_back((char *)obj.get());
