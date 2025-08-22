@@ -6982,8 +6982,8 @@ typedef unsigned long long int sqlite_uint64;
         int (*xRelease)(sqlite3_vtab *pVTab, int);
         int (*xRollbackTo)(sqlite3_vtab *pVTab, int);
         /* The methods above are in versions 1 and 2 of the sqlite_module
-        *object.
-        ** Those below are for version 3 and greater. */
+         *object.
+         ** Those below are for version 3 and greater. */
         int (*xShadowName)(const char *);
     };
 
