@@ -12,7 +12,7 @@ jobs:
   format:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install dos2unix
         run: sudo apt-get install -y dos2unix
@@ -32,7 +32,7 @@ jobs:
   cpplint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install cpplint
         run: pip install cpplint
