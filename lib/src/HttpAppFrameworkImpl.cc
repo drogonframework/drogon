@@ -376,7 +376,7 @@ void HttpAppFrameworkImpl::addPlugin(
     Json::Value pluginConfig;
     pluginConfig["name"] = name;
     Json::Value deps(Json::arrayValue);
-    for (const auto dep : dependencies)
+    for (const auto &dep : dependencies)
     {
         deps.append(dep);
     }
@@ -391,7 +391,7 @@ void HttpAppFrameworkImpl::addPlugins(const Json::Value &configs)
     assert(!isRunning());
     assert(configs.isArray());
     auto &plugins = jsonRuntimeConfig_["plugins"];
-    for (const auto config : configs)
+    for (const auto &config : configs)
     {
         plugins.append(config);
     }
