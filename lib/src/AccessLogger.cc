@@ -260,10 +260,7 @@ void AccessLogger::initAndStart(const Json::Value &config)
             asyncFileLogger_.setFileSizeLimit(sizeLimit);
         }
         auto maxFiles = config.get("max_files", 0).asUInt();
-        if (maxFiles >= 0)
-        {
-            asyncFileLogger_.setMaxFiles(maxFiles);
-        }
+        asyncFileLogger_.setMaxFiles(maxFiles);
     }
     drogon::app().registerPreSendingAdvice(
         [this](const drogon::HttpRequestPtr &req,
