@@ -88,9 +88,9 @@ class DROGON_EXPORT HttpViewData
                                 backup_ap);
         va_end(backup_ap);
         if ((result >= 0) &&
-            ((std::string::size_type)result < strBuffer.size()))
+            (static_cast<std::string::size_type>(result) < strBuffer.size()))
         {
-            strBuffer.resize(result);
+            strBuffer.resize(static_cast<std::string::size_type>(result));
         }
         else
         {

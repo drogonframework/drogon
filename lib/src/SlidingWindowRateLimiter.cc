@@ -34,7 +34,6 @@ bool SlidingWindowRateLimiter::isAllowed()
         auto duration =
             std::chrono::duration_cast<std::chrono::duration<double>>(
                 unitStartTime_ - lastTime_);
-        auto startTime = lastTime_;
         if (duration >= timeUnit_)
         {
             previousRequests_ = 0;

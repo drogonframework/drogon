@@ -549,7 +549,6 @@ void HttpClientImpl::handleResponse(
     const trantor::TcpConnectionPtr &connPtr)
 {
     assert(!pipeliningCallbacks_.empty());
-    auto &type = resp->getHeaderBy("content-type");
     auto &coding = resp->getHeaderBy("content-encoding");
     if (coding == "gzip")
     {
