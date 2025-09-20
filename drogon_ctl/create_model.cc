@@ -871,6 +871,20 @@ void create_model::createModel(const std::string &path,
             connStr += " client_encoding=";
             connStr += escapeConnString(characterSet);
         }
+        auto options = config["connect_options"];
+        if (options.isObject() && !options.empty())
+        {
+            std::string optionStr = " options='";
+            for (auto const &key : options.getMemberNames())
+            {
+                optionStr += " -c ";
+                optionStr += escapeConnString(key);
+                optionStr += "=";
+                optionStr += escapeConnString(options[key].asString());
+            }
+            optionStr += "'";
+            connStr += optionStr;
+        }
 
         auto schema = config.get("schema", "public").asString();
         DbClientPtr client = drogon::orm::DbClient::newPgClient(connStr, 1);
@@ -982,6 +996,19 @@ void create_model::createModel(const std::string &path,
         {
             connStr += " client_encoding=";
             connStr += escapeConnString(characterSet);
+        }
+        auto options = config["connect_options"];
+        if (options.isObject() && !options.empty())
+        {
+            std::string optionStr;
+            for (auto const &key : options.getMemberNames())
+            {
+                optionStr += " ";
+                optionStr += escapeConnString(key);
+                optionStr += "=";
+                optionStr += escapeConnString(options[key].asString());
+            }
+            connStr += optionStr;
         }
         DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
