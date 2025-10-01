@@ -127,6 +127,11 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
         const std::string &connInfo,
         size_t connNum);
 
+    // add duckdb supported. dq 2025-7-12
+    static std::shared_ptr<DbClient> newDuckDbClient(
+        const std::string &connInfo,
+        size_t connNum);
+
     /// Async and nonblocking method
     /**
      * @param sql is the SQL statement to be executed;
