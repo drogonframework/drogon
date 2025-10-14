@@ -2,6 +2,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include "../../lib/src/HttpResponseImpl.h"
+#include "../../lib/src/HttpRequestImpl.h"
 
 using namespace drogon;
 
@@ -65,4 +66,16 @@ DROGON_TEST(ResquestSetCustomContentTypeString)
     req = HttpRequest::newHttpRequest();
     req->setContentTypeString("thisdoesnotexist/unknown");
     CHECK(req->getContentType() == CT_CUSTOM);
+}
+
+DROGON_TEST(RequestCookieString)
+{
+    auto req = std::make_shared<HttpRequestImpl>(nullptr);
+    std::string header
+    {"Cookie: UserID=vLz3vmoVkwCAnYWYZX1Q0cCIdu5Xn6EQ; HttpOnly\r\nClientID: ClientID=PCEyyx2SG5YgUw-Vh3QjuSQyXSDL15rQ\r\nProtocolVersion: 3.0\r\nContent-Type: application/json; charset=utf-8)\r\n"};
+    char *start = (char *)header.data();
+    char *end = start + header.find("\r\n");
+    char *colon = start + header.find(':');
+    req->addHeader(start, colon, end);
+    CHECK(req->getCookies().size() == 1);
 }
