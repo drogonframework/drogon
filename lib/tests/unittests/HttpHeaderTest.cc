@@ -12,8 +12,20 @@ DROGON_TEST(HttpHeaderRequest)
     CHECK(req->getHeader("Abc") == "abc");
     CHECK(req->getHeader("abc") == "abc");
 
+    // removing header
     req->removeHeader("Abc");
     CHECK(req->getHeader("abc") == "");
+
+    req->addHeader("Def", "def");
+    CHECK(req->getHeader("Def") == "def");
+
+    auto it = req->headers().find("def");
+    const std::string *original_ptr = &it->second;
+
+    // clearing header, but reusing memory
+    req->clearHeader("Def");
+    CHECK(req->getHeader("def") == "");
+    CHECK(&req->getHeader("def") == original_ptr);
 }
 
 DROGON_TEST(HttpHeaderResponse)
