@@ -20,15 +20,14 @@
 #include <trantor/net/EventLoopThread.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/utils/SerialTaskQueue.h>
-#include <sqlite3_duck.h>
-#include <deque>
+#include <duckdb.h>
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <shared_mutex>
 #include <string>
 #include <thread>
 #include <set>
+#include <unordered_map>
 
 namespace drogon
 {
@@ -58,7 +57,7 @@ class DuckdbConnection : public DbConnection,
 
     void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
     {
-        LOG_FATAL << "The mysql library does not support batch mode";
+        LOG_FATAL << "DuckDB does not support batch mode yet";
         exit(1);
     }
 
@@ -66,6 +65,7 @@ class DuckdbConnection : public DbConnection,
 
   private:
     static std::once_flag once_;
+
     void execSqlInQueue(
         const std::string_view &sql,
         size_t paraNum,
@@ -74,19 +74,29 @@ class DuckdbConnection : public DbConnection,
         const std::vector<int> &format,
         const ResultCallback &rcb,
         const std::function<void(const std::exception_ptr &)> &exceptCallback);
+
     void onError(
         const std::string_view &sql,
         const std::function<void(const std::exception_ptr &)> &exceptCallback,
-        const int &extendedErrcode);
-    int stmtStep(sqlite3_stmt *stmt,
-                 const std::shared_ptr<DuckdbResultImpl> &resultPtr,
-                 int columnNum);
+        const char *errorMessage);
+
+    std::shared_ptr<DuckdbResultImpl> stmtExecute(
+        duckdb_prepared_statement stmt);
+
     trantor::EventLoopThread loopThread_;
-    std::shared_ptr<sqlite3> connectionPtr_;
+
+    // DuckDB 数据库和连接句柄
+    std::shared_ptr<duckdb_database> databasePtr_;
+    std::shared_ptr<duckdb_connection> connectionPtr_;
+
+    // 读写锁（所有连接共享）
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
-    std::unordered_map<std::string_view, std::shared_ptr<sqlite3_stmt>>
+
+    // 预编译语句缓存
+    std::unordered_map<std::string_view, std::shared_ptr<duckdb_prepared_statement>>
         stmtsMap_;
-    std::set<std::string> stmts_;
+    std::set<std::string> stmts_;  // 维护SQL字符串的生命周期
+
     std::string connInfo_;
 };
 

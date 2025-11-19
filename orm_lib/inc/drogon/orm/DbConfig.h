@@ -58,6 +58,15 @@ struct Sqlite3Config
     double timeout;
 };
 
-using DbConfig = std::variant<PostgresConfig, MysqlConfig, Sqlite3Config>;
+// Duckdb configuration structure [dq 2025-11-19]
+struct DuckdbConfig
+{
+    size_t connectionNumber;
+    std::string filename;
+    std::string name;
+    double timeout;
+};
+
+using DbConfig = std::variant<PostgresConfig, MysqlConfig, Sqlite3Config, DuckdbConfig>;
 
 }  // namespace drogon::orm

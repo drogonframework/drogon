@@ -1000,10 +1000,14 @@ void HttpAppFrameworkImpl::addDbClient(
     {
         addDbClient(orm::Sqlite3Config{connectionNum, filename, name, timeout});
     }
+    else if (dbType == "duckdb")
+    {
+        addDbClient(orm::DuckdbConfig{connectionNum, filename, name, timeout});
+    }
     else
     {
         LOG_ERROR << "Unsupported database type: " << dbType
-                  << ", should be one of (postgresql, mysql, sqlite3)";
+                  << ", should be one of (postgresql, mysql, sqlite3, duckdb)";
     }
 }
 

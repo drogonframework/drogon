@@ -27,7 +27,7 @@
 #include "sqlite3_impl/Sqlite3Connection.h"
 #endif
 #if USE_DUCKDB
-#include "duckdb_wrapper_impl/DuckdbConnection.h"
+#include "duckdb_impl/DuckdbConnection.h"
 #endif
 #include "TransactionImpl.h"
 #include <drogon/drogon.h>

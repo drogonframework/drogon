@@ -543,7 +543,7 @@ static void loadDbClients(const Json::Value &dbClients)
         auto host = client.get("host", "127.0.0.1").asString();
         unsigned short port = client.get("port", 5432).asUInt();
         auto dbname = client.get("dbname", "").asString();
-        if (dbname.empty() && type != "sqlite3")
+        if (dbname.empty() && type != "sqlite3" && type != "duckdb")
         {
             throw std::runtime_error(
                 "Please configure dbname in the configuration file");

@@ -4,6 +4,11 @@ project(drogon)
 
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 
+# Set C++20 as the minimum required standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
@@ -490,22 +495,16 @@ if (BUILD_DUCKDB)
         message(STATUS "Ok! We find DuckDB!")
         target_link_libraries(${PROJECT_NAME} PRIVATE ${DuckDB_LIBRARIES})
         target_include_directories(${PROJECT_NAME} PRIVATE ${DuckDB_INCLUDE_DIRS})
-        add_subdirectory(orm_lib/src/duckdb_wrapper_impl/sqlite3_api_wrapper)
         set(DROGON_FOUND_DUCKDB TRUE)
-        # 链接duckdb_wrapper_impl/sqlite3_api_wrapper的对象文件
-        target_sources(${PROJECT_NAME} PRIVATE ${ALL_OBJECT_FILES})
-        # set(DROGON_SOURCES ...)
-        # set(private_headers ...)
-        #include_directories(orm_lib/src/duckdb_wrapper_impl/inc)
+        # 使用 duckdb_impl 目录下的 DuckDB C API 直接实现
         set(DROGON_SOURCES
             ${DROGON_SOURCES}
-            orm_lib/src/duckdb_wrapper_impl/DuckdbConnection.cc
-            orm_lib/src/duckdb_wrapper_impl/DuckdbResultImpl.cc)
+            orm_lib/src/duckdb_impl/DuckdbConnection.cc
+            orm_lib/src/duckdb_impl/DuckdbResultImpl.cc)
         set(private_headers
             ${private_headers}
-            #orm_lib/src/duckdb_wrapper_impl/sqlite3_api_wrapper/inc/sqlite3_duck.h
-            orm_lib/src/duckdb_wrapper_impl/DuckdbConnection.h
-            orm_lib/src/duckdb_wrapper_impl/DuckdbResultImpl.h)
+            orm_lib/src/duckdb_impl/DuckdbConnection.h
+            orm_lib/src/duckdb_impl/DuckdbResultImpl.h)
     else (DuckDB_FOUND)
         message(STATUS "DuckDB was not found.")
         set(DROGON_FOUND_DUCKDB FALSE)
@@ -738,9 +737,9 @@ if (BUILD_TESTING)
     if (DROGON_FOUND_SQLite3)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
     endif (DROGON_FOUND_SQLite3)
-    # Add DuckDB test 
+    # Add DuckDB test
     if (DROGON_FOUND_DUCKDB)
-        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/duckdb_wrapper_impl/test)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/duckdb_impl/test)
     endif (DROGON_FOUND_DUCKDB)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
 endif (BUILD_TESTING)

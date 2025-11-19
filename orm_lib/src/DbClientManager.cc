@@ -141,6 +141,17 @@ void DbClientManager::createDbClients(
                 dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
             }
         }
+        else if (std::holds_alternative<DuckdbConfig>(dbInfo.config_))
+        {
+            auto &cfg = std::get<DuckdbConfig>(dbInfo.config_);
+            dbClientsMap_[cfg.name] =
+                drogon::orm::DbClient::newDuckDbClient(dbInfo.connectionInfo_,
+                                                       cfg.connectionNumber);
+            if (cfg.timeout > 0.0)
+            {
+                dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
+            }
+        }
     }
 }
 
@@ -231,6 +242,19 @@ void DbClientManager::addDbClient(const DbConfig &config)
         dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
         std::cout << "The Sqlite3 is not supported in current drogon build, "
+                     "please install the development library first."
+                  << std::endl;
+        exit(1);
+#endif
+    }
+    else if (std::holds_alternative<DuckdbConfig>(config))
+    {
+#if USE_DUCKDB
+        auto cfg = std::get<DuckdbConfig>(config);
+        std::string connStr = "filename=" + cfg.filename;
+        dbInfos_.emplace_back(DbInfo{connStr, config});
+#else
+        std::cout << "The DuckDB is not supported in current drogon build, "
                      "please install the development library first."
                   << std::endl;
         exit(1);
