@@ -1002,7 +1002,8 @@ void HttpAppFrameworkImpl::addDbClient(
     }
     else if (dbType == "duckdb")
     {
-        addDbClient(orm::DuckdbConfig{connectionNum, filename, name, timeout});
+        // 传递配置选项到DuckdbConfig [dq 2025-11-19]
+        addDbClient(orm::DuckdbConfig{connectionNum, filename, name, timeout, std::move(options)});
     }
     else
     {

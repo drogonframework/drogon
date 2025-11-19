@@ -75,6 +75,29 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
     assert(connNum > 0);
 }
 
+// DuckDB配置构造函数实现 [dq 2025-11-19]
+DbClientImpl::DbClientImpl(const std::string &connInfo,
+                           size_t connNum,
+                           ClientType type,
+                           const std::unordered_map<std::string, std::string> &configOptions)
+    : numberOfConnections_(connNum),
+#if LIBPQ_SUPPORTS_BATCH_MODE
+      autoBatch_(false),
+#endif
+      configOptions_(configOptions),  // 存储配置选项
+      loops_(type == ClientType::Sqlite3 || type == ClientType::DuckDB
+                 ? 1
+                 : (connNum < std::thread::hardware_concurrency()
+                        ? connNum
+                        : std::thread::hardware_concurrency()),
+             "DbLoop")
+{
+    type_ = type;
+    connectionInfo_ = connInfo;
+    LOG_TRACE << "type=" << (int)type;
+    assert(connNum > 0);
+}
+
 void DbClientImpl::init()
 {
     // LOG_DEBUG << loops_.getLoopNum();
@@ -434,7 +457,8 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
 #if USE_DUCKDB
         connPtr = std::make_shared<DuckdbConnection>(loop,
                                                      connectionInfo_,
-                                                     sharedMutexPtr_);
+                                                     sharedMutexPtr_,
+                                                     configOptions_);  // 传递配置选项 [dq 2025-11-19]
 #else
         return nullptr;
 #endif

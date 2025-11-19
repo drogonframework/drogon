@@ -572,6 +572,19 @@ static void loadDbClients(const Json::Value &dbClients)
         auto autoBatch = client.get("auto_batch", false).asBool();
 
         std::unordered_map<std::string, std::string> options;
+        // DuckDB使用config_options字段名（若存在则优先使用）[dq 2025-11-19]
+        if (type == "duckdb")
+        {
+            auto configOptions = client.get("config_options", Json::Value());
+            if (configOptions.isObject() && !configOptions.empty())
+            {
+                for (const auto &key : configOptions.getMemberNames())
+                {
+                    options[key] = configOptions[key].asString();
+                }
+            }
+        }
+        // PostgreSQL等使用connect_options
         if (connectOptions.isObject() && !connectOptions.empty())
         {
             for (const auto &key : connectOptions.getMemberNames())

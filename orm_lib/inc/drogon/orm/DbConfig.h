@@ -65,6 +65,7 @@ struct DuckdbConfig
     std::string filename;
     std::string name;
     double timeout;
+    std::unordered_map<std::string, std::string> configOptions;  // DuckDB配置选项 [dq 2025-11-19]
 };
 
 using DbConfig = std::variant<PostgresConfig, MysqlConfig, Sqlite3Config, DuckdbConfig>;

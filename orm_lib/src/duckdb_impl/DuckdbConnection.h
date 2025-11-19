@@ -42,7 +42,8 @@ class DuckdbConnection : public DbConnection,
   public:
     DuckdbConnection(trantor::EventLoop *loop,
                      const std::string &connInfo,
-                     const std::shared_ptr<SharedMutex> &sharedMutex);
+                     const std::shared_ptr<SharedMutex> &sharedMutex,
+                     const std::unordered_map<std::string, std::string> &configOptions = {});  // 新增配置参数支持 [dq 2025-11-19]
 
     void init() override;
 
@@ -98,6 +99,7 @@ class DuckdbConnection : public DbConnection,
     std::set<std::string> stmts_;  // 维护SQL字符串的生命周期
 
     std::string connInfo_;
+    std::unordered_map<std::string, std::string> configOptions_;  // DuckDB配置选项 [dq 2025-11-19]
 };
 
 }  // namespace orm

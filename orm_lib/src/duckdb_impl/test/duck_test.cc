@@ -56,7 +56,16 @@ int main()
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
 
     // Create DuckDB client
-    auto clientPtr = DbClient::newDuckDbClient("filename=test_duckdb_comprehensive.db", 1);
+    //auto clientPtr = DbClient::newDuckDbClient("filename=test_duckdb_comprehensive.db", 1);
+    auto clientPtr = DbClient::newDuckDbClient(
+            "filename=test.duckdb",
+            2,
+            {
+                {"threads", "4"},
+                {"max_memory", "4GB"},
+                {"access_mode", "READ_WRITE"}
+            }
+    );
     std::this_thread::sleep_for(1s);
 
     LOG_INFO << "\n==========================================";

@@ -44,8 +44,12 @@ void DuckdbConnection::onError(
 DuckdbConnection::DuckdbConnection(
     trantor::EventLoop *loop,
     const std::string &connInfo,
-    const std::shared_ptr<SharedMutex> &sharedMutex)
-    : DbConnection(loop), sharedMutexPtr_(sharedMutex), connInfo_(connInfo)
+    const std::shared_ptr<SharedMutex> &sharedMutex,
+    const std::unordered_map<std::string, std::string> &configOptions)  // 新增配置参数支持 [dq 2025-11-19]
+    : DbConnection(loop),
+      sharedMutexPtr_(sharedMutex),
+      connInfo_(connInfo),
+      configOptions_(configOptions)  // 存储配置选项 [dq 2025-11-19]
 {
 }
 
@@ -74,17 +78,56 @@ void DuckdbConnection::init()
 
     loop_->runInLoop([this, filename = std::move(filename)]() {
         duckdb_database db;
+        duckdb_config config;
         duckdb_connection conn;
 
-        // 打开数据库
-        auto state = duckdb_open(filename.c_str(), &db);
-        if (state == DuckDBError)
-        {
-            LOG_FATAL << "Failed to open DuckDB database: " << filename;
+        // create the configuration object
+        if (duckdb_create_config(&config) == DuckDBError) {
+            LOG_FATAL << "Failed to config DuckDB database: " << filename;
             auto thisPtr = shared_from_this();
             closeCallback_(thisPtr);
             return;
         }
+
+        // 应用配置选项（使用传入的配置，或使用默认值）[dq 2025-11-19]
+        // 定义默认值
+        std::unordered_map<std::string, std::string> defaultConfig = {
+            {"access_mode", "READ_WRITE"},
+            {"threads", "4"},  // 默认改为4以避免过度占用资源
+            {"max_memory", "4GB"},
+        };
+
+        // 合并用户配置和默认配置（用户配置优先）
+        for (const auto& [key, defaultValue] : defaultConfig) {
+            auto it = configOptions_.find(key);
+            const std::string& value = (it != configOptions_.end()) ? it->second : defaultValue;
+
+            if (duckdb_set_config(config, key.c_str(), value.c_str()) == DuckDBError) {
+                LOG_WARN << "Failed to set DuckDB config option: " << key << "=" << value;
+            }
+        }
+
+        // 应用其他用户自定义的配置选项
+        for (const auto& [key, value] : configOptions_) {
+            if (defaultConfig.find(key) == defaultConfig.end()) {
+                if (duckdb_set_config(config, key.c_str(), value.c_str()) == DuckDBError) {
+                    LOG_WARN << "Failed to set DuckDB config option: " << key << "=" << value;
+                }
+            }
+        }
+
+        // 打开数据库
+        //auto state = duckdb_open(filename.c_str(), &db);
+        auto state = duckdb_open_ext(filename.c_str(), &db, config, NULL);
+        if (state == DuckDBError)
+        {
+            LOG_FATAL << "Failed to open DuckDB database: " << filename;
+            duckdb_destroy_config(&config);
+            auto thisPtr = shared_from_this();
+            closeCallback_(thisPtr);
+            return;
+        }
+        duckdb_destroy_config(&config);
 
         // 创建连接
         state = duckdb_connect(db, &conn);
