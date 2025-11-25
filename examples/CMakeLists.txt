@@ -50,6 +50,14 @@ set(example_targets
     async_stream
     cors)
 
+foreach(target ${example_targets})
+    set_target_properties(${target} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+endforeach()
+
+install(TARGETS ${example_targets}
+    RUNTIME DESTINATION ${INSTALL_BIN_DIR})
+
 # Add warnings for our example targets--some warnings (such as -Wunused-parameter) only appear
 # when the templated functions are instantiated at their point of use.
 if(NOT ${CMAKE_PLATFORM_NAME} STREQUAL "Windows" AND CMAKE_CXX_COMPILER_ID MATCHES GNU)

@@ -74,7 +74,7 @@ class RedisConnection : public trantor::NonCopyable,
     static std::string getFormattedCommand(const std::string_view &command,
                                            va_list ap) noexcept(false)
     {
-        char *cmd;
+        char *cmd{nullptr};
         auto len = redisvFormatCommand(&cmd, command.data(), ap);
         if (len == -1)
         {
@@ -92,7 +92,7 @@ class RedisConnection : public trantor::NonCopyable,
                                  "Unknown format error");
         }
         std::string fullCommand{cmd, static_cast<size_t>(len)};
-        free(cmd);
+        redisFreeCommand(cmd);
         return fullCommand;
     }
 
