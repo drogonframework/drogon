@@ -36,7 +36,6 @@ build/
 cmake-build-debug/
 cmake-build-debug-visual-studio/
 .idea/
-.claude/
 html/
 latex/
 .vscode
@@ -49,4 +48,3 @@ CMakeSettings.json
 install
 trace.json
 .cache/
-CLAUDE.md
