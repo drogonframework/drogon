@@ -6,6 +6,25 @@
 - **功能**: 为 Drogon 框架添加 DuckDB 数据库支持
 
 ---
+## 最新更新 (2025-11-22)
+### 功能增强： 实现了 DuckDB 的 batchSql 功能
+**修改的文件**
+1. DuckdbConnection.h
+- 声明了 batchSql() 公开方法
+- 添加了两个私有辅助方法：executeBatchSql() 和 executeSingleBatchCommand()
+- 添加了批量命令队列成员变量 batchSqlCommands_
+2. DuckdbConnection.cc
+- 实现了 batchSql() 入口方法（异步入队）
+- 实现了 executeBatchSql() 主逻辑（批量循环处理）
+- 实现了 executeSingleBatchCommand() 核心方法（使用 duckdb_extract_statements）
+**核心特性**
+- 使用官方 API：采用 duckdb_extract_statements 进行批量语句解析和执行
+- 双路径执行：
+  无参数 SQL：使用 duckdb_extract_statements → 支持多语句字符串
+  有参数 SQL：使用现有的 execSqlInQueue → 支持参数绑定
+- 完善的资源管理：所有 DuckDB 资源都正确清理（extract、prepare、result）
+- 独立的错误处理：每个命令独立处理错误，不影响后续命令
+- 线程安全：在事件循环线程中执行，使用 queueInLoop 确保线程安全
 
 ## 最新更新 (2025-11-19)
 

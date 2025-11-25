@@ -36,6 +36,7 @@ build/
 cmake-build-debug/
 cmake-build-debug-visual-studio/
 .idea/
+.claude/
 html/
 latex/
 .vscode

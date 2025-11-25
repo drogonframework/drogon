@@ -1,7 +1,7 @@
 /**
  *
- *  DuckdbResultImpl.h
- *  Dq wei
+ *  @file DuckdbResultImpl.h
+ *  @author Dq Wei
  *
  *  Copyright 2025, Dq Wei.  All rights reserved.
  *  https://github.com/an-tao/drogon

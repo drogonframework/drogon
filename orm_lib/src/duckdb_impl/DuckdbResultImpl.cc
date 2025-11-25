@@ -1,7 +1,7 @@
 /**
  *
- *  DuckdbResultImpl.cc
- *  An Tao
+ *  @file DuckdbResultImpl.cc
+ *  @author Dq Wei
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon

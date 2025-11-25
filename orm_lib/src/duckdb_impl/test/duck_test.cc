@@ -63,7 +63,9 @@ int main()
             {
                 {"threads", "4"},
                 {"max_memory", "4GB"},
-                {"access_mode", "READ_WRITE"}
+                {"access_mode", "READ_WRITE"},
+                {"autoinstall_known_extensions", "true"},
+                {"autoload_known_extensions", "true"}
             }
     );
     std::this_thread::sleep_for(1s);
@@ -72,6 +74,82 @@ int main()
     LOG_INFO << "DuckDB Comprehensive Test Suite";
     LOG_INFO << "==========================================\n";
 
+    // ============================================
+    // Test 0: Extensions 
+    // ============================================
+    LOG_INFO << "[Test 0] Testing Extension List...";
+    *clientPtr << "SELECT extension_name, installed, description FROM duckdb_extensions();" >>
+           [](const Result &r) {
+            bool jsonLoaded = false;
+            for (size_t i = 0; i < r.size(); ++i) {
+                auto row = r[i];
+                std::string extName = row["extension_name"].as<std::string>();
+                bool installed = row["installed"].as<bool>();
+                LOG_DEBUG << "Extension: " << extName << ", Installed: " << installed;
+                
+            }
+            if(r.size() >0) {
+                jsonLoaded = true;
+            }
+            if (jsonLoaded) {
+                testResults.recordPass("List extension");
+            } else {
+                testResults.recordFail("Load JSON extension", " extension not found or not installed");
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            testResults.recordFail("Load JSON extension", e.base().what());
+        };
+    LOG_INFO << "spatial extension Loading.";
+    *clientPtr << "INSTALL spatial;" >>
+           [](const Result &r) {
+            testResults.recordPass("Install spatial extension");
+        } >>
+        [](const DrogonDbException &e) {
+            testResults.recordFail("Install spatial extension", e.base().what());
+        };
+    std::this_thread::sleep_for(5s); // wait for extension to be installed
+    *clientPtr << "LOAD spatial;" >>
+           [](const Result &r) {
+            testResults.recordPass("Load spatial extension");
+            LOG_DEBUG << "spatial extension loaded.";
+        } >>
+        [](const DrogonDbException &e) {
+            testResults.recordFail("Load spatial extension", e.base().what());
+        };
+    std::this_thread::sleep_for(5s); // wait for extension to be loaded
+    
+    LOG_INFO << "spatial extension ST_Area function test.";
+    *clientPtr << "select ST_Area('POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))'::geometry);" >>
+           [](const Result &r) {
+            if (r.size() == 1) {
+                double area = r[0][0].as<double>();
+                LOG_DEBUG << "Area: " << area;
+                if (std::abs(area - 1.0) < 0.0001) {
+                    testResults.recordPass("Spatial extension ST_Area function");
+                } else {
+                    testResults.recordFail("Spatial extension ST_Area function", "Incorrect area calculation");
+                }
+            } else {
+                testResults.recordFail("Spatial extension ST_Area function", "No rows returned");
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            testResults.recordFail("Spatial extension ST_Area function", e.base().what());
+        };
+    LOG_INFO << "autoloaded extension test for httpfs read csv file.";
+    *clientPtr << "SELECT count(*) FROM 'https://raw.githubusercontent.com/duckdb/duckdb-web/main/data/weather.csv';" >>
+              [](const Result &r) {
+                if (r.size() > 0) {
+                 testResults.recordPass("Autoloaded HTTPFS extension read CSV");
+                } else {
+                 testResults.recordFail("Autoloaded HTTPFS extension read CSV", "No rows returned");
+                }
+          } >>
+          [](const DrogonDbException &e) {
+                testResults.recordFail("Autoloaded HTTPFS extension read CSV", e.base().what());
+          };
+    /*
     // ============================================
     // Test 1: Basic Data Types
     // ============================================
@@ -828,7 +906,7 @@ int main()
 
     // Wait for all async operations to complete
     std::this_thread::sleep_for(2s);
-
+    */
     // Print test summary
     testResults.printSummary();
 

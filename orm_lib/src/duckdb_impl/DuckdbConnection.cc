@@ -1,7 +1,7 @@
 /**
  *
  *  @file DuckdbConnection.cc
- *  @author An Tao
+ *  @author Dq Wei
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -35,21 +35,30 @@ void DuckdbConnection::onError(
     const char *errorMessage)
 {
     // DuckDB 错误处理
+    // 创建 SqlError 异常并通过回调传递
     auto exceptPtr = std::make_exception_ptr(
         SqlError(errorMessage ? errorMessage : "Unknown DuckDB error",
                  std::string{sql}));
     exceptCallback(exceptPtr);
 }
 
+/**
+ * @brief Construct a new Duckdb Connection:: Duckdb Connection object
+ * 
+ * @param loop 
+ * @param connInfo 连接字符串
+ * @param sharedMutex 
+ * @param configOptions 配置参数
+ */
 DuckdbConnection::DuckdbConnection(
     trantor::EventLoop *loop,
     const std::string &connInfo,
     const std::shared_ptr<SharedMutex> &sharedMutex,
-    const std::unordered_map<std::string, std::string> &configOptions)  // 新增配置参数支持 [dq 2025-11-19]
+    const std::unordered_map<std::string, std::string> &configOptions)  // 新增配置参数支持 [dq 2025-11-21]
     : DbConnection(loop),
       sharedMutexPtr_(sharedMutex),
       connInfo_(connInfo),
-      configOptions_(configOptions)  // 存储配置选项 [dq 2025-11-19]
+      configOptions_(configOptions)  // 存储配置选项 [dq 2025-11-21]
 {
 }
 
@@ -76,6 +85,7 @@ void DuckdbConnection::init()
         }
     }
 
+    // 在事件循环线程中初始化 DuckDB 数据库连接
     loop_->runInLoop([this, filename = std::move(filename)]() {
         duckdb_database db;
         duckdb_config config;
@@ -166,6 +176,17 @@ void DuckdbConnection::init()
     });
 }
 
+/**
+ * @brief 执行 SQL 语句（异步）
+ * 
+ * @param sql SQL 语句 
+ * @param paraNum 参数数量
+ * @param parameters 参数值
+ * @param length 
+ * @param format 
+ * @param rcb 
+ * @param exceptCallback 
+ */
 void DuckdbConnection::execSql(
     std::string_view &&sql,
     size_t paraNum,
@@ -190,6 +211,17 @@ void DuckdbConnection::execSql(
         });
 }
 
+/**
+ * @brief 
+ * 
+ * @param sql 
+ * @param paraNum 
+ * @param parameters 
+ * @param length 
+ * @param format 
+ * @param rcb 
+ * @param exceptCallback 
+ */
 void DuckdbConnection::execSqlInQueue(
     const std::string_view &sql,
     size_t paraNum,
@@ -325,7 +357,7 @@ std::shared_ptr<DuckdbResultImpl> DuckdbConnection::stmtExecute(
         return nullptr;
     }
 
-    // 创建智能指针，自定义删除器调用 duckdb_destroy_result
+    // 创建智能指针，删除器调用 duckdb_destroy_result must call！
     auto resultShared = std::shared_ptr<duckdb_result>(
         rawResult,
         [](duckdb_result *ptr) {
@@ -345,6 +377,142 @@ std::shared_ptr<DuckdbResultImpl> DuckdbConnection::stmtExecute(
 
     // 使用带参数的构造函数创建 DuckdbResultImpl
     return std::make_shared<DuckdbResultImpl>(resultShared, rowCount, insertId);
+}
+
+
+
+/**
+ * @brief 批量执行 SQL 语句（入口方法）
+ *
+ * @param sqlCommands SQL 命令队列
+ */
+void DuckdbConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
+{
+    auto thisPtr = shared_from_this();
+    loopThread_.getLoop()->queueInLoop(
+        [thisPtr, sqlCommands = std::move(sqlCommands)]() mutable {
+            thisPtr->batchSqlCommands_ = std::move(sqlCommands);
+            thisPtr->executeBatchSql();
+        });
+}
+
+/**
+ * @brief 执行批量 SQL 的主逻辑
+ */
+void DuckdbConnection::executeBatchSql()
+{
+    loop_->assertInLoopThread();
+
+    if (batchSqlCommands_.empty())
+    {
+        idleCb_();
+        return;
+    }
+
+    // 标记为工作中
+    isWorking_ = true;
+
+    // 逐个处理每个命令
+    while (!batchSqlCommands_.empty())
+    {
+        auto cmd = batchSqlCommands_.front();
+        executeSingleBatchCommand(cmd);
+        batchSqlCommands_.pop_front();
+    }
+
+    // 完成所有批处理
+    isWorking_ = false;
+    idleCb_();
+}
+
+/**
+ * @brief 执行单个批量 SQL 命令
+ *
+ * @param cmd SQL 命令对象
+ */
+void DuckdbConnection::executeSingleBatchCommand(
+    const std::shared_ptr<SqlCmd> &cmd)
+{
+    LOG_TRACE << "DuckDB batch sql:" << cmd->sql_;
+
+    // case1：无参数的 SQL，使用 duckdb_extract_statements
+    if (cmd->parametersNumber_ == 0)
+    {
+        duckdb_extracted_statements extracted;
+        idx_t count = duckdb_extract_statements(
+            *connectionPtr_,
+            cmd->sql_.data(),
+            &extracted);
+
+        if (count == 0)
+        {
+            // 提取失败
+            const char *error = duckdb_extract_statements_error(extracted);
+            onError(cmd->sql_, cmd->exceptionCallback_, error);
+            duckdb_destroy_extracted(&extracted);
+            return;
+        }
+
+        // 执行提取的语句
+        for (idx_t i = 0; i < count; ++i)
+        {
+            duckdb_prepared_statement stmt;
+            if (duckdb_prepare_extracted_statement(
+                    *connectionPtr_, extracted, i, &stmt) == DuckDBError)
+            {
+                const char *error = duckdb_prepare_error(stmt);
+                onError(cmd->sql_, cmd->exceptionCallback_, error);
+                duckdb_destroy_prepare(&stmt);
+                continue;
+            }
+
+            // 执行语句
+            auto rawResult = new duckdb_result();
+            auto state = duckdb_execute_prepared(stmt, rawResult);
+
+            if (state == DuckDBError)
+            {
+                const char *error = duckdb_result_error(rawResult);
+                onError(cmd->sql_, cmd->exceptionCallback_,
+                       error ? error : "Unknown execution error");
+                duckdb_destroy_result(rawResult);
+                delete rawResult;
+                duckdb_destroy_prepare(&stmt);
+                continue;
+            }
+
+            // 成功，创建结果并调用回调
+            auto resultShared = std::shared_ptr<duckdb_result>(
+                rawResult,
+                [](duckdb_result *ptr) {
+                    if (ptr)
+                    {
+                        duckdb_destroy_result(ptr);
+                        delete ptr;
+                    }
+                });
+
+            idx_t rowCount = duckdb_row_count(rawResult);
+            auto result = std::make_shared<DuckdbResultImpl>(
+                resultShared, rowCount, 0);
+            cmd->callback_(Result(result));
+
+            duckdb_destroy_prepare(&stmt);
+        }
+
+        duckdb_destroy_extracted(&extracted);
+    }
+    else
+    {
+        // case 2：有参数的 SQL，使用现有的预编译逻辑
+        execSqlInQueue(cmd->sql_,
+                      cmd->parametersNumber_,
+                      cmd->parameters_,
+                      cmd->lengths_,
+                      cmd->formats_,
+                      cmd->callback_,
+                      cmd->exceptionCallback_);
+    }
 }
 
 void DuckdbConnection::disconnect()
