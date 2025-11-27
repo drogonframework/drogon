@@ -103,7 +103,7 @@ void DuckdbConnection::init()
         // 定义默认值
         std::unordered_map<std::string, std::string> defaultConfig = {
             {"access_mode", "READ_WRITE"},
-            {"threads", "4"},  // 默认改为4以避免过度占用资源
+            {"threads", "4"},  // Default changed to 4 to avoid excessive resource usage
             {"max_memory", "4GB"},
         };
 
