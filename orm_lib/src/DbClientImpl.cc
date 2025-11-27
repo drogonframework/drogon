@@ -156,18 +156,19 @@ void DbClientImpl::execSql(
     if (!(paraNum == parameters.size() && paraNum == length.size() &&
           paraNum == format.size()))
     {
-        std::cerr << "[DEBUG][DbClientImpl] paraNum=" << paraNum
+        LOG_DEBUG << "[DbClientImpl] paraNum=" << paraNum
                   << ", parameters.size()=" << parameters.size()
                   << ", length.size()=" << length.size()
-                  << ", format.size()=" << format.size() << std::endl;
+                  << ", format.size()=" << format.size();
         for (size_t i = 0; i < parameters.size(); ++i)
         {
-            std::cerr << "  param[" << i << "]: ptr=" << (void *)parameters[i];
+            std::ostringstream oss;
+            oss << "  param[" << i << "]: ptr=" << (void *)parameters[i];
             if (parameters[i])
-                std::cerr << ", str='" << parameters[i] << "'";
-            std::cerr << ", len=" << (length.size() > i ? length[i] : -1)
-                      << ", fmt=" << (format.size() > i ? format[i] : -1)
-                      << std::endl;
+                oss << ", str='" << parameters[i] << "'";
+            oss << ", len=" << (length.size() > i ? length[i] : -1)
+                << ", fmt=" << (format.size() > i ? format[i] : -1);
+            LOG_DEBUG << oss.str();
         }
     }
     assert(paraNum == parameters.size());
