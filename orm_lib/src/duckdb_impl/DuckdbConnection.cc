@@ -381,12 +381,15 @@ std::shared_ptr<DuckdbResultImpl> DuckdbConnection::stmtExecute(
 
 
 /**
- * @brief 批量执行 SQL 语句（入口方法）
+ * @brief batch SQL execution
  *
- * @param sqlCommands SQL 命令队列
+ * @param sqlCommands SQL commands queue
  */
 void DuckdbConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
 {
+    LOG_WARN << "The DuckDB library does not fully support batch mode. "
+                "Recommended for use only with parameter-less SQL.";
+
     auto thisPtr = shared_from_this();
     loopThread_.getLoop()->queueInLoop(
         [thisPtr, sqlCommands = std::move(sqlCommands)]() mutable {
@@ -396,7 +399,7 @@ void DuckdbConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommand
 }
 
 /**
- * @brief 执行批量 SQL 的主逻辑
+ * @brief execute batch SQL commands
  */
 void DuckdbConnection::executeBatchSql()
 {
@@ -408,10 +411,9 @@ void DuckdbConnection::executeBatchSql()
         return;
     }
 
-    // 标记为工作中
+    
     isWorking_ = true;
 
-    // 逐个处理每个命令
     while (!batchSqlCommands_.empty())
     {
         auto cmd = batchSqlCommands_.front();
@@ -419,22 +421,22 @@ void DuckdbConnection::executeBatchSql()
         batchSqlCommands_.pop_front();
     }
 
-    // 完成所有批处理
+    // finished all commands
     isWorking_ = false;
     idleCb_();
 }
 
 /**
- * @brief 执行单个批量 SQL 命令
+ * @brief execute a single batch SQL command
  *
- * @param cmd SQL 命令对象
+ * @param cmd SQL command object
  */
 void DuckdbConnection::executeSingleBatchCommand(
     const std::shared_ptr<SqlCmd> &cmd)
 {
     LOG_TRACE << "DuckDB batch sql:" << cmd->sql_;
 
-    // case1：无参数的 SQL，使用 duckdb_extract_statements
+    // case1: no paramters SQL，use duckdb_extract_statements
     if (cmd->parametersNumber_ == 0)
     {
         duckdb_extracted_statements extracted;
@@ -445,14 +447,13 @@ void DuckdbConnection::executeSingleBatchCommand(
 
         if (count == 0)
         {
-            // 提取失败
             const char *error = duckdb_extract_statements_error(extracted);
             onError(cmd->sql_, cmd->exceptionCallback_, error);
             duckdb_destroy_extracted(&extracted);
             return;
         }
 
-        // 执行提取的语句
+        // execute each extracted statement
         for (idx_t i = 0; i < count; ++i)
         {
             duckdb_prepared_statement stmt;
@@ -465,7 +466,6 @@ void DuckdbConnection::executeSingleBatchCommand(
                 continue;
             }
 
-            // 执行语句
             auto rawResult = new duckdb_result();
             auto state = duckdb_execute_prepared(stmt, rawResult);
 
@@ -480,7 +480,7 @@ void DuckdbConnection::executeSingleBatchCommand(
                 continue;
             }
 
-            // 成功，创建结果并调用回调
+            //
             auto resultShared = std::shared_ptr<duckdb_result>(
                 rawResult,
                 [](duckdb_result *ptr) {
@@ -503,7 +503,7 @@ void DuckdbConnection::executeSingleBatchCommand(
     }
     else
     {
-        // case 2：有参数的 SQL，使用现有的预编译逻辑
+        // case 2： parameters SQL，use execSqlInQueue
         execSqlInQueue(cmd->sql_,
                       cmd->parametersNumber_,
                       cmd->parameters_,

@@ -3,7 +3,7 @@
  *  @file DuckdbResultImpl.h
  *  @author Dq Wei
  *
- *  Copyright 2025, Dq Wei.  All rights reserved.
+ *  Copyright 2025, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
@@ -21,10 +21,9 @@
 #include <string>
 #include <unordered_map>
 
-namespace drogon
+namespace drogon::orm
 {
-namespace orm
-{
+
 class DuckdbResultImpl : public ResultImpl
 {
   public:
@@ -66,5 +65,5 @@ class DuckdbResultImpl : public ResultImpl
     std::shared_ptr<std::string> convertValue(RowSizeType col,
                                                SizeType row) const;
 };
-}  // namespace orm
-}  // namespace drogon
+
+}  // namespace drogon::orm

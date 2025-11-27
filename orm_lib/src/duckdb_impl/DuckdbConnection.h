@@ -29,10 +29,9 @@
 #include <set>
 #include <unordered_map>
 
-namespace drogon
+namespace drogon::orm
 {
-namespace orm
-{
+
 class DuckdbConnection;
 using DuckdbConnectionPtr = std::shared_ptr<DuckdbConnection>;
 
@@ -105,5 +104,5 @@ class DuckdbConnection : public DbConnection,
     std::deque<std::shared_ptr<SqlCmd>> batchSqlCommands_;
 };
 
-}  // namespace orm
-}  // namespace drogon
+
+}  // namespace drogon::orm
