@@ -1,55 +1,92 @@
 # DuckDB 支持更新日志
+# DuckDB Support Changelog
 
 ## 版本信息
+## Version Information
 - **分支**: duckdb-add-branch
+- **Branch**: duckdb-add-branch
 - **日期**: 2025-11-19
+- **Date**: 2025-11-19
 - **功能**: 为 Drogon 框架添加 DuckDB 数据库支持
+- **Feature**: Add DuckDB database support for the Drogon framework
 
 ---
 ## 最新更新 (2025-11-22)
+## Latest Update (2025-11-22)
 ### 功能增强： 实现了 DuckDB 的 batchSql 功能
+### Feature Enhancement: Implemented DuckDB's batchSql Functionality
 **修改的文件**
+**Modified Files**
 1. DuckdbConnection.h
-- 声明了 batchSql() 公开方法
-- 添加了两个私有辅助方法：executeBatchSql() 和 executeSingleBatchCommand()
-- 添加了批量命令队列成员变量 batchSqlCommands_
+   - 声明了 batchSql() 公开方法
+   - Declared the public method batchSql()
+   - 添加了两个私有辅助方法：executeBatchSql() 和 executeSingleBatchCommand()
+   - Added two private helper methods: executeBatchSql() and executeSingleBatchCommand()
+   - 添加了批量命令队列成员变量 batchSqlCommands_
+   - Added batch command queue member variable batchSqlCommands_
 2. DuckdbConnection.cc
-- 实现了 batchSql() 入口方法（异步入队）
-- 实现了 executeBatchSql() 主逻辑（批量循环处理）
-- 实现了 executeSingleBatchCommand() 核心方法（使用 duckdb_extract_statements）
+   - 实现了 batchSql() 入口方法（异步入队）
+   - Implemented the batchSql() entry method (asynchronous enqueue)
+   - 实现了 executeBatchSql() 主逻辑（批量循环处理）
+   - Implemented the main logic of executeBatchSql() (batch loop processing)
+   - 实现了 executeSingleBatchCommand() 核心方法（使用 duckdb_extract_statements）
+   - Implemented the core method executeSingleBatchCommand() (using duckdb_extract_statements)
 **核心特性**
+**Key Features**
 - 使用官方 API：采用 duckdb_extract_statements 进行批量语句解析和执行
+- Uses official API: batch statement parsing and execution via duckdb_extract_statements
 - 双路径执行：
+- Dual execution paths:
   无参数 SQL：使用 duckdb_extract_statements → 支持多语句字符串
+  Parameterless SQL: uses duckdb_extract_statements → supports multi-statement strings
   有参数 SQL：使用现有的 execSqlInQueue → 支持参数绑定
+  Parameterized SQL: uses existing execSqlInQueue → supports parameter binding
 - 完善的资源管理：所有 DuckDB 资源都正确清理（extract、prepare、result）
+- Robust resource management: all DuckDB resources are properly cleaned up (extract, prepare, result)
 - 独立的错误处理：每个命令独立处理错误，不影响后续命令
+- Independent error handling: each command handles errors independently, not affecting subsequent commands
 - 线程安全：在事件循环线程中执行，使用 queueInLoop 确保线程安全
+- Thread safety: executed in the event loop thread, using queueInLoop to ensure thread safety
 
 ## 最新更新 (2025-11-19)
+## Latest Update (2025-11-19)
 
 ### 功能增强：DuckDB 配置参数灵活化支持
+### Feature Enhancement: Flexible DuckDB Configuration Parameter Support
 
 **更新说明**：参考 PostgreSQL 的 `connectOptions` 模式，为 DuckDB 添加了灵活的配置参数支持，允许用户通过配置文件自定义 DuckDB 的各种运行参数。
+**Update Note**: Referring to PostgreSQL's `connectOptions` model, flexible configuration parameter support has been added for DuckDB, allowing users to customize various DuckDB runtime parameters via configuration files.
 
 #### 主要改进
+#### Main Improvements
 
 1. **配置参数支持**
+   1. **Configuration Parameter Support**
    - 使用 `std::unordered_map<std::string, std::string>` 存储可变配置参数
+   - Uses `std::unordered_map<std::string, std::string>` to store variable configuration parameters
    - 支持任意 DuckDB 官方文档中的配置选项
+   - Supports any configuration options from the official DuckDB documentation
    - 提供合理的默认值（access_mode: READ_WRITE, threads: 4, max_memory: 4GB）
+   - Provides reasonable defaults (access_mode: READ_WRITE, threads: 4, max_memory: 4GB)
    - 用户配置优先级高于默认值
+   - User configuration takes precedence over defaults
 
 2. **配置方式**
+   2. **Configuration Methods**
    - JSON/YAML 配置文件：通过 `config_options` 字段配置
+   - JSON/YAML configuration file: configure via the `config_options` field
    - 编程式配置：通过 `DuckdbConfig` 结构体或工厂方法
+   - Programmatic configuration: via `DuckdbConfig` struct or factory method
    - 向后兼容：现有代码无需修改
+   - Backward compatible: no changes required for existing code
 
 #### 新增/修改文件
+#### New/Modified Files
 
 | 文件路径 | 修改内容 | 说明 |
 |---------|---------|------|
 | `orm_lib/inc/drogon/orm/DbConfig.h` | 添加 `configOptions` 字段 | `DuckdbConfig` 结构新增配置参数映射 |
+| `orm_lib/inc/drogon/orm/DbConfig.h` | Added `configOptions` field | `DuckdbConfig` struct adds configuration parameter mapping |
 | `orm_lib/src/duckdb_impl/DuckdbConnection.h` | 更新构造函数，添加成员变量 | 支持配置参数传递和存储 |
 | `orm_lib/src/duckdb_impl/DuckdbConnection.cc` | 重构 `init()` 方法 | 使用灵活配置替代硬编码，支持默认值机制 |
 | `orm_lib/src/DbClientImpl.h` | 新增配置构造函数 | 支持接收配置选项的构造函数 |
