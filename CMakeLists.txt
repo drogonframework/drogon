@@ -492,7 +492,6 @@ if (BUILD_DUCKDB)
         target_link_libraries(${PROJECT_NAME} PRIVATE ${DuckDB_LIBRARIES})
         target_include_directories(${PROJECT_NAME} PRIVATE ${DuckDB_INCLUDE_DIRS})
         set(DROGON_FOUND_DUCKDB TRUE)
-        # 使用 duckdb_impl 目录下的 DuckDB C API 直接实现
         set(DROGON_SOURCES
             ${DROGON_SOURCES}
             orm_lib/src/duckdb_impl/DuckdbConnection.cc
