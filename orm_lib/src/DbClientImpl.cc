@@ -75,7 +75,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
     assert(connNum > 0);
 }
 
-// DuckDB配置构造函数实现 [dq 2025-11-19]
+// DuckDB configuration constructor implementation [dq 2025-11-19]
 DbClientImpl::DbClientImpl(const std::string &connInfo,
                            size_t connNum,
                            ClientType type,
@@ -84,7 +84,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
 #if LIBPQ_SUPPORTS_BATCH_MODE
       autoBatch_(false),
 #endif
-      configOptions_(configOptions),  // 存储配置选项
+      configOptions_(configOptions),  // Store configuration options
       loops_(type == ClientType::Sqlite3 || type == ClientType::DuckDB
                  ? 1
                  : (connNum < std::thread::hardware_concurrency()
@@ -152,7 +152,7 @@ void DbClientImpl::execSql(
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
-    // 打印参数信息 dq 2025-07-01
+    // Print parameter information dq 2025-07-01
     if (!(paraNum == parameters.size() && paraNum == length.size() &&
           paraNum == format.size()))
     {
@@ -459,7 +459,7 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
         connPtr = std::make_shared<DuckdbConnection>(loop,
                                                      connectionInfo_,
                                                      sharedMutexPtr_,
-                                                     configOptions_);  // 传递配置选项 [dq 2025-11-19]
+                                                     configOptions_);  // Pass configuration options [dq 2025-11-19]
 #else
         return nullptr;
 #endif

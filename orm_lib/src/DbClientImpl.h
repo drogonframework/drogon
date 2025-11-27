@@ -40,7 +40,7 @@ class DbClientImpl : public DbClient,
 #else
                  ClientType type);
 #endif
-    // DuckDB配置构造函数 [dq 2025-11-19]
+    // DuckDB configuration constructor [dq 2025-11-19]
     DbClientImpl(const std::string &connInfo,
                  size_t connNum,
                  ClientType type,
@@ -80,7 +80,7 @@ class DbClientImpl : public DbClient,
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool autoBatch_{false};
 #endif
-    std::unordered_map<std::string, std::string> configOptions_;  // DuckDB配置选项 [dq 2025-11-19]
+    std::unordered_map<std::string, std::string> configOptions_;  // DuckDB configuration options [dq 2025-11-19]
     DbConnectionPtr newConnection(trantor::EventLoop *loop);
 
     void makeTrans(

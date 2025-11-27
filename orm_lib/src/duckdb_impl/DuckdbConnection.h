@@ -43,7 +43,7 @@ class DuckdbConnection : public DbConnection,
     DuckdbConnection(trantor::EventLoop *loop,
                      const std::string &connInfo,
                      const std::shared_ptr<SharedMutex> &sharedMutex,
-                     const std::unordered_map<std::string, std::string> &configOptions = {});  // 新增配置参数支持 [dq 2025-11-19]
+                     const std::unordered_map<std::string, std::string> &configOptions = {});  // Added configuration parameter support [dq 2025-11-19]
 
     void init() override;
 
@@ -80,28 +80,28 @@ class DuckdbConnection : public DbConnection,
     std::shared_ptr<DuckdbResultImpl> stmtExecute(
         duckdb_prepared_statement stmt);
 
-    // 批量 SQL 执行辅助方法 [dq 2025-11-21]
+    // Batch SQL execution helper method [dq 2025-11-21]
     void executeBatchSql();
     void executeSingleBatchCommand(const std::shared_ptr<SqlCmd> &cmd);
 
     trantor::EventLoopThread loopThread_;
 
-    // DuckDB 数据库和连接句柄
+    // DuckDB database and connection handles
     std::shared_ptr<duckdb_database> databasePtr_;
     std::shared_ptr<duckdb_connection> connectionPtr_;
 
-    // 读写锁（所有连接共享）
+    // Read-write lock (shared by all connections)
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
 
-    // 预编译语句缓存
+    // Prepared statement cache
     std::unordered_map<std::string_view, std::shared_ptr<duckdb_prepared_statement>>
         stmtsMap_;
-    std::set<std::string> stmts_;  // 维护SQL字符串的生命周期
+    std::set<std::string> stmts_;  // Maintain SQL string lifecycle
 
     std::string connInfo_;
-    std::unordered_map<std::string, std::string> configOptions_;  // DuckDB配置选项 [dq 2025-11-19]
+    std::unordered_map<std::string, std::string> configOptions_;  // DuckDB configuration options [dq 2025-11-19]
 
-    // 批量 SQL 命令队列 [dq 2025-11-21]
+    // Batch SQL command queue [dq 2025-11-21]
     std::deque<std::shared_ptr<SqlCmd>> batchSqlCommands_;
 };
 

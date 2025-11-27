@@ -144,11 +144,11 @@ void DbClientManager::createDbClients(
         else if (std::holds_alternative<DuckdbConfig>(dbInfo.config_))
         {
             auto &cfg = std::get<DuckdbConfig>(dbInfo.config_);
-            // 使用带配置选项的工厂方法 [dq 2025-11-19]
+            // Use factory method with configuration options [dq 2025-11-19]
             dbClientsMap_[cfg.name] =
                 drogon::orm::DbClient::newDuckDbClient(dbInfo.connectionInfo_,
                                                        cfg.connectionNumber,
-                                                       cfg.configOptions);  // 传递配置选项
+                                                       cfg.configOptions);  // Pass configuration options
             if (cfg.timeout > 0.0)
             {
                 dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);

@@ -45,24 +45,24 @@ class DuckdbResultImpl : public ResultImpl
   private:
     friend class DuckdbConnection;
 
-    // 使用智能指针管理 duckdb_result，参考 MySQL 实现
+    // Use shared_ptr to manage duckdb_result, reference MySQL implementation
     const std::shared_ptr<duckdb_result> result_;
 
-    // 缓存的元数据
+    // Cached metadata
     const Result::SizeType rowsNumber_;
     const Result::RowSizeType columnsNumber_;
     const SizeType affectedRows_;
     const unsigned long long insertId_;
 
-    // 列名映射（小写，支持大小写不敏感查询）
+    // Column name mapping (lowercase, supports case-insensitive queries)
     std::shared_ptr<std::unordered_map<std::string, RowSizeType>>
         columnNamesMap_;
 
-    // 值缓存（按需转换，避免重复转换）
+    // Value cache (convert on demand, avoid repeated conversions)
     mutable std::unordered_map<std::string, std::shared_ptr<std::string>>
         valueCache_;
 
-    // 辅助函数：按需转换值
+    // Helper function: convert values on demand
     std::shared_ptr<std::string> convertValue(RowSizeType col,
                                                SizeType row) const;
 };

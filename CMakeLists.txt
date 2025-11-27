@@ -4,12 +4,6 @@ project(drogon)
 
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 
-# Allow user to select C++ standard, default to 20 (C++20)
-option(DROGON_CXX_STANDARD "C++ standard to use (e.g. 17, 20)" 20)
-set(CMAKE_CXX_STANDARD ${DROGON_CXX_STANDARD})
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-message(STATUS "Using C++${CMAKE_CXX_STANDARD} standard")
 
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
@@ -579,15 +573,6 @@ if (BUILD_EXAMPLES)
 endif (BUILD_EXAMPLES)
 
 if (BUILD_CTL)
-    if (CMAKE_CROSSCOMPILING)
-        find_program(HOST_DROGON_CTL _drogon_ctl)
-        if (NOT HOST_DROGON_CTL)
-            message(FATAL_ERROR "_drogon_ctl not found on host system")
-        endif()
-        set(DROGON_CTL "${HOST_DROGON_CTL}")
-    else (CMAKE_CROSSCOMPILING)
-        set(DROGON_CTL "$<TARGET_FILE:_drogon_ctl>")
-    endif (CMAKE_CROSSCOMPILING)
     add_subdirectory(drogon_ctl)
 endif (BUILD_CTL)
 

@@ -36,7 +36,7 @@ DuckdbResultImpl::DuckdbResultImpl(std::shared_ptr<duckdb_result> r,
         {
             const char *colName = duckdb_column_name(result_.get(), i);
             std::string fieldName(colName);
-            // 转换为小写以支持大小写不敏感查询
+            // Convert to lowercase to support case-insensitive queries
             std::transform(fieldName.begin(),
                           fieldName.end(),
                           fieldName.begin(),
@@ -98,23 +98,23 @@ const char *DuckdbResultImpl::getValue(SizeType row, RowSizeType column) const
         return nullptr;
     }
 
-    // 检查 NULL
+    // Check for NULL
     if (duckdb_value_is_null(result_.get(), column, row))
     {
         return nullptr;
     }
 
-    // 生成缓存键
+    // Generate cache key
     std::string cacheKey = std::to_string(row) + "_" + std::to_string(column);
 
-    // 检查缓存
+    // Check cache
     auto it = valueCache_.find(cacheKey);
     if (it != valueCache_.end())
     {
         return it->second->c_str();
     }
 
-    // 按需转换并缓存
+    // Convert and cache on demand
     auto value = convertValue(column, row);
     if (value)
     {
@@ -193,7 +193,7 @@ std::shared_ptr<std::string> DuckdbResultImpl::convertValue(
         {
             char *val = duckdb_value_varchar(result_.get(), col, row);
             auto str = std::make_shared<std::string>(val);
-            duckdb_free(val);  // 立即释放 DuckDB 分配的内存
+            duckdb_free(val);  // Free DuckDB allocated memory immediately
             return str;
         }
         case DUCKDB_TYPE_BLOB:
@@ -206,7 +206,7 @@ std::shared_ptr<std::string> DuckdbResultImpl::convertValue(
         }
         default:
         {
-            // 未知类型尝试转为字符串
+            // For unknown types, attempt to convert to string
             char *val = duckdb_value_varchar(result_.get(), col, row);
             auto str = std::make_shared<std::string>(val);
             duckdb_free(val);

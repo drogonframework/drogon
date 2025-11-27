@@ -34,8 +34,8 @@ void DuckdbConnection::onError(
     const std::function<void(const std::exception_ptr &)> &exceptCallback,
     const char *errorMessage)
 {
-    // DuckDB 错误处理
-    // 创建 SqlError 异常并通过回调传递
+    // DuckDB error handling
+    // Create SqlError exception and pass via callback
     auto exceptPtr = std::make_exception_ptr(
         SqlError(errorMessage ? errorMessage : "Unknown DuckDB error",
                  std::string{sql}));
@@ -46,19 +46,19 @@ void DuckdbConnection::onError(
  * @brief Construct a new Duckdb Connection:: Duckdb Connection object
  * 
  * @param loop 
- * @param connInfo 连接字符串
+ * @param connInfo Connection string
  * @param sharedMutex 
- * @param configOptions 配置参数
+ * @param configOptions Configuration parameters
  */
 DuckdbConnection::DuckdbConnection(
     trantor::EventLoop *loop,
     const std::string &connInfo,
     const std::shared_ptr<SharedMutex> &sharedMutex,
-    const std::unordered_map<std::string, std::string> &configOptions)  // 新增配置参数支持 [dq 2025-11-21]
+    const std::unordered_map<std::string, std::string> &configOptions)  // Added configuration parameter support [dq 2025-11-21]
     : DbConnection(loop),
       sharedMutexPtr_(sharedMutex),
       connInfo_(connInfo),
-      configOptions_(configOptions)  // 存储配置选项 [dq 2025-11-21]
+      configOptions_(configOptions)  // Store configuration options [dq 2025-11-21]
 {
 }
 
@@ -67,9 +67,9 @@ void DuckdbConnection::init()
     loopThread_.run();
     loop_ = loopThread_.getLoop();
 
-    // 解析连接字符串
+    // Parse connection string
     auto connParams = parseConnString(connInfo_);
-    std::string filename = ":memory:";  // 默认为内存数据库
+    std::string filename = ":memory:";  // Default to in-memory database
 
     for (auto const &kv : connParams)
     {
@@ -85,7 +85,7 @@ void DuckdbConnection::init()
         }
     }
 
-    // 在事件循环线程中初始化 DuckDB 数据库连接
+    // Initialize DuckDB in the loop thread
     loop_->runInLoop([this, filename = std::move(filename)]() {
         duckdb_database db;
         duckdb_config config;
@@ -99,15 +99,15 @@ void DuckdbConnection::init()
             return;
         }
 
-        // 应用配置选项（使用传入的配置，或使用默认值）[dq 2025-11-19]
-        // 定义默认值
+        // Apply configuration options
+        // Define default values
         std::unordered_map<std::string, std::string> defaultConfig = {
             {"access_mode", "READ_WRITE"},
             {"threads", "4"},  // Default changed to 4 to avoid excessive resource usage
             {"max_memory", "4GB"},
         };
 
-        // 合并用户配置和默认配置（用户配置优先）
+        // merge defaultConfig with user-provided configOptions_
         for (const auto& [key, defaultValue] : defaultConfig) {
             auto it = configOptions_.find(key);
             const std::string& value = (it != configOptions_.end()) ? it->second : defaultValue;
@@ -117,7 +117,7 @@ void DuckdbConnection::init()
             }
         }
 
-        // 应用其他用户自定义的配置选项
+        // Apply other user-defined configuration options
         for (const auto& [key, value] : configOptions_) {
             if (defaultConfig.find(key) == defaultConfig.end()) {
                 if (duckdb_set_config(config, key.c_str(), value.c_str()) == DuckDBError) {
@@ -126,7 +126,7 @@ void DuckdbConnection::init()
             }
         }
 
-        // 打开数据库
+        // Open database
         //auto state = duckdb_open(filename.c_str(), &db);
         auto state = duckdb_open_ext(filename.c_str(), &db, config, NULL);
         if (state == DuckDBError)
@@ -139,7 +139,6 @@ void DuckdbConnection::init()
         }
         duckdb_destroy_config(&config);
 
-        // 创建连接
         state = duckdb_connect(db, &conn);
         if (state == DuckDBError)
         {
@@ -150,7 +149,7 @@ void DuckdbConnection::init()
             return;
         }
 
-        // 使用智能指针管理资源
+        // Store database and connection handles in shared_ptr with custom deleters
         databasePtr_ = std::shared_ptr<duckdb_database>(
             new duckdb_database(db),
             [](duckdb_database *ptr) {
@@ -177,11 +176,11 @@ void DuckdbConnection::init()
 }
 
 /**
- * @brief 执行 SQL 语句（异步）
+ * @brief 
  * 
- * @param sql SQL 语句 
- * @param paraNum 参数数量
- * @param parameters 参数值
+ * @param sql SQL statement 
+ * @param paraNum 
+ * @param parameters 
  * @param length 
  * @param format 
  * @param rcb 
@@ -236,7 +235,7 @@ void DuckdbConnection::execSqlInQueue(
     std::shared_ptr<duckdb_prepared_statement> stmtPtr;
     bool newStmt = false;
 
-    // 尝试从缓存中获取预编译语句
+    // Try to get the prepared statement from cache
     if (paraNum > 0)
     {
         auto iter = stmtsMap_.find(sql);
@@ -246,7 +245,7 @@ void DuckdbConnection::execSqlInQueue(
         }
     }
 
-    // 如果没有缓存，则准备新的语句
+    // If not cached, prepare new statement
     if (!stmtPtr)
     {
         duckdb_prepared_statement stmt;
@@ -277,7 +276,7 @@ void DuckdbConnection::execSqlInQueue(
     assert(stmtPtr);
     auto stmt = *stmtPtr;
 
-    // 绑定参数
+    // Bind parameters
     for (int i = 0; i < (int)parameters.size(); ++i)
     {
         duckdb_state bindRet = DuckDBSuccess;
@@ -321,7 +320,7 @@ void DuckdbConnection::execSqlInQueue(
         }
     }
 
-    // 执行语句
+    // Execute statement
     auto resultPtr = stmtExecute(stmt);
 
     if (!resultPtr)
@@ -331,7 +330,7 @@ void DuckdbConnection::execSqlInQueue(
         return;
     }
 
-    // 缓存预编译语句
+    // Cache prepared statement
     if (paraNum > 0 && newStmt)
     {
         auto r = stmts_.insert(std::string{sql});
@@ -346,7 +345,7 @@ void DuckdbConnection::execSqlInQueue(
 std::shared_ptr<DuckdbResultImpl> DuckdbConnection::stmtExecute(
     duckdb_prepared_statement stmt)
 {
-    // 在堆上分配 duckdb_result
+    // Allocate duckdb_result on heap
     auto rawResult = new duckdb_result();
     auto state = duckdb_execute_prepared(stmt, rawResult);
 
@@ -357,7 +356,7 @@ std::shared_ptr<DuckdbResultImpl> DuckdbConnection::stmtExecute(
         return nullptr;
     }
 
-    // 创建智能指针，删除器调用 duckdb_destroy_result must call！
+    // Create smart pointer, deleter calls duckdb_destroy_result must call!
     auto resultShared = std::shared_ptr<duckdb_result>(
         rawResult,
         [](duckdb_result *ptr) {
@@ -368,14 +367,14 @@ std::shared_ptr<DuckdbResultImpl> DuckdbConnection::stmtExecute(
             }
         });
 
-    // 获取受影响的行数
+    // Get the number of affected rows
     idx_t rowCount = duckdb_row_count(rawResult);
 
-    // DuckDB C API 没有直接的 last_insert_id
-    // 需要通过 RETURNING 子句或其他方式获取
+    // DuckDB C API does not have direct last_insert_id
+    // Must be obtained through RETURNING clause or other means
     unsigned long long insertId = 0;
 
-    // 使用带参数的构造函数创建 DuckdbResultImpl
+    // Create DuckdbResultImpl using parameterized constructor
     return std::make_shared<DuckdbResultImpl>(resultShared, rowCount, insertId);
 }
 
