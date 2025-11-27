@@ -31,8 +31,6 @@
 *.out
 *.app
 
-trantor/
-.claude/
 build/
 cmake-build-debug/
 cmake-build-debug-visual-studio/
