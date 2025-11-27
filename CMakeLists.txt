@@ -4,10 +4,12 @@ project(drogon)
 
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 
-# Set C++20 as the minimum required standard
-set(CMAKE_CXX_STANDARD 20)
+# Allow user to select C++ standard, default to 20 (C++20)
+option(DROGON_CXX_STANDARD "C++ standard to use (e.g. 17, 20)" 20)
+set(CMAKE_CXX_STANDARD ${DROGON_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+message(STATUS "Using C++${CMAKE_CXX_STANDARD} standard")
 
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
