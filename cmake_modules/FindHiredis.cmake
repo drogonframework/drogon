@@ -39,3 +39,7 @@ if(Hiredis_FOUND)
             INTERFACE_LINK_LIBRARIES
             "${HIREDIS_LIBRARIES}")
 endif(Hiredis_FOUND)
+
+if(WIN32 AND MINGW)
+        target_link_libraries(Hiredis_lib INTERFACE ws2_32 secur32 crypt32 bcrypt zstd curl shlwapi)
+endif()
