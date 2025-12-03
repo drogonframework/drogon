@@ -215,6 +215,18 @@ void DbClientManager::addDbClient(const DbConfig &config)
                                     cfg.username,
                                     cfg.password,
                                     cfg.characterSet);
+        if (!cfg.connectOptions.empty())
+        {
+            std::string optionStr;
+            for (auto const &[key, value] : cfg.connectOptions)
+            {
+                optionStr += " ";
+                optionStr += escapeConnString(key);
+                optionStr += "=";
+                optionStr += escapeConnString(value);
+            }
+            connStr += optionStr;
+        }
         dbInfos_.emplace_back(DbInfo{connStr, config});
 #else
         std::cout << "The Mysql is not supported in current drogon build, "
