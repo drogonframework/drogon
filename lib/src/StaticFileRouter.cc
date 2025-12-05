@@ -169,7 +169,18 @@ void StaticFileRouter::route(
             if (std::filesystem::is_directory(fsFilePath, err))
             {
                 // Check if path is eligible for an implicit index.html
-                if (implicitPageEnable_)
+                if (implicitPageEnable_ && req->path().back() != '/')
+                {
+                    std::string newLocation = req->path() + "/";
+                    if (!req->query().empty())
+                    {
+                        newLocation += "?" + req->query();
+                    }
+                    callback(HttpResponse::newRedirectionResponse(
+                        newLocation, k301MovedPermanently));
+                    return;
+                }
+                else if (implicitPageEnable_)
                 {
                     filePath = filePath + "/" + implicitPage_;
                 }
@@ -244,7 +255,19 @@ void StaticFileRouter::route(
         if (std::filesystem::is_directory(fsDirectoryPath, err))
         {
             // Check if path is eligible for an implicit index.html
-            if (implicitPageEnable_)
+            if (implicitPageEnable_ && req->path().back() != '/')
+            {
+                std::string newLocation = req->path() + "/";
+                if (!req->query().empty())
+                {
+                    newLocation += "?" + req->query();
+                }
+                callback(
+                    HttpResponse::newRedirectionResponse(newLocation,
+                                                         k301MovedPermanently));
+                return;
+            }
+            else if (implicitPageEnable_)
             {
                 std::string filePath = directoryPath + "/" + implicitPage_;
                 sendStaticFileResponse(filePath, req, std::move(callback), "");
