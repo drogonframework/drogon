@@ -654,13 +654,13 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
             {
                 auto now = trantor::Date::now();
                 bool isDateChanged =
-                    ((now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC) !=
+                    ((now.microSecondsSinceEpoch() / MICRO_SECONDS_PER_SEC) !=
                      httpStringDate_);
                 assert(httpString_);
                 if (isDateChanged)
                 {
                     httpStringDate_ =
-                        now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+                        now.microSecondsSinceEpoch() / MICRO_SECONDS_PER_SEC;
                     auto newDate = utils::getHttpFullDate(now);
 
                     httpString_ =
