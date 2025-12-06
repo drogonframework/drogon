@@ -57,7 +57,7 @@ class Sqlite3Connection : public DbConnection,
 
     void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
     {
-        LOG_FATAL << "The mysql library does not support batch mode";
+        LOG_FATAL << "The sqlite3 library does not support batch mode";
         exit(1);
     }
 
