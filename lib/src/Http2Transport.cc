@@ -241,9 +241,7 @@ bool HeadersFrame::serialize(OByteStream &stream, uint8_t &flags) const
     if (exclusive)
     {
         flags |= (uint8_t)H2HeadersFlags::Priority;
-        uint32_t streamDependency = this->streamDependency;
-        if (exclusive)
-            streamDependency |= 1U << 31;
+        uint32_t streamDependency = this->streamDependency | (1U << 31);
         stream.writeU32BE(streamDependency);
         stream.writeU8(weight);
     }
@@ -1226,7 +1224,6 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     SettingsFrame settingsFrame;
     settingsFrame.settings.emplace_back((uint16_t)H2SettingsKey::EnablePush,
                                         0);  // Disable push
-    sendFrame(settingsFrame, 0);
     sendBufferedData();
 }
 
