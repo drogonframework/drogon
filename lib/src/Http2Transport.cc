@@ -242,6 +242,10 @@ bool HeadersFrame::serialize(OByteStream &stream, uint8_t &flags) const
         stream.writeU32BE(streamDependency);
         stream.writeU8(weight);
     }
+    if(padLength > 0)
+    {
+        stream.pad(padLength);
+    }
 
     if (endHeaders)
         flags |= (uint8_t)H2HeadersFlags::EndHeaders;
@@ -324,13 +328,16 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
 bool DataFrame::serialize(OByteStream &stream, uint8_t &flags) const
 {
     flags = (endStream ? (uint8_t)H2DataFlags::EndStream : 0x0);
-    auto [ptr, size] = getData();
-
-    stream.write(ptr, size);
-    if (padLength > 0)
+    if(padLength > 0)
     {
         flags |= (uint8_t)H2DataFlags::Padded;
-        stream.pad(padLength, 0);
+        stream.writeU8(padLength);
+    }
+    auto [ptr, size] = getData();
+
+    if (padLength > 0)
+    {
+        stream.pad(padLength);
     }
     return true;
 }
@@ -417,13 +424,17 @@ bool PushPromiseFrame::serialize(OByteStream &stream, uint8_t &flags) const
     flags = 0x0;
     if (endHeaders)
         flags |= (uint8_t)H2HeadersFlags::EndHeaders;
+    if( padLength > 0)
+    {
+        flags |= (uint8_t)H2HeadersFlags::Padded;
+        stream.writeU8(padLength);
+    }
     assert(promisedStreamId > 0);
     stream.writeU32BE(promisedStreamId);
     stream.write(headerBlockFragment.data(), headerBlockFragment.size());
     if (padLength > 0)
     {
-        flags |= (uint8_t)H2HeadersFlags::Padded;
-        stream.writeU8(padLength);
+        stream.pad(padLength);
     }
     return true;
 }
@@ -921,6 +932,15 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         if (std::holds_alternative<WindowUpdateFrame>(frame))
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
+            if(std::numeric_limits<decltype(avaliableTxWindow)>::max() - avaliableTxWindow < f.windowSizeIncrement)
+            {
+                LOG_TRACE << "Flow control error: TX window size overflow";
+                connectionErrored(
+                    streamId,
+                    StreamCloseErrorCode::FlowControlError,
+                    "TX window size overflow");
+                break;
+            }
             avaliableTxWindow += f.windowSizeIncrement;
 
             // Find if we have a stream that can be resumed
@@ -1298,6 +1318,15 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     {
         auto &f = std::get<WindowUpdateFrame>(frame);
         stream.avaliableTxWindow += f.windowSizeIncrement;
+        if(std::numeric_limits<decltype(stream.avaliableTxWindow)>::max() - stream.avaliableTxWindow < f.windowSizeIncrement)
+        {
+            LOG_TRACE << "Flow control error: stream TX window size overflow";
+            connectionErrored(
+                streamId,
+                StreamCloseErrorCode::FlowControlError,
+                "Stream TX window size overflow");
+            return;
+        }
         if (avaliableTxWindow == 0)
             return;
 
@@ -1460,7 +1489,7 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     {
         size_t remaining = maxSendSize - i;
         size_t readSize = (std::min)(maxFrameSize, remaining);
-        bool endStream = sendEverything && i + maxFrameSize >= size;
+        bool endStream = sendEverything && (i + readSize >= maxSendSize);
         const std::string_view sendData((const char *)data + i, readSize);
         DataFrame dataFrame(sendData, endStream);
         LOG_TRACE << "Sending data frame: size=" << readSize

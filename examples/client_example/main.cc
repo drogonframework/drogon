@@ -16,7 +16,7 @@ int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     {
-        auto client = HttpClient::newHttpClient("http://www.baidu.com");
+        auto client = HttpClient::newHttpClient("https://google.com");
         client->setSockOptCallback([](int fd) {
             std::cout << "setSockOptCallback:" << fd << std::endl;
 #ifdef __linux__
@@ -41,11 +41,11 @@ int main()
 
         auto req = HttpRequest::newHttpRequest();
         req->setMethod(drogon::Get);
-        req->setPath("/s");
-        req->setParameter("wd", "wx");
-        req->setParameter("oq", "wx");
+        // req->setPath("/s");
+        // req->setParameter("wd", "wx");
+        // req->setParameter("oq", "wx");
 
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < 1; ++i)
         {
             client->sendRequest(
                 req, [](ReqResult result, const HttpResponsePtr &response) {

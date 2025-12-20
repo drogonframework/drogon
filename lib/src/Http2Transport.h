@@ -77,7 +77,9 @@ struct ByteStream
 
     void read(uint8_t *buffer, size_t size)
     {
-        assert((length >= size && offset <= length - size) || size == 0);
+        if(size==0)
+            return;
+        assert(length >= size && offset <= length - size);
         assert(buffer != nullptr);
         assert(ptr != nullptr);
         memcpy(buffer, ptr + offset, size);
@@ -136,7 +138,7 @@ struct OByteStream
     void pad(size_t size, uint8_t value = 0)
     {
         buffer.ensureWritableBytes(size);
-        auto ptr = (uint8_t *)buffer.peek() + buffer.readableBytes();
+        auto ptr = (uint8_t *)buffer.peek() + size;
         memset(ptr, value, size);
         buffer.hasWritten(size);
     }
