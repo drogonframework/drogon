@@ -242,16 +242,16 @@ bool HeadersFrame::serialize(OByteStream &stream, uint8_t &flags) const
         stream.writeU32BE(streamDependency);
         stream.writeU8(weight);
     }
-    if(padLength > 0)
-    {
-        stream.pad(padLength);
-    }
 
     if (endHeaders)
         flags |= (uint8_t)H2HeadersFlags::EndHeaders;
     if (endStream)
         flags |= (uint8_t)H2HeadersFlags::EndStream;
     stream.write(headerBlockFragment.data(), headerBlockFragment.size());
+    if(padLength > 0)
+    {
+        stream.pad(padLength);
+    }
     return true;
 }
 
@@ -334,6 +334,7 @@ bool DataFrame::serialize(OByteStream &stream, uint8_t &flags) const
         stream.writeU8(padLength);
     }
     auto [ptr, size] = getData();
+    stream.write(ptr, size);
 
     if (padLength > 0)
     {
@@ -932,7 +933,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         if (std::holds_alternative<WindowUpdateFrame>(frame))
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
-            if(std::numeric_limits<decltype(avaliableTxWindow)>::max() - avaliableTxWindow < f.windowSizeIncrement)
+            if(std::numeric_limits<decltype(avaliableTxWindow)>::max()
+                - avaliableTxWindow < f.windowSizeIncrement)
             {
                 LOG_TRACE << "Flow control error: TX window size overflow";
                 connectionErrored(
@@ -1317,8 +1319,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     else if (std::holds_alternative<WindowUpdateFrame>(frame))
     {
         auto &f = std::get<WindowUpdateFrame>(frame);
-        stream.avaliableTxWindow += f.windowSizeIncrement;
-        if(std::numeric_limits<decltype(stream.avaliableTxWindow)>::max() - stream.avaliableTxWindow < f.windowSizeIncrement)
+        if(std::numeric_limits<decltype(stream.avaliableTxWindow)>::max()
+            - stream.avaliableTxWindow < f.windowSizeIncrement)
         {
             LOG_TRACE << "Flow control error: stream TX window size overflow";
             connectionErrored(
@@ -1327,6 +1329,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 "Stream TX window size overflow");
             return;
         }
+        stream.avaliableTxWindow += f.windowSizeIncrement;
         if (avaliableTxWindow == 0)
             return;
 
