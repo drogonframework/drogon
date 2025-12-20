@@ -1537,7 +1537,7 @@ void Http2Transport::connectionErrored(int32_t lastStreamId,
                                        StreamCloseErrorCode errorCode,
                                        std::string errorMsg)
 {
-    LOG_TRACE << "Killing connection with error: " << errorMsg;
+    LOG_ERROR << "Client killing HTTP/2 connection with error: " << errorMsg;
     connPtr->getLoop()->assertInLoopThread();
     sendFrame(
         GoAwayFrame(lastStreamId, (uint32_t)errorCode, std::move(errorMsg)), 0);
