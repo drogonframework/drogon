@@ -14,6 +14,7 @@ using namespace drogon;
 using namespace drogon::internal;
 
 static const std::string_view h2_preamble = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+static std::array<uint8_t, 8> pingOpaqueData = {0, 1, 2, 3, 4, 5, 6, 7};
 
 static std::optional<size_t> stosz(const std::string &str)
 {
@@ -692,9 +693,6 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         connPtr->forceClose();
         return;
     }
-    // -2 because we are using the next stream id for the next request
-    // TODO: Clean interface to get the current highest stream id. Might need
-    // to keep tracking separately
     const auto streamId = *sid;
     assert(streamId % 2 == 1);
     LOG_TRACE << "Sending HTTP/2 request: streamId=" << streamId;
@@ -1205,10 +1203,12 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
 
 Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
                                size_t *bytesSent,
-                               size_t *bytesReceived)
+                               size_t *bytesReceived,
+                               double pingIntervalSec)
     : connPtr(connPtr),
       bytesSent_(bytesSent),
       bytesReceived_(bytesReceived),
+      pingIntervalSec_(pingIntervalSec),
       hpackRx(&maxRxDynamicTableSize)
 {
     // TODO: Handle connection dies before constructing the object
@@ -1230,6 +1230,26 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     initialRxWindowSize = desiredInitialRxWindowSize;
     sendFrame(settingsFrame, 0);
     sendBufferedData();
+
+    // Setup ping timer
+    if (pingIntervalSec_ > 0)
+    {
+        pingTimerId_ = connPtr->getLoop()->runEvery(
+            pingIntervalSec_,
+            [this]() {
+                PingFrame pingFrame(pingOpaqueData, false);
+                sendFrame(pingFrame, 0);
+            });
+    }
+}
+
+Http2Transport::~Http2Transport()
+{
+    if (pingTimerId_ != 0)
+    {
+        connPtr->getLoop()->invalidateTimer(pingTimerId_);
+        pingTimerId_ = 0;
+    }
 }
 
 void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,

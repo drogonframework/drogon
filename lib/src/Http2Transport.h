@@ -323,7 +323,7 @@ struct PingFrame
     PingFrame() = default;
 
     PingFrame(std::array<uint8_t, 8> opaqueData, bool ack)
-        : opaqueData(opaqueData), ack(ack)
+        : opaqueData(std::move(opaqueData)), ack(ack)
     {
     }
 
@@ -494,6 +494,9 @@ class Http2Transport : public HttpTransport
     int64_t avaliableRxWindow = 65535;  // RFC default initial value
     bool firstInitalWindowUpdateReceived = false;
 
+    double pingIntervalSec_{0.0};
+    trantor::TimerId pingTimerId_;
+
     internal::H2Stream &createStream(int32_t streamId);
     void responseSuccess(internal::H2Stream &stream);
     void streamErrored(int32_t streamId, ReqResult result);
@@ -540,7 +543,9 @@ class Http2Transport : public HttpTransport
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
                    size_t *bytesSent,
-                   size_t *bytesReceived);
+                   size_t *bytesReceived,
+                   double pingIntervalSec = 0.0);
+    ~Http2Transport() override;
 
     void sendRequestInLoop(const HttpRequestPtr &req,
                            HttpReqCallback &&callback) override;

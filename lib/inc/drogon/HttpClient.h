@@ -319,6 +319,14 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual void addSSLConfigs(
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
+    
+    /**
+     * @brief Enable sending ping messages to the peer.
+     *
+     * @param intervalSec The sending interval in seconds.
+     * @note This only has effect for HTTP/2 connections.
+     */
+    virtual void enablePing(double intervalSec = 30.0) = 0;
 
     /**
      * @brief get the protocol version used by the HTTP connection
