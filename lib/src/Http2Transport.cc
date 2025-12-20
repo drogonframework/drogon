@@ -1203,7 +1203,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         }
         bool endStream = (flags & (uint8_t)H2HeadersFlags::EndStream);
         bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders);
-        if (endStream && !endHeaders)
+        if ((endStream && !endHeaders) || stream.body.size() != 0)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
