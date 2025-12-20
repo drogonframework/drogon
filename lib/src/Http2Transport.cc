@@ -801,14 +801,12 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     auto [sentOffset, done] = sendBodyForStream(stream, 0);
     if (!done)
     {
-        auto it = pendingDataSend.find(streamId);
-        if (it != pendingDataSend.end())
+        auto [it, inserted] = pendingDataSend.try_emplace(streamId, sentOffset);
+        if(!inserted)
         {
             LOG_FATAL << "Stream id already in use! This should not happen";
             abort();
         }
-
-        pendingDataSend.emplace(streamId, sentOffset);
     }
 }
 
