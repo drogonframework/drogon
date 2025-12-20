@@ -319,7 +319,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual void addSSLConfigs(
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
-    
+
     /**
      * @brief Enable sending ping messages to the peer.
      *

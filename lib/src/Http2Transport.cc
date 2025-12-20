@@ -1234,12 +1234,10 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     // Setup ping timer
     if (pingIntervalSec_ > 0)
     {
-        pingTimerId_ = connPtr->getLoop()->runEvery(
-            pingIntervalSec_,
-            [this]() {
-                PingFrame pingFrame(pingOpaqueData, false);
-                sendFrame(pingFrame, 0);
-            });
+        pingTimerId_ = connPtr->getLoop()->runEvery(pingIntervalSec_, [this]() {
+            PingFrame pingFrame(pingOpaqueData, false);
+            sendFrame(pingFrame, 0);
+        });
     }
 }
 
