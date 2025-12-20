@@ -880,6 +880,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 }
             }
             // TODO: Should be half-closed but trantor doesn't support it
+            // Nothing I can do for now
             connPtr->shutdown();
             return;
         }
@@ -983,6 +984,13 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             {
                 if (key == (uint16_t)H2SettingsKey::HeaderTableSize)
                 {
+                    if (value > 20 * 1024 * 1024)
+                    {
+                        LOG_TRACE << "HeaderTableSize too large";
+                        connectionErrored(streamId,
+                                          StreamCloseErrorCode::ProtocolError,
+                                          "HeaderTableSize too large");
+                    }
                     maxRxDynamicTableSize = value;
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
@@ -1467,8 +1475,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             return;
         auto &f = std::get<RstStreamFrame>(frame);
         LOG_TRACE << "RST_STREAM frame received: errorCode=" << f.errorCode;
-        streamErrored(streamId, ReqResult::BadResponse);
         stream.state = StreamState::Finished;
+        streamErrored(streamId, ReqResult::BadResponse);
     }
     else
     {
