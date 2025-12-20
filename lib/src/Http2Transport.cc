@@ -264,7 +264,7 @@ std::optional<GoAwayFrame> GoAwayFrame::parse(ByteStream &payload,
         return std::nullopt;
     }
     GoAwayFrame frame;
-    frame.lastStreamId = payload.readU32BE();
+    frame.lastStreamId = payload.readU32BE() & ~(1U << 31);
     frame.errorCode = payload.readU32BE();
     frame.additionalDebugData.resize(payload.remaining());
     payload.read(frame.additionalDebugData.data(), payload.remaining());
@@ -760,7 +760,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 
     bool haveBody =
         req->body().length() > 0 ||
-        (req->contentType() != CT_MULTIPART_FORM_DATA &&
+        (req->contentType() == CT_MULTIPART_FORM_DATA &&
          dynamic_cast<HttpFileUploadRequest *>(req.get()) != nullptr);
     auto &stream = createStream(streamId);
     stream.callback = std::move(callback);
