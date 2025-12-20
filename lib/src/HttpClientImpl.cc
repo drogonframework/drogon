@@ -619,6 +619,11 @@ void HttpClientImpl::handleResponse(
         resp->brDecompress();
     }
 #endif
+    if (type.find("application/json") != std::string::npos)
+    {
+        resp->parseJson();
+    }
+    resp->setPeerCertificate(connPtr->peerCertificate());
     auto cb = std::move(reqAndCb);
     handleCookies(resp);
     cb.second(ReqResult::Ok, resp);
