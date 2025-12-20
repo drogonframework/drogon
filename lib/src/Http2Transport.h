@@ -555,8 +555,5 @@ class Http2Transport : public HttpTransport
     bool handleConnectionClose() override;
 
     void onError(ReqResult result) override;
-
-  protected:
-    void onServerSettingsReceived(){};
 };
 }  // namespace drogon
