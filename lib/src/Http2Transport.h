@@ -484,13 +484,14 @@ class Http2Transport : public HttpTransport
     const uint32_t windowIncreaseThreshold = 256 * 1024;  // 256 KB
     const uint32_t windowIncreaseSize = 4 * 1024 * 1024;  // 4 MB
     const uint32_t maxCompressiedHeaderSize = 2048;
-    // TODO: We should send our own INITIAL_WINDOW_SIZE setting to 512 KB or
-    // more to reduce initial stalls.
+    const uint32_t desiredInitialRxWindowSize = 512 * 1024;  // 512 KB
+    // ^^^^ this value must be larger then 65535 - our logic DOES NOT
+    //      handle decreasing window size gracefully
     const int32_t streamIdReconnectThreshold = INT_MAX - 8192;
 
     // HTTP/2 connection-wide state
-    int64_t avaliableTxWindow = 65535;
-    int64_t avaliableRxWindow = 65535;
+    int64_t avaliableTxWindow = 65535;  // RFC default initial value
+    int64_t avaliableRxWindow = 65535;  // RFC default initial value
     bool firstInitalWindowUpdateReceived = false;
 
     internal::H2Stream &createStream(int32_t streamId);
@@ -511,7 +512,7 @@ class Http2Transport : public HttpTransport
     // Returns true when we SHOULD reconnect due to exhausting stream IDs.
     // Doesn't mean we will. We will force a reconnect when we actually
     // run out.
-    inline bool runningOutStreamId()
+    inline bool runningOutStreamId() const
     {
         return currentStreamId > streamIdReconnectThreshold;
     }

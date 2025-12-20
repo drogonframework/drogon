@@ -1225,6 +1225,12 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     SettingsFrame settingsFrame;
     settingsFrame.settings.emplace_back((uint16_t)H2SettingsKey::EnablePush,
                                         0);  // Disable push
+    // Increase initial window size to our desired size -- the values supplied
+    // by RFC is too small for practical use
+    settingsFrame.settings.emplace_back((uint16_t)H2SettingsKey::InitialWindowSize,
+                                        desiredInitialRxWindowSize);
+    initialRxWindowSize = desiredInitialRxWindowSize;
+    sendFrame(settingsFrame, 0);
     sendBufferedData();
 }
 
