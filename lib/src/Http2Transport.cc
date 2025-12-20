@@ -158,7 +158,7 @@ std::optional<WindowUpdateFrame> WindowUpdateFrame::parse(ByteStream &payload,
     // MSB is reserved for future use
     auto [_, windowSizeIncrement] = payload.readBI31BE();
     frame.windowSizeIncrement = windowSizeIncrement;
-    if(frame.windowSizeIncrement == 0)
+    if (frame.windowSizeIncrement == 0)
     {
         LOG_TRACE << "Flow control error: window size increment cannot be 0";
         return std::nullopt;
@@ -253,7 +253,7 @@ bool HeadersFrame::serialize(OByteStream &stream, uint8_t &flags) const
     if (endStream)
         flags |= (uint8_t)H2HeadersFlags::EndStream;
     stream.write(headerBlockFragment.data(), headerBlockFragment.size());
-    if(padLength > 0)
+    if (padLength > 0)
     {
         stream.pad(padLength);
     }
@@ -333,7 +333,7 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
 bool DataFrame::serialize(OByteStream &stream, uint8_t &flags) const
 {
     flags = (endStream ? (uint8_t)H2DataFlags::EndStream : 0x0);
-    if(padLength > 0)
+    if (padLength > 0)
     {
         flags |= (uint8_t)H2DataFlags::Padded;
         stream.writeU8(padLength);
@@ -430,7 +430,7 @@ bool PushPromiseFrame::serialize(OByteStream &stream, uint8_t &flags) const
     flags = 0x0;
     if (endHeaders)
         flags |= (uint8_t)H2HeadersFlags::EndHeaders;
-    if( padLength > 0)
+    if (padLength > 0)
     {
         flags |= (uint8_t)H2HeadersFlags::Padded;
         stream.writeU8(padLength);
@@ -938,14 +938,14 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         if (std::holds_alternative<WindowUpdateFrame>(frame))
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
-            if(std::numeric_limits<decltype(avaliableTxWindow)>::max()
-                - avaliableTxWindow < f.windowSizeIncrement)
+            if (std::numeric_limits<decltype(avaliableTxWindow)>::max() -
+                    avaliableTxWindow <
+                f.windowSizeIncrement)
             {
                 LOG_TRACE << "Flow control error: TX window size overflow";
-                connectionErrored(
-                    streamId,
-                    StreamCloseErrorCode::FlowControlError,
-                    "TX window size overflow");
+                connectionErrored(streamId,
+                                  StreamCloseErrorCode::FlowControlError,
+                                  "TX window size overflow");
                 break;
             }
             avaliableTxWindow += f.windowSizeIncrement;
@@ -1113,7 +1113,7 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
     for (auto &[key, value] : headers)
         LOG_TRACE << "  " << key << ": " << value;
     assert(stream.response || !isTrailers);
-    if(stream.response == nullptr)
+    if (stream.response == nullptr)
     {
         stream.response = std::make_shared<HttpResponseImpl>();
         stream.response->setVersion(Version::kHttp2);
@@ -1133,12 +1133,11 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
         "content-encoding",
         "content-type",
         "content-range",
-        "trailer"
-    };
+        "trailer"};
     for (const auto &[key, value] : headers)
     {
         bool ok = true;
-        if(isTrailers)
+        if (isTrailers)
         {
             if (std::find(bannedTrailerHeaders.begin(),
                           bannedTrailerHeaders.end(),
@@ -1148,7 +1147,7 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
                 streamErrored(streamId, ReqResult::BadResponse);
                 return false;
             }
-            if( key.front() == ':')
+            if (key.front() == ':')
             {
                 LOG_TRACE << "Pseudo header in trailers: " << key;
                 streamErrored(streamId, ReqResult::BadResponse);
@@ -1233,8 +1232,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
     if (std::holds_alternative<HeadersFrame>(frame))
     {
-        if (stream.state != StreamState::ExpectingHeaders
-            && stream.state != StreamState::ExpectingData) // Trailers
+        if (stream.state != StreamState::ExpectingHeaders &&
+            stream.state != StreamState::ExpectingData)  // Trailers
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
@@ -1250,9 +1249,9 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             headerBufferRx.append((char *)f.headerBlockFragment.data(),
                                   f.headerBlockFragment.size());
             expectngContinuationStreamId = streamId;
-            stream.state = isTrailers ?
-                               StreamState::ExpectingContinuation :
-                               StreamState::ExepectingContinuationTrailers;
+            stream.state = isTrailers
+                               ? StreamState::ExpectingContinuation
+                               : StreamState::ExepectingContinuationTrailers;
             return;
         }
         auto &f = std::get<HeadersFrame>(frame);
@@ -1271,7 +1270,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             return;
         }
 
-        if(isTrailers)
+        if (isTrailers)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
@@ -1282,7 +1281,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     else if (std::holds_alternative<ContinuationFrame>(frame))
     {
         auto &f = std::get<ContinuationFrame>(frame);
-        if (stream.state == StreamState::ExpectingContinuation || 
+        if (stream.state == StreamState::ExpectingContinuation ||
             stream.state == StreamState::ExepectingContinuationTrailers)
         {
             connectionErrored(streamId,
@@ -1293,18 +1292,18 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         headerBufferRx.append((char *)f.headerBlockFragment.data(),
                               f.headerBlockFragment.size());
-        bool isTrailers = (stream.state == StreamState::ExepectingContinuationTrailers);
+        bool isTrailers =
+            (stream.state == StreamState::ExepectingContinuationTrailers);
         bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders) != 0;
         bool endStream = (flags & (uint8_t)H2HeadersFlags::EndStream) != 0;
 
-        if(isTrailers && (endHeaders == true && endStream == false))
+        if (isTrailers && (endHeaders == true && endStream == false))
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
                               "Trailers must end header and stream together");
             return;
         }
-
 
         if (endHeaders)
         {
@@ -1320,7 +1319,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             return;
         }
 
-        if(endStream)
+        if (endStream)
         {
             stream.state = StreamState::Finished;
             responseSuccess(stream);
@@ -1388,14 +1387,14 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     else if (std::holds_alternative<WindowUpdateFrame>(frame))
     {
         auto &f = std::get<WindowUpdateFrame>(frame);
-        if(std::numeric_limits<decltype(stream.avaliableTxWindow)>::max()
-            - stream.avaliableTxWindow < f.windowSizeIncrement)
+        if (std::numeric_limits<decltype(stream.avaliableTxWindow)>::max() -
+                stream.avaliableTxWindow <
+            f.windowSizeIncrement)
         {
             LOG_TRACE << "Flow control error: stream TX window size overflow";
-            connectionErrored(
-                streamId,
-                StreamCloseErrorCode::FlowControlError,
-                "Stream TX window size overflow");
+            connectionErrored(streamId,
+                              StreamCloseErrorCode::FlowControlError,
+                              "Stream TX window size overflow");
             return;
         }
         stream.avaliableTxWindow += f.windowSizeIncrement;

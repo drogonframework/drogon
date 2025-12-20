@@ -77,7 +77,7 @@ struct ByteStream
 
     void read(uint8_t *buffer, size_t size)
     {
-        if(size==0)
+        if (size == 0)
             return;
         assert(length >= size && offset <= length - size);
         assert(buffer != nullptr);
