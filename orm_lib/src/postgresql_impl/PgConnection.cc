@@ -65,11 +65,14 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
                                   [](PGconn *conn) { PQfinish(conn); })),
       channel_(loop, PQsocket(connectionPtr_.get()))
 {
+    if (channel_.fd() < 0)
+    {
+        LOG_ERROR << "Failed to create Postgres connection";
+    }
 }
 
 void PgConnection::init()
 {
-    PQsetnonblocking(connectionPtr_.get(), 1);
     if (channel_.fd() < 0)
     {
         LOG_ERROR << "Connection with Postgres could not be established";
@@ -80,6 +83,8 @@ void PgConnection::init()
         }
         return;
     }
+
+    PQsetnonblocking(connectionPtr_.get(), 1);
     channel_.setReadCallback([this]() {
         if (status_ == ConnectStatus::Bad)
         {
@@ -128,6 +133,15 @@ void PgConnection::handleClosed()
     if (status_ == ConnectStatus::Bad)
         return;
     status_ = ConnectStatus::Bad;
+
+    if (isWorking_)
+    {
+        // Connection was closed unexpectedly while isWorking_ was true.
+        isWorking_ = false;
+        handleFatalError();
+        callback_ = nullptr;
+    }
+
     channel_.disableAll();
     channel_.remove();
     assert(closeCallback_);
@@ -142,8 +156,11 @@ void PgConnection::disconnect()
     auto thisPtr = shared_from_this();
     loop_->runInLoop([thisPtr, &pro]() {
         thisPtr->status_ = ConnectStatus::Bad;
-        thisPtr->channel_.disableAll();
-        thisPtr->channel_.remove();
+        if (thisPtr->channel_.fd() >= 0)
+        {
+            thisPtr->channel_.disableAll();
+            thisPtr->channel_.remove();
+        }
         thisPtr->connectionPtr_.reset();
         pro.set_value(1);
     });
@@ -213,6 +230,14 @@ void PgConnection::execSqlInLoop(
     assert(rcb);
     assert(!isWorking_);
     assert(!sql.empty());
+    if (status_ != ConnectStatus::Ok)
+    {
+        LOG_ERROR << "Connection is not ready";
+        auto exceptPtr =
+            std::make_exception_ptr(drogon::orm::BrokenConnection());
+        exceptCallback(exceptPtr);
+        return;
+    }
     sql_ = std::move(sql);
     callback_ = std::move(rcb);
     isWorking_ = true;
@@ -398,9 +423,13 @@ void PgConnection::doAfterPreparing()
 
 void PgConnection::handleFatalError()
 {
-    auto exceptPtr =
-        std::make_exception_ptr(Failure(PQerrorMessage(connectionPtr_.get())));
-    exceptionCallback_(exceptPtr);
+    if (exceptionCallback_)
+    {
+        auto exceptPtr = std::make_exception_ptr(
+            Failure(PQerrorMessage(connectionPtr_.get())));
+        exceptionCallback_(exceptPtr);
+    }
+
     exceptionCallback_ = nullptr;
 }
 

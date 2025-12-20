@@ -116,6 +116,14 @@ enum class Mode
     Blocking
 };
 
+struct RawParameter
+{
+    std::shared_ptr<void> obj;
+    const char *parameter;
+    int length;
+    int format;
+};
+
 namespace internal
 {
 template <typename T>
@@ -433,6 +441,15 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         // LOG_TRACE << "Bind parameter:" << parameter;
         return *this;
     }
+
+    self &operator<<(const RawParameter &);
+
+    self &operator<<(RawParameter &param)
+    {
+        return operator<<((const RawParameter &)param);
+    }
+
+    self &operator<<(RawParameter &&);
 
     // template <>
     self &operator<<(const char str[])

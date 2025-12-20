@@ -1208,6 +1208,11 @@ Json::Value [[className]]::toJson() const
     return ret;
 }
 
+std::string [[className]]::toString() const
+{
+    return toJson().toStyledString();
+}
+
 Json::Value [[className]]::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
@@ -1534,14 +1539,14 @@ if(!col.notNull_){%>
                 if(col.colType_ == "std::string" && col.colLength_>0)
                 {
 %>
-            if(pJson.isString() && std::strlen(pJson.asCString()) > {%col.colLength_%})
+            if(pJson.isString() && std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}
+                .from_bytes(pJson.asCString()).size() > {%col.colLength_%})
             {
                 err="String length exceeds limit for the " +
                     fieldName +
                     " field (the maximum value is {%col.colLength_%})";
                 return false;
             }
-
 <%c++
                 }
             }

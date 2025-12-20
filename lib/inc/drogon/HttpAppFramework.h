@@ -43,6 +43,16 @@
 #include <vector>
 #include <chrono>
 
+#if defined(__APPLE__) && defined(__MACH__) && \
+    (defined(__ENVIRONMENT_IPHONE_OS__) ||     \
+     defined(__IPHONE_OS_VERSION_MIN_REQUIRED))
+// iOS
+#define TARGET_OS_IOS 1
+#else
+// not iOS
+#define TARGET_OS_IOS 0
+#endif
+
 namespace drogon
 {
 // the drogon banner
@@ -997,7 +1007,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setFileTypes(
         const std::vector<std::string> &types) = 0;
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     /// Enable supporting for dynamic views loading.
     /**
      *

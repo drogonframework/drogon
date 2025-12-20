@@ -429,5 +429,6 @@ class create_model : public DrObject<create_model>, public CommandHandler
                                     const Json::Value &restfulApiConfig);
     std::string dbname_;
     bool forceOverwrite_{false};
+    std::string outputPath_;
 };
 }  // namespace drogon_ctl

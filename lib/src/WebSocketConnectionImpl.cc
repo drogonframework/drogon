@@ -17,6 +17,7 @@
 #include <json/value.h>
 #include <json/writer.h>
 #include <thread>
+#include <limits>
 
 using namespace drogon;
 
@@ -268,14 +269,14 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
 {
     // According to the rfc6455
     gotAll_ = false;
-    if (buffer->readableBytes() >= 2)
+    while (buffer->readableBytes() >= 2)
     {
         unsigned char opcode = (*buffer)[0] & 0x0f;
         bool isControlFrame = false;
         switch (opcode)
         {
             case 0:
-                // continuation frame
+                LOG_TRACE << "continuation frame";
                 break;
             case 1:
                 type_ = WebSocketMessageType::Text;
@@ -327,8 +328,13 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         {
             indexFirstMask = 10;
         }
-        if (indexFirstMask > 2 && buffer->readableBytes() >= indexFirstMask)
+        if (indexFirstMask > 2)
         {
+            if (buffer->readableBytes() < indexFirstMask)
+            {
+                // Not enough data yet, wait for more.
+                return true;
+            }
             if (isControlFrame)
             {
                 // rfc6455-5.5
@@ -344,14 +350,17 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             }
             else if (indexFirstMask == 10)
             {
-                length = (unsigned char)(*buffer)[2];
-                length = (length << 8) + (unsigned char)(*buffer)[3];
-                length = (length << 8) + (unsigned char)(*buffer)[4];
-                length = (length << 8) + (unsigned char)(*buffer)[5];
-                length = (length << 8) + (unsigned char)(*buffer)[6];
-                length = (length << 8) + (unsigned char)(*buffer)[7];
-                length = (length << 8) + (unsigned char)(*buffer)[8];
-                length = (length << 8) + (unsigned char)(*buffer)[9];
+                length = 0;
+                for (int i = 2; i <= 9; ++i)
+                {
+                    if (length > ((std::numeric_limits<size_t>::max)() >> 8))
+                    {
+                        LOG_ERROR
+                            << "Payload length too large to handle safely";
+                        return false;
+                    }
+                    length = (length << 8) + (unsigned char)(*buffer)[i];
+                }
             }
             else
             {
@@ -380,9 +389,16 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
                 {
                     message_[oldLen + i] = (rawData[i] ^ masks[i % 4]);
                 }
-                if (isFin)
-                    gotAll_ = true;
                 buffer->retrieve(indexFirstMask + 4 + length);
+                if (isFin)
+                {
+                    gotAll_ = true;
+                    return true;
+                }
+            }
+            else
+            {
+                // Not enough data yet, wait for more.
                 return true;
             }
         }
@@ -392,9 +408,16 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             {
                 auto rawData = buffer->peek() + indexFirstMask;
                 message_.append(rawData, length);
-                if (isFin)
-                    gotAll_ = true;
                 buffer->retrieve(indexFirstMask + length);
+                if (isFin)
+                {
+                    gotAll_ = true;
+                    return true;
+                }
+            }
+            else
+            {
+                // Not enough data yet, wait for more.
                 return true;
             }
         }

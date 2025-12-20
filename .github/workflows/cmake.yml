@@ -17,7 +17,7 @@ env:
 jobs:
   windows:
     name: windows/msvc - ${{ matrix.link }}
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -44,9 +44,6 @@ jobs:
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
-        # For unknown reasons, we fail to create file in windows ci environment.
-        # So examples, drogon_ctl and integration tests can not be built in windows ci.
-        # We should try to enable them again in the future.
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
           cmake ..                                         \
@@ -54,8 +51,8 @@ jobs:
             -DBUILD_TESTING=on                             \
             -DBUILD_SHARED_LIBS=$shared                    \
             -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
-            -DBUILD_CTL=OFF                                \
-            -DBUILD_EXAMPLES=OFF                           \
+            -DBUILD_CTL=ON                                 \
+            -DBUILD_EXAMPLES=ON                            \
             -DUSE_SPDLOG=ON                                \
             -DCMAKE_INSTALL_PREFIX=../install              \
             -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             \
@@ -73,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        osver: [13, 14, 15]
+        osver: [14, 15]
     steps:
       - name: Checkout Drogon source code
         uses: actions/checkout@v4
@@ -102,7 +99,6 @@ jobs:
 
       - name: Prepare for testing
         run: |
-          brew tap homebrew/services
           brew services restart postgresql@14
           brew services start mariadb
           brew services start redis
@@ -179,12 +175,12 @@ jobs:
           sudo apt-get --purge remove postgresql postgresql-doc postgresql-common postgresql-client-common
           sudo apt-get -y install postgresql-all
 
-      - name: Install g++-13
-        if: startsWith(matrix.compiler.cxx, 'g++') && matrix.compiler.ver == 13
+      - name: Install g++
+        if: startsWith(matrix.compiler.cxx, 'g++') && (matrix.compiler.ver == 13 || matrix.compiler.ver == 9)
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get install g++-${{ matrix.compiler.ver }}
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 13
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ matrix.compiler.ver }} ${{ matrix.compiler.ver }}
 
       - name: Install Clang
         if: startsWith(matrix.compiler.cxx, 'clang') && matrix.compiler.ver < 13

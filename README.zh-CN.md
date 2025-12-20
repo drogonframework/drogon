@@ -197,3 +197,9 @@ class User : public drogon::HttpController<User>
 ## QQ交流群：1137909452
 
 欢迎交流探讨。
+
+## 微信公众号：
+
+![](https://github.com/an-tao/drogon/wiki/images/qrcode_wechat.jpg)
+
+会不定期推送一些Drogon的使用技巧和更新信息，欢迎关注。

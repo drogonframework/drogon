@@ -16,6 +16,7 @@ proxy with a simple round robin
 11. [redis_cache](https://github.com/drogonframework/drogon/tree/master/examples/redis_cache) - An example for using coroutines of Redis clients
 12. [redis_chat](https://github.com/drogonframework/drogon/tree/master/examples/redis_chat) - A chatroom server built with websocket and Redis pub/sub service
 13. [prometheus_example](https://github.com/drogonframework/drogon/tree/master/examples/prometheus_example) - An example of how to use the Prometheus exporter in Drogon
+14. [cors](https://github.com/drogonframework/drogon/tree/master/examples/cors) - An example demonstrating how to implement CORS (Cross-Origin Resource Sharing) support in Drogon
 
 ### [TechEmpower Framework Benchmarks](https://github.com/TechEmpower/FrameworkBenchmarks) test suite
 
