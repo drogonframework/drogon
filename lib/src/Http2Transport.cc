@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Http2Transport.h"
 #include "HttpFileUploadRequest.h"
 #include "drogon/utils/Utilities.h"
