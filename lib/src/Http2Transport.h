@@ -410,6 +410,7 @@ enum class StreamState
     ExpectingHeaders,
     ExpectingContinuation,
     ExpectingData,
+    ExepectingContinuationTrailers,
     Finished,
 };
 
@@ -520,7 +521,8 @@ class Http2Transport : public HttpTransport
 
     bool parseAndApplyHeaders(internal::H2Stream &stream,
                               const void *data,
-                              size_t len);
+                              size_t len,
+                              bool isTrailers);
     std::pair<size_t, bool> sendBodyForStream(internal::H2Stream &stream,
                                               const void *data,
                                               size_t size);

@@ -1093,7 +1093,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
 
 bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
                                           const void *data,
-                                          size_t size)
+                                          size_t size,
+                                          bool isTrailers)
 {
     std::vector<KeyValPair> headers;
     headers.reserve(6);  // some small amount to reduce reallocation
@@ -1111,11 +1112,49 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
     }
     for (auto &[key, value] : headers)
         LOG_TRACE << "  " << key << ": " << value;
-    assert(stream.response == nullptr);
-    stream.response = std::make_shared<HttpResponseImpl>();
-    stream.response->setVersion(Version::kHttp2);
+    assert(stream.response || !isTrailers);
+    if(stream.response == nullptr)
+    {
+        stream.response = std::make_shared<HttpResponseImpl>();
+        stream.response->setVersion(Version::kHttp2);
+    }
+
+    constexpr std::array<std::string_view, 14> bannedTrailerHeaders = {
+        "content-length",
+        "host",
+        "cache-control",
+        "expect",
+        "max-forwards",
+        "pragma",
+        "range",
+        "te",
+        "authorization",
+        "set-cookie",
+        "content-encoding",
+        "content-type",
+        "content-range",
+        "trailer"
+    };
     for (const auto &[key, value] : headers)
     {
+        bool ok = true;
+        if(isTrailers)
+        {
+            if (std::find(bannedTrailerHeaders.begin(),
+                          bannedTrailerHeaders.end(),
+                          key) != bannedTrailerHeaders.end())
+            {
+                LOG_TRACE << "Banned trailer header: " << key;
+                streamErrored(streamId, ReqResult::BadResponse);
+                return false;
+            }
+            if( key.front() == ':')
+            {
+                LOG_TRACE << "Pseudo header in trailers: " << key;
+                streamErrored(streamId, ReqResult::BadResponse);
+                return false;
+            }
+        }
         // TODO: Filter more pseudo headers
         if (key == "content-length")
         {
@@ -1194,36 +1233,34 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
     if (std::holds_alternative<HeadersFrame>(frame))
     {
-        if (stream.state != StreamState::ExpectingHeaders)
+        if (stream.state != StreamState::ExpectingHeaders
+            && stream.state != StreamState::ExpectingData) // Trailers
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
                               "Unexpected headers frame");
             return;
         }
+        bool isTrailers = (stream.state == StreamState::ExpectingData);
         bool endStream = (flags & (uint8_t)H2HeadersFlags::EndStream);
         bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders);
-        if ((endStream && !endHeaders) || stream.body.size() != 0)
-        {
-            connectionErrored(streamId,
-                              StreamCloseErrorCode::ProtocolError,
-                              "This client does not support trailers");
-            return;
-        }
         if (!endHeaders)
         {
             auto &f = std::get<HeadersFrame>(frame);
             headerBufferRx.append((char *)f.headerBlockFragment.data(),
                                   f.headerBlockFragment.size());
             expectngContinuationStreamId = streamId;
-            stream.state = StreamState::ExpectingContinuation;
+            stream.state = isTrailers ?
+                               StreamState::ExpectingContinuation :
+                               StreamState::ExepectingContinuationTrailers;
             return;
         }
         auto &f = std::get<HeadersFrame>(frame);
         // This function handles error itself
         if (!parseAndApplyHeaders(stream,
                                   f.headerBlockFragment.data(),
-                                  f.headerBlockFragment.size()))
+                                  f.headerBlockFragment.size(),
+                                  isTrailers))
             return;
 
         // There is no body in the response.
@@ -1233,12 +1270,20 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             responseSuccess(stream);
             return;
         }
+
+        if(isTrailers)
+        {
+            connectionErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              "Data after trailers");
+        }
         stream.state = StreamState::ExpectingData;
     }
     else if (std::holds_alternative<ContinuationFrame>(frame))
     {
         auto &f = std::get<ContinuationFrame>(frame);
-        if (stream.state != StreamState::ExpectingContinuation)
+        if (stream.state == StreamState::ExpectingContinuation || 
+            stream.state == StreamState::ExepectingContinuationTrailers)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
@@ -1248,17 +1293,37 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         headerBufferRx.append((char *)f.headerBlockFragment.data(),
                               f.headerBlockFragment.size());
+        bool isTrailers = (stream.state == StreamState::ExepectingContinuationTrailers);
         bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders) != 0;
+        bool endStream = (flags & (uint8_t)H2HeadersFlags::EndStream) != 0;
+
+        if(isTrailers && (endHeaders == true && endStream == false))
+        {
+            connectionErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              "Trailers must end header and stream together");
+            return;
+        }
+
+
         if (endHeaders)
         {
             stream.state = StreamState::ExpectingData;
             expectngContinuationStreamId = 0;
             bool ok = parseAndApplyHeaders(stream,
                                            headerBufferRx.peek(),
-                                           headerBufferRx.readableBytes());
+                                           headerBufferRx.readableBytes(),
+                                           isTrailers);
             headerBufferRx.retrieveAll();
             if (!ok)
                 LOG_TRACE << "Failed to parse headers in continuation frame";
+            return;
+        }
+
+        if(endStream)
+        {
+            stream.state = StreamState::Finished;
+            responseSuccess(stream);
             return;
         }
     }
@@ -1309,7 +1374,6 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 streamErrored(streamId, ReqResult::BadResponse);
                 return;
             }
-            stream.response->setBody(std::move(stream.body));
             responseSuccess(stream);
             return;
         }
@@ -1403,6 +1467,7 @@ void Http2Transport::responseSuccess(internal::H2Stream &stream)
     pendingDataSend.erase(streamId);
     // XXX: This callback seems to be able to cause the destruction of this
     // object
+    stream.response->setBody(std::move(stream.body));
     respCallback(stream.response,
                  {std::move(stream.request), std::move(stream.callback)},
                  connPtr);
