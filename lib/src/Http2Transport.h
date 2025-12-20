@@ -484,8 +484,8 @@ class Http2Transport : public HttpTransport
     const uint32_t windowIncreaseThreshold = 256 * 1024;  // 256 KB
     const uint32_t windowIncreaseSize = 4 * 1024 * 1024;  // 4 MB
     const uint32_t maxCompressiedHeaderSize = 2048;
-    // TODO: We should send our own INITIAL_WINDOW_SIZE setting to 512 KB or more
-    // to reduce initial stalls.
+    // TODO: We should send our own INITIAL_WINDOW_SIZE setting to 512 KB or
+    // more to reduce initial stalls.
     const int32_t streamIdReconnectThreshold = INT_MAX - 8192;
 
     // HTTP/2 connection-wide state
