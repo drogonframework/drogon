@@ -36,6 +36,8 @@ CacheFile::CacheFile(const std::string &path, bool autoDelete)
         file_ = nullptr;
     }
 #endif
+    if (!file_)
+        LOG_SYSERR << "CacheFile fopen:";
 }
 
 CacheFile::~CacheFile()
@@ -63,7 +65,10 @@ CacheFile::~CacheFile()
 void CacheFile::append(const char *data, size_t length)
 {
     if (file_)
-        fwrite(data, length, 1, file_);
+    {
+        if (!fwrite(data, length, 1, file_))
+            LOG_SYSERR << "CacheFile append:";
+    }
 }
 
 size_t CacheFile::length()
@@ -95,7 +100,7 @@ char *CacheFile::data()
         if (data_ == MAP_FAILED)
         {
             data_ = nullptr;
-            LOG_SYSERR << "mmap:";
+            LOG_SYSERR << "CacheFile mmap:";
         }
     }
     return data_;

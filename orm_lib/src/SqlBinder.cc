@@ -18,6 +18,9 @@
 #include <drogon/utils/Utilities.h>
 #include <future>
 #include <regex>
+#if defined(__cpp_lib_format)
+#include <format>
+#endif
 #if USE_MYSQL
 #include <mysql.h>
 #endif
@@ -132,6 +135,26 @@ SqlBinder::~SqlBinder()
     {
         exec();
     }
+}
+
+SqlBinder &SqlBinder::operator<<(const RawParameter &param)
+{
+    objs_.push_back(param.obj);
+    parameters_.push_back(param.parameter);
+    lengths_.push_back(param.length);
+    formats_.push_back(param.format);
+    ++parametersNumber_;
+    return *this;
+}
+
+SqlBinder &SqlBinder::operator<<(RawParameter &&param)
+{
+    objs_.push_back(std::move(param.obj));
+    parameters_.push_back(std::move(param.parameter));
+    lengths_.push_back(std::move(param.length));
+    formats_.push_back(std::move(param.format));
+    ++parametersNumber_;
+    return *this;
 }
 
 SqlBinder &SqlBinder::operator<<(const std::string_view &str)
@@ -259,7 +282,14 @@ SqlBinder &SqlBinder::operator<<(double f)
         parameters_.push_back((char *)(obj.get()));
         return *this;
     }
-    return operator<<(std::to_string(f));
+
+#if defined(__cpp_lib_format)
+    return operator<<(std::format("{:.17g}", f));
+#else
+    std::stringstream ss;
+    ss << std::setprecision(17) << f;
+    return operator<<(ss.str());
+#endif
 }
 
 SqlBinder &SqlBinder::operator<<(std::nullptr_t)

@@ -42,6 +42,48 @@ All notable changes to this project will be documented in this file.
 * Technically supports handling server push. But no API to expose it to the user yet
 * Does not support setting HTTP request dependency and priority
 * Does not support trailers
+
+### Changed
+
+- Add toString method to all models
+
+## [1.9.11] - 2025-06-20
+
+### API changes list
+
+- Add a new overload for execSqlCoro.
+
+### Changed
+
+- Do not write to source directory during build.
+
+- Improve Postgres connection stability.
+
+- Add handleFatalError in handleClosed.
+
+- Add -o|--output option to drogon_ctl create models.
+
+- Add qrcode for WeChat official account to the README file.
+
+- Support for iOS compiling.
+
+- Add cors example to demonstrate cross-origin support in drogon.
+
+- Add support for continuation frame in WebSocketMessageParser.
+
+- Add RawParameter API to pass raw SQL parameters.
+
+- Upgrade Windows image and re-enable tests on Windows.
+
+### Fixed
+
+- Fix a bug in isAutoCreationClass<T>.
+
+- Fix CI on MacOS.
+
+- Fix issue with precision loss of double-type parameters in ORM inputs.
+
+
 ## [1.9.10] - 2025-02-20
 
 ### API changes list
@@ -1843,7 +1885,13 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
+<<<<<<< HEAD
 [Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.10...HEAD
+=======
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.11...HEAD
+
+[1.9.11]: https://github.com/an-tao/drogon/compare/v1.9.10...v1.9.11
+>>>>>>> master
 
 [1.9.10]: https://github.com/an-tao/drogon/compare/v1.9.9...v1.9.10
 
@@ -1854,10 +1902,13 @@ All notable changes to this project will be documented in this file.
 [1.9.7]: https://github.com/an-tao/drogon/compare/v1.9.6...v1.9.7
 
 [1.9.6]: https://github.com/an-tao/drogon/compare/v1.9.5...v1.9.6
+<<<<<<< HEAD
 
 [1.10.0-beta.2]: https://github.com/drogonframework/drogon/compare/v1.10.0-beta.1...v1.10.0-beta.2
 
 [1.10.0-beta.1]: https://github.com/drogonframework/drogon/compare/v1.10.0-beta.0...v1.10.0-beta.1
+=======
+>>>>>>> master
 
 [1.9.5]: https://github.com/an-tao/drogon/compare/v1.9.4...v1.9.5
 

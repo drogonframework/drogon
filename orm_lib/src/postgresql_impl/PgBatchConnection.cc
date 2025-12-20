@@ -87,11 +87,14 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
                                   [](PGconn *conn) { PQfinish(conn); })),
       channel_(loop, PQsocket(connectionPtr_.get()))
 {
+    if (channel_.fd() < 0)
+    {
+        LOG_ERROR << "Failed to create Postgres connection";
+    }
 }
 
 void PgConnection::init()
 {
-    PQsetnonblocking(connectionPtr_.get(), 1);
     if (channel_.fd() < 0)
     {
         LOG_ERROR << "Connection with Postgres could not be established";
@@ -103,6 +106,8 @@ void PgConnection::init()
         }
         return;
     }
+
+    PQsetnonblocking(connectionPtr_.get(), 1);
     channel_.setReadCallback([this]() {
         if (status_ == ConnectStatus::Bad)
         {
@@ -165,8 +170,11 @@ void PgConnection::disconnect()
     auto thisPtr = shared_from_this();
     loop_->runInLoop([thisPtr, &pro]() {
         thisPtr->status_ = ConnectStatus::Bad;
-        thisPtr->channel_.disableAll();
-        thisPtr->channel_.remove();
+        if (thisPtr->channel_.fd() >= 0)
+        {
+            thisPtr->channel_.disableAll();
+            thisPtr->channel_.remove();
+        }
         thisPtr->connectionPtr_.reset();
         pro.set_value(1);
     });
@@ -233,6 +241,14 @@ void PgConnection::execSqlInLoop(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
+    if (status_ != ConnectStatus::Ok)
+    {
+        LOG_ERROR << "Connection is not ready";
+        auto exceptPtr =
+            std::make_exception_ptr(drogon::orm::BrokenConnection());
+        exceptCallback(exceptPtr);
+        return;
+    }
     isWorking_ = true;
     batchSqlCommands_.emplace_back(
         std::make_shared<SqlCmd>(std::move(sql),
@@ -522,11 +538,17 @@ void PgConnection::handleFatalError(bool clearAll, bool isAbortPipeline)
     {
         for (auto &cmd : batchCommandsForWaitingResults_)
         {
-            cmd->exceptionCallback_(exceptPtr);
+            if (cmd->exceptionCallback_)
+            {
+                cmd->exceptionCallback_(exceptPtr);
+            }
         }
         for (auto &cmd : batchSqlCommands_)
         {
-            cmd->exceptionCallback_(exceptPtr);
+            if (cmd->exceptionCallback_)
+            {
+                cmd->exceptionCallback_(exceptPtr);
+            }
         }
         batchCommandsForWaitingResults_.clear();
         batchSqlCommands_.clear();
@@ -536,13 +558,19 @@ void PgConnection::handleFatalError(bool clearAll, bool isAbortPipeline)
         if (!batchSqlCommands_.empty() &&
             !batchSqlCommands_.front()->preparingStatement_.empty())
         {
-            batchSqlCommands_.front()->exceptionCallback_(exceptPtr);
+            if (batchSqlCommands_.front()->exceptionCallback_)
+            {
+                batchSqlCommands_.front()->exceptionCallback_(exceptPtr);
+            }
             batchSqlCommands_.pop_front();
         }
         else if (!batchCommandsForWaitingResults_.empty())
         {
             auto &cmd = batchCommandsForWaitingResults_.front();
-            cmd->exceptionCallback_(exceptPtr);
+            if (cmd->exceptionCallback_)
+            {
+                cmd->exceptionCallback_(exceptPtr);
+            }
             batchCommandsForWaitingResults_.pop_front();
         }
         else

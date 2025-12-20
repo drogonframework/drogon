@@ -287,11 +287,24 @@ DROGON_TEST(PostgreTest)
             FAULT("postgresql - DbClient streaming-type interface(8) what():",
                   e.base().what());
         };
-    /// 1.10 clean up
+    /// 1.10 query with raw parameter
+    auto rawParamData = std::make_shared<int>(htonl(3));
+    auto rawParam = RawParameter{rawParamData,
+                                 reinterpret_cast<char *>(rawParamData.get()),
+                                 sizeof(int),
+                                 1};
+    *clientPtr << "select * from users where length(user_id)=$1" << rawParam >>
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); } >>
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("postgresql - DbClient streaming-type interface(9) what():",
+                  e.base().what());
+        };
+
+    /// 1.11 clean up
     *clientPtr << "truncate table users restart identity" >>
         [TEST_CTX](const Result &r) { SUCCESS(); } >>
         [TEST_CTX](const DrogonDbException &e) {
-            FAULT("postgresql - DbClient streaming-type interface(9) what():",
+            FAULT("postgresql - DbClient streaming-type interface(10) what():",
                   e.base().what());
         };
     /// Test asynchronous method
@@ -379,12 +392,21 @@ DROGON_TEST(PostgreTest)
         "postgresql1",
         "pg",
         "postgresql");
-    /// 2.6 clean up
+    /// 2.6 query with raw parameter
+    clientPtr->execSqlAsync(
+        "select * from users where length(user_id)=$1",
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("postgresql - DbClient asynchronous interface(7) what():",
+                  e.base().what());
+        },
+        rawParam);
+    /// 2.7 clean up
     clientPtr->execSqlAsync(
         "truncate table users restart identity",
         [TEST_CTX](const Result &r) { SUCCESS(); },
         [TEST_CTX](const DrogonDbException &e) {
-            FAULT("postgresql - DbClient asynchronous interface(7) what():",
+            FAULT("postgresql - DbClient asynchronous interface(8) what():",
                   e.base().what());
         });
 
@@ -464,7 +486,19 @@ DROGON_TEST(PostgreTest)
     {
         SUCCESS();
     }
-    /// 3.6 clean up
+    /// 3.6 query with raw parameter
+    try
+    {
+        auto r = clientPtr->execSqlSync(
+            "select * from users where length(user_id)=$1", rawParam);
+        MANDATE(r.size() == 1);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - DbClient asynchronous interface(4) what():",
+              e.base().what());
+    }
+    /// 3.7 clean up
     try
     {
         auto r =
@@ -557,7 +591,20 @@ DROGON_TEST(PostgreTest)
     {
         SUCCESS();
     }
-    /// 4.6 clean up
+    /// 4.6 query with raw parameter
+    f = clientPtr->execSqlAsyncFuture(
+        "select * from users where length(user_id)=$1", rawParam);
+    try
+    {
+        auto r = f.get();
+        MANDATE(r.size() == 1);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - DbClient future interface(4) what():",
+              e.base().what());
+    }
+    /// 4.7 clean up
     f = clientPtr->execSqlAsyncFuture("truncate table users restart identity");
     try
     {
@@ -1670,11 +1717,28 @@ DROGON_TEST(MySQLTest)
             FAULT("mysql - DbClient streaming-type interface(8) what():",
                   e.base().what());
         };
-    /// 1.10 truncate
+    /// 1.10 query with raw parameter
+    // MariaDB uses little-endian, so the opposite of network ordering :P
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    auto rawParamData = std::make_shared<int>(3);
+#else
+    auto rawParamData = std::make_shared<int>(0x03000000);  // byteswapped 3
+#endif
+    auto rawParam = RawParameter{rawParamData,
+                                 reinterpret_cast<char *>(rawParamData.get()),
+                                 sizeof(int),
+                                 internal::MySqlLong};
+    *clientPtr << "select * from users where length(user_id)=?" << rawParam >>
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); } >>
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("mysql - DbClient streaming-type interface(9) what():",
+                  e.base().what());
+        };
+    /// 1.11 truncate
     *clientPtr << "truncate table users" >> [TEST_CTX](const Result &r) {
         SUCCESS();
     } >> [TEST_CTX](const DrogonDbException &e) {
-        FAULT("mysql - DbClient streaming-type interface(9) what():",
+        FAULT("mysql - DbClient streaming-type interface(10) what():",
               e.base().what());
     };
     /// Test asynchronous method
@@ -1759,12 +1823,21 @@ DROGON_TEST(MySQLTest)
         "postgresql1",
         "pg",
         "postgresql");
-    /// 2.6 truncate
+    /// 2.6 query with raw parameter
+    clientPtr->execSqlAsync(
+        "select * from users where length(user_id)=?",
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("mysql - DbClient asynchronous interface(7) what():",
+                  e.base().what());
+        },
+        rawParam);
+    /// 2.7 truncate
     clientPtr->execSqlAsync(
         "truncate table users",
         [TEST_CTX](const Result &r) { SUCCESS(); },
         [TEST_CTX](const DrogonDbException &e) {
-            FAULT("mysql - DbClient asynchronous interface(7) what():",
+            FAULT("mysql - DbClient asynchronous interface(9) what():",
                   e.base().what());
         });
 
@@ -1845,7 +1918,19 @@ DROGON_TEST(MySQLTest)
     {
         SUCCESS();
     }
-    /// 3.6 truncate
+    /// 3.6 query with raw parameter
+    try
+    {
+        auto r = clientPtr->execSqlSync(
+            "select * from users where length(user_id)=?", rawParam);
+        MANDATE(r.size() == 1);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - DbClient asynchronous interface(4) what():",
+              e.base().what());
+    }
+    /// 3.7 truncate
     try
     {
         auto r = clientPtr->execSqlSync("truncate table users");
@@ -1932,7 +2017,19 @@ DROGON_TEST(MySQLTest)
     {
         SUCCESS();
     }
-    /// 4.6 truncate
+    /// 4.6. query with raw parameter
+    f = clientPtr->execSqlAsyncFuture(
+        "select * from users where length(user_id)=?", rawParam);
+    try
+    {
+        auto r = f.get();
+        MANDATE(r.size() == 1);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - DbClient future interface(5) what():", e.base().what());
+    }
+    /// 4.7 truncate
     f = clientPtr->execSqlAsyncFuture("truncate table users");
     try
     {
@@ -1941,7 +2038,7 @@ DROGON_TEST(MySQLTest)
     }
     catch (const DrogonDbException &e)
     {
-        FAULT("mysql - DbClient future interface(5) what():", e.base().what());
+        FAULT("mysql - DbClient future interface(6) what():", e.base().what());
     }
 
     /// 5 Test Result and Row exception throwing
@@ -2881,17 +2978,29 @@ DROGON_TEST(SQLite3Test)
             FAULT("sqlite3 - DbClient streaming-type interface(8) what():",
                   e.base().what());
         };
-    /// 1.10 clean up
+    /// 1.10 query with raw parameter
+    auto rawParamData = std::make_shared<int>(3);
+    auto rawParam = RawParameter{rawParamData,
+                                 reinterpret_cast<char *>(rawParamData.get()),
+                                 0,
+                                 Sqlite3TypeInt};
+    *clientPtr << "select * from users where length(user_id) = ?" << rawParam >>
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); } >>
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("sqlite3 - DbClient streaming-type interface(9) what():",
+                  e.base().what());
+        };
+    /// 1.11 clean up
     *clientPtr << "delete from users" >> [TEST_CTX](const Result &r) {
         SUCCESS();
     } >> [TEST_CTX](const DrogonDbException &e) {
-        FAULT("sqlite3 - DbClient streaming-type interface(9.1) what():",
+        FAULT("sqlite3 - DbClient streaming-type interface(10.1) what():",
               e.base().what());
     };
     *clientPtr << "UPDATE sqlite_sequence SET seq = 0" >>
         [TEST_CTX](const Result &r) { SUCCESS(); } >>
         [TEST_CTX](const DrogonDbException &e) {
-            FAULT("sqlite3 - DbClient streaming-type interface(9.2) what():",
+            FAULT("sqlite3 - DbClient streaming-type interface(10.2) what():",
                   e.base().what());
         };
     /// Test asynchronous method
@@ -2975,19 +3084,28 @@ DROGON_TEST(SQLite3Test)
         "postgresql1",
         "pg",
         "postgresql");
-    /// 2.6 clean up
+    /// 2.6 query with raw parameter
+    clientPtr->execSqlAsync(
+        "select * from users where length(user_id) = ?",
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("sqlite3 - DbClient asynchronous interface(7) what():",
+                  e.base().what());
+        },
+        rawParam);
+    /// 2.7 clean up
     clientPtr->execSqlAsync(
         "delete from users",
         [TEST_CTX](const Result &r) { SUCCESS(); },
         [TEST_CTX](const DrogonDbException &e) {
-            FAULT("sqlite3 - DbClient asynchronous interface(7.1) what():",
+            FAULT("sqlite3 - DbClient asynchronous interface(8.1) what():",
                   e.base().what());
         });
     clientPtr->execSqlAsync(
         "UPDATE sqlite_sequence SET seq = 0",
         [TEST_CTX](const Result &r) { SUCCESS(); },
         [TEST_CTX](const DrogonDbException &e) {
-            FAULT("sqlite3 - DbClient asynchronous interface(7.2) what():",
+            FAULT("sqlite3 - DbClient asynchronous interface(8.2) what():",
                   e.base().what());
         });
 
@@ -3074,7 +3192,19 @@ DROGON_TEST(SQLite3Test)
     {
         SUCCESS();
     }
-    /// 3.6 clean up
+    /// 3.6 query with raw parameter
+    try
+    {
+        auto r = clientPtr->execSqlSync(
+            "select * from users where length(user_id) = ?", rawParam);
+        MANDATE(r.size() == 1);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - DbClient asynchronous interface(4) what():",
+              e.base().what());
+    }
+    /// 3.7 clean up
     try
     {
         auto r = clientPtr->execSqlSync("delete from users");
@@ -3176,6 +3306,19 @@ DROGON_TEST(SQLite3Test)
     catch (const DrogonDbException &e)
     {
         SUCCESS();
+    }
+    /// 4.6 query with raw parameter
+    f = clientPtr->execSqlAsyncFuture(
+        "select * from users where length(user_id)=?", rawParam);
+    try
+    {
+        auto r = f.get();
+        MANDATE(r.size() == 1);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - DbClient future interface(4) what():",
+              e.base().what());
     }
     /// 4.6 clean up
     f = clientPtr->execSqlAsyncFuture("delete from users");
