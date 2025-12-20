@@ -91,7 +91,8 @@ void HttpClientImpl::createTcpClient()
                 thisPtr->transport_ =
                     std::make_unique<Http2Transport>(connPtr,
                                                      &thisPtr->bytesSent_,
-                                                     &thisPtr->bytesReceived_);
+                                                     &thisPtr->bytesReceived_,
+                                                     thisPtr->pingIntervalSec_);
                 thisPtr->httpVersion_ = Version::kHttp2;
             }
             else if (protocol.empty())

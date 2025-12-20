@@ -326,7 +326,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * @param intervalSec The sending interval in seconds.
      * @note This only has effect for HTTP/2 connections.
      */
-    virtual void enablePing(double intervalSec = 30.0) = 0;
+    virtual void setPingInterval(double intervalSec = 30.0) = 0;
 
     /**
      * @brief get the protocol version used by the HTTP connection

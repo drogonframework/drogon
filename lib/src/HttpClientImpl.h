@@ -144,7 +144,7 @@ class HttpClientImpl final : public HttpClient,
         }
     }
 
-    void enablePing(double intervalSec) override
+    void setPingInterval(double intervalSec) override
     {
         pingIntervalSec_ = intervalSec;
     }

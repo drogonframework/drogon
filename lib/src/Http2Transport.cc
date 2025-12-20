@@ -1235,8 +1235,10 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     if (pingIntervalSec_ > 0)
     {
         pingTimerId_ = connPtr->getLoop()->runEvery(pingIntervalSec_, [this]() {
+            LOG_DEBUG << "Sending HTTP/2 ping frame";
             PingFrame pingFrame(pingOpaqueData, false);
             sendFrame(pingFrame, 0);
+            sendBufferedData();
         });
     }
 }
