@@ -1020,7 +1020,22 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                             "InitialWindowSize too large");
                         break;
                     }
+                    int64_t diff = (int64_t)value - (int64_t)initialTxWindowSize;
                     initialTxWindowSize = value;
+
+                    // If first initial window update received, we need to
+                    // update all streams' avaliable window size (even if)
+                    // it is going negative)
+                    if(firstInitalWindowUpdateReceived)
+                    {
+                        continue;
+                    }
+                    for(auto &[_, stream] : streams)
+                    {
+                        stream.avaliableTxWindow += diff;
+                    }
+                    firstInitalWindowUpdateReceived = true;
+                    
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxHeaderListSize)
                 {
@@ -1551,7 +1566,7 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     if (stream.avaliableTxWindow == 0 || avaliableTxWindow == 0)
         return {0, false};
 
-    size_t maxSendSize = size;
+    int64_t maxSendSize = size;
     maxSendSize = (std::min)(maxSendSize, stream.avaliableTxWindow);
     maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
     bool sendEverything = maxSendSize == size;

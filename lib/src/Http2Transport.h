@@ -5,6 +5,7 @@
 #include "hpack.h"
 
 #include <cassert>
+#include <cstdint>
 #include <string_view>
 #include <variant>
 #include <climits>
@@ -424,8 +425,8 @@ struct H2Stream
     std::string body;
     std::optional<size_t> contentLength;
     int32_t streamId = 0;
-    size_t avaliableTxWindow = 65535;
-    size_t avaliableRxWindow = 65535;
+    int64_t avaliableTxWindow = 65535;
+    int64_t avaliableRxWindow = 65535;
     StreamState state = StreamState::ExpectingHeaders;
 
     trantor::MsgBuffer multipartData;
@@ -486,8 +487,9 @@ class Http2Transport : public HttpTransport
     const int32_t streamIdReconnectThreshold = INT_MAX - 8192;
 
     // HTTP/2 connection-wide state
-    size_t avaliableTxWindow = 65535;
-    size_t avaliableRxWindow = 65535;
+    int64_t avaliableTxWindow = 65535;
+    int64_t avaliableRxWindow = 65535;
+    bool firstInitalWindowUpdateReceived = false;
 
     internal::H2Stream &createStream(int32_t streamId);
     void responseSuccess(internal::H2Stream &stream);
