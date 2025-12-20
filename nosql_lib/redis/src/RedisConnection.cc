@@ -71,7 +71,8 @@ void RedisConnection::startConnectionInLoop()
     redisContext_->ev.data = this;
 
     channel_ =
-        std::make_unique<trantor::Channel>(loop_, (int)redisContext_->c.fd);
+        std::make_unique<trantor::Channel>(loop_,
+        static_cast<int>(redisContext_->c.fd));
     channel_->setReadCallback([this]() { handleRedisRead(); });
     channel_->setWriteCallback([this]() { handleRedisWrite(); });
     redisAsyncSetConnectCallback(
