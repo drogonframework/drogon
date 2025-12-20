@@ -158,6 +158,11 @@ std::optional<WindowUpdateFrame> WindowUpdateFrame::parse(ByteStream &payload,
     // MSB is reserved for future use
     auto [_, windowSizeIncrement] = payload.readBI31BE();
     frame.windowSizeIncrement = windowSizeIncrement;
+    if(frame.windowSizeIncrement == 0)
+    {
+        LOG_TRACE << "Flow control error: window size increment cannot be 0";
+        return std::nullopt;
+    }
     return frame;
 }
 
