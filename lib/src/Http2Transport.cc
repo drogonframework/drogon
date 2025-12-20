@@ -802,7 +802,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     if (!done)
     {
         auto [it, inserted] = pendingDataSend.try_emplace(streamId, sentOffset);
-        if(!inserted)
+        if (!inserted)
         {
             LOG_FATAL << "Stream id already in use! This should not happen";
             abort();
