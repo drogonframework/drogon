@@ -1228,6 +1228,18 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
             return false;
         }
 
+        // RFC 7540 Section 8.1.2:  request or response containing uppercase
+        // header field names MUST be treated as malformed
+        for (auto c : key)
+        {
+            if (isupper(c))
+            {
+                LOG_TRACE << "Uppercase header field name: " << key;
+                streamErrored(streamId, ReqResult::BadResponse);
+                return false;
+            }
+        }
+
         stream.response->addHeader(key, value);
     }
     return true;
