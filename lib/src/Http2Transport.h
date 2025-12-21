@@ -500,7 +500,7 @@ class Http2Transport : public HttpTransport
     bool firstInitalWindowUpdateReceived = false;
 
     double pingIntervalSec_{0.0};
-    trantor::TimerId pingTimerId_;
+    trantor::TimerId pingTimerId_{0};
 
     std::vector<uint8_t> additionalHeaderData_;
 
