@@ -411,7 +411,7 @@ enum class StreamState
     ExpectingHeaders,
     ExpectingContinuation,
     ExpectingData,
-    ExepectingContinuationTrailers,
+    ExpectingContinuationTrailers,
     Finished,
 };
 

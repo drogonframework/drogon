@@ -678,7 +678,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 {
     connPtr->getLoop()->assertInLoopThread();
     Defer d([this]() { sendBufferedData(); });
-    if (streams.size() + 1 >= maxConcurrentStreams)
+    if (streams.size() + 1 > maxConcurrentStreams)
     {
         LOG_TRACE << "Too many streams in flight. Buffering request";
         bufferedRequests.push({req, std::move(callback)});
@@ -1045,7 +1045,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     // If first initial window update received, we need to
                     // update all streams' avaliable window size (even if)
                     // it is going negative)
-                    if (firstInitalWindowUpdateReceived)
+                    if (!firstInitalWindowUpdateReceived)
                     {
                         continue;
                     }
@@ -1310,8 +1310,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                                   f.headerBlockFragment.size());
             expectngContinuationStreamId = streamId;
             stream.state = isTrailers
-                               ? StreamState::ExpectingContinuation
-                               : StreamState::ExepectingContinuationTrailers;
+                               ? StreamState::ExpectingContinuationTrailers
+                               : StreamState::ExpectingContinuation;
             return;
         }
         auto &f = std::get<HeadersFrame>(frame);
@@ -1341,8 +1341,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
     else if (std::holds_alternative<ContinuationFrame>(frame))
     {
         auto &f = std::get<ContinuationFrame>(frame);
-        if (stream.state == StreamState::ExpectingContinuation ||
-            stream.state == StreamState::ExepectingContinuationTrailers)
+        if (stream.state != StreamState::ExpectingContinuation &&
+            stream.state != StreamState::ExpectingContinuationTrailers)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
@@ -1353,7 +1353,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         headerBufferRx.append((char *)f.headerBlockFragment.data(),
                               f.headerBlockFragment.size());
         bool isTrailers =
-            (stream.state == StreamState::ExepectingContinuationTrailers);
+            (stream.state == StreamState::ExpectingContinuationTrailers);
         bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders) != 0;
         bool endStream = (flags & (uint8_t)H2HeadersFlags::EndStream) != 0;
 
