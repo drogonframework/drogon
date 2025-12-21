@@ -881,11 +881,20 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 return;
             }
 
-            for (auto &[streamId, stream] : streams)
+            // Cannot use range-based for loop because of possible erasure in
+            // streamErrored()
+            auto it = streams.begin();
+            while (it != streams.end())
             {
-                if (streamId > f.lastStreamId)
+                if (it->first > f.lastStreamId)
                 {
-                    streamErrored(streamId, ReqResult::BadResponse);
+                    // Collect ID or handle careful erasure
+                    auto current = it++;  // Advance iterator first
+                    streamErrored(current->first, ReqResult::BadResponse);
+                }
+                else
+                {
+                    ++it;
                 }
             }
             // TODO: Should be half-closed but trantor doesn't support it
