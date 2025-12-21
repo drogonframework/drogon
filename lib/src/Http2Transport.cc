@@ -1433,10 +1433,9 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         if (stream.state != StreamState::ExpectingData)
         {
-            // XXX: Maybe this could be a RST_STREAM instead?
-            connectionErrored(streamId,
-                              StreamCloseErrorCode::ProtocolError,
-                              "Unexpected data frame");
+            streamErrored(streamId,
+                          StreamCloseErrorCode::ProtocolError,
+                          ReqResult::BadResponse);
             return;
         }
         availableRxWindow -= size;
