@@ -1600,16 +1600,17 @@ void Http2Transport::connectionErrored(int32_t lastStreamId,
                                        StreamCloseErrorCode errorCode,
                                        std::string errorMsg)
 {
+    (void)lastStreamId;
     LOG_ERROR << "Client killing HTTP/2 connection with error: " << errorMsg;
     connPtr->getLoop()->assertInLoopThread();
-    sendFrame(
-        GoAwayFrame(lastStreamId, (uint32_t)errorCode, std::move(errorMsg)), 0);
 
-    // TODO: GOAWAY should gracefully shutdown the connection. But we are
-    // force closing it for now. This is not ideal and we need to switch to
-    // RST_STREAM and leave GOAWAY for when we bother to gracefully shutdown
+    // last stream ID = 0: we haven't processed any server-initiated streams (no
+    // PUSH_PROMISE yet)
+    sendFrame(GoAwayFrame(0, (uint32_t)errorCode, std::move(errorMsg)), 0);
+
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);
+    streams.clear();  // Add this to avoid issues
     errorCallback(ReqResult::BadResponse);
 }
 
