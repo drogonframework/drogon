@@ -748,6 +748,14 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     encoded.reserve(maxCompressiedHeaderSize);
     // TODO: We should be able to avoid this allocation
     auto wbuf = hpackTx.MakeHpWBuffer(encoded, maxCompressiedHeaderSize);
+    if(additionalHeaderData_.size() > 0)
+    {
+        for(auto byte : additionalHeaderData_)
+        {
+            wbuf->Append(byte);
+        }
+        additionalHeaderData_.clear();
+    }
     auto status = hpackTx.Encoder(*wbuf, vec);
     if (status != Success)
     {
@@ -991,7 +999,15 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                           StreamCloseErrorCode::ProtocolError,
                                           "HeaderTableSize too large");
                     }
-                    maxRxDynamicTableSize = value;
+                    // 64 is large enough
+                    auto newBuf = hpackTx.MakeHpWBuffer(
+                        additionalHeaderData_,
+                        64);
+                    HeaderFieldInfo headerFieldInfo;
+                    hpackTx.EncoderDynamicTableSizeUpdate(
+                        *newBuf,
+                        value,
+                        headerFieldInfo);
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
                 {

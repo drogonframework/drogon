@@ -497,6 +497,8 @@ class Http2Transport : public HttpTransport
     double pingIntervalSec_{0.0};
     trantor::TimerId pingTimerId_;
 
+    std::vector<uint8_t> additionalHeaderData_;
+
     internal::H2Stream &createStream(int32_t streamId);
     void responseSuccess(internal::H2Stream &stream);
     void streamErrored(int32_t streamId, ReqResult result);
