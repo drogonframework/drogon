@@ -827,11 +827,11 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     LOG_TRACE << dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
-        if (avaliableRxWindow < windowIncreaseThreshold)
+        if (availableRxWindow < windowIncreaseThreshold)
         {
             WindowUpdateFrame windowUpdateFrame(windowIncreaseSize);
             sendFrame(windowUpdateFrame, 0);
-            avaliableRxWindow += windowIncreaseSize;
+            availableRxWindow += windowIncreaseSize;
         }
 
         if (msg->readableBytes() == 0)
@@ -952,8 +952,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         if (std::holds_alternative<WindowUpdateFrame>(frame))
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
-            if (std::numeric_limits<decltype(avaliableTxWindow)>::max() -
-                    avaliableTxWindow <
+            if (std::numeric_limits<decltype(availableTxWindow)>::max() -
+                    availableTxWindow <
                 f.windowSizeIncrement)
             {
                 LOG_TRACE << "Flow control error: TX window size overflow";
@@ -962,7 +962,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                                   "TX window size overflow");
                 break;
             }
-            avaliableTxWindow += f.windowSizeIncrement;
+            availableTxWindow += f.windowSizeIncrement;
 
             // Find if we have a stream that can be resumed
             if (currentDataSend.has_value() == false && pendingDataSend.empty())
@@ -986,7 +986,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     continue;
                 }
                 it->second = sentOffset;
-                if (avaliableTxWindow != 0)
+                if (availableTxWindow != 0)
                 {
                     ++it;
                     currentDataSend = it;
@@ -1008,6 +1008,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                         connectionErrored(streamId,
                                           StreamCloseErrorCode::ProtocolError,
                                           "HeaderTableSize too large");
+                        break;
                     }
                     // 64 is large enough
                     auto newBuf =
@@ -1052,7 +1053,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     initialTxWindowSize = value;
 
                     // If first initial window update received, we need to
-                    // update all streams' avaliable window size (even if)
+                    // update all streams' available window size (even if)
                     // it is going negative)
                     if (!firstInitalWindowUpdateReceived)
                     {
@@ -1060,7 +1061,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     }
                     for (auto &[_, stream] : streams)
                     {
-                        stream.avaliableTxWindow += diff;
+                        stream.availableTxWindow += diff;
                     }
                     firstInitalWindowUpdateReceived = true;
                 }
@@ -1376,17 +1377,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         bool isTrailers =
             (stream.state == StreamState::ExpectingContinuationTrailers);
         bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders) != 0;
-        bool endStream = (flags & (uint8_t)H2HeadersFlags::EndStream) != 0;
 
-        if (isTrailers && (endHeaders == true && endStream == false))
-        {
-            connectionErrored(streamId,
-                              StreamCloseErrorCode::ProtocolError,
-                              "Trailers must end header and stream together");
-            return;
-        }
-
-        if (endHeaders)
+        if (endHeaders && !isTrailers)
         {
             stream.state = StreamState::ExpectingData;
             expectngContinuationStreamId = 0;
@@ -1400,25 +1392,22 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             return;
         }
 
-        if (endStream)
-        {
-            stream.state = StreamState::Finished;
-            responseSuccess(stream);
-            return;
-        }
+        stream.state = StreamState::Finished;
+        responseSuccess(stream);
+        return;
     }
     else if (std::holds_alternative<DataFrame>(frame))
     {
         auto &f = std::get<DataFrame>(frame);
         auto [data, size] = f.getData();
-        if (avaliableRxWindow < size)
+        if (availableRxWindow < size)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::FlowControlError,
                               "Too much for connection-level flow control");
             return;
         }
-        else if (stream.avaliableRxWindow < size)
+        else if (stream.availableRxWindow < size)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::FlowControlError,
@@ -1434,8 +1423,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                               "Unexpected data frame");
             return;
         }
-        avaliableRxWindow -= size;
-        stream.avaliableRxWindow -= size;
+        availableRxWindow -= size;
+        stream.availableRxWindow -= size;
         LOG_TRACE << "Data frame received: size=" << size;
 
         stream.body.append((char *)data, size);
@@ -1458,18 +1447,18 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             return;
         }
 
-        if (stream.avaliableRxWindow < windowIncreaseThreshold)
+        if (stream.availableRxWindow < windowIncreaseThreshold)
         {
             WindowUpdateFrame windowUpdateFrame(windowIncreaseSize);
             sendFrame(windowUpdateFrame, streamId);
-            stream.avaliableRxWindow += windowIncreaseSize;
+            stream.availableRxWindow += windowIncreaseSize;
         }
     }
     else if (std::holds_alternative<WindowUpdateFrame>(frame))
     {
         auto &f = std::get<WindowUpdateFrame>(frame);
-        if (std::numeric_limits<decltype(stream.avaliableTxWindow)>::max() -
-                stream.avaliableTxWindow <
+        if (std::numeric_limits<decltype(stream.availableTxWindow)>::max() -
+                stream.availableTxWindow <
             f.windowSizeIncrement)
         {
             LOG_TRACE << "Flow control error: stream TX window size overflow";
@@ -1478,8 +1467,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                               "Stream TX window size overflow");
             return;
         }
-        stream.avaliableTxWindow += f.windowSizeIncrement;
-        if (avaliableTxWindow == 0)
+        stream.availableTxWindow += f.windowSizeIncrement;
+        if (availableTxWindow == 0)
             return;
 
         auto it = pendingDataSend.find(streamId);
@@ -1530,8 +1519,8 @@ internal::H2Stream &Http2Transport::createStream(int32_t streamId)
     }
     auto &stream = streams[streamId];
     stream.streamId = streamId;
-    stream.avaliableTxWindow = initialTxWindowSize;
-    stream.avaliableRxWindow = initialRxWindowSize;
+    stream.availableTxWindow = initialTxWindowSize;
+    stream.availableRxWindow = initialRxWindowSize;
     return stream;
 }
 
@@ -1629,12 +1618,12 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     size_t size)
 {
     auto streamId = stream.streamId;
-    if (stream.avaliableTxWindow == 0 || avaliableTxWindow == 0)
+    if (stream.availableTxWindow == 0 || availableTxWindow == 0)
         return {0, false};
 
     int64_t maxSendSize = size;
-    maxSendSize = (std::min)(maxSendSize, stream.avaliableTxWindow);
-    maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
+    maxSendSize = (std::min)(maxSendSize, stream.availableTxWindow);
+    maxSendSize = (std::min)(maxSendSize, availableTxWindow);
     bool sendEverything = maxSendSize == size;
 
     size_t sent = 0;
@@ -1650,8 +1639,8 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
         sent += readSize;
         sendFrame(dataFrame, streamId);
 
-        stream.avaliableTxWindow -= readSize;
-        avaliableTxWindow -= readSize;
+        stream.availableTxWindow -= readSize;
+        availableTxWindow -= readSize;
     }
     return {sent, sendEverything};
 }
@@ -1661,7 +1650,7 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     size_t offset)
 {
     auto streamId = stream.streamId;
-    if (stream.avaliableTxWindow == 0 || avaliableTxWindow == 0)
+    if (stream.availableTxWindow == 0 || availableTxWindow == 0)
         return {offset, false};
 
     // Special handling for multipart because different underlying code

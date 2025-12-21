@@ -425,8 +425,8 @@ struct H2Stream
     std::string body;
     std::optional<size_t> contentLength;
     int32_t streamId = 0;
-    int64_t avaliableTxWindow = 65535;
-    int64_t avaliableRxWindow = 65535;
+    int64_t availableTxWindow = 65535;
+    int64_t availableRxWindow = 65535;
     StreamState state = StreamState::ExpectingHeaders;
 
     trantor::MsgBuffer multipartData;
@@ -490,8 +490,8 @@ class Http2Transport : public HttpTransport
     const int32_t streamIdReconnectThreshold = INT_MAX - 8192;
 
     // HTTP/2 connection-wide state
-    int64_t avaliableTxWindow = 65535;  // RFC default initial value
-    int64_t avaliableRxWindow = 65535;  // RFC default initial value
+    int64_t availableTxWindow = 65535;  // RFC default initial value
+    int64_t availableRxWindow = 65535;  // RFC default initial value
     bool firstInitalWindowUpdateReceived = false;
 
     double pingIntervalSec_{0.0};
