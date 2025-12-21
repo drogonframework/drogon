@@ -599,13 +599,14 @@ static void serializeFrame(OByteStream &buffer,
 // We need to handle both cases. Also it could happen that the TCP stream
 // just cuts off in the middle of a frame (or header). We need to handle that
 // too.
-static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
-    trantor::MsgBuffer *msg)
+// return: {optional<H2Frame>, streamId, h2flags, isFatalError, consumedBytes}
+static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool, uint32_t>
+parseH2Frame(trantor::MsgBuffer *msg)
 {
     if (msg->readableBytes() < 9)
     {
         LOG_TRACE << "Not enough bytes to parse H2 frame header";
-        return {std::nullopt, 0, 0, false};
+        return {std::nullopt, 0, 0, false, 0};
     }
 
     uint8_t *ptr = (uint8_t *)msg->peek();
@@ -616,7 +617,7 @@ static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
     if (msg->readableBytes() < length + 9)
     {
         LOG_TRACE << "Not enough bytes to parse H2 frame";
-        return {std::nullopt, 0, 0, false};
+        return {std::nullopt, 0, 0, false, 0};
     }
 
     const uint8_t type = header.readU8();
@@ -628,7 +629,7 @@ static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
     {
         // TODO: Handle fatal protocol error
         LOG_TRACE << "Unsupported H2 frame type: " << (int)type;
-        return {std::nullopt, streamId, 0, true};
+        return {std::nullopt, streamId, 0, true, 0};
     }
 
     LOG_TRACE << "H2 frame: length=" << length << " type=" << (int)type
@@ -658,7 +659,7 @@ static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
     {
         LOG_WARN << "Unsupported H2 frame type: " << (int)type;
         msg->retrieve(length + 9);
-        return {std::nullopt, streamId, 0, false};
+        return {std::nullopt, streamId, 0, false, 0};
     }
 
     if (payload.remaining() != 0)
@@ -668,10 +669,10 @@ static std::tuple<std::optional<H2Frame>, uint32_t, uint8_t, bool> parseH2Frame(
     if (!frame)
     {
         LOG_TRACE << "Failed to parse H2 frame of type: " << (int)type;
-        return {std::nullopt, streamId, 0, true};
+        return {std::nullopt, streamId, 0, true, 0};
     }
 
-    return {frame, streamId, flags, false};
+    return {frame, streamId, flags, false, length + 9};
 }
 
 void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
@@ -824,7 +825,6 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     Defer d([this]() { sendBufferedData(); });
     LOG_TRACE << "HTTP/2 message received:";
     assert(bytesReceived_ != nullptr);
-    *bytesReceived_ += msg->readableBytes();
     LOG_TRACE << dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
@@ -838,7 +838,9 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         if (msg->readableBytes() == 0)
             break;
 
-        auto [frameOpt, streamId, flags, error] = parseH2Frame(msg);
+        auto [frameOpt, streamId, flags, error, consumedBytes] =
+            parseH2Frame(msg);
+        *bytesReceived_ += consumedBytes;
         if (error)
         {
             LOG_TRACE << "Fatal protocol error happened during stream parsing";
