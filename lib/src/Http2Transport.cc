@@ -977,28 +977,27 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             auto it = currentDataSend.value_or(pendingDataSend.begin());
             while (it != pendingDataSend.end())
             {
-                auto &stream = streams[it->first];
-                auto [sentOffset, done] = sendBodyForStream(stream, it->second);
+                auto streamIt = streams.find(it->first);
+                assert(streamIt != streams.end());  // FATAL: must exist
+                auto [sentOffset, done] =
+                    sendBodyForStream(streamIt->second, it->second);
                 if (done)
                 {
                     it = pendingDataSend.erase(it);
-                    if (it != pendingDataSend.end())
-                        currentDataSend = it;
-                    else
+                    if (it == pendingDataSend.end())
                     {
                         currentDataSend = std::nullopt;
                         break;
                     }
+                    currentDataSend = it;
                     continue;
                 }
                 it->second = sentOffset;
-                if (availableTxWindow != 0)
-                {
-                    ++it;
-                    currentDataSend = it;
-                }
-                else
+                if (availableTxWindow == 0)
                     break;
+
+                ++it;
+                currentDataSend = it;
             }
         }
         else if (std::holds_alternative<SettingsFrame>(frame))
