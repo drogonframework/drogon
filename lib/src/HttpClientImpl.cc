@@ -73,6 +73,16 @@ void HttpClientImpl::createTcpClient()
         {
             // send request;
             LOG_TRACE << "Connection established!";
+            static bool disableHttp2 = []() {
+                const char *env = std::getenv("DROGON_DISABLE_HTTP2_CLIENT");
+                if (env != nullptr && std::string(env) == "1")
+                {
+                    LOG_WARN << "HTTP/2 client disabled by environment "
+                                "variable DROGON_DISABLE_HTTP2_CLIENT";
+                    return true;
+                }
+                return false;
+            }();
 
             auto protocol = connPtr->applicationProtocol();
             if (protocol == "http/1.1")
@@ -85,7 +95,7 @@ void HttpClientImpl::createTcpClient()
                                                       &thisPtr->bytesReceived_);
                 thisPtr->httpVersion_ = Version::kHttp11;
             }
-            else if (protocol == "h2")
+            else if (protocol == "h2" && !disableHttp2)
             {
                 LOG_TRACE << "Select http/2 protocol";
                 thisPtr->transport_ =
