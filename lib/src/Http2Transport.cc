@@ -1187,13 +1187,17 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
                           key) != bannedTrailerHeaders.end())
             {
                 LOG_TRACE << "Banned trailer header: " << key;
-                streamErrored(streamId, ReqResult::BadResponse);
+                connectionErrored(streamId,
+                                  StreamCloseErrorCode::ProtocolError,
+                                  "Banned trailer header: " + key);
                 return false;
             }
             if (key.front() == ':')
             {
                 LOG_TRACE << "Pseudo header in trailers: " << key;
-                streamErrored(streamId, ReqResult::BadResponse);
+                connectionErrored(streamId,
+                                  StreamCloseErrorCode::ProtocolError,
+                                  "Pseudo header in trailers: " + key);
                 return false;
             }
         }
@@ -1203,7 +1207,9 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
             auto sz = stosz(value);
             if (!sz)
             {
-                streamErrored(streamId, ReqResult::BadResponse);
+                connectionErrored(streamId,
+                                  StreamCloseErrorCode::ProtocolError,
+                                  "Invalid content-length");
                 return false;
             }
             stream.contentLength = std::move(sz);
@@ -1213,7 +1219,9 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
             auto status = stosz(value);
             if (!status || *status > enumMaxValue<HttpStatusCode>())
             {
-                streamErrored(streamId, ReqResult::BadResponse);
+                connectionErrored(streamId,
+                                  StreamCloseErrorCode::ProtocolError,
+                                  "Invalid status code");
                 return false;
             }
             stream.response->setStatusCode((HttpStatusCode)*status);
@@ -1225,7 +1233,9 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
         if (key.find_first_of("\r\n: ") != std::string::npos ||
             value.find_first_of("\r\n") != std::string::npos)
         {
-            streamErrored(streamId, ReqResult::BadResponse);
+            connectionErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              "Invalid characters in header");
             return false;
         }
 
@@ -1236,7 +1246,9 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
             if (isupper(c))
             {
                 LOG_TRACE << "Uppercase header field name: " << key;
-                streamErrored(streamId, ReqResult::BadResponse);
+                connectionErrored(streamId,
+                                  StreamCloseErrorCode::ProtocolError,
+                                  "Uppercase header field name: " + key);
                 return false;
             }
         }
