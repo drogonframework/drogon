@@ -1,3 +1,4 @@
+#include <optional>
 #define NOMINMAX
 #include "Http2Transport.h"
 #include "HttpFileUploadRequest.h"
@@ -890,7 +891,9 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 {
                     // Collect ID or handle careful erasure
                     auto current = it++;  // Advance iterator first
-                    streamErrored(current->first, ReqResult::BadResponse);
+                    streamErrored(current->first,
+                                  std::nullopt,
+                                  ReqResult::BadResponse);
                 }
                 else
                 {
@@ -1187,17 +1190,17 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
                           key) != bannedTrailerHeaders.end())
             {
                 LOG_TRACE << "Banned trailer header: " << key;
-                connectionErrored(streamId,
-                                  StreamCloseErrorCode::ProtocolError,
-                                  "Banned trailer header: " + key);
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return false;
             }
             if (key.front() == ':')
             {
                 LOG_TRACE << "Pseudo header in trailers: " << key;
-                connectionErrored(streamId,
-                                  StreamCloseErrorCode::ProtocolError,
-                                  "Pseudo header in trailers: " + key);
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return false;
             }
         }
@@ -1207,9 +1210,9 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
             auto sz = stosz(value);
             if (!sz)
             {
-                connectionErrored(streamId,
-                                  StreamCloseErrorCode::ProtocolError,
-                                  "Invalid content-length");
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return false;
             }
             stream.contentLength = std::move(sz);
@@ -1219,9 +1222,9 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
             auto status = stosz(value);
             if (!status || *status > enumMaxValue<HttpStatusCode>())
             {
-                connectionErrored(streamId,
-                                  StreamCloseErrorCode::ProtocolError,
-                                  "Invalid status code");
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return false;
             }
             stream.response->setStatusCode((HttpStatusCode)*status);
@@ -1233,9 +1236,10 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
         if (key.find_first_of("\r\n: ") != std::string::npos ||
             value.find_first_of("\r\n") != std::string::npos)
         {
-            connectionErrored(streamId,
-                              StreamCloseErrorCode::ProtocolError,
-                              "Invalid characters in header");
+            LOG_TRACE << "Invalid characters in header: " << key;
+            streamErrored(streamId,
+                          StreamCloseErrorCode::ProtocolError,
+                          ReqResult::BadResponse);
             return false;
         }
 
@@ -1246,9 +1250,9 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
             if (isupper(c))
             {
                 LOG_TRACE << "Uppercase header field name: " << key;
-                connectionErrored(streamId,
-                                  StreamCloseErrorCode::ProtocolError,
-                                  "Uppercase header field name: " + key);
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return false;
             }
         }
@@ -1452,7 +1456,9 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 stream.body.size() != *stream.contentLength)
             {
                 LOG_TRACE << "content-length mismatch";
-                streamErrored(streamId, ReqResult::BadResponse);
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return;
             }
             responseSuccess(stream);
@@ -1513,7 +1519,7 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
         auto &f = std::get<RstStreamFrame>(frame);
         LOG_TRACE << "RST_STREAM frame received: errorCode=" << f.errorCode;
         stream.state = StreamState::Finished;
-        streamErrored(streamId, ReqResult::BadResponse);
+        streamErrored(streamId, std::nullopt, ReqResult::BadResponse);
     }
     else
     {
@@ -1562,12 +1568,20 @@ void Http2Transport::responseSuccess(internal::H2Stream &stream)
     bufferedRequests.pop();
 }
 
-void Http2Transport::streamErrored(int32_t streamId, ReqResult result)
+void Http2Transport::streamErrored(
+    int32_t streamId,
+    std::optional<StreamCloseErrorCode> errorCode,
+    ReqResult result)
 {
     pendingDataSend.erase(streamId);
 
-    // TODO: Detect if we need to send RST_STREAM
     auto it = streams.find(streamId);
+    if (errorCode.has_value())
+    {
+        // Send RST_STREAM frame
+        RstStreamFrame rstFrame(*errorCode);
+        sendFrame(rstFrame, streamId);
+    }
     assert(it != streams.end());
     it->second.callback(result, nullptr);
     streams.erase(it);

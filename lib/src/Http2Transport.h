@@ -15,6 +15,24 @@ namespace drogon
 
 using namespace EricHpack;
 
+enum class StreamCloseErrorCode
+{
+    NoError = 0x0,
+    ProtocolError = 0x1,
+    InternalError = 0x2,
+    FlowControlError = 0x3,
+    SettingsTimeout = 0x4,
+    StreamClosed = 0x5,
+    FrameSizeError = 0x6,
+    RefusedStream = 0x7,
+    Cancel = 0x8,
+    CompressionError = 0x9,
+    ConnectError = 0xa,
+    EnhanceYourCalm = 0xb,
+    InadequateSecurity = 0xc,
+    Http11Required = 0xd,
+};
+
 namespace internal
 {
 // Quick and dirty ByteStream implementation and extensions so we can use it
@@ -365,6 +383,11 @@ struct RstStreamFrame
     {
     }
 
+    RstStreamFrame(StreamCloseErrorCode errorCode)
+        : errorCode(static_cast<uint32_t>(errorCode))
+    {
+    }
+
     uint32_t errorCode = 0;
 
     static std::optional<RstStreamFrame> parse(ByteStream &payload,
@@ -433,24 +456,6 @@ struct H2Stream
 };
 }  // namespace internal
 
-enum class StreamCloseErrorCode
-{
-    NoError = 0x0,
-    ProtocolError = 0x1,
-    InternalError = 0x2,
-    FlowControlError = 0x3,
-    SettingsTimeout = 0x4,
-    StreamClosed = 0x5,
-    FrameSizeError = 0x6,
-    RefusedStream = 0x7,
-    Cancel = 0x8,
-    CompressionError = 0x9,
-    ConnectError = 0xa,
-    EnhanceYourCalm = 0xb,
-    InadequateSecurity = 0xc,
-    Http11Required = 0xd,
-};
-
 class Http2Transport : public HttpTransport
 {
   private:
@@ -501,7 +506,9 @@ class Http2Transport : public HttpTransport
 
     internal::H2Stream &createStream(int32_t streamId);
     void responseSuccess(internal::H2Stream &stream);
-    void streamErrored(int32_t streamId, ReqResult result);
+    void streamErrored(int32_t streamId,
+                       std::optional<StreamCloseErrorCode> errorCode,
+                       ReqResult result);
 
     std::optional<int32_t> nextStreamId()
     {
