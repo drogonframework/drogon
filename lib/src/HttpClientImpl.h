@@ -144,6 +144,11 @@ class HttpClientImpl final : public HttpClient,
         }
     }
 
+    void setPingInterval(double intervalSec) override
+    {
+        pingIntervalSec_ = intervalSec;
+    }
+
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
@@ -181,6 +186,7 @@ class HttpClientImpl final : public HttpClient,
     std::unique_ptr<HttpTransport> transport_;
     std::optional<Version> targetHttpVersion_;
     std::optional<Version> httpVersion_;
+    double pingIntervalSec_{0.0};
 };
 
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;

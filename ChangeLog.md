@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0-beta.3] - TBD
+
+### Changes
+
+* Synced with latest master branch
+* Environment variable `DROGON_DISABLE_HTTP2_CLIENT=1` will disable HTTP/2 in client
+* `HttpClient` supports `setPingInterval(seconds)` to send periodic PING frames to keep the connection alive
+* Relax recoverable protocol errors instead of killing the connection
+* Support trailers in HTTP/2 responses
+
+### Fixes
+
+* Fixes in HTTP/2 client protocol implementation to improve stability and compatibility
+  * Increased connection and stream level flow level RX window to improve throughput
+  * Proper respect of `DYNAMIC_TABLE_SIZE` and `INITIAL_WINDOW_SIZE` settings from server
+  * Various UAF fixes
+  * Handle malicious server triggering overflow in flow control window
+  * GOAWAY frame correctly ignores MSB of last stream ID
+  * Headers with uppercase letters are treated as malformed
+  * Fix overly strict asserts in debug mode
+  * Corrected padding serialization in frames
+  * Responses with long headers but no body are handled correctly
+
 ## [1.10.0-beta.2] - 2024-06-18
 
 ### Changes

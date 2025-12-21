@@ -5,6 +5,7 @@
 #include "hpack.h"
 
 #include <cassert>
+#include <cstdint>
 #include <string_view>
 #include <variant>
 #include <climits>
@@ -13,6 +14,24 @@ namespace drogon
 {
 
 using namespace EricHpack;
+
+enum class StreamCloseErrorCode
+{
+    NoError = 0x0,
+    ProtocolError = 0x1,
+    InternalError = 0x2,
+    FlowControlError = 0x3,
+    SettingsTimeout = 0x4,
+    StreamClosed = 0x5,
+    FrameSizeError = 0x6,
+    RefusedStream = 0x7,
+    Cancel = 0x8,
+    CompressionError = 0x9,
+    ConnectError = 0xa,
+    EnhanceYourCalm = 0xb,
+    InadequateSecurity = 0xc,
+    Http11Required = 0xd,
+};
 
 namespace internal
 {
@@ -77,7 +96,9 @@ struct ByteStream
 
     void read(uint8_t *buffer, size_t size)
     {
-        assert((length >= size && offset <= length - size) || size == 0);
+        if (size == 0)
+            return;
+        assert(length >= size && offset <= length - size);
         assert(buffer != nullptr);
         assert(ptr != nullptr);
         memcpy(buffer, ptr + offset, size);
@@ -136,7 +157,7 @@ struct OByteStream
     void pad(size_t size, uint8_t value = 0)
     {
         buffer.ensureWritableBytes(size);
-        auto ptr = (uint8_t *)buffer.peek() + buffer.readableBytes();
+        auto ptr = (uint8_t *)buffer.peek() + size;
         memset(ptr, value, size);
         buffer.hasWritten(size);
     }
@@ -320,7 +341,7 @@ struct PingFrame
     PingFrame() = default;
 
     PingFrame(std::array<uint8_t, 8> opaqueData, bool ack)
-        : opaqueData(opaqueData), ack(ack)
+        : opaqueData(std::move(opaqueData)), ack(ack)
     {
     }
 
@@ -359,6 +380,11 @@ struct RstStreamFrame
     RstStreamFrame() = default;
 
     RstStreamFrame(uint32_t errorCode) : errorCode(errorCode)
+    {
+    }
+
+    RstStreamFrame(StreamCloseErrorCode errorCode)
+        : errorCode(static_cast<uint32_t>(errorCode))
     {
     }
 
@@ -408,6 +434,7 @@ enum class StreamState
     ExpectingHeaders,
     ExpectingContinuation,
     ExpectingData,
+    ExpectingContinuationTrailers,
     Finished,
 };
 
@@ -421,31 +448,13 @@ struct H2Stream
     std::string body;
     std::optional<size_t> contentLength;
     int32_t streamId = 0;
-    size_t avaliableTxWindow = 65535;
-    size_t avaliableRxWindow = 65535;
+    int64_t availableTxWindow = 65535;
+    int64_t availableRxWindow = 65535;
     StreamState state = StreamState::ExpectingHeaders;
 
     trantor::MsgBuffer multipartData;
 };
 }  // namespace internal
-
-enum class StreamCloseErrorCode
-{
-    NoError = 0x0,
-    ProtocolError = 0x1,
-    InternalError = 0x2,
-    FlowControlError = 0x3,
-    SettingsTimeout = 0x4,
-    StreamClosed = 0x5,
-    FrameSizeError = 0x6,
-    RefusedStream = 0x7,
-    Cancel = 0x8,
-    CompressionError = 0x9,
-    ConnectError = 0xa,
-    EnhanceYourCalm = 0xb,
-    InadequateSecurity = 0xc,
-    Http11Required = 0xd,
-};
 
 class Http2Transport : public HttpTransport
 {
@@ -477,18 +486,29 @@ class Http2Transport : public HttpTransport
     size_t maxRxDynamicTableSize = 4096;
 
     // Configuration settings
-    const uint32_t windowIncreaseThreshold = 16384;
-    const uint32_t windowIncreaseSize = 128 * 1024;  // 128KB
+    const uint32_t windowIncreaseThreshold = 256 * 1024;  // 256 KB
+    const uint32_t windowIncreaseSize = 4 * 1024 * 1024;  // 4 MB
     const uint32_t maxCompressiedHeaderSize = 2048;
+    const uint32_t desiredInitialRxWindowSize = 512 * 1024;  // 512 KB
+    // ^^^^ this value must be larger then 65535 - our logic DOES NOT
+    //      handle decreasing window size gracefully
     const int32_t streamIdReconnectThreshold = INT_MAX - 8192;
 
     // HTTP/2 connection-wide state
-    size_t avaliableTxWindow = 65535;
-    size_t avaliableRxWindow = 65535;
+    int64_t availableTxWindow = 65535;  // RFC default initial value
+    int64_t availableRxWindow = 65535;  // RFC default initial value
+    bool firstInitalWindowUpdateReceived = false;
+
+    double pingIntervalSec_{0.0};
+    trantor::TimerId pingTimerId_;
+
+    std::vector<uint8_t> additionalHeaderData_;
 
     internal::H2Stream &createStream(int32_t streamId);
     void responseSuccess(internal::H2Stream &stream);
-    void streamErrored(int32_t streamId, ReqResult result);
+    void streamErrored(int32_t streamId,
+                       std::optional<StreamCloseErrorCode> errorCode,
+                       ReqResult result);
 
     std::optional<int32_t> nextStreamId()
     {
@@ -504,7 +524,7 @@ class Http2Transport : public HttpTransport
     // Returns true when we SHOULD reconnect due to exhausting stream IDs.
     // Doesn't mean we will. We will force a reconnect when we actually
     // run out.
-    inline bool runningOutStreamId()
+    inline bool runningOutStreamId() const
     {
         return currentStreamId > streamIdReconnectThreshold;
     }
@@ -518,7 +538,8 @@ class Http2Transport : public HttpTransport
 
     bool parseAndApplyHeaders(internal::H2Stream &stream,
                               const void *data,
-                              size_t len);
+                              size_t len,
+                              bool isTrailers);
     std::pair<size_t, bool> sendBodyForStream(internal::H2Stream &stream,
                                               const void *data,
                                               size_t size);
@@ -531,7 +552,9 @@ class Http2Transport : public HttpTransport
   public:
     Http2Transport(trantor::TcpConnectionPtr connPtr,
                    size_t *bytesSent,
-                   size_t *bytesReceived);
+                   size_t *bytesReceived,
+                   double pingIntervalSec = 0.0);
+    ~Http2Transport() override;
 
     void sendRequestInLoop(const HttpRequestPtr &req,
                            HttpReqCallback &&callback) override;
@@ -546,8 +569,5 @@ class Http2Transport : public HttpTransport
     bool handleConnectionClose() override;
 
     void onError(ReqResult result) override;
-
-  protected:
-    void onServerSettingsReceived(){};
 };
 }  // namespace drogon

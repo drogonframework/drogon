@@ -1,3 +1,5 @@
+#include <optional>
+#define NOMINMAX
 #include "Http2Transport.h"
 #include "HttpFileUploadRequest.h"
 #include "drogon/utils/Utilities.h"
@@ -13,6 +15,7 @@ using namespace drogon;
 using namespace drogon::internal;
 
 static const std::string_view h2_preamble = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+static std::array<uint8_t, 8> pingOpaqueData = {0, 1, 2, 3, 4, 5, 6, 7};
 
 static std::optional<size_t> stosz(const std::string &str)
 {
@@ -158,6 +161,11 @@ std::optional<WindowUpdateFrame> WindowUpdateFrame::parse(ByteStream &payload,
     // MSB is reserved for future use
     auto [_, windowSizeIncrement] = payload.readBI31BE();
     frame.windowSizeIncrement = windowSizeIncrement;
+    if (frame.windowSizeIncrement == 0)
+    {
+        LOG_TRACE << "Flow control error: window size increment cannot be 0";
+        return std::nullopt;
+    }
     return frame;
 }
 
@@ -236,9 +244,7 @@ bool HeadersFrame::serialize(OByteStream &stream, uint8_t &flags) const
     if (exclusive)
     {
         flags |= (uint8_t)H2HeadersFlags::Priority;
-        uint32_t streamDependency = this->streamDependency;
-        if (exclusive)
-            streamDependency |= 1U << 31;
+        uint32_t streamDependency = this->streamDependency | (1U << 31);
         stream.writeU32BE(streamDependency);
         stream.writeU8(weight);
     }
@@ -248,6 +254,10 @@ bool HeadersFrame::serialize(OByteStream &stream, uint8_t &flags) const
     if (endStream)
         flags |= (uint8_t)H2HeadersFlags::EndStream;
     stream.write(headerBlockFragment.data(), headerBlockFragment.size());
+    if (padLength > 0)
+    {
+        stream.pad(padLength);
+    }
     return true;
 }
 
@@ -260,7 +270,7 @@ std::optional<GoAwayFrame> GoAwayFrame::parse(ByteStream &payload,
         return std::nullopt;
     }
     GoAwayFrame frame;
-    frame.lastStreamId = payload.readU32BE();
+    frame.lastStreamId = payload.readU32BE() & ~(1U << 31);
     frame.errorCode = payload.readU32BE();
     frame.additionalDebugData.resize(payload.remaining());
     payload.read(frame.additionalDebugData.data(), payload.remaining());
@@ -324,13 +334,17 @@ std::optional<DataFrame> DataFrame::parse(ByteStream &payload, uint8_t flags)
 bool DataFrame::serialize(OByteStream &stream, uint8_t &flags) const
 {
     flags = (endStream ? (uint8_t)H2DataFlags::EndStream : 0x0);
-    auto [ptr, size] = getData();
-
-    stream.write(ptr, size);
     if (padLength > 0)
     {
         flags |= (uint8_t)H2DataFlags::Padded;
-        stream.pad(padLength, 0);
+        stream.writeU8(padLength);
+    }
+    auto [ptr, size] = getData();
+    stream.write(ptr, size);
+
+    if (padLength > 0)
+    {
+        stream.pad(padLength);
     }
     return true;
 }
@@ -417,13 +431,17 @@ bool PushPromiseFrame::serialize(OByteStream &stream, uint8_t &flags) const
     flags = 0x0;
     if (endHeaders)
         flags |= (uint8_t)H2HeadersFlags::EndHeaders;
+    if (padLength > 0)
+    {
+        flags |= (uint8_t)H2HeadersFlags::Padded;
+        stream.writeU8(padLength);
+    }
     assert(promisedStreamId > 0);
     stream.writeU32BE(promisedStreamId);
     stream.write(headerBlockFragment.data(), headerBlockFragment.size());
     if (padLength > 0)
     {
-        flags |= (uint8_t)H2HeadersFlags::Padded;
-        stream.writeU8(padLength);
+        stream.pad(padLength);
     }
     return true;
 }
@@ -661,7 +679,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 {
     connPtr->getLoop()->assertInLoopThread();
     Defer d([this]() { sendBufferedData(); });
-    if (streams.size() + 1 >= maxConcurrentStreams)
+    if (streams.size() + 1 > maxConcurrentStreams)
     {
         LOG_TRACE << "Too many streams in flight. Buffering request";
         bufferedRequests.push({req, std::move(callback)});
@@ -676,9 +694,6 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
         connPtr->forceClose();
         return;
     }
-    // -2 because we are using the next stream id for the next request
-    // TODO: Clean interface to get the current highest stream id. Might need
-    // to keep tracking separately
     const auto streamId = *sid;
     assert(streamId % 2 == 1);
     LOG_TRACE << "Sending HTTP/2 request: streamId=" << streamId;
@@ -713,7 +728,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     }
     std::string scheme = connPtr->isSSLConnection() ? "https" : "http";
     if (static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
-        scheme = (req->isOnSecureConnection()) ? "https" : "http";
+        scheme = (req->peerCertificate() != nullptr) ? "https" : "http";
     vec.emplace_back(":scheme", scheme);
     if (auto host = req->getHeader("host"); !host.empty())
         vec.emplace_back(":authority", host);
@@ -733,7 +748,16 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     std::vector<uint8_t> encoded;
     encoded.reserve(maxCompressiedHeaderSize);
     // TODO: We should be able to avoid this allocation
-    auto wbuf = hpackTx.MakeHpWBuffer(encoded, maxCompressiedHeaderSize);
+    // NOTE: 2MB of encoded header size should be enough for everyone
+    auto wbuf = hpackTx.MakeHpWBuffer(encoded, 2 * 1024 * 1024);
+    if (additionalHeaderData_.size() > 0)
+    {
+        for (auto byte : additionalHeaderData_)
+        {
+            wbuf->Append(byte);
+        }
+        additionalHeaderData_.clear();
+    }
     auto status = hpackTx.Encoder(*wbuf, vec);
     if (status != Success)
     {
@@ -748,7 +772,7 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
 
     bool haveBody =
         req->body().length() > 0 ||
-        (req->contentType() != CT_MULTIPART_FORM_DATA &&
+        (req->contentType() == CT_MULTIPART_FORM_DATA &&
          dynamic_cast<HttpFileUploadRequest *>(req.get()) != nullptr);
     auto &stream = createStream(streamId);
     stream.callback = std::move(callback);
@@ -785,14 +809,12 @@ void Http2Transport::sendRequestInLoop(const HttpRequestPtr &req,
     auto [sentOffset, done] = sendBodyForStream(stream, 0);
     if (!done)
     {
-        auto it = pendingDataSend.find(streamId);
-        if (it != pendingDataSend.end())
+        auto [it, inserted] = pendingDataSend.try_emplace(streamId, sentOffset);
+        if (!inserted)
         {
             LOG_FATAL << "Stream id already in use! This should not happen";
             abort();
         }
-
-        pendingDataSend.emplace(streamId, sentOffset);
     }
 }
 
@@ -806,11 +828,11 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
     LOG_TRACE << dump_hex_beautiful(msg->peek(), msg->readableBytes());
     while (true)
     {
-        if (avaliableRxWindow < windowIncreaseThreshold)
+        if (availableRxWindow < windowIncreaseThreshold)
         {
             WindowUpdateFrame windowUpdateFrame(windowIncreaseSize);
             sendFrame(windowUpdateFrame, 0);
-            avaliableRxWindow += windowIncreaseSize;
+            availableRxWindow += windowIncreaseSize;
         }
 
         if (msg->readableBytes() == 0)
@@ -860,14 +882,26 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                 return;
             }
 
-            for (auto &[streamId, stream] : streams)
+            // Cannot use range-based for loop because of possible erasure in
+            // streamErrored()
+            auto it = streams.begin();
+            while (it != streams.end())
             {
-                if (streamId > f.lastStreamId)
+                if (it->first > f.lastStreamId)
                 {
-                    streamErrored(streamId, ReqResult::BadResponse);
+                    // Collect ID or handle careful erasure
+                    auto current = it++;  // Advance iterator first
+                    streamErrored(current->first,
+                                  std::nullopt,
+                                  ReqResult::BadResponse);
+                }
+                else
+                {
+                    ++it;
                 }
             }
             // TODO: Should be half-closed but trantor doesn't support it
+            // Nothing I can do for now
             connPtr->shutdown();
             return;
         }
@@ -921,7 +955,17 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
         if (std::holds_alternative<WindowUpdateFrame>(frame))
         {
             auto &f = std::get<WindowUpdateFrame>(frame);
-            avaliableTxWindow += f.windowSizeIncrement;
+            if (std::numeric_limits<decltype(availableTxWindow)>::max() -
+                    availableTxWindow <
+                f.windowSizeIncrement)
+            {
+                LOG_TRACE << "Flow control error: TX window size overflow";
+                connectionErrored(streamId,
+                                  StreamCloseErrorCode::FlowControlError,
+                                  "TX window size overflow");
+                break;
+            }
+            availableTxWindow += f.windowSizeIncrement;
 
             // Find if we have a stream that can be resumed
             if (currentDataSend.has_value() == false && pendingDataSend.empty())
@@ -945,7 +989,7 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                     continue;
                 }
                 it->second = sentOffset;
-                if (avaliableTxWindow != 0)
+                if (availableTxWindow != 0)
                 {
                     ++it;
                     currentDataSend = it;
@@ -961,7 +1005,21 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             {
                 if (key == (uint16_t)H2SettingsKey::HeaderTableSize)
                 {
-                    maxRxDynamicTableSize = value;
+                    if (value > 20 * 1024 * 1024)
+                    {
+                        LOG_TRACE << "HeaderTableSize too large";
+                        connectionErrored(streamId,
+                                          StreamCloseErrorCode::ProtocolError,
+                                          "HeaderTableSize too large");
+                        break;
+                    }
+                    // 64 is large enough
+                    auto newBuf =
+                        hpackTx.MakeHpWBuffer(additionalHeaderData_, 64);
+                    HeaderFieldInfo headerFieldInfo;
+                    hpackTx.EncoderDynamicTableSizeUpdate(*newBuf,
+                                                          value,
+                                                          headerFieldInfo);
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxConcurrentStreams)
                 {
@@ -993,7 +1051,22 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
                             "InitialWindowSize too large");
                         break;
                     }
+                    int64_t diff =
+                        (int64_t)value - (int64_t)initialTxWindowSize;
                     initialTxWindowSize = value;
+
+                    // If first initial window update received, we need to
+                    // update all streams' available window size (even if)
+                    // it is going negative)
+                    if (!firstInitalWindowUpdateReceived)
+                    {
+                        continue;
+                    }
+                    for (auto &[_, stream] : streams)
+                    {
+                        stream.availableTxWindow += diff;
+                    }
+                    firstInitalWindowUpdateReceived = true;
                 }
                 else if (key == (uint16_t)H2SettingsKey::MaxHeaderListSize)
                 {
@@ -1066,7 +1139,8 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
 
 bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
                                           const void *data,
-                                          size_t size)
+                                          size_t size,
+                                          bool isTrailers)
 {
     std::vector<KeyValPair> headers;
     headers.reserve(6);  // some small amount to reduce reallocation
@@ -1084,18 +1158,61 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
     }
     for (auto &[key, value] : headers)
         LOG_TRACE << "  " << key << ": " << value;
-    assert(stream.response == nullptr);
-    stream.response = std::make_shared<HttpResponseImpl>();
-    stream.response->setVersion(Version::kHttp2);
+    assert(stream.response || !isTrailers);
+    if (stream.response == nullptr)
+    {
+        stream.response = std::make_shared<HttpResponseImpl>();
+        stream.response->setVersion(Version::kHttp2);
+    }
+
+    constexpr std::array<std::string_view, 14> bannedTrailerHeaders = {
+        "content-length",
+        "host",
+        "cache-control",
+        "expect",
+        "max-forwards",
+        "pragma",
+        "range",
+        "te",
+        "authorization",
+        "set-cookie",
+        "content-encoding",
+        "content-type",
+        "content-range",
+        "trailer"};
     for (const auto &[key, value] : headers)
     {
+        bool ok = true;
+        if (isTrailers)
+        {
+            if (std::find(bannedTrailerHeaders.begin(),
+                          bannedTrailerHeaders.end(),
+                          key) != bannedTrailerHeaders.end())
+            {
+                LOG_TRACE << "Banned trailer header: " << key;
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
+                return false;
+            }
+            if (key.front() == ':')
+            {
+                LOG_TRACE << "Pseudo header in trailers: " << key;
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
+                return false;
+            }
+        }
         // TODO: Filter more pseudo headers
         if (key == "content-length")
         {
             auto sz = stosz(value);
             if (!sz)
             {
-                streamErrored(streamId, ReqResult::BadResponse);
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return false;
             }
             stream.contentLength = std::move(sz);
@@ -1105,7 +1222,9 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
             auto status = stosz(value);
             if (!status || *status > enumMaxValue<HttpStatusCode>())
             {
-                streamErrored(streamId, ReqResult::BadResponse);
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return false;
             }
             stream.response->setStatusCode((HttpStatusCode)*status);
@@ -1117,8 +1236,25 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
         if (key.find_first_of("\r\n: ") != std::string::npos ||
             value.find_first_of("\r\n") != std::string::npos)
         {
-            streamErrored(streamId, ReqResult::BadResponse);
+            LOG_TRACE << "Invalid characters in header: " << key;
+            streamErrored(streamId,
+                          StreamCloseErrorCode::ProtocolError,
+                          ReqResult::BadResponse);
             return false;
+        }
+
+        // RFC 7540 Section 8.1.2:  request or response containing uppercase
+        // header field names MUST be treated as malformed
+        for (auto c : key)
+        {
+            if (isupper(c))
+            {
+                LOG_TRACE << "Uppercase header field name: " << key;
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
+                return false;
+            }
         }
 
         stream.response->addHeader(key, value);
@@ -1128,10 +1264,12 @@ bool Http2Transport::parseAndApplyHeaders(internal::H2Stream &stream,
 
 Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
                                size_t *bytesSent,
-                               size_t *bytesReceived)
+                               size_t *bytesReceived,
+                               double pingIntervalSec)
     : connPtr(connPtr),
       bytesSent_(bytesSent),
       bytesReceived_(bytesReceived),
+      pingIntervalSec_(pingIntervalSec),
       hpackRx(&maxRxDynamicTableSize)
 {
     // TODO: Handle connection dies before constructing the object
@@ -1146,8 +1284,33 @@ Http2Transport::Http2Transport(trantor::TcpConnectionPtr connPtr,
     SettingsFrame settingsFrame;
     settingsFrame.settings.emplace_back((uint16_t)H2SettingsKey::EnablePush,
                                         0);  // Disable push
+    // Increase initial window size to our desired size -- the values supplied
+    // by RFC is too small for practical use
+    settingsFrame.settings.emplace_back(
+        (uint16_t)H2SettingsKey::InitialWindowSize, desiredInitialRxWindowSize);
+    initialRxWindowSize = desiredInitialRxWindowSize;
     sendFrame(settingsFrame, 0);
     sendBufferedData();
+
+    // Setup ping timer
+    if (pingIntervalSec_ > 0)
+    {
+        pingTimerId_ = connPtr->getLoop()->runEvery(pingIntervalSec_, [this]() {
+            LOG_DEBUG << "Sending HTTP/2 ping frame";
+            PingFrame pingFrame(pingOpaqueData, false);
+            sendFrame(pingFrame, 0);
+            sendBufferedData();
+        });
+    }
+}
+
+Http2Transport::~Http2Transport()
+{
+    if (pingTimerId_ != 0)
+    {
+        connPtr->getLoop()->invalidateTimer(pingTimerId_);
+        pingTimerId_ = 0;
+    }
 }
 
 void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
@@ -1167,36 +1330,34 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
     if (std::holds_alternative<HeadersFrame>(frame))
     {
-        if (stream.state != StreamState::ExpectingHeaders)
+        if (stream.state != StreamState::ExpectingHeaders &&
+            stream.state != StreamState::ExpectingData)  // Trailers
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
                               "Unexpected headers frame");
             return;
         }
+        bool isTrailers = (stream.state == StreamState::ExpectingData);
         bool endStream = (flags & (uint8_t)H2HeadersFlags::EndStream);
         bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders);
-        if (endStream && !endHeaders)
-        {
-            connectionErrored(streamId,
-                              StreamCloseErrorCode::ProtocolError,
-                              "This client does not support trailers");
-            return;
-        }
         if (!endHeaders)
         {
             auto &f = std::get<HeadersFrame>(frame);
             headerBufferRx.append((char *)f.headerBlockFragment.data(),
                                   f.headerBlockFragment.size());
             expectngContinuationStreamId = streamId;
-            stream.state = StreamState::ExpectingContinuation;
+            stream.state = isTrailers
+                               ? StreamState::ExpectingContinuationTrailers
+                               : StreamState::ExpectingContinuation;
             return;
         }
         auto &f = std::get<HeadersFrame>(frame);
         // This function handles error itself
         if (!parseAndApplyHeaders(stream,
                                   f.headerBlockFragment.data(),
-                                  f.headerBlockFragment.size()))
+                                  f.headerBlockFragment.size(),
+                                  isTrailers))
             return;
 
         // There is no body in the response.
@@ -1206,12 +1367,20 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             responseSuccess(stream);
             return;
         }
+
+        if (isTrailers)
+        {
+            connectionErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              "Data after trailers");
+        }
         stream.state = StreamState::ExpectingData;
     }
     else if (std::holds_alternative<ContinuationFrame>(frame))
     {
         auto &f = std::get<ContinuationFrame>(frame);
-        if (stream.state != StreamState::ExpectingContinuation)
+        if (stream.state != StreamState::ExpectingContinuation &&
+            stream.state != StreamState::ExpectingContinuationTrailers)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::ProtocolError,
@@ -1221,32 +1390,40 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         headerBufferRx.append((char *)f.headerBlockFragment.data(),
                               f.headerBlockFragment.size());
+        bool isTrailers =
+            (stream.state == StreamState::ExpectingContinuationTrailers);
         bool endHeaders = (flags & (uint8_t)H2HeadersFlags::EndHeaders) != 0;
-        if (endHeaders)
+
+        if (endHeaders && !isTrailers)
         {
             stream.state = StreamState::ExpectingData;
             expectngContinuationStreamId = 0;
             bool ok = parseAndApplyHeaders(stream,
                                            headerBufferRx.peek(),
-                                           headerBufferRx.readableBytes());
+                                           headerBufferRx.readableBytes(),
+                                           isTrailers);
             headerBufferRx.retrieveAll();
             if (!ok)
                 LOG_TRACE << "Failed to parse headers in continuation frame";
             return;
         }
+
+        stream.state = StreamState::Finished;
+        responseSuccess(stream);
+        return;
     }
     else if (std::holds_alternative<DataFrame>(frame))
     {
         auto &f = std::get<DataFrame>(frame);
         auto [data, size] = f.getData();
-        if (avaliableRxWindow < size)
+        if (availableRxWindow < size)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::FlowControlError,
                               "Too much for connection-level flow control");
             return;
         }
-        else if (stream.avaliableRxWindow < size)
+        else if (stream.availableRxWindow < size)
         {
             connectionErrored(streamId,
                               StreamCloseErrorCode::FlowControlError,
@@ -1256,14 +1433,13 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
 
         if (stream.state != StreamState::ExpectingData)
         {
-            // XXX: Maybe this could be a RST_STREAM instead?
-            connectionErrored(streamId,
-                              StreamCloseErrorCode::ProtocolError,
-                              "Unexpected data frame");
+            streamErrored(streamId,
+                          StreamCloseErrorCode::ProtocolError,
+                          ReqResult::BadResponse);
             return;
         }
-        avaliableRxWindow -= size;
-        stream.avaliableRxWindow -= size;
+        availableRxWindow -= size;
+        stream.availableRxWindow -= size;
         LOG_TRACE << "Data frame received: size=" << size;
 
         stream.body.append((char *)data, size);
@@ -1279,26 +1455,37 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
                 stream.body.size() != *stream.contentLength)
             {
                 LOG_TRACE << "content-length mismatch";
-                streamErrored(streamId, ReqResult::BadResponse);
+                streamErrored(streamId,
+                              StreamCloseErrorCode::ProtocolError,
+                              ReqResult::BadResponse);
                 return;
             }
-            stream.response->setBody(std::move(stream.body));
             responseSuccess(stream);
             return;
         }
 
-        if (stream.avaliableRxWindow < windowIncreaseThreshold)
+        if (stream.availableRxWindow < windowIncreaseThreshold)
         {
             WindowUpdateFrame windowUpdateFrame(windowIncreaseSize);
             sendFrame(windowUpdateFrame, streamId);
-            stream.avaliableRxWindow += windowIncreaseSize;
+            stream.availableRxWindow += windowIncreaseSize;
         }
     }
     else if (std::holds_alternative<WindowUpdateFrame>(frame))
     {
         auto &f = std::get<WindowUpdateFrame>(frame);
-        stream.avaliableTxWindow += f.windowSizeIncrement;
-        if (avaliableTxWindow == 0)
+        if (std::numeric_limits<decltype(stream.availableTxWindow)>::max() -
+                stream.availableTxWindow <
+            f.windowSizeIncrement)
+        {
+            LOG_TRACE << "Flow control error: stream TX window size overflow";
+            connectionErrored(streamId,
+                              StreamCloseErrorCode::FlowControlError,
+                              "Stream TX window size overflow");
+            return;
+        }
+        stream.availableTxWindow += f.windowSizeIncrement;
+        if (availableTxWindow == 0)
             return;
 
         auto it = pendingDataSend.find(streamId);
@@ -1330,8 +1517,8 @@ void Http2Transport::handleFrameForStream(const internal::H2Frame &frame,
             return;
         auto &f = std::get<RstStreamFrame>(frame);
         LOG_TRACE << "RST_STREAM frame received: errorCode=" << f.errorCode;
-        streamErrored(streamId, ReqResult::BadResponse);
         stream.state = StreamState::Finished;
+        streamErrored(streamId, std::nullopt, ReqResult::BadResponse);
     }
     else
     {
@@ -1349,8 +1536,8 @@ internal::H2Stream &Http2Transport::createStream(int32_t streamId)
     }
     auto &stream = streams[streamId];
     stream.streamId = streamId;
-    stream.avaliableTxWindow = initialTxWindowSize;
-    stream.avaliableRxWindow = initialRxWindowSize;
+    stream.availableTxWindow = initialTxWindowSize;
+    stream.availableRxWindow = initialRxWindowSize;
     return stream;
 }
 
@@ -1366,6 +1553,7 @@ void Http2Transport::responseSuccess(internal::H2Stream &stream)
     pendingDataSend.erase(streamId);
     // XXX: This callback seems to be able to cause the destruction of this
     // object
+    stream.response->setBody(std::move(stream.body));
     respCallback(stream.response,
                  {std::move(stream.request), std::move(stream.callback)},
                  connPtr);
@@ -1379,12 +1567,20 @@ void Http2Transport::responseSuccess(internal::H2Stream &stream)
     bufferedRequests.pop();
 }
 
-void Http2Transport::streamErrored(int32_t streamId, ReqResult result)
+void Http2Transport::streamErrored(
+    int32_t streamId,
+    std::optional<StreamCloseErrorCode> errorCode,
+    ReqResult result)
 {
     pendingDataSend.erase(streamId);
 
-    // TODO: Detect if we need to send RST_STREAM
     auto it = streams.find(streamId);
+    if (errorCode.has_value())
+    {
+        // Send RST_STREAM frame
+        RstStreamFrame rstFrame(*errorCode);
+        sendFrame(rstFrame, streamId);
+    }
     assert(it != streams.end());
     it->second.callback(result, nullptr);
     streams.erase(it);
@@ -1417,16 +1613,17 @@ void Http2Transport::connectionErrored(int32_t lastStreamId,
                                        StreamCloseErrorCode errorCode,
                                        std::string errorMsg)
 {
-    LOG_TRACE << "Killing connection with error: " << errorMsg;
+    (void)lastStreamId;
+    LOG_ERROR << "Client killing HTTP/2 connection with error: " << errorMsg;
     connPtr->getLoop()->assertInLoopThread();
-    sendFrame(
-        GoAwayFrame(lastStreamId, (uint32_t)errorCode, std::move(errorMsg)), 0);
 
-    // TODO: GOAWAY should gracefully shutdown the connection. But we are
-    // force closing it for now. This is not ideal and we need to switch to
-    // RST_STREAM and leave GOAWAY for when we bother to gracefully shutdown
+    // last stream ID = 0: we haven't processed any server-initiated streams (no
+    // PUSH_PROMISE yet)
+    sendFrame(GoAwayFrame(0, (uint32_t)errorCode, std::move(errorMsg)), 0);
+
     for (auto &[streamId, stream] : streams)
         stream.callback(ReqResult::BadResponse, nullptr);
+    streams.clear();  // Add this to avoid issues
     errorCallback(ReqResult::BadResponse);
 }
 
@@ -1447,12 +1644,12 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     size_t size)
 {
     auto streamId = stream.streamId;
-    if (stream.avaliableTxWindow == 0 || avaliableTxWindow == 0)
+    if (stream.availableTxWindow == 0 || availableTxWindow == 0)
         return {0, false};
 
-    size_t maxSendSize = size;
-    maxSendSize = (std::min)(maxSendSize, stream.avaliableTxWindow);
-    maxSendSize = (std::min)(maxSendSize, avaliableTxWindow);
+    int64_t maxSendSize = size;
+    maxSendSize = (std::min)(maxSendSize, stream.availableTxWindow);
+    maxSendSize = (std::min)(maxSendSize, availableTxWindow);
     bool sendEverything = maxSendSize == size;
 
     size_t sent = 0;
@@ -1460,7 +1657,7 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     {
         size_t remaining = maxSendSize - i;
         size_t readSize = (std::min)(maxFrameSize, remaining);
-        bool endStream = sendEverything && i + maxFrameSize >= size;
+        bool endStream = sendEverything && (i + readSize >= maxSendSize);
         const std::string_view sendData((const char *)data + i, readSize);
         DataFrame dataFrame(sendData, endStream);
         LOG_TRACE << "Sending data frame: size=" << readSize
@@ -1468,8 +1665,8 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
         sent += readSize;
         sendFrame(dataFrame, streamId);
 
-        stream.avaliableTxWindow -= readSize;
-        avaliableTxWindow -= readSize;
+        stream.availableTxWindow -= readSize;
+        availableTxWindow -= readSize;
     }
     return {sent, sendEverything};
 }
@@ -1479,7 +1676,7 @@ std::pair<size_t, bool> Http2Transport::sendBodyForStream(
     size_t offset)
 {
     auto streamId = stream.streamId;
-    if (stream.avaliableTxWindow == 0 || avaliableTxWindow == 0)
+    if (stream.availableTxWindow == 0 || availableTxWindow == 0)
         return {offset, false};
 
     // Special handling for multipart because different underlying code
