@@ -532,7 +532,7 @@ void MysqlConnection::outputError()
     {
         // TODO: exception type
         auto exceptPtr = std::make_exception_ptr(
-            SqlError(mysql_error(mysqlPtr_.get()), sql_, errorNo, errorNo));
+            SqlError(mysql_error(mysqlPtr_.get()), sql_, errorNo, 0));
         exceptionCallback_(exceptPtr);
         exceptionCallback_ = nullptr;
 
