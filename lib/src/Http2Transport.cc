@@ -625,12 +625,13 @@ parseH2Frame(trantor::MsgBuffer *msg)
     // MSB is reserved for future use
     const uint32_t streamId = header.readU32BE() & ((1U << 31) - 1);
 
-    if (type >= (uint8_t)H2FrameType::NumEntries)
-    {
-        // TODO: Handle fatal protocol error
-        LOG_TRACE << "Unsupported H2 frame type: " << (int)type;
-        return {std::nullopt, streamId, 0, true, 0};
-    }
+    // This check is not need as HTTP/2 allows unknown frame types to be
+    // ignored for forward compatibility.
+    // if (type >= (uint8_t)H2FrameType::NumEntries)
+    // {
+    //     LOG_TRACE << "Unsupported H2 frame type: " << (int)type;
+    //     return {std::nullopt, streamId, 0, true, 0};
+    // }
 
     LOG_TRACE << "H2 frame: length=" << length << " type=" << (int)type
               << " flags=" << (int)flags << " streamId=" << streamId;
@@ -657,7 +658,7 @@ parseH2Frame(trantor::MsgBuffer *msg)
         frame = RstStreamFrame::parse(payload, flags);
     else
     {
-        LOG_WARN << "Unsupported H2 frame type: " << (int)type;
+        LOG_TRACE << "Unsupported H2 frame type: " << (int)type;
         msg->retrieve(length + 9);
         return {std::nullopt, streamId, 0, false, 0};
     }
@@ -976,28 +977,27 @@ void Http2Transport::onRecvMessage(const trantor::TcpConnectionPtr &,
             auto it = currentDataSend.value_or(pendingDataSend.begin());
             while (it != pendingDataSend.end())
             {
-                auto &stream = streams[it->first];
-                auto [sentOffset, done] = sendBodyForStream(stream, it->second);
+                auto streamIt = streams.find(it->first);
+                assert(streamIt != streams.end());  // FATAL: must exist
+                auto [sentOffset, done] =
+                    sendBodyForStream(streamIt->second, it->second);
                 if (done)
                 {
                     it = pendingDataSend.erase(it);
-                    if (it != pendingDataSend.end())
-                        currentDataSend = it;
-                    else
+                    if (it == pendingDataSend.end())
                     {
                         currentDataSend = std::nullopt;
                         break;
                     }
+                    currentDataSend = it;
                     continue;
                 }
                 it->second = sentOffset;
-                if (availableTxWindow != 0)
-                {
-                    ++it;
-                    currentDataSend = it;
-                }
-                else
+                if (availableTxWindow == 0)
                     break;
+
+                ++it;
+                currentDataSend = it;
             }
         }
         else if (std::holds_alternative<SettingsFrame>(frame))

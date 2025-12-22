@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [1.10.0-beta.3] - TBD
+## [1.10.0-beta.4] - TBD
+
+### Fixes
+
+* Correctly track received bytes in HTTP/2 client statistics
+* Ignore unknown HTTP/2 frame types instead of treating them as fatal errors (forward compatibility)
+
+## [1.10.0-beta.3] - 2025-12-21
 
 ### Changes
 
