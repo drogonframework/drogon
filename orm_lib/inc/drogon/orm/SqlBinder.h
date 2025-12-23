@@ -604,7 +604,11 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     template <typename T>
     static int getMysqlType()
     {
-        if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, signed char>)
+        if constexpr (std::is_same_v<T, bool>)
+        {
+            return MySqlTiny;
+        }
+        else if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, signed char>)
         {
             return MySqlTiny;
         }
