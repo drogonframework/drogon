@@ -481,10 +481,12 @@ void MysqlConnection::execSqlInLoop(
                             std::to_string(*((int64_t *)parameters[i])));
                         break;
                     case internal::MySqlUTiny:
-                        sql_.append(std::to_string(*((unsigned char *)parameters[i])));
+                        sql_.append(
+                            std::to_string(*((unsigned char *)parameters[i])));
                         break;
                     case internal::MySqlUShort:
-                        sql_.append(std::to_string(*((unsigned short *)parameters[i])));
+                        sql_.append(
+                            std::to_string(*((unsigned short *)parameters[i])));
                         break;
                     case internal::MySqlULong:
                         sql_.append(

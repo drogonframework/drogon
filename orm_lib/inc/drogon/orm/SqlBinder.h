@@ -608,43 +608,50 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         {
             return MySqlTiny;
         }
-        else if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, signed char>)
+        else if constexpr (std::is_same_v<T, int8_t> ||
+                           std::is_same_v<T, signed char>)
         {
             return MySqlTiny;
         }
-        else if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, unsigned char>)
+        else if constexpr (std::is_same_v<T, uint8_t> ||
+                           std::is_same_v<T, unsigned char>)
         {
             return MySqlUTiny;
         }
-        else if constexpr (std::is_same_v<T, int16_t> || std::is_same_v<T, short>)
+        else if constexpr (std::is_same_v<T, int16_t> ||
+                           std::is_same_v<T, short>)
         {
             return MySqlShort;
         }
-        else if constexpr (std::is_same_v<T, uint16_t> || std::is_same_v<T, unsigned short>)
+        else if constexpr (std::is_same_v<T, uint16_t> ||
+                           std::is_same_v<T, unsigned short>)
         {
             return MySqlUShort;
         }
-        else if constexpr (std::is_same_v<T, int32_t> || 
-                          (std::is_same_v<T, int> && sizeof(int) == 4) ||
-                          (std::is_same_v<T, long> && sizeof(long) == 4))
+        else if constexpr (std::is_same_v<T, int32_t> ||
+                           (std::is_same_v<T, int> && sizeof(int) == 4) ||
+                           (std::is_same_v<T, long> && sizeof(long) == 4))
         {
             return MySqlLong;
         }
-        else if constexpr (std::is_same_v<T, uint32_t> || 
-                          (std::is_same_v<T, unsigned int> && sizeof(unsigned int) == 4) ||
-                          (std::is_same_v<T, unsigned long> && sizeof(unsigned long) == 4))
+        else if constexpr (std::is_same_v<T, uint32_t> ||
+                           (std::is_same_v<T, unsigned int> &&
+                            sizeof(unsigned int) == 4) ||
+                           (std::is_same_v<T, unsigned long> &&
+                            sizeof(unsigned long) == 4))
         {
             return MySqlULong;
         }
-        else if constexpr (std::is_same_v<T, int64_t> || 
-                          std::is_same_v<T, long long> ||
-                          (std::is_same_v<T, long> && sizeof(long) == 8))
+        else if constexpr (std::is_same_v<T, int64_t> ||
+                           std::is_same_v<T, long long> ||
+                           (std::is_same_v<T, long> && sizeof(long) == 8))
         {
             return MySqlLongLong;
         }
-        else if constexpr (std::is_same_v<T, uint64_t> || 
-                          std::is_same_v<T, unsigned long long> ||
-                          (std::is_same_v<T, unsigned long> && sizeof(unsigned long) == 8))
+        else if constexpr (std::is_same_v<T, uint64_t> ||
+                           std::is_same_v<T, unsigned long long> ||
+                           (std::is_same_v<T, unsigned long> &&
+                            sizeof(unsigned long) == 8))
         {
             return MySqlULongLong;
         }
@@ -657,6 +664,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             static_assert(sizeof(T) == 0, "Unsupported type for MySQL binding");
         }
     }
+
     std::shared_ptr<std::string> sqlPtr_;
     const char *sqlViewPtr_;
     size_t sqlViewLength_;
