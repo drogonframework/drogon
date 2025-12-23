@@ -1342,10 +1342,15 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     clear();
     static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
+    std::vector<std::string> colNames = obj.updateColumns();
+    if (colNames.empty())
+    {
+        return 0;
+    }
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto const &colName : obj.updateColumns())
+    for (auto const &colName : colNames)
     {
         sql += colName;
         sql += " = $?,";
@@ -1415,10 +1420,17 @@ inline void Mapper<T>::update(const T &obj,
     clear();
     static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
+
+    std::vector<std::string> colNames = obj.updateColumns();
+    if (colNames.empty())
+    {
+        rcb(0);
+        return;
+    }
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto const &colName : obj.updateColumns())
+    for (auto const &colName : colNames)
     {
         sql += colName;
         sql += " = $?,";
@@ -1478,10 +1490,18 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     clear();
     static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
+    std::vector<std::string> colNames = obj.updateColumns();
+    if (colNames.empty())
+    {
+        std::shared_ptr<std::promise<size_t>> prom =
+            std::make_shared<std::promise<size_t>>();
+        prom->set_value(0);
+        return prom->get_future();
+    }
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto const &colName : obj.updateColumns())
+    for (auto const &colName : colNames)
     {
         sql += colName;
         sql += " = $?,";
