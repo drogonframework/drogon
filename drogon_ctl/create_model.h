@@ -425,6 +425,22 @@ class create_model : public DrObject<create_model>, public CommandHandler
         std::map<std::string, std::vector<Relationship>> &relationships,
         std::map<std::string, std::vector<ConvertMethod>> &convertMethod);
 #endif
+// DuckDB model generation support [dq 2025-11-19]
+#if USE_DUCKDB
+    void createModelClassFromDuckdb(
+        const std::string &path,
+        const DbClientPtr &client,
+        const std::string &tableName,
+        const Json::Value &restfulApiConfig,
+        const std::vector<Relationship> &relationships,
+        const std::vector<ConvertMethod> &convertMethods);
+    void createModelFromDuckdb(
+        const std::string &path,
+        const DbClientPtr &client,
+        const Json::Value &restfulApiConfig,
+        std::map<std::string, std::vector<Relationship>> &relationships,
+        std::map<std::string, std::vector<ConvertMethod>> &convertMethods);
+#endif
     void createRestfulAPIController(const DrTemplateData &tableInfo,
                                     const Json::Value &restfulApiConfig);
     std::string dbname_;
