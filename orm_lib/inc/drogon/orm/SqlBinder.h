@@ -600,7 +600,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
 
   private:
     static int getMysqlTypeBySize(size_t size);
-    
+
     template <typename T>
     static int getMysqlType()
     {
