@@ -111,7 +111,7 @@ void SharedLibManager::managerLibs()
                         void *oldHandle = nullptr;
                         if (dlMap_.find(filename) != dlMap_.end())
                         {
-#if defined __linux__ || defined __HAIKU__
+#if defined __linux__ || defined __HAIKU__ || defined __sun
                             if (st.st_mtim.tv_sec >
                                 dlMap_[filename].mTime.tv_sec)
 #elif defined _WIN32
@@ -172,7 +172,7 @@ void SharedLibManager::managerLibs()
                             dlStat.handle =
                                 compileAndLoadLib(srcFile, oldHandle);
                         }
-#if defined __linux__ || defined __HAIKU__
+#if defined __linux__ || defined __HAIKU__ || defined __sun
                         dlStat.mTime = st.st_mtim;
 #elif defined _WIN32
                         dlStat.mTime.tv_sec = st.st_mtime;
@@ -235,7 +235,7 @@ void *SharedLibManager::compileAndLoadLib(const std::string &sourceFile,
 bool SharedLibManager::shouldCompileLib(const std::string &soFile,
                                         const struct stat &sourceStat)
 {
-#if defined __linux__ || defined __HAIKU__
+#if defined __linux__ || defined __HAIKU__ || defined __sun
     auto sourceModifiedTime = sourceStat.st_mtim.tv_sec;
 #elif defined _WIN32
     auto sourceModifiedTime = sourceStat.st_mtime;
@@ -250,7 +250,7 @@ bool SharedLibManager::shouldCompileLib(const std::string &soFile,
         return true;
     }
 
-#if defined __linux__ || defined __HAIKU__
+#if defined __linux__ || defined __HAIKU__ || defined __sun
     auto soModifiedTime = soStat.st_mtim.tv_sec;
 #elif defined _WIN32
     auto soModifiedTime = soStat.st_mtime;
