@@ -39,7 +39,7 @@ using HttpResponsePtr = std::shared_ptr<HttpResponse>;
  * type object. Users must specialize the template for a particular type.
  */
 template <typename T>
-T fromResponse(const HttpResponse &resp)
+T fromResponse(const HttpResponse &)
 {
     LOG_ERROR
         << "You must specialize the fromResponse template for the type of "

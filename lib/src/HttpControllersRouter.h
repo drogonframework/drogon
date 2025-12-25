@@ -27,7 +27,7 @@ namespace drogon
 {
 class HttpControllerBinder;
 class HttpSimpleControllerBinder;
-class WebsocketControllerBinder;
+struct WebsocketControllerBinder;
 
 class HttpControllersRouter : public trantor::NonCopyable
 {
