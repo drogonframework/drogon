@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <type_traits>
 #ifdef _WIN32
 #include <winsock2.h>
 #else  // some Unix-like OS
@@ -414,7 +415,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             objs_.push_back(obj);
             parameters_.push_back((char *)obj.get());
             lengths_.push_back(0);
-            formats_.push_back(getMysqlTypeBySize(sizeof(T)));
+            formats_.push_back(getMysqlType<ParaType>());
         }
         else if (type_ == ClientType::Sqlite3)
         {
@@ -599,6 +600,78 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
 
   private:
     static int getMysqlTypeBySize(size_t size);
+
+    template <typename T>
+    static int getMysqlType()
+    {
+        if constexpr (std::is_same_v<T, bool>)
+        {
+            return MySqlTiny;
+        }
+        else if constexpr (std::is_same_v<T, int8_t> ||
+                           std::is_same_v<T, signed char>)
+        {
+            return MySqlTiny;
+        }
+        else if constexpr (std::is_same_v<T, uint8_t> ||
+                           std::is_same_v<T, unsigned char>)
+        {
+            return MySqlUTiny;
+        }
+        else if constexpr (std::is_same_v<T, int16_t> ||
+                           std::is_same_v<T, short>)
+        {
+            return MySqlShort;
+        }
+        else if constexpr (std::is_same_v<T, uint16_t> ||
+                           std::is_same_v<T, unsigned short>)
+        {
+            return MySqlUShort;
+        }
+        else if constexpr (std::is_same_v<T, int32_t> ||
+                           (std::is_same_v<T, int> && sizeof(int) == 4) ||
+                           (std::is_same_v<T, long> && sizeof(long) == 4))
+        {
+            return MySqlLong;
+        }
+        else if constexpr (std::is_same_v<T, uint32_t> ||
+                           (std::is_same_v<T, unsigned int> &&
+                            sizeof(unsigned int) == 4) ||
+                           (std::is_same_v<T, unsigned long> &&
+                            sizeof(unsigned long) == 4))
+        {
+            return MySqlULong;
+        }
+        else if constexpr (std::is_same_v<T, int64_t> ||
+                           std::is_same_v<T, long long> ||
+                           (std::is_same_v<T, long> && sizeof(long) == 8))
+        {
+            return MySqlLongLong;
+        }
+        else if constexpr (std::is_same_v<T, uint64_t> ||
+                           std::is_same_v<T, unsigned long long> ||
+                           (std::is_same_v<T, unsigned long> &&
+                            sizeof(unsigned long) == 8))
+        {
+            return MySqlULongLong;
+        }
+        else if constexpr (std::is_same_v<T, char>)
+        {
+            if constexpr (std::is_signed_v<char>)
+            {
+                return MySqlTiny;
+            }
+            else
+            {
+                return MySqlUTiny;
+            }
+        }
+        else
+        {
+            static_assert(sizeof(T) == 0, "Unsupported type for MySQL binding");
+        }
+    }
+
     std::shared_ptr<std::string> sqlPtr_;
     const char *sqlViewPtr_;
     size_t sqlViewLength_;
