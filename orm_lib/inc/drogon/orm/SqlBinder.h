@@ -657,7 +657,14 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         else if constexpr (std::is_same_v<T, char>)
         {
-            return MySqlTiny;
+            if constexpr (std::is_signed_v<char>)
+            {
+                return MySqlTiny;
+            }
+            else
+            {
+                return MySqlUTiny;
+            }
         }
         else
         {
