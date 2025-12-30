@@ -48,6 +48,7 @@ struct MysqlConfig
     bool isFast;
     std::string characterSet;
     double timeout;
+    std::unordered_map<std::string, std::string> connectOptions;
 };
 
 struct Sqlite3Config
