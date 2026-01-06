@@ -418,10 +418,16 @@ class CoroMapper : public Mapper<T>
             this->clear();
             static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                           "No primary key in the table!");
+            std::vector<std::string> colNames = obj.updateColumns();
+            if (colNames.empty())
+            {
+                callback(0);
+                return;
+            }
             std::string sql = "update ";
             sql += T::tableName;
             sql += " set ";
-            for (auto const &colName : obj.updateColumns())
+            for (auto const &colName : colNames)
             {
                 sql += colName;
                 sql += " = $?,";

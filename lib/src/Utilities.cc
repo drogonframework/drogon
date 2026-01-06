@@ -1022,7 +1022,8 @@ char *getHttpFullDate(const trantor::Date &date)
 {
     static thread_local int64_t lastSecond = 0;
     static thread_local char lastTimeString[128] = {0};
-    auto nowSecond = date.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+    auto nowSecond =
+        date.microSecondsSinceEpoch() / trantor::Date::MICRO_SECONDS_PER_SEC;
     if (nowSecond == lastSecond)
     {
         return lastTimeString;
@@ -1038,8 +1039,8 @@ void dateToCustomFormattedString(const std::string &fmtStr,
                                  std::string &str,
                                  const trantor::Date &date)
 {
-    auto nowSecond = date.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
-    time_t seconds = static_cast<time_t>(nowSecond);
+    auto nowSecond =
+        date.microSecondsSinceEpoch() / trantor::Date::MICRO_SECONDS_PER_SEC;
     struct tm tm_LValue = date.tmStruct();
     std::stringstream Out;
     Out.imbue(std::locale{"C"});
@@ -1051,7 +1052,8 @@ const std::string &getHttpFullDateStr(const trantor::Date &date)
 {
     static thread_local int64_t lastSecond = 0;
     static thread_local std::string lastTimeString(128, 0);
-    auto nowSecond = date.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+    auto nowSecond =
+        date.microSecondsSinceEpoch() / trantor::Date::MICRO_SECONDS_PER_SEC;
     if (nowSecond == lastSecond)
     {
         return lastTimeString;
@@ -1081,7 +1083,7 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
         if (strptime(httpFullDateString.c_str(), format, &tmptm) != NULL)
         {
             auto epoch = timegm(&tmptm);
-            return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
+            return trantor::Date(epoch * trantor::Date::MICRO_SECONDS_PER_SEC);
         }
     }
     LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
@@ -1318,7 +1320,7 @@ const size_t fixedRandomNumber = []() {
     utils::secureRandomBytes(&res, sizeof(res));
     return res;
 }();
-}
+}  // namespace internal
 
 }  // namespace utils
 }  // namespace drogon

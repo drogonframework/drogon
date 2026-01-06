@@ -222,7 +222,6 @@ HttpResponsePtr HttpResponse::newFileResponse(
     // Check for type and assign proper content type in header
     if (!typeString.empty())
     {
-        // auto contentType = type;
         if (type == CT_NONE)
             type = parseContentType(typeString);
         if (type == CT_NONE)
@@ -344,7 +343,6 @@ HttpResponsePtr HttpResponse::newFileResponse(
         if (!typeString.empty())
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            // auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -368,7 +366,6 @@ HttpResponsePtr HttpResponse::newFileResponse(
         else
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            // auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -423,7 +420,6 @@ HttpResponsePtr HttpResponse::newStreamResponse(
         if (!typeString.empty())
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -443,7 +439,6 @@ HttpResponsePtr HttpResponse::newStreamResponse(
         else
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -654,13 +649,13 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
             {
                 auto now = trantor::Date::now();
                 bool isDateChanged =
-                    ((now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC) !=
-                     httpStringDate_);
+                    ((now.microSecondsSinceEpoch() /
+                      trantor::Date::MICRO_SECONDS_PER_SEC) != httpStringDate_);
                 assert(httpString_);
                 if (isDateChanged)
                 {
-                    httpStringDate_ =
-                        now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+                    httpStringDate_ = now.microSecondsSinceEpoch() /
+                                      trantor::Date::MICRO_SECONDS_PER_SEC;
                     auto newDate = utils::getHttpFullDate(now);
 
                     httpString_ =
