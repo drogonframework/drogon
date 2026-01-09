@@ -4,6 +4,7 @@ project(drogon)
 
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 
+
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
@@ -20,6 +21,9 @@ CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUIL
 CMAKE_DEPENDENT_OPTION(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON "BUILD_POSTGRESQL" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_MYSQL "Build with mysql support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" OFF)
+# Add DuckDB support
+CMAKE_DEPENDENT_OPTION(BUILD_DUCKDB "Build with duckdb support" ON "BUILD_ORM" OFF)
+
 CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "USE_SUBMODULE" OFF)
 
@@ -461,6 +465,50 @@ if (BUILD_SQLITE)
     endif (DROGON_FOUND_SQLite3)
 endif (BUILD_SQLITE)
 
+# Add DuckDB support
+if (BUILD_DUCKDB)
+    # Find DuckDB library
+    find_package(DuckDB QUIET)
+    if(NOT DuckDB_FOUND)
+        # Try to find DuckDB manually
+        find_library(DUCKDB_LIBRARY
+            NAMES duckdb
+            PATHS /usr/lib /usr/local/lib /opt/homebrew/lib
+        )
+        find_path(DUCKDB_INCLUDE_DIR
+            NAMES duckdb.h
+            PATHS /usr/include /usr/local/include /opt/homebrew/include
+        )
+        
+        if(DUCKDB_LIBRARY AND DUCKDB_INCLUDE_DIR)
+            set(DuckDB_LIBRARIES ${DUCKDB_LIBRARY})
+            set(DuckDB_INCLUDE_DIRS ${DUCKDB_INCLUDE_DIR})
+            set(DuckDB_FOUND TRUE)
+        endif()
+    endif()
+
+    if (DuckDB_FOUND)
+        message(STATUS "Ok! We find DuckDB!")
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${DuckDB_LIBRARIES})
+        target_include_directories(${PROJECT_NAME} PRIVATE ${DuckDB_INCLUDE_DIRS})
+        set(DROGON_FOUND_DUCKDB TRUE)
+        set(DROGON_SOURCES
+            ${DROGON_SOURCES}
+            orm_lib/src/duckdb_impl/DuckdbConnection.cc
+            orm_lib/src/duckdb_impl/DuckdbResultImpl.cc)
+        set(private_headers
+            ${private_headers}
+            orm_lib/src/duckdb_impl/DuckdbConnection.h
+            orm_lib/src/duckdb_impl/DuckdbResultImpl.h)
+    else (DuckDB_FOUND)
+        message(STATUS "DuckDB was not found.")
+        set(DROGON_FOUND_DUCKDB FALSE)
+    endif (DuckDB_FOUND)
+else (BUILD_DUCKDB)
+    set(DROGON_FOUND_DUCKDB FALSE)
+endif (BUILD_DUCKDB)
+
+
 if (BUILD_REDIS)
     find_package(Hiredis)
     if (Hiredis_FOUND)
@@ -524,15 +572,6 @@ if (BUILD_EXAMPLES)
 endif (BUILD_EXAMPLES)
 
 if (BUILD_CTL)
-    if (CMAKE_CROSSCOMPILING)
-        find_program(HOST_DROGON_CTL _drogon_ctl)
-        if (NOT HOST_DROGON_CTL)
-            message(FATAL_ERROR "_drogon_ctl not found on host system")
-        endif()
-        set(DROGON_CTL "${HOST_DROGON_CTL}")
-    else (CMAKE_CROSSCOMPILING)
-        set(DROGON_CTL "$<TARGET_FILE:_drogon_ctl>")
-    endif (CMAKE_CROSSCOMPILING)
     add_subdirectory(drogon_ctl)
 endif (BUILD_CTL)
 
@@ -622,7 +661,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Drogon)
 
-if (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
+# 'OR DROGON_FOUND_DUCKDB' add by dq 
+if (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3 OR DROGON_FOUND_DUCKDB) 
     if (pg_FOUND)
         option(USE_POSTGRESQL "Enable PostgreSQL" ON)
     else (pg_FOUND)
@@ -640,7 +680,15 @@ if (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
     else (DROGON_FOUND_SQLite3)
         option(USE_SQLITE3 "Disable Sqlite3" OFF)
     endif (DROGON_FOUND_SQLite3)
-endif (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
+    # add by dq
+    if (DROGON_FOUND_DUCKDB)
+        message(STATUS "DuckDB was found.")
+        option(USE_DUCKDB "Enable DuckDB" ON)
+    else (DROGON_FOUND_DUCKDB)
+        message(STATUS "DuckDB was not found.")
+        option(USE_DUCKDB "Disable DuckDB" OFF)
+    endif (DROGON_FOUND_DUCKDB)
+endif (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3 OR DROGON_FOUND_DUCKDB)
 
 get_filename_component(COMPILER_COMMAND ${CMAKE_CXX_COMPILER} NAME)
 set(COMPILER_ID ${CMAKE_CXX_COMPILER_ID})
@@ -684,6 +732,10 @@ if (BUILD_TESTING)
     if (DROGON_FOUND_SQLite3)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
     endif (DROGON_FOUND_SQLite3)
+    # Add DuckDB test
+    if (DROGON_FOUND_DUCKDB)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/duckdb_impl/test)
+    endif (DROGON_FOUND_DUCKDB)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
 endif (BUILD_TESTING)
 

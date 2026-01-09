@@ -1962,7 +1962,8 @@ inline std::string Mapper<T>::replaceSqlPlaceHolder(
         } while (1);
     }
     else if (client_->type() == ClientType::Mysql ||
-             client_->type() == ClientType::Sqlite3)
+             client_->type() == ClientType::Sqlite3 ||
+             client_->type() == ClientType::DuckDB)
     {
         std::string::size_type startPos = 0;
         std::string::size_type pos;
