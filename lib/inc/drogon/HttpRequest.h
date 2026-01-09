@@ -159,6 +159,13 @@ class DROGON_EXPORT HttpRequest
      */
     virtual void removeHeader(std::string key) = 0;
 
+    /**
+     * @brief  Clears the value in the header identified by the key parameter.
+     *
+     * @param key The key is case insensitive
+     */
+    virtual void clearHeader(std::string key) = 0;
+
     /// Get the cookie string identified by the field parameter
     virtual const std::string &getCookie(const std::string &field) const = 0;
 
