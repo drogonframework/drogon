@@ -1608,6 +1608,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @brief get the number of active connections.
      */
     virtual int64_t getConnectionCount() const = 0;
+    virtual HttpAppFramework &reset() = 0;
 
     /**
      * @brief Set the before listen setsockopt callback.
