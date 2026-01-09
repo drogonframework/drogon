@@ -321,6 +321,13 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           client_(client),
           type_(type)
     {
+        if (sql[sqlLength] != '\0')
+        {
+            // if the sql is not null terminated, we need to copy it to a string
+            sqlPtr_ = std::make_shared<std::string>(sql, sqlLength);
+            sqlViewPtr_ = sqlPtr_->data();
+            sqlViewLength_ = sqlPtr_->length();
+        }
     }
 
     SqlBinder(SqlBinder &&that) noexcept
