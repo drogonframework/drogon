@@ -215,6 +215,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
+    HttpAppFramework &setSessionMode(SessionMode mode) override
+    {
+        sessionMode_ = mode;
+    }
+
     HttpAppFramework &registerSessionStartAdvice(
         const AdviceStartSessionCallback &advice) override
     {
@@ -656,8 +661,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     // should return unsigned type!
     int64_t getConnectionCount() const override;
 
-    // TODO: move session related codes to its own singleton class
     void findSessionForRequest(const HttpRequestImplPtr &req);
+    void createSessionForRequest(HttpRequestImpl *req);
     HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &resp);
 
@@ -693,6 +698,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     int sessionMaxAge_{-1};
     size_t idleConnectionTimeout_{60};
     bool useSession_{false};
+    SessionMode sessionMode_{SessionMode::kAuto};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
                               "\r\n"};
 
