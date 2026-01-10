@@ -98,7 +98,7 @@ class RequestStreamExampleCtrl : public HttpController<RequestStreamExampleCtrl>
             [files](const char *data, size_t length) {
                 if (files->back().tmpName.empty())
                 {
-                    return;
+                    return false;
                 }
                 auto &currentFile = files->back().file;
                 if (length == 0)
@@ -109,18 +109,20 @@ class RequestStreamExampleCtrl : public HttpController<RequestStreamExampleCtrl>
                         currentFile.flush();
                         currentFile.close();
                     }
-                    return;
+                    return true;
                 }
                 LOG_INFO << "data[" << length << "]: ";
                 if (currentFile.is_open())
                 {
                     LOG_INFO << "write file";
                     currentFile.write(data, length);
+                    return true;
                 }
                 else
                 {
                     LOG_ERROR << "file not open";
                 }
+                return false;
             },
             [files, callback = std::move(callback)](std::exception_ptr ex) {
                 if (ex)
