@@ -124,7 +124,112 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
     const std::string &str,
     const std::string &separator);
 
-/// Get UUID string.
+/// Compare two string_views for equality, ignoring case.
+inline bool ci_equals(std::string_view str1, std::string_view str2)
+{
+    if (str1.size() != str2.size())
+        return false;
+    return std::equal(str1.begin(), str1.end(), str2.begin(),
+                      [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+}
+
+/// Trim leading and trailing spaces and tabs from a string_view.
+inline std::string_view &trim_inplace(std::string_view &str)
+{
+#ifndef min
+    // On Windows, min is defined as a macro since the origins - NOMINMAX should
+    // be added to the preprocessor definitions of drogon to remove this
+    // historical macro - meanwhile, use std namespace to keep using this macro
+    // on Windows and std::min on other platforms.
+    using namespace std;
+#endif
+    auto pos = str.find_first_not_of(" \t");
+    str.remove_prefix(min(pos, str.size()));
+    if (str.empty())
+        return str;
+    pos = str.find_last_not_of(" \t");
+    str.remove_suffix(str.size() - pos - 1);
+    return str;
+}
+inline std::string_view trim(std::string_view str)
+{
+    return trim_inplace(str);
+}
+inline std::string trim(std::string&& str)
+{
+    auto pos = str.find_last_not_of(" \t");
+    if (pos == std::string::npos)
+        return {};
+    str.resize(pos + 1);
+    pos = str.find_first_not_of(" \t");
+    if (pos > 0)
+        str.erase(0, pos);
+    return str;
+}
+
+/// Split a string_view into a vector of string_views.
+inline std::vector<std::string_view> splitStringView(
+    std::string_view str,
+    std::string_view separator,
+    bool trimValues = true,
+    bool acceptEmptyString = false)
+{
+    std::vector<std::string_view> result;
+    size_t start = 0;
+    size_t end = 0;
+    while ((end = str.find(separator, start)) != std::string_view::npos)
+    {
+        auto token = str.substr(start, end - start);
+        if (trimValues)
+            trim_inplace(token);
+        if (acceptEmptyString || !token.empty())
+            result.push_back(token);
+        start = end + separator.size();
+    }
+    auto token = str.substr(start);
+    if (trimValues)
+        trim_inplace(token);
+    if (acceptEmptyString || !token.empty())
+    {
+        result.push_back(token);
+    }
+    return result;
+}
+
+/// Split a string_view into a set of string_views.
+inline std::set<std::string_view> splitStringViewToSet(
+    std::string_view str,
+    std::string_view separator,
+    bool trimValues = true,
+    bool acceptEmptyString = false)
+{
+    auto v = splitStringView(str, separator, trimValues, acceptEmptyString);
+    return std::set<std::string_view>(v.begin(), v.end());
+}
+
+/// Join a vector of string_view into a string.
+inline std::string joinStringViews(const std::vector<std::string_view> &strs,
+                                   std::string_view separator)
+{
+    std::string result;
+    for (auto& str: strs)
+    {
+        if (!result.empty())
+            result.append(separator);
+        result.append(str);
+    }
+    return result;
+}
+
+inline std::string joinStringViews(const std::set<std::string_view> &strs,
+                                   std::string_view separator)
+{
+    return joinStringViews(std::vector<std::string_view>{strs.begin(),
+                                                         strs.end()},
+                           separator);
+}
+
+    /// Get UUID string.
 DROGON_EXPORT std::string getUuid(bool lowercase = true);
 
 /// Get the encoded length of base64.
