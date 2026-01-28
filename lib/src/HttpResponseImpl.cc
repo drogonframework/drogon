@@ -659,7 +659,7 @@ void HttpResponse::addCorsHeaders(
                              exposed.end(),
                              [&header](const auto &val) {
                                  return drogon::utils::ci_equals(val, header);
-                             }) != vary.end())
+                             }) != exposed.end())
                 continue;
             exposed.insert(header);
             changed = true;
