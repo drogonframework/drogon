@@ -124,38 +124,55 @@ DROGON_EXPORT std::set<std::string> splitStringToSet(
     const std::string &str,
     const std::string &separator);
 
-/// Compare two string_views for equality, ignoring case.
+/*! \brief Compare two string_views for equality, ignoring case.
+ *  \warning This is locale dependent
+ *  \param[in] str1 The first string_view.
+ *  \param[in] str2 The second string_view.
+ *  \return true if the string_views are equal, ignoring case; false otherwise.
+ */
 inline bool ci_equals(std::string_view str1, std::string_view str2)
 {
     if (str1.size() != str2.size())
         return false;
-    return std::equal(str1.begin(), str1.end(), str2.begin(),
-                      [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+    return std::equal(str1.begin(),
+                      str1.end(),
+                      str2.begin(),
+                      [](unsigned char a, unsigned char b) {
+                          return std::tolower(a) == std::tolower(b);
+                      });
 }
 
-/// Trim leading and trailing spaces and tabs from a string_view.
+/*! \details Trim leading and trailing spaces and tabs from a string_view,
+ *           modifying it.
+ *  \param[in,out] str The string_view to trim.
+ *  \return The trimmed string_view.
+ */
 inline std::string_view &trim_inplace(std::string_view &str)
 {
-#ifndef min
-    // On Windows, min is defined as a macro since the origins - NOMINMAX should
-    // be added to the preprocessor definitions of drogon to remove this
-    // historical macro - meanwhile, use std namespace to keep using this macro
-    // on Windows and std::min on other platforms.
-    using namespace std;
-#endif
     auto pos = str.find_first_not_of(" \t");
-    str.remove_prefix(min(pos, str.size()));
+    // defeat Windows macro "min"
+    str.remove_prefix((std::min)(pos, str.size()));
     if (str.empty())
         return str;
     pos = str.find_last_not_of(" \t");
     str.remove_suffix(str.size() - pos - 1);
     return str;
 }
+
+/*! \brief Trim leading and trailing spaces and tabs from a string_view.
+ *  \param[in] str The string_view to trim.
+ *  \return A string_view with leading and trailing spaces and tabs removed.
+ */
 inline std::string_view trim(std::string_view str)
 {
     return trim_inplace(str);
 }
-inline std::string trim(std::string&& str)
+
+/*! \brief Trim leading and trailing spaces and tabs from a rvalue string.
+ *  \param[in] str The string to trim.
+ *  \return The string with leading and trailing spaces and tabs removed.
+ */
+inline std::string trim(std::string &&str)
 {
     auto pos = str.find_last_not_of(" \t");
     if (pos == std::string::npos)
@@ -167,7 +184,15 @@ inline std::string trim(std::string&& str)
     return str;
 }
 
-/// Split a string_view into a vector of string_views.
+/*! \brief Split a string_view into a vector of string_views.
+ *  \param[in] str The string_view to split.
+ *  \param[in] separator The separator to use for splitting.
+ *  \param[in] trimValues Whether to trim whitespace from the resulting
+ *                        string_views.
+ *  \param[in] acceptEmptyString Whether to include empty strings in the result.
+ *  \return A vector of string_views obtained by splitting the input
+ *          string_view.
+ */
 inline std::vector<std::string_view> splitStringView(
     std::string_view str,
     std::string_view separator,
@@ -175,6 +200,14 @@ inline std::vector<std::string_view> splitStringView(
     bool acceptEmptyString = false)
 {
     std::vector<std::string_view> result;
+    if (separator.empty())
+    {
+        if (trimValues)
+            trim_inplace(str);
+        if (acceptEmptyString || !str.empty())
+            result.push_back(str);
+        return result;
+    }
     size_t start = 0;
     size_t end = 0;
     while ((end = str.find(separator, start)) != std::string_view::npos)
@@ -196,7 +229,13 @@ inline std::vector<std::string_view> splitStringView(
     return result;
 }
 
-/// Split a string_view into a set of string_views.
+/*! \brief Split a string_view into a set of string_views.
+ *  \copyparams splitStringView
+ *  \return A set of (unique) string_views obtained by splitting the input
+ *          string_view.
+ *  \note Uniqueness is case-sensitive: "A" and "a" are considered different
+ *        values.
+ */
 inline std::set<std::string_view> splitStringViewToSet(
     std::string_view str,
     std::string_view separator,
@@ -207,13 +246,21 @@ inline std::set<std::string_view> splitStringViewToSet(
     return std::set<std::string_view>(v.begin(), v.end());
 }
 
-/// Join a vector of string_view into a string.
+/*! \brief Join a vector of string_view into a string.
+ *  \param[in] strs The vector of string_views to join.
+ *  \param[in] separator The separator to use between string_views.
+ *  \return A single string obtained by joining the input string_views with the
+ *          specified separator.
+ *  \note Empty values are skipped.
+ */
 inline std::string joinStringViews(const std::vector<std::string_view> &strs,
                                    std::string_view separator)
 {
     std::string result;
-    for (auto& str: strs)
+    for (std::string_view str : strs)
     {
+        if (trim_inplace(str).empty())
+            continue;
         if (!result.empty())
             result.append(separator);
         result.append(str);
@@ -221,6 +268,13 @@ inline std::string joinStringViews(const std::vector<std::string_view> &strs,
     return result;
 }
 
+/*! \brief Join a set of string_view into a string.
+ *  \param[in] strs The set of string_views to join.
+ *  \param[in] separator The separator to use between string_views.
+ *  \return A single string obtained by joining the input string_views with the
+ *          specified separator.
+ *  \note Empty values are skipped.
+ */
 inline std::string joinStringViews(const std::set<std::string_view> &strs,
                                    std::string_view separator)
 {
@@ -229,7 +283,7 @@ inline std::string joinStringViews(const std::set<std::string_view> &strs,
                            separator);
 }
 
-    /// Get UUID string.
+/// Get UUID string.
 DROGON_EXPORT std::string getUuid(bool lowercase = true);
 
 /// Get the encoded length of base64.

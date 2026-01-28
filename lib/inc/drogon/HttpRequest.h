@@ -501,7 +501,7 @@ class DROGON_EXPORT HttpRequest
         return toRequest(std::forward<T>(obj));
     }
 
-	/*! \details Check if the method of the request is OPTIONS and if it is
+    /*! \details Check if the method of the request is OPTIONS and if it is
      *           a CORS pre-flight request.\n
      *           It should contain:
      *              - Origin: origination page

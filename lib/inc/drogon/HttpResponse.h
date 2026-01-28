@@ -552,7 +552,7 @@ class DROGON_EXPORT HttpResponse
         return toResponse(std::forward<T>(obj));
     }
 
-	/*! \brief Create an OPTIONS or CORS pre-flight response
+    /*! \brief Create an OPTIONS or CORS pre-flight response
      *  \details If the request is not an OPTIONS request, returns a NULL
      *           response\n
      *           If it is a generic OPTIONS request, returns a 204 No Content
@@ -618,8 +618,15 @@ class DROGON_EXPORT HttpResponse
         bool allowPNA = true,
         std::optional<unsigned int> maxAgeSeconds = {},
         const std::optional<std::set<std::string_view>> &allowedHeaders = std::nullopt);
-    // Helper when specifing the allowed headers, when other parameters may be
-    // default, to avoid having to specify them all
+
+    /*! \copydoc newOptionsResponse(const HttpRequestPtr&,
+     *                         const std::function<bool(std::string_view)>&,
+     *                         bool, bool, bool,
+     *                         std::optional<unsigned int>,
+     *                         const std::optional<std::set<std::string_view>>&)
+     *  \remarks Helper when specifing the allowed headers, when other
+     *           parameters may be default, to avoid having to specify them all
+     */
     inline static HttpResponsePtr newOptionsResponse(
         const HttpRequestPtr &request,
         const std::set<std::string_view> &allowedHeaders,
