@@ -198,8 +198,8 @@ DROGON_TEST(HttpCorsHeadersResponse)
     CHECK(resp->getHeader("Access-Control-Allow-Private-Network") == "true");
 
     // CORS max age
-    resp =
-        HttpResponse::newOptionsResponse(req, nullptr, false, false, false, 600);
+    resp = HttpResponse::newOptionsResponse(
+        req, nullptr, false, false, false, 600);
     CHECK(resp->getStatusCode() == HttpStatusCode::k204NoContent);
     CHECK(resp->getHeader("Access-Control-Max-Age") == "600");
 }

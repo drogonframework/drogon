@@ -635,10 +635,9 @@ void HttpResponse::addCorsHeaders(
         return;
     // add/set Origin to the Vary header (needed for cache proxies)
     auto vary = drogon::utils::splitStringViewToSet(getHeader("Vary"), ",");
-    if (std::find_if(vary.begin(), vary.end(),
-                     [](const auto &val) {
-                        return drogon::utils::ci_equals(val, "Origin");
-                     }) == vary.end())
+    if (std::find_if(vary.begin(), vary.end(), [](const auto &val) {
+            return drogon::utils::ci_equals(val, "Origin");
+        }) == vary.end())
     {
         vary.insert("Origin");
         addHeader("Vary", drogon::utils::joinStringViews(vary, ","));
@@ -646,7 +645,8 @@ void HttpResponse::addCorsHeaders(
     // add _MISSING_ CORS header - do not overwrite existing one
     if (headers().find("access-control-allow-origin") == headers().end())
         addHeader("Access-Control-Allow-Origin",
-                  std::string(drogon::utils::trim(request->getHeader("Origin"))));
+                  std::string(
+                      drogon::utils::trim(request->getHeader("Origin"))));
     // set (or append) exposed headers
     if (!exposedHeaders.empty())
     {

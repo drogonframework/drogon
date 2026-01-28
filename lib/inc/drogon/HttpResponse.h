@@ -624,7 +624,7 @@ class DROGON_EXPORT HttpResponse
      *                         bool, bool, bool,
      *                         std::optional<unsigned int>,
      *                         const std::optional<std::set<std::string_view>>&)
-     *  \remarks Helper when specifing the allowed headers, when other
+     *  \remarks Helper when specifying the allowed headers, when other
      *           parameters may be default, to avoid having to specify them all
      */
     inline static HttpResponsePtr newOptionsResponse(
