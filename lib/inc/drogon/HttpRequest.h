@@ -512,8 +512,8 @@ class DROGON_EXPORT HttpRequest
         return headers().find("origin") != headers().end();
     }
 
-    /*! \brief Check if the request is a CORS request.
-    /*  \details Check if the method of the request is OPTIONS and if it is
+    /*! \brief Check if the request is a CORS pre-flight request.
+     *  \details Check if the method of the request is OPTIONS and if it is
      *           a CORS pre-flight request.\n
      *           It should contain:
      *              - Origin: origination page

@@ -634,7 +634,7 @@ void HttpResponse::addCorsHeaders(
         request->isCorsPreflightRequest())
         return;
     // add/set Origin to the Vary header (needed for cache proxies)
-    auto vary = drogon::utils::splitStringViewToSet(request->getHeader("Vary"), ",");
+    auto vary = drogon::utils::splitStringViewToSet(getHeader("Vary"), ",");
     if (std::find_if(vary.begin(), vary.end(),
                      [](const auto &val) {
                         return drogon::utils::ci_equals(val, "Origin");

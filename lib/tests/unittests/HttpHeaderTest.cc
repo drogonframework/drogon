@@ -81,7 +81,8 @@ DROGON_TEST(HttpOptionsHeadersResponse)
     CHECK(resp->getHeader("Access-Control-Allow-Origin") == "");
     CHECK(resp->getHeader("Access-Control-Allow-Methods") == "");
 
-    req->attributes()->insert("drogon.corsMethods", std::string("GET, POST, OPTIONS"));
+    req->attributes()->insert("drogon.corsMethods",
+                              std::string("GET, POST, OPTIONS"));
     resp = HttpResponse::newOptionsResponse(req);
     CHECK(resp->getStatusCode() == HttpStatusCode::k204NoContent);
     CHECK(resp->getHeader("Vary") == "Origin");
@@ -146,7 +147,8 @@ DROGON_TEST(HttpCorsHeadersResponse)
 
     // unallowed method
     req->addHeader("Access-Control-Request-Method", "PUT");
-    req->attributes()->insert("drogon.corsMethods", std::string("GET,POST,OPTIONS"));
+    req->attributes()->insert("drogon.corsMethods",
+                              std::string("GET,POST,OPTIONS"));
     resp = HttpResponse::newOptionsResponse(req);
     CHECK(resp->getStatusCode() == HttpStatusCode::k405MethodNotAllowed);
     CHECK(resp->getHeader("Allow") == "GET,POST,OPTIONS");
@@ -213,16 +215,19 @@ DROGON_TEST(AddHttpCorsHeaders)
     resp->addCorsHeaders(req, {"X-Foo"}, true);
     CHECK(resp->headers().empty());
 
-    // with Origin -> Allow-Origin + Vary + Expose-Headers
+    // with Origin -> Allow-Origin + Vary (not overwritten) + Expose-Headers
     req->addHeader("Origin", "http://somepage");
+    resp->addHeader("Vary", "X-SomeHeader");
     resp->addCorsHeaders(req, {"X-Foo"});
-    CHECK(resp->getHeader("Vary") == "Origin");
+    CHECK(resp->getHeader("Vary") == "Origin,X-SomeHeader");
     CHECK(resp->getHeader("Access-Control-Allow-Origin") == "http://somepage");
     CHECK(resp->getHeader("Access-Control-Expose-Headers") == "X-Foo");
 
     // add a new exposed header
     resp->addCorsHeaders(req, {"X-Bar"});
     CHECK(resp->getHeader("Access-Control-Expose-Headers") == "X-Bar,X-Foo");
+    // no duplicate Origin in Vary
+    CHECK(resp->getHeader("Vary") == "Origin,X-SomeHeader");
 
     // check credentials (true/false/unchanged)
     resp->addCorsHeaders(req, {}, true);
