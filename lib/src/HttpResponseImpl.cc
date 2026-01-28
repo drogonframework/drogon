@@ -625,6 +625,57 @@ HttpResponsePtr HttpResponse::newOptionsResponse(
     return response;
 }
 
+void HttpResponse::addCorsHeaders(
+    const HttpRequestPtr &request,
+    const std::set<std::string_view> &exposedHeaders,
+    const std::optional<bool> &allowCredentials)
+{
+    if (!request || !request->isCorsRequest() ||
+        request->isCorsPreflightRequest())
+        return;
+    // add/set Origin to the Vary header (needed for cache proxies)
+    auto vary = drogon::utils::splitStringViewToSet(request->getHeader("Vary"), ",");
+    if (std::find_if(vary.begin(), vary.end(),
+                     [](const auto &val) {
+                        return drogon::utils::ci_equals(val, "Origin");
+                     }) == vary.end())
+    {
+        vary.insert("Origin");
+        addHeader("Vary", drogon::utils::joinStringViews(vary, ","));
+    }
+    // add _MISSING_ CORS header - do not overwrite existing one
+    if (headers().find("access-control-allow-origin") == headers().end())
+        addHeader("Access-Control-Allow-Origin",
+                  std::string(drogon::utils::trim(request->getHeader("Origin"))));
+    // set (or append) exposed headers
+    if (!exposedHeaders.empty())
+    {
+        auto exposed = drogon::utils::splitStringViewToSet(
+            getHeader("Access-Control-Expose-Headers"), ",");
+        bool changed = false;
+        for (auto &header : exposedHeaders)
+        {
+            if (std::find_if(exposed.begin(),
+                             exposed.end(),
+                             [&header](const auto &val) {
+                                 return drogon::utils::ci_equals(val, header);
+                             }) != vary.end())
+                continue;
+            exposed.insert(header);
+            changed = true;
+        }
+        if (changed)
+            addHeader("Access-Control-Expose-Headers",
+                      drogon::utils::joinStringViews(exposed, ","));
+    }
+    if (!allowCredentials.has_value())
+        return;
+    if (allowCredentials.value())
+        addHeader("Access-Control-Allow-Credentials", "true");
+    else
+        removeHeader("Access-Control-Allow-Credentials");
+}
+
 void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 {
     buffer.ensureWritableBytes(128);

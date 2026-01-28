@@ -572,8 +572,8 @@ class DROGON_EXPORT HttpResponse
      *             not allowed
      *  \note CORS is a browser-side security mechanism.\n
      *        Do not rely on Origin for authentication/authorization:
-     *        non-browser clients can spoof or omit it. Enforce access control
-     *        independently.
+     *        non-browser clients can spoof or omit it.\n
+     *        Enforce access control independently.
      *  \param[in] request          Drogon (OPTIONS) request
      *  \param[in] allowedHeaders   Set of allowed headers (for
      *                              Access-Control-Allow-Headers header)\n
@@ -644,6 +644,47 @@ class DROGON_EXPORT HttpResponse
                                   maxAgeSeconds,
                                   allowedHeaders);
     }
+
+	/*! \brief Add CORS headers to a response
+     *  \details Adds the CORS headers to a response for a normal request (a
+     *           CORS request but not a CORS preflight request):
+     *              - does nothing if it's an OPTIONS request, or
+     *              - if it's not a CORS request, or
+     *              - if it's a CORS preflight request
+     *           Else:
+     *              - adds Access-Control-Allow-Origin (if not yet present)
+     *              - adds Origin to the Vary header,
+     *              - sets or clears Access-Control-Allow-Credentials (if
+     *                allowCredentials is set)
+     *              - completes Access-Control-Expose-Headers
+     *  \param[in] request          Drogon request (to get Origin)
+     *  \param[in] allowCredentials If set and true, adds the
+     *                              "Access-Control-Allow-Credentials: true
+     *                              header"\n
+     *                              If set and false, removes the
+     *                              "Access-Control-Allow-Credentials" header\n
+     *                              If not set, leaves the
+     *                              "Access-Control-Allow-Credentials" header
+     *                              untouched\n
+     *                              *MUST MATCH THE createOptionsResponse()
+     *                              PRE-FLIGHT RESPONSE VALUE*
+     *  \param[in] exposedHeaders   Set of exposed headers (for
+     *                              Access-Control-Expose-Headers header)\n
+     *                              These are the headers allowed to be exposed
+     *                              to javascript by the remote browser\n
+     *                              Note: they are *APPENDED* to any already
+     *                              present in the response, they are not
+     *                              REPLACED.\n
+     *                              This allows to complete them in the
+     *                              controller path handler.\n
+     *                              If you want to REPLACE them, remove the
+     *                              header before calling this function.
+     * \note may be use both in the controller path handler and in a
+     *       pre-sending advice
+     */
+    void addCorsHeaders(const HttpRequestPtr &request,
+                        const std::set<std::string_view> &exposedHeaders = {},
+                        const std::optional<bool> &allowCredentials = {});
 
     /**
      * @brief If the response is a file response (i.e. created by

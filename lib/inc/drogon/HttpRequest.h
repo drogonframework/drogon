@@ -501,13 +501,23 @@ class DROGON_EXPORT HttpRequest
         return toRequest(std::forward<T>(obj));
     }
 
+    /*! \details Check if the request a CORS request.\n
+     *           It should contain:
+     *              - Origin: origination page
+     *  \returns true if the Origin header is present
+     */
+    inline bool isCorsRequest() const
+    {
+        // Check presence of required headers
+        return headers().find("origin") != headers().end();
+    }
+
     /*! \details Check if the method of the request is OPTIONS and if it is
      *           a CORS pre-flight request.\n
      *           It should contain:
      *              - Origin: origination page
      *              - Access-Control-Request-Method: method to be used in the
      *                actual request
-     *  \param[in] request Drogon request
      *  \returns true if the method is OPTIONS and the required CORS pre-flight
      *                headers are present
      */
@@ -516,7 +526,7 @@ class DROGON_EXPORT HttpRequest
         if (method() != HttpMethod::Options)
             return false;
         // Check presence of required headers
-        return headers().find("origin") != headers().end() &&
+        return isCorsRequest() &&
                headers().find("access-control-request-method") !=
                    headers().end();
     }
