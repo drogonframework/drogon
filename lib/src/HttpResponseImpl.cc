@@ -536,7 +536,8 @@ HttpResponsePtr HttpResponse::newOptionsResponse(
     // Check requested method
     // Policy: explicitly fail preflight with 40x + diagnostic header rather
     // than silently returning allowed methods
-    auto acrMethod = drogon::utils::trim(request->getHeader("Access-Control-Request-Method"));
+    auto acrMethod = drogon::utils::trim(
+        request->getHeader("Access-Control-Request-Method"));
     if (acrMethod.empty())
     {
         response->setStatusCode(HttpStatusCode::k400BadRequest);
@@ -605,7 +606,7 @@ HttpResponsePtr HttpResponse::newOptionsResponse(
     if (!requestedHeaders.empty())
         response->addHeader("Access-Control-Allow-Headers",
                             drogon::utils::joinStringViews(requestedHeaders,
-                                                          ","));
+                                                           ","));
     if (response->statusCode() == HttpStatusCode::k403Forbidden)
         return response;
     // Allow credentials

@@ -617,7 +617,8 @@ class DROGON_EXPORT HttpResponse
         bool allowCredentials = false,
         bool allowPNA = true,
         std::optional<unsigned int> maxAgeSeconds = {},
-        const std::optional<std::set<std::string_view>> &allowedHeaders = std::nullopt);
+        const std::optional<std::set<std::string_view>> &allowedHeaders =
+            std::nullopt);
 
     /*! \copydoc newOptionsResponse(const HttpRequestPtr&,
      *                         const std::function<bool(std::string_view)>&,
@@ -645,7 +646,7 @@ class DROGON_EXPORT HttpResponse
                                   allowedHeaders);
     }
 
-	/*! \brief Add CORS headers to a response
+    /*! \brief Add CORS headers to a response
      *  \details Adds the CORS headers to a response for a normal request (a
      *           CORS request but not a CORS preflight request):
      *              - does nothing if it's an OPTIONS request, or
