@@ -667,7 +667,7 @@ class DROGON_EXPORT HttpResponse
      *                              If not set, leaves the
      *                              "Access-Control-Allow-Credentials" header
      *                              untouched\n
-     *                              *MUST MATCH THE createOptionsResponse()
+     *                              *MUST MATCH THE newOptionsResponse()
      *                              PRE-FLIGHT RESPONSE VALUE*
      *  \param[in] exposedHeaders   Set of exposed headers (for
      *                              Access-Control-Expose-Headers header)\n

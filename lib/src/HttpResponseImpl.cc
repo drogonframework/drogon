@@ -484,7 +484,7 @@ HttpResponsePtr HttpResponse::newOptionsResponse(
 {
     if (!request || (request->method() != HttpMethod::Options))
         return {};
-    // Allowed methods, set by  drogon::HttpOptionsMiddlewareImpl
+    // Allowed methods, set by drogon::HttpOptionsMiddlewareImpl
     auto methods =
         request->attributes()->get<std::string>("drogon.corsMethods");
     if (methods.empty())
