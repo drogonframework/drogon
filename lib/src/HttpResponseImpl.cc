@@ -54,6 +54,16 @@ static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
 }
 }  // namespace drogon
 
+void HttpResponseImpl::setAllowCompression(bool allow)
+{
+    allowCompression_ = allow;
+}
+
+bool HttpResponseImpl::allowCompression() const
+{
+    return allowCompression_;
+}
+
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_TEXT_HTML);
@@ -960,6 +970,12 @@ void HttpResponseImpl::parseJson() const
 
 bool HttpResponseImpl::shouldBeCompressed() const
 {
+    // If the developer said "No" stop immediately.
+    if (!allowCompression_)
+    {
+        return false;
+    }
+
     if (streamCallback_ || asyncStreamCallback_ || !sendfileName_.empty() ||
         contentType() >= CT_APPLICATION_OCTET_STREAM ||
         getBody().length() < 1024 ||
