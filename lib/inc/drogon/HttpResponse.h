@@ -161,7 +161,7 @@ class DROGON_EXPORT HttpResponse
         setCustomStatusCode(code, message.data(), message.length());
     }
 
-    /// Set wheter the response should be compress.
+    /// Set whether the response should be compress.
     virtual void setAllowCompression(bool allow) = 0;
 
     /// Get whether the response allow compression.
@@ -566,9 +566,9 @@ class DROGON_EXPORT HttpResponse
     virtual const std::string &sendfileName() const = 0;
 
     /**
-     * @brief Returns the range of the file response as a pair ot size_t
+     * @brief Returns the range of the file response as a pair of size_t
      * (offset, length). Length of 0 means the entire file is sent. Behavior of
-     * this function is undefined if the response if not a file response
+     * this function is undefined if the response is not a file response
      */
     using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }
     virtual const SendfileRange &sendfileRange() const = 0;
