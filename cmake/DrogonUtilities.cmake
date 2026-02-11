@@ -7,6 +7,7 @@ function(drogon_create_views arg)
     message(STATUS "arguments error when calling drogon_create_views")
     return()
   endif()
+  find_program(DROGON_CTL drogon_ctl REQUIRED)
   file(MAKE_DIRECTORY ${ARGV2})
   file(GLOB_RECURSE SCP_LIST ${ARGV1}/*.csp)
   foreach(cspFile ${SCP_LIST})
@@ -39,7 +40,7 @@ function(drogon_create_views arg)
         set(ns "")
       endif()
       add_custom_command(OUTPUT ${ARGV2}/${outputFile}.h ${ARGV2}/${outputFile}.cc
-                         COMMAND drogon_ctl
+                         COMMAND ${DROGON_CTL}
                                  ARGS
                                  create
                                  view
@@ -55,7 +56,7 @@ function(drogon_create_views arg)
     else()
       get_filename_component(classname ${cspFile} NAME_WE)
       add_custom_command(OUTPUT ${ARGV2}/${classname}.h ${ARGV2}/${classname}.cc
-                         COMMAND drogon_ctl
+                         COMMAND ${DROGON_CTL}
                                  ARGS
                                  create
                                  view
