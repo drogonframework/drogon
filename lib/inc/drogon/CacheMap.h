@@ -342,7 +342,8 @@ class CacheMap
         size_t timeout = 0;
         bool flag = false;
 
-        // We use unique_lock here because eraseAfter modifies the internal map state
+        // We use unique_lock here because eraseAfter modifies the internal map
+        // state
         std::unique_lock<std::shared_mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
