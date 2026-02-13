@@ -281,7 +281,7 @@ class CacheMap
     T2 operator[](const T1 &key)
     {
         size_t timeout = 0;
-        std::shared_lock<std::shared_mutex> lock(mtx_);
+        std::unique_lock<std::shared_mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
@@ -342,8 +342,8 @@ class CacheMap
         size_t timeout = 0;
         bool flag = false;
 
-        // Using shared_lock to allow other threads as well at the same time
-        std::shared_lock<std::shared_mutex> lock(mtx_);
+        // We use unique_lock here because eraseAfter modifies the internal map state
+        std::unique_lock<std::shared_mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
@@ -366,7 +366,7 @@ class CacheMap
     {
         size_t timeout = 0;
         bool flag = false;
-        std::shared_lock<std::shared_mutex> lock(mtx_);
+        std::unique_lock<std::shared_mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
