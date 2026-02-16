@@ -351,6 +351,23 @@ class HttpRequestImpl : public HttpRequest
         headers_.erase(lowerKey);
     }
 
+    void clearHeader(std::string key) override
+    {
+        transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
+            return tolower(c);
+        });
+        clearHeaderBy(key);
+    }
+
+    void clearHeaderBy(const std::string &lowerKey)
+    {
+        auto it = headers_.find(lowerKey);
+        if (it != headers_.end())
+        {
+            it->second = "";
+        }
+    }
+
     const std::string &getHeader(std::string field) const override
     {
         std::transform(field.begin(),
