@@ -23,6 +23,10 @@
 #include <optional>
 #include <string_view>
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4251)
+#endif
+
 namespace drogon
 {
 /**
