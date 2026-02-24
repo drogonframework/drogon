@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- dg_ctl create models new command line option --clear-output
+
+
 ## [1.9.12] - 2026-01-26
 
 ### API changes list

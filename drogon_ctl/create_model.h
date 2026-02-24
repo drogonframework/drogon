@@ -430,5 +430,6 @@ class create_model : public DrObject<create_model>, public CommandHandler
     std::string dbname_;
     bool forceOverwrite_{false};
     std::string outputPath_;
+    bool cleanupDirectory_{false};
 };
 }  // namespace drogon_ctl
