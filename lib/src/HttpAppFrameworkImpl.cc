@@ -994,7 +994,8 @@ void HttpAppFrameworkImpl::addDbClient(
                                      name,
                                      isFast,
                                      characterSet,
-                                     timeout});
+                                     timeout,
+                                     std::move(options)});
     }
     else if (dbType == "sqlite3")
     {
