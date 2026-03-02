@@ -97,3 +97,47 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     (void)(connNum);
 #endif
 }
+
+std::shared_ptr<DbClient> DbClient::newDuckDbClient(const std::string &connInfo,
+                                                    size_t connNum)
+{
+#if USE_DUCKDB
+    auto client = std::make_shared<DbClientImpl>(connInfo,
+                                                 connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                                                 ClientType::DuckDB,
+                                                 false);
+#else
+                                                 ClientType::DuckDB);
+#endif
+    client->init();
+    return client;
+#else
+    LOG_FATAL << "DuckDB is not supported!";
+    exit(1);
+    (void)(connInfo);
+    (void)(connNum);
+#endif
+}
+
+// DuckDB with config options support [dq 2025-11-19]
+std::shared_ptr<DbClient> DbClient::newDuckDbClient(
+    const std::string &connInfo,
+    size_t connNum,
+    const std::unordered_map<std::string, std::string> &configOptions)
+{
+#if USE_DUCKDB
+    auto client = std::make_shared<DbClientImpl>(connInfo,
+                                                 connNum,
+                                                 ClientType::DuckDB,
+                                                 configOptions);
+    client->init();
+    return client;
+#else
+    LOG_FATAL << "DuckDB is not supported!";
+    exit(1);
+    (void)(connInfo);
+    (void)(connNum);
+    (void)(configOptions);
+#endif
+}
