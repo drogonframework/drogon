@@ -276,7 +276,19 @@ static void loadApp(const Json::Value &app)
                                     maxAge);
     }
     else
+    {
         drogon::app().disableSession();
+    }
+    auto sessionMode = app.get("session_mode", "auto").asString();
+    if (sessionMode == "auto" || sessionMode == "AUTO")
+    {
+        drogon::app().setSessionMode(SessionMode::kAuto);
+    }
+    else
+    {
+        drogon::app().setSessionMode(SessionMode::kManual);
+    }
+
     // document root
     auto documentRoot = app.get("document_root", "").asString();
     if (documentRoot != "")
