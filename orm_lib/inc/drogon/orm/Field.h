@@ -27,7 +27,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
 #ifdef __linux__
 #include <arpa/inet.h>
 #endif
@@ -36,8 +35,11 @@ namespace drogon
 {
 namespace orm
 {
-
 /// Reference to a field in a result set.
+/**
+ * A field represents one entry in a row.  It represents an actual value
+ * in the result set, and can be converted to various types.
+ */
 class DROGON_EXPORT Field
 {
   public:
@@ -49,7 +51,13 @@ class DROGON_EXPORT Field
     /// Is this field's value null?
     bool isNull() const;
 
-    /// Raw C-string value
+    /// Read as plain C string
+    /**
+     * Since the field's data is stored internally in the form of a
+     * zero-terminated C string, this is the fastest way to read it.  Use the
+     * to() or as() functions to convert the string to other types such as
+     * @c int, or to C++ strings.
+     */
     const char *c_str() const;
 
     /// Get the length of the plain C string
@@ -82,9 +90,25 @@ class DROGON_EXPORT Field
     {
         if (isNull())
             return T();
-
         auto data_ = result_.getValue(row_, column_);
-        T value{};
+        // auto dataLength_ = result_.getLength(row_, column_);
+        // For binary format!
+        // if (dataLength_ == 1)
+        // {
+        //     return *data_;
+        // }
+        // else if (dataLength_ == 4)
+        // {
+        //     const int32_t *n = (int32_t *)data_;
+        //     return ntohl(*n);
+        // }
+        // else if (dataLength_ == 8)
+        // {
+        //     const int64_t *n = (int64_t *)data_;
+        //     return ntohll(*n);
+        // }
+        // return 0;
+        T value = T();
         if (data_)
         {
             try
@@ -100,6 +124,14 @@ class DROGON_EXPORT Field
         return value;
     }
 
+    /// Parse the field as an SQL array.
+    /**
+     * Call the parser to retrieve values (and structure) from the array.
+     *
+     * Make sure the @c result object stays alive until parsing is finished.  If
+     * you keep the @c row of @c field object alive, it will keep the @c result
+     * object alive as well.
+     */
     ArrayParser getArrayParser() const
     {
         return ArrayParser(result_.getValue(row_, column_));
@@ -109,24 +141,24 @@ class DROGON_EXPORT Field
     std::vector<std::shared_ptr<T>> asArray() const
     {
         std::vector<std::shared_ptr<T>> ret;
-        auto parser = getArrayParser();
-
-        while (true)
+        auto arrParser = getArrayParser();
+        while (1)
         {
-            auto val = parser.getNext();
-            if (val.first == ArrayParser::juncture::done)
+            auto arrVal = arrParser.getNext();
+            if (arrVal.first == ArrayParser::juncture::done)
+            {
                 break;
-
-            if (val.first == ArrayParser::juncture::string_value)
-            {
-                T v{};
-                std::stringstream ss(std::move(val.second));
-                ss >> v;
-                ret.emplace_back(std::make_shared<T>(v));
             }
-            else if (val.first == ArrayParser::juncture::null_value)
+            if (arrVal.first == ArrayParser::juncture::string_value)
             {
-                ret.emplace_back(nullptr);
+                T val;
+                std::stringstream ss(std::move(arrVal.second));
+                ss >> val;
+                ret.push_back(std::shared_ptr<T>(new T(val)));
+            }
+            else if (arrVal.first == ArrayParser::juncture::null_value)
+            {
+                ret.push_back(std::shared_ptr<T>());
             }
         }
         return ret;
@@ -134,32 +166,25 @@ class DROGON_EXPORT Field
 
   protected:
     Result::SizeType row_;
+    /**
+     * Column number
+     * You'd expect this to be a size_t, but due to the way reverse iterators
+     * are related to regular iterators, it must be allowed to underflow to -1.
+     */
     long column_;
-
     friend class Row;
-    friend class MysqlResultImpl;
-    friend class PgResultImpl;
-    friend class Sqlite3ResultImpl;
-
     Field(const Row &row, Row::SizeType columnNum) noexcept;
 
   private:
     const Result result_;
 };
 
-// =============================================================
-// Explicit template specializations (UNCHANGED)
-// =============================================================
-
 template <>
 DROGON_EXPORT std::string Field::as<std::string>() const;
-
 template <>
 DROGON_EXPORT const char *Field::as<const char *>() const;
-
 template <>
 DROGON_EXPORT char *Field::as<char *>() const;
-
 template <>
 DROGON_EXPORT std::vector<char> Field::as<std::vector<char>>() const;
 
@@ -167,54 +192,106 @@ template <>
 inline std::string_view Field::as<std::string_view>() const
 {
     auto first = result_.getValue(row_, column_);
-    auto len = result_.getLength(row_, column_);
-    return {first, len};
+    auto length = result_.getLength(row_, column_);
+    return {first, length};
 }
 
 template <>
 inline float Field::as<float>() const
 {
-    return isNull() ? 0.0f : std::stof(result_.getValue(row_, column_));
+    if (isNull())
+        return 0.0;
+    return std::stof(result_.getValue(row_, column_));
 }
 
 template <>
 inline double Field::as<double>() const
 {
-    return isNull() ? 0.0 : std::stod(result_.getValue(row_, column_));
+    if (isNull())
+        return 0.0;
+    return std::stod(result_.getValue(row_, column_));
 }
 
 template <>
 inline bool Field::as<bool>() const
 {
     if (result_.getLength(row_, column_) != 1)
+    {
         return false;
-    char v = *result_.getValue(row_, column_);
-    return (v == 't' || v == '1');
+    }
+    auto value = result_.getValue(row_, column_);
+    if (*value == 't' || *value == '1')
+        return true;
+    return false;
 }
 
 template <>
 inline int Field::as<int>() const
 {
-    return isNull() ? 0 : std::stoi(result_.getValue(row_, column_));
+    if (isNull())
+        return 0;
+    return std::stoi(result_.getValue(row_, column_));
 }
 
 template <>
 inline long Field::as<long>() const
 {
-    return isNull() ? 0L : std::stol(result_.getValue(row_, column_));
+    if (isNull())
+        return 0;
+    return std::stol(result_.getValue(row_, column_));
+}
+
+template <>
+inline int8_t Field::as<int8_t>() const
+{
+    if (isNull())
+        return 0;
+    return static_cast<int8_t>(atoi(result_.getValue(row_, column_)));
 }
 
 template <>
 inline long long Field::as<long long>() const
 {
-    return isNull() ? 0LL : std::stoll(result_.getValue(row_, column_));
+    if (isNull())
+        return 0;
+    return atoll(result_.getValue(row_, column_));
+}
+
+template <>
+inline unsigned int Field::as<unsigned int>() const
+{
+    if (isNull())
+        return 0;
+    return static_cast<unsigned int>(
+        std::stoul(result_.getValue(row_, column_)));
+}
+
+template <>
+inline unsigned long Field::as<unsigned long>() const
+{
+    if (isNull())
+        return 0;
+    return std::stoul(result_.getValue(row_, column_));
+}
+
+template <>
+inline uint8_t Field::as<uint8_t>() const
+{
+    if (isNull())
+        return 0;
+    return static_cast<uint8_t>(atoi(result_.getValue(row_, column_)));
 }
 
 template <>
 inline unsigned long long Field::as<unsigned long long>() const
 {
-    return isNull() ? 0ULL : std::stoull(result_.getValue(row_, column_));
+    if (isNull())
+        return 0;
+    return std::stoull(result_.getValue(row_, column_));
 }
 
+// std::vector<int32_t> Field::as<std::vector<int32_t>>() const;
+// template <>
+// std::vector<int64_t> Field::as<std::vector<int64_t>>() const;
 }  // namespace orm
 }  // namespace drogon
