@@ -52,7 +52,7 @@ class DROGON_EXPORT Field
     /// Raw C-string value
     const char *c_str() const;
 
-    /// Length of raw data
+    /// Get the length of the plain C string
     size_t length() const
     {
         return result_.getLength(row_, column_);
@@ -76,10 +76,7 @@ class DROGON_EXPORT Field
     /// Numeric scale (DECIMAL / NUMERIC)
     int scale() const noexcept { return result_.getScale(column_); }
 
-    // =========================================================
-    // Existing conversion API (UNCHANGED)
-    // =========================================================
-
+    /// Convert to a type T value
     template <typename T>
     T as() const
     {
@@ -97,7 +94,7 @@ class DROGON_EXPORT Field
             }
             catch (...)
             {
-                LOG_DEBUG << "Field::as<T>() conversion error";
+                LOG_DEBUG << "Type error";
             }
         }
         return value;
