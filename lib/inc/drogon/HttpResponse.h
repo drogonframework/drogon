@@ -161,6 +161,12 @@ class DROGON_EXPORT HttpResponse
         setCustomStatusCode(code, message.data(), message.length());
     }
 
+    /// Set whether the response should be compress.
+    virtual void setAllowCompression(bool allow) = 0;
+
+    /// Get whether the response allow compression.
+    virtual bool allowCompression() const = 0;
+
     /// Get the creation timestamp of the response.
     virtual const trantor::Date &creationDate() const = 0;
 
