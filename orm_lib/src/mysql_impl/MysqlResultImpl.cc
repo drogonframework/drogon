@@ -83,3 +83,8 @@ unsigned long long MysqlResultImpl::insertId() const noexcept
 {
     return insertId_;
 }
+
+const MysqlColumnMeta &MysqlResultImpl::columnMeta(SizeType column) const
+{
+    return columnMeta_[column];
+}

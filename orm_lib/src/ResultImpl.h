@@ -36,6 +36,7 @@ class ResultImpl : public trantor::NonCopyable
     virtual const char *getValue(SizeType row, RowSizeType column) const = 0;
     virtual bool isNull(SizeType row, RowSizeType column) const = 0;
     virtual FieldSizeType getLength(SizeType row, RowSizeType column) const = 0;
+    virtual const MysqlColumnMeta &columnMeta(SizeType column) const = 0;
 
     virtual unsigned long long insertId() const noexcept
     {

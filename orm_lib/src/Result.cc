@@ -170,6 +170,32 @@ unsigned long long Result::insertId() const noexcept
     return resultPtr_->insertId();
 }
 
+SqlFieldType Result::getSqlType(SizeType column) const
+{
+    return resultPtr_->columnMeta(column).sqlType;
+}
+
+const std::string &Result::getTypeName(SizeType column) const
+{
+    return resultPtr_->columnMeta(column).typeName;
+}
+
+int Result::getColumnLength(SizeType column) const
+{
+    return resultPtr_->columnMeta(column).length;
+}
+
+int Result::getPrecision(SizeType column) const
+{
+    return resultPtr_->columnMeta(column).precision;
+}
+
+int Result::getScale(SizeType column) const
+{
+    return resultPtr_->columnMeta(column).scale;
+}
+
+
 int Result::oid(RowSizeType column) const noexcept
 {
     return resultPtr_->oid(column);

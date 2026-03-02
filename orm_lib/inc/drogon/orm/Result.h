@@ -34,10 +34,39 @@ class Row;
 class ResultImpl;
 using ResultImplPtr = std::shared_ptr<ResultImpl>;
 
+// 🔥 NEW: SQL field type abstraction
+enum class SqlFieldType : uint8_t
+{
+    Unknown = 0,
+    Bool,
+    Int,
+    BigInt,
+    Float,
+    Double,
+    Decimal,
+    Varchar,
+    Text,
+    Date,
+    Time,
+    DateTime,
+    Blob,
+    Json,
+    Binary
+};
+
 enum class SqlStatus
 {
     Ok,
     End
+};
+
+struct MysqlColumnMeta
+{
+    SqlFieldType sqlType{SqlFieldType::Unknown};
+    std::string typeName;
+    int length{0};
+    int precision{0};
+    int scale{0};
 };
 
 /// Result set containing data returned by a query or command.
@@ -138,6 +167,12 @@ class DROGON_EXPORT Result
      *   insert into table_name volumn1, volumn2 values(....) returning id;
      */
     unsigned long long insertId() const noexcept;
+
+    SqlFieldType getSqlType(SizeType column) const;
+    const std::string &getTypeName(SizeType column) const;
+    int getColumnLength(SizeType column) const;
+    int getPrecision(SizeType column) const;
+    int getScale(SizeType column) const;
 
 #ifdef _MSC_VER
     Result() noexcept = default;

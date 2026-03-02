@@ -161,12 +161,6 @@ class DROGON_EXPORT HttpResponse
         setCustomStatusCode(code, message.data(), message.length());
     }
 
-    /// Set whether the response should be compress.
-    virtual void setAllowCompression(bool allow) = 0;
-
-    /// Get whether the response allow compression.
-    virtual bool allowCompression() const = 0;
-
     /// Get the creation timestamp of the response.
     virtual const trantor::Date &creationDate() const = 0;
 
@@ -308,6 +302,8 @@ class DROGON_EXPORT HttpResponse
         assert(strnlen(body, N) == N - 1);
         setBody(body, N - 1);
     }
+
+    virtual void setBody(const char *body, size_t len) = 0;
 
     /// Get the response body.
     std::string_view body() const
@@ -566,9 +562,9 @@ class DROGON_EXPORT HttpResponse
     virtual const std::string &sendfileName() const = 0;
 
     /**
-     * @brief Returns the range of the file response as a pair of size_t
+     * @brief Returns the range of the file response as a pair ot size_t
      * (offset, length). Length of 0 means the entire file is sent. Behavior of
-     * this function is undefined if the response is not a file response
+     * this function is undefined if the response if not a file response
      */
     using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }
     virtual const SendfileRange &sendfileRange() const = 0;
@@ -598,7 +594,6 @@ class DROGON_EXPORT HttpResponse
     }
 
   private:
-    virtual void setBody(const char *body, size_t len) = 0;
     virtual const char *getBodyData() const = 0;
     virtual size_t getBodyLength() const = 0;
     virtual void setContentTypeCodeAndCustomString(ContentType type,
