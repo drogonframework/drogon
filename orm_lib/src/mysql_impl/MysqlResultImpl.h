@@ -27,8 +27,7 @@ namespace drogon
 namespace orm
 {
 
-inline SqlFieldType mysqlTypeToSql(enum enum_field_types t,
-                                   unsigned int flags)
+inline SqlFieldType mysqlTypeToSql(enum enum_field_types t, unsigned int flags)
 {
     switch (t)
     {
@@ -57,7 +56,7 @@ inline SqlFieldType mysqlTypeToSql(enum enum_field_types t,
 
         case MYSQL_TYPE_STRING:
             if (flags & BINARY_FLAG)
-                return SqlFieldType::Binary;   // 🔥 THIS FIXES BINARY(16)
+                return SqlFieldType::Binary;  // 🔥 THIS FIXES BINARY(16)
             return SqlFieldType::Text;
 
         case MYSQL_TYPE_BLOB:
@@ -81,18 +80,25 @@ inline SqlFieldType mysqlTypeToSql(enum enum_field_types t,
     }
 }
 
-inline const char* mysqlFieldTypeToName(enum enum_field_types t,
+inline const char *mysqlFieldTypeToName(enum enum_field_types t,
                                         unsigned int flags)
 {
     switch (t)
     {
-        case MYSQL_TYPE_TINY:      return "TINYINT";
-        case MYSQL_TYPE_SHORT:     return "SMALLINT";
-        case MYSQL_TYPE_LONG:      return "INT";
-        case MYSQL_TYPE_LONGLONG:  return "BIGINT";
-        case MYSQL_TYPE_FLOAT:     return "FLOAT";
-        case MYSQL_TYPE_DOUBLE:    return "DOUBLE";
-        case MYSQL_TYPE_NEWDECIMAL:return "DECIMAL";
+        case MYSQL_TYPE_TINY:
+            return "TINYINT";
+        case MYSQL_TYPE_SHORT:
+            return "SMALLINT";
+        case MYSQL_TYPE_LONG:
+            return "INT";
+        case MYSQL_TYPE_LONGLONG:
+            return "BIGINT";
+        case MYSQL_TYPE_FLOAT:
+            return "FLOAT";
+        case MYSQL_TYPE_DOUBLE:
+            return "DOUBLE";
+        case MYSQL_TYPE_NEWDECIMAL:
+            return "DECIMAL";
 
         case MYSQL_TYPE_VAR_STRING:
         case MYSQL_TYPE_VARCHAR:
@@ -104,15 +110,22 @@ inline const char* mysqlFieldTypeToName(enum enum_field_types t,
         case MYSQL_TYPE_BLOB:
             return (flags & BINARY_FLAG) ? "BLOB" : "TEXT";
 
-        case MYSQL_TYPE_DATE:      return "DATE";
-        case MYSQL_TYPE_TIME:      return "TIME";
-        case MYSQL_TYPE_DATETIME:  return "DATETIME";
-        case MYSQL_TYPE_TIMESTAMP: return "TIMESTAMP";
-        case MYSQL_TYPE_JSON:      return "JSON";
+        case MYSQL_TYPE_DATE:
+            return "DATE";
+        case MYSQL_TYPE_TIME:
+            return "TIME";
+        case MYSQL_TYPE_DATETIME:
+            return "DATETIME";
+        case MYSQL_TYPE_TIMESTAMP:
+            return "TIMESTAMP";
+        case MYSQL_TYPE_JSON:
+            return "JSON";
 
-        default:    return "UNKNOWN";
+        default:
+            return "UNKNOWN";
     }
 }
+
 class MysqlResultImpl : public ResultImpl
 {
   public:
@@ -126,7 +139,7 @@ class MysqlResultImpl : public ResultImpl
           affectedRows_(affectedRows),
           insertId_(insertId)
     {
-         if (fieldArray_ && fieldsNumber_ > 0)
+        if (fieldArray_ && fieldsNumber_ > 0)
         {
             columnMeta_.resize(fieldsNumber_);
 
@@ -145,18 +158,16 @@ class MysqlResultImpl : public ResultImpl
                 meta.length = static_cast<int>(f.length);
 
                 // DECIMAL(p,s): length == precision, decimals == scale
-                meta.precision =
-                    (meta.sqlType == SqlFieldType::Decimal)
-                        ? static_cast<int>(f.length)
-                        : 0;
+                meta.precision = (meta.sqlType == SqlFieldType::Decimal)
+                                     ? static_cast<int>(f.length)
+                                     : 0;
 
-                meta.scale =
-                    (meta.sqlType == SqlFieldType::Decimal)
-                        ? static_cast<int>(f.decimals)
-                        : 0;
+                meta.scale = (meta.sqlType == SqlFieldType::Decimal)
+                                 ? static_cast<int>(f.decimals)
+                                 : 0;
             }
         }
-    
+
         if (fieldArray_ && fieldsNumber_ > 0)
         {
             fieldsMapPtr_ = std::make_shared<

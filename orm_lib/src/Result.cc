@@ -195,7 +195,6 @@ int Result::getScale(SizeType column) const
     return resultPtr_->columnMeta(column).scale;
 }
 
-
 int Result::oid(RowSizeType column) const noexcept
 {
     return resultPtr_->oid(column);
