@@ -60,7 +60,7 @@ enum class SqlStatus
     End
 };
 
-struct MysqlColumnMeta
+struct ColumnMeta
 {
     SqlFieldType sqlType{SqlFieldType::Unknown};
     std::string typeName;

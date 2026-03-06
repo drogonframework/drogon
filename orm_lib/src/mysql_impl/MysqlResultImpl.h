@@ -210,13 +210,13 @@ class MysqlResultImpl : public ResultImpl
     bool isNull(SizeType row, RowSizeType column) const override;
     FieldSizeType getLength(SizeType row, RowSizeType column) const override;
     unsigned long long insertId() const noexcept override;
-    const MysqlColumnMeta &columnMeta(SizeType column) const override;
+    const ColumnMeta &columnMeta(SizeType column) const override;
 
   private:
     const std::shared_ptr<MYSQL_RES> result_;
     const Result::SizeType rowsNumber_;
     const MYSQL_FIELD *fieldArray_;
-    std::vector<MysqlColumnMeta> columnMeta_;
+    std::vector<ColumnMeta> columnMeta_;
     const Result::RowSizeType fieldsNumber_;
     const SizeType affectedRows_;
     const unsigned long long insertId_;
