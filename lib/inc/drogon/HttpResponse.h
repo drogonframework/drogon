@@ -309,6 +309,8 @@ class DROGON_EXPORT HttpResponse
         setBody(body, N - 1);
     }
 
+    virtual void setBody(const char *body, size_t len) = 0;
+
     /// Get the response body.
     std::string_view body() const
     {
@@ -598,7 +600,6 @@ class DROGON_EXPORT HttpResponse
     }
 
   private:
-    virtual void setBody(const char *body, size_t len) = 0;
     virtual const char *getBodyData() const = 0;
     virtual size_t getBodyLength() const = 0;
     virtual void setContentTypeCodeAndCustomString(ContentType type,
