@@ -63,6 +63,11 @@ void HttpControllersRouter::init(
         initMiddlewaresAndCorsMethods(iter.second);
     }
 
+    for (auto &router : wsCtrlVector_)
+    {
+        initMiddlewaresAndCorsMethods(router);
+    }
+
     for (auto &router : ctrlVector_)
     {
         router.regex_ = std::regex(router.pathParameterPattern_,
@@ -85,6 +90,7 @@ void HttpControllersRouter::reset()
     ctrlMap_.clear();
     ctrlVector_.clear();
     wsCtrlMap_.clear();
+    wsCtrlVector_.clear();
 }
 
 std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
