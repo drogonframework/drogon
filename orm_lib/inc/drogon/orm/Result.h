@@ -170,7 +170,8 @@ class DROGON_EXPORT Result
     /**
      * @brief Get the logical SQL type of the specified column.
      *
-     * @param column Zero-based index of the column (must be less than columns()).
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
      * @return The abstracted SQL field type for the given column, or
      *         SqlFieldType::Unknown if the type cannot be determined.
      *
@@ -183,7 +184,8 @@ class DROGON_EXPORT Result
     /**
      * @brief Get the database-specific type name of the specified column.
      *
-     * @param column Zero-based index of the column (must be less than columns()).
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
      * @return A reference to a string containing the type name as reported
      *         by the underlying database driver (for example, "INT",
      *         "VARCHAR", "DECIMAL(10,2)", etc.).
@@ -197,7 +199,8 @@ class DROGON_EXPORT Result
     /**
      * @brief Get the defined maximum length of the specified column.
      *
-     * @param column Zero-based index of the column (must be less than columns()).
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
      * @return The maximum length for the column in characters or bytes, as
      *         reported by the underlying database driver, or 0 if this
      *         information is not available.
@@ -211,7 +214,8 @@ class DROGON_EXPORT Result
     /**
      * @brief Get the numeric precision for the specified column.
      *
-     * @param column Zero-based index of the column (must be less than columns()).
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
      * @return The precision (total number of significant digits) for the
      *         column, as reported by the underlying database driver, or 0 if
      *         not applicable or not available.
@@ -226,7 +230,8 @@ class DROGON_EXPORT Result
     /**
      * @brief Get the numeric scale for the specified column.
      *
-     * @param column Zero-based index of the column (must be less than columns()).
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
      * @return The scale (number of fractional digits) for the column, as
      *         reported by the underlying database driver, or 0 if not
      *         applicable or not available.

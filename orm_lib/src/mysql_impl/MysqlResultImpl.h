@@ -160,18 +160,18 @@ class MysqlResultImpl : public ResultImpl
                 meta.length = static_cast<int>(f.length);
 
                 meta.precision = (meta.sqlType == SqlFieldType::Decimal)
-                                    ? static_cast<int>(f.length)
-                                    : 0;
+                                     ? static_cast<int>(f.length)
+                                     : 0;
 
                 meta.scale = (meta.sqlType == SqlFieldType::Decimal)
-                                ? static_cast<int>(f.decimals)
-                                : 0;
+                                 ? static_cast<int>(f.decimals)
+                                 : 0;
 
                 std::string fieldName = f.name;
                 std::transform(fieldName.begin(),
-                            fieldName.end(),
-                            fieldName.begin(),
-                            [](unsigned char c) { return std::tolower(c); });
+                               fieldName.end(),
+                               fieldName.begin(),
+                               [](unsigned char c) { return std::tolower(c); });
 
                 (*fieldsMapPtr_)[fieldName] = i;
             }
