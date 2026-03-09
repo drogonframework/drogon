@@ -143,6 +143,10 @@ class MysqlResultImpl : public ResultImpl
         {
             columnMeta_.resize(fieldsNumber_);
 
+            fieldsMapPtr_ = std::make_shared<
+                std::unordered_map<std::string, RowSizeType>>();
+            fieldsMapPtr_->reserve(fieldsNumber_);
+
             for (unsigned int i = 0; i < fieldsNumber_; ++i)
             {
                 const MYSQL_FIELD &f = fieldArray_[i];
@@ -150,35 +154,25 @@ class MysqlResultImpl : public ResultImpl
 
                 meta.sqlType = mysqlTypeToSql(f.type, f.flags);
 
-                // mysql_field_type_to_name() may return nullptr
                 const char *typeName = mysqlFieldTypeToName(f.type, f.flags);
                 meta.typeName = typeName ? typeName : "UNKNOWN";
 
-                // VARCHAR / CHAR length
                 meta.length = static_cast<int>(f.length);
 
-                // DECIMAL(p,s): length == precision, decimals == scale
                 meta.precision = (meta.sqlType == SqlFieldType::Decimal)
-                                     ? static_cast<int>(f.length)
-                                     : 0;
+                                    ? static_cast<int>(f.length)
+                                    : 0;
 
                 meta.scale = (meta.sqlType == SqlFieldType::Decimal)
-                                 ? static_cast<int>(f.decimals)
-                                 : 0;
-            }
-        }
+                                ? static_cast<int>(f.decimals)
+                                : 0;
 
-        if (fieldArray_ && fieldsNumber_ > 0)
-        {
-            fieldsMapPtr_ = std::make_shared<
-                std::unordered_map<std::string, RowSizeType>>();
-            for (RowSizeType i = 0; i < fieldsNumber_; ++i)
-            {
-                std::string fieldName = fieldArray_[i].name;
+                std::string fieldName = f.name;
                 std::transform(fieldName.begin(),
-                               fieldName.end(),
-                               fieldName.begin(),
-                               [](unsigned char c) { return tolower(c); });
+                            fieldName.end(),
+                            fieldName.begin(),
+                            [](unsigned char c) { return std::tolower(c); });
+
                 (*fieldsMapPtr_)[fieldName] = i;
             }
         }
