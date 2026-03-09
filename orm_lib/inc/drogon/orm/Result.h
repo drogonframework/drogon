@@ -34,7 +34,6 @@ class Row;
 class ResultImpl;
 using ResultImplPtr = std::shared_ptr<ResultImpl>;
 
-// 🔥 NEW: SQL field type abstraction
 enum class SqlFieldType : uint8_t
 {
     Unknown = 0,

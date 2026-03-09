@@ -56,7 +56,7 @@ inline SqlFieldType mysqlTypeToSql(enum enum_field_types t, unsigned int flags)
 
         case MYSQL_TYPE_STRING:
             if (flags & BINARY_FLAG)
-                return SqlFieldType::Binary;  // 🔥 THIS FIXES BINARY(16)
+                return SqlFieldType::Binary;
             return SqlFieldType::Text;
 
         case MYSQL_TYPE_BLOB:

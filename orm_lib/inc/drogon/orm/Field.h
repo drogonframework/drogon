@@ -66,10 +66,6 @@ class DROGON_EXPORT Field
         return result_.getLength(row_, column_);
     }
 
-    // =========================================================
-    // 🔥 NEW METADATA APIs
-    // =========================================================
-
     SqlFieldType sqlType() const noexcept
     {
         return result_.getSqlType(column_);
