@@ -40,7 +40,7 @@ class ResultImpl : public trantor::NonCopyable
     virtual const ColumnMeta &columnMeta(SizeType column) const
     {
         (void)column;
-        static ColumnMeta dummy{};
+        static const ColumnMeta dummy{};
         return dummy;
     }
 
