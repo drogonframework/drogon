@@ -15,7 +15,9 @@
  *  {
  *    "name": "drogon::plugin::WebMCPPlugin",
  *    "config": {
- *      "path": "/mcp"
+ *      "path": "/mcp",
+ *      "server_name": "my-app",
+ *      "server_version": "1.0.0"
  *    }
  *  }
  *  @endcode
@@ -48,10 +50,14 @@
  *  HTTP endpoints (MCP Streamable-HTTP transport, 2025-03-26 spec)
  *  --------------------------------------------------------------------------
  *
- *    POST {path}   — JSON-RPC 2.0 endpoint (initialize / tools/list /
- *                    tools/call / ping …)
- *    GET  {path}   — SSE stream for server-initiated messages (optional)
- *    DELETE {path} — terminate a session
+ *    POST {path}   — JSON-RPC 2.0 endpoint; handles all MCP method calls.
+ *                    Responses are returned as a single HTTP reply (not
+ *                    streamed), because Drogon does not support chunked
+ *                    transfer encoding / true SSE push.
+ *    GET  {path}   — Returns an empty text/event-stream response (HTTP 200)
+ *                    so that MCP clients that open an SSE channel do not
+ *                    receive a 404.  No events are pushed over this channel;
+ *                    all data flows through POST responses.
  *
  *  --------------------------------------------------------------------------
  *  Supported MCP methods
@@ -64,9 +70,13 @@
  *  --------------------------------------------------------------------------
  *  Configuration fields
  *  --------------------------------------------------------------------------
- *    path          (string,  default "/mcp")   — HTTP endpoint path
- *    server_name   (string,  default "drogon") — MCP serverInfo.name
- *    server_version(string,  default "1.0.0")  — MCP serverInfo.version
+ *    path           (string, default "/mcp")    — HTTP endpoint prefix.
+ *                   Must start with '/'; a leading slash is added
+ *                   automatically if omitted.
+ *    server_name    (string, default "drogon")  — Value of serverInfo.name
+ *                   returned in the initialize response.
+ *    server_version (string, default "1.0.0")   — Value of
+ *                   serverInfo.version returned in the initialize response.
  */
 
 #pragma once
