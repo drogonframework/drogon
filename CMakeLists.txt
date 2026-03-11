@@ -255,6 +255,7 @@ endif (BUILD_BROTLI)
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
     lib/src/AccessLogger.cc
+    lib/src/WebMCPPlugin.cc
     lib/src/CacheFile.cc
     lib/src/ConfigAdapterManager.cc
     lib/src/ConfigLoader.cc
@@ -758,7 +759,8 @@ set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/Hodor.h
     lib/inc/drogon/plugins/SlashRemover.h
     lib/inc/drogon/plugins/GlobalFilters.h
-    lib/inc/drogon/plugins/PromExporter.h)
+    lib/inc/drogon/plugins/PromExporter.h
+    lib/inc/drogon/plugins/WebMCPPlugin.h)
 
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
