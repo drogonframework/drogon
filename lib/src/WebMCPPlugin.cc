@@ -11,7 +11,6 @@
 #include <json/json.h>
 
 #include <mutex>
-#include <sstream>
 #include <string>
 
 namespace drogon
@@ -22,15 +21,6 @@ namespace plugin
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-static Json::Value parseBody(const HttpRequestPtr &req, std::string &errs)
-{
-    Json::Value root;
-    Json::CharReaderBuilder builder;
-    std::istringstream ss(req->getBody());
-    Json::parseFromStream(builder, ss, &root, &errs);
-    return root;
-}
 
 static std::string jsonStr(const Json::Value &v)
 {
@@ -135,14 +125,15 @@ void WebMCPPlugin::handlePost(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&cb) const
 {
-    std::string errs;
-    Json::Value body = parseBody(req, errs);
-
-    if (!errs.empty() || body.isNull())
+    auto jsonPtr = req->getJsonObject();
+    if (!jsonPtr)
     {
-        cb(rpcError(Json::Value::null, -32700, "Parse error: " + errs));
+        cb(rpcError(Json::Value::null,
+                    -32700,
+                    "Parse error: " + req->getJsonError()));
         return;
     }
+    const Json::Value &body = *jsonPtr;
 
     // Support both single request and batch (array)
     if (body.isArray())
