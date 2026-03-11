@@ -483,6 +483,210 @@ HttpResponsePtr HttpResponse::newAsyncStreamResponse(
     return resp;
 }
 
+HttpResponsePtr HttpResponse::newOptionsResponse(
+    const HttpRequestPtr &request,
+    const std::function<bool(std::string_view)> &originValidator,
+    bool allowNullOrigin,
+    bool allowCredentials,
+    bool allowPNA,
+    std::optional<unsigned int> maxAgeSeconds,
+    const std::optional<std::set<std::string_view>> &allowedHeaders)
+{
+    if (!request || (request->method() != HttpMethod::Options))
+        return {};
+    // Allowed methods, set by drogon::HttpOptionsMiddlewareImpl
+    auto methods =
+        request->attributes()->get<std::string>("drogon.corsMethods");
+    if (methods.empty())
+        methods = "OPTIONS";
+
+    auto response = newHttpResponse(HttpStatusCode::k204NoContent,
+                                    drogon::ContentType::CT_NONE);
+    // Disable HTTP caching for OPTIONS responses
+    response->addHeader("Cache-Control"s, "no-store"s);
+    // Vary on Origin for bad proxies that do not respect no-store or want
+    // Pragma: no-cache instead
+    response->addHeader("Vary"s, "Origin");
+    // Generic OPTIONS response
+    if (!request->isCorsPreflightRequest())
+    {
+        response->addHeader("Allow", methods);
+        return response;
+    }
+
+    // CORS pre-flight response
+    std::string_view origin = drogon::utils::trim(request->getHeader("Origin"));
+    if (origin.empty())
+    {
+        response->setStatusCode(HttpStatusCode::k400BadRequest);
+        response->addHeader("X-Cors-Error",
+                            "invalid empty Origin");  // diagnose help
+        return response;
+    }
+    // Check whether null origin is allowed (file://, sandboxed iframes, etc.)
+    if (drogon::utils::ci_equals(origin, "null") && !allowNullOrigin)
+    {
+        response->setStatusCode(HttpStatusCode::k403Forbidden);
+        response->addHeader("X-Cors-Error",
+                            "null Origin not allowed");  // diagnose help
+        return response;
+    }
+    // Check whether the origin is allowed
+    if (originValidator && !originValidator(origin))
+    {
+        response->setStatusCode(HttpStatusCode::k403Forbidden);
+        response->addHeader("X-Cors-Error",
+                            "origin not allowed");  // diagnose help
+        return response;
+    }
+    // Reflect the origin (acts like '*', that is forbidden when
+    // allowCredentials is true)
+    response->addHeader("Access-Control-Allow-Origin", std::string(origin));
+    response->addHeader("Access-Control-Allow-Methods", methods);
+    // Check requested method
+    // Policy: explicitly fail preflight with 40x + diagnostic header rather
+    // than silently returning allowed methods
+    auto acrMethod = drogon::utils::trim(
+        request->getHeader("Access-Control-Request-Method"));
+    if (acrMethod.empty())
+    {
+        response->setStatusCode(HttpStatusCode::k400BadRequest);
+        response->addHeader(
+            "X-Cors-Error",
+            "invalid empty Access-Control-Request-Method");  // diagnose help
+        return response;
+    }
+    const auto allowedMethods = drogon::utils::splitStringView(methods, ",");
+    if (std::find_if(allowedMethods.begin(),
+                     allowedMethods.end(),
+                     [&acrMethod](const std::string_view &method) {
+                         return drogon::utils::ci_equals(method, acrMethod);
+                     }) == allowedMethods.end())
+    {
+        response->setStatusCode(HttpStatusCode::k405MethodNotAllowed);
+        response->addHeader("Allow",
+                            methods);  // failing CORS pre-flight with 405 must
+                                       // also return the Allow header
+        response->addHeader("X-Cors-Error",
+                            "method not allowed: "s.append(
+                                acrMethod));  // diagnose help
+        return response;
+    }
+    // Allowed headers (intersection with requested ones on success, all allowed
+    // on error) Note: Browsers typically include only non-safelisted headers in
+    // Access-Control-Request-Headers We validate strictly against
+    // allowedHeaders Policy: explicitly fail preflight with 403 + diagnostic
+    // header rather than silently omitting forbidden CORS headers
+    auto requestedHeaders = drogon::utils::splitStringViewToSet(
+        request->getHeader("Access-Control-Request-Headers"), ",");
+    if (allowedHeaders.has_value())
+    {
+        auto &validHeaders = allowedHeaders.value();
+        if (requestedHeaders.empty())  // noisy, but helpful for diagnosis
+            requestedHeaders = {validHeaders.begin(), validHeaders.end()};
+        else
+        {
+            for (auto it = requestedHeaders.begin();
+                 it != requestedHeaders.end();)
+            {
+                auto &reqHeader = *it;
+                if (std::find_if(validHeaders.begin(),
+                                 validHeaders.end(),
+                                 [&reqHeader](const std::string_view &header) {
+                                     return drogon::utils::ci_equals(
+                                         reqHeader,
+                                         drogon::utils::trim(header));
+                                 }) != validHeaders.end())
+                {
+                    ++it;
+                    continue;
+                }
+                response->setStatusCode(
+                    HttpStatusCode::k403Forbidden);  // Forbidden header
+                response->addHeader("X-Cors-Error",
+                                    "disallowed header: "s.append(
+                                        reqHeader));  // diagnose help
+                // report all allowed headers to help diagnosing what's
+                // wrong
+                requestedHeaders = {validHeaders.begin(), validHeaders.end()};
+                break;
+            }
+        }
+    }
+    if (!requestedHeaders.empty())
+        response->addHeader("Access-Control-Allow-Headers",
+                            drogon::utils::joinStringViews(requestedHeaders,
+                                                           ","));
+    if (response->statusCode() == HttpStatusCode::k403Forbidden)
+        return response;
+    // Allow credentials
+    if (allowCredentials)
+        response->addHeader("Access-Control-Allow-Credentials", "true");
+    // Chromium-based browsers require this header to allow Private Network
+    // Access requests
+    if (allowPNA &&
+        drogon::utils::ci_equals(request->getHeader(
+                                     "Access-Control-Request-Private-Network"),
+                                 "true"))
+        response->addHeader("Access-Control-Allow-Private-Network", "true");
+    // Set a max age only on success
+    if (maxAgeSeconds.has_value())
+        response->addHeader("Access-Control-Max-Age",
+                            std::to_string(maxAgeSeconds.value()));
+    return response;
+}
+
+void HttpResponse::addCorsHeaders(
+    const HttpRequestPtr &request,
+    const std::set<std::string_view> &exposedHeaders,
+    const std::optional<bool> &allowCredentials)
+{
+    if (!request || !request->isCorsRequest() ||
+        request->isCorsPreflightRequest())
+        return;
+    // add/set Origin to the Vary header (needed for cache proxies)
+    auto vary = drogon::utils::splitStringViewToSet(getHeader("Vary"), ",");
+    if (std::find_if(vary.begin(), vary.end(), [](const auto &val) {
+            return drogon::utils::ci_equals(val, "Origin");
+        }) == vary.end())
+    {
+        vary.insert("Origin");
+        addHeader("Vary", drogon::utils::joinStringViews(vary, ","));
+    }
+    // add _MISSING_ CORS header - do not overwrite existing one
+    if (headers().find("access-control-allow-origin") == headers().end())
+        addHeader("Access-Control-Allow-Origin",
+                  std::string(
+                      drogon::utils::trim(request->getHeader("Origin"))));
+    // set (or append) exposed headers
+    if (!exposedHeaders.empty())
+    {
+        auto exposed = drogon::utils::splitStringViewToSet(
+            getHeader("Access-Control-Expose-Headers"), ",");
+        bool changed = false;
+        for (auto &header : exposedHeaders)
+        {
+            if (std::find_if(exposed.begin(),
+                             exposed.end(),
+                             [&header](const auto &val) {
+                                 return drogon::utils::ci_equals(val, header);
+                             }) != exposed.end())
+                continue;
+            exposed.insert(header);
+            changed = true;
+        }
+        if (changed)
+            addHeader("Access-Control-Expose-Headers",
+                      drogon::utils::joinStringViews(exposed, ","));
+    }
+    if (!allowCredentials.has_value())
+        return;
+    if (allowCredentials.value())
+        addHeader("Access-Control-Allow-Credentials", "true");
+    else
+        removeHeader("Access-Control-Allow-Credentials");
+}
+
 void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 {
     buffer.ensureWritableBytes(128);

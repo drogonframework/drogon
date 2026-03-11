@@ -558,6 +558,141 @@ class DROGON_EXPORT HttpResponse
         return toResponse(std::forward<T>(obj));
     }
 
+    /*! \brief Create an OPTIONS or CORS pre-flight response
+     *  \details If the request is not an OPTIONS request, returns a NULL
+     *           response\n
+     *           If it is a generic OPTIONS request, returns a 204 No Content
+     *           response with the Allow header\n
+     *           If it is a CORS pre-flight request, returns a 204 No Content
+     *           response with the CORS headers set
+     *
+     *           Other status codes for CORS pre-flight answers:
+     * 			 - 400 Bad Request: if the request is malformed (missing
+     *             required headers)
+     * 			 - 403 Forbidden: if the Origin is not allowed + reason
+     *             in a X-Cors-Error header
+     * 			 - 403 Forbidden: if one of the headers in
+     *             Access-Control-Request-Headers is not allowed + reason in
+     *             a X-Cors-Error header
+     * 			 - 405 Method Not Allowed: if the requested method is
+     *             not allowed
+     *  \note CORS is a browser-side security mechanism.\n
+     *        Do not rely on Origin for authentication/authorization:
+     *        non-browser clients can spoof or omit it.\n
+     *        Enforce access control independently.
+     *  \param[in] request          Drogon (OPTIONS) request
+     *  \param[in] allowedHeaders   Set of allowed headers (for
+     *                              Access-Control-Allow-Headers header)\n
+     *                              (headers allowed by the controller path
+     *                              handler)
+     *  \param[in] originValidator  Function to validate the Origin header value
+     *                              (allow the origin or not)\n
+     *                              If allowCredentials is true, originValidator
+     *                              _SHOULD_ enforce a strict allowlist
+     *  \param[in] allowNullOrigin  Should be true to accept the "Origin: null"
+     *                              header\n
+     *                              (set for local file:// pages, sandboxed
+     *                              iframes, opaque origins, data: URIs)
+     *  \param[in] allowCredentials Should be true to add the header
+     *                              "Access-Control-Allow-Credentials: true"
+     *                              (controls whether the browser may include
+     *                              credentials such as cookies, HTTP auth, or
+     *                              client certificates)\n
+     *                              Note: Authorization (bearer) is not a
+     *                              credential header; allow it via
+     *                              allowedHeaders when needed
+     *  \param[in] allowPNA         Should be true to accept the header
+     *                              "Access-Control-Request-Private-Network"
+     *                              (when a page from a less private address
+     *                              space is trying to reach a more private
+     *                              one, like internet -> intranet)\n
+     *                              Note: specific to Chromium & derivatives
+     *                              (Edge, Opera, Brave, ...), not in Firefox
+     *                              or Safari
+     *  \param[in] maxAgeSeconds    If set, adds the "Access-Control-Max-Age"
+     *                              header with the given value (in seconds,
+     *                              how long the results of a preflight
+     *                              request can be cached by the navigator)
+     *  \returns the OPTIONS or CORS pre-flight response, or a null pointer if
+     *           the request is not an OPTIONS request
+     */
+    static HttpResponsePtr newOptionsResponse(
+        const HttpRequestPtr &request,
+        const std::function<bool(std::string_view)> &originValidator = nullptr,
+        bool allowNullOrigin = false,
+        bool allowCredentials = false,
+        bool allowPNA = true,
+        std::optional<unsigned int> maxAgeSeconds = {},
+        const std::optional<std::set<std::string_view>> &allowedHeaders =
+            std::nullopt);
+
+    /*! \copydoc newOptionsResponse(const HttpRequestPtr&,
+     *                         const std::function<bool(std::string_view)>&,
+     *                         bool, bool, bool,
+     *                         std::optional<unsigned int>,
+     *                         const std::optional<std::set<std::string_view>>&)
+     *  \remarks Helper when specifying the allowed headers, when other
+     *           parameters may be default, to avoid having to specify them all
+     */
+    inline static HttpResponsePtr newOptionsResponse(
+        const HttpRequestPtr &request,
+        const std::set<std::string_view> &allowedHeaders,
+        const std::function<bool(std::string_view)> &originValidator = nullptr,
+        bool allowNullOrigin = false,
+        bool allowCredentials = false,
+        bool allowPNA = true,
+        std::optional<unsigned int> maxAgeSeconds = {})
+    {
+        return newOptionsResponse(request,
+                                  originValidator,
+                                  allowNullOrigin,
+                                  allowCredentials,
+                                  allowPNA,
+                                  maxAgeSeconds,
+                                  allowedHeaders);
+    }
+
+    /*! \brief Add CORS headers to a response
+     *  \details Adds the CORS headers to a response for a normal request (a
+     *           CORS request but not a CORS preflight request):
+     *              - does nothing if it's an OPTIONS request, or
+     *              - if it's not a CORS request, or
+     *              - if it's a CORS preflight request
+     *           Else:
+     *              - adds Access-Control-Allow-Origin (if not yet present)
+     *              - adds Origin to the Vary header,
+     *              - sets or clears Access-Control-Allow-Credentials (if
+     *                allowCredentials is set)
+     *              - completes Access-Control-Expose-Headers
+     *  \param[in] request          Drogon request (to get Origin)
+     *  \param[in] allowCredentials If set and true, adds the
+     *                              "Access-Control-Allow-Credentials: true
+     *                              header"\n
+     *                              If set and false, removes the
+     *                              "Access-Control-Allow-Credentials" header\n
+     *                              If not set, leaves the
+     *                              "Access-Control-Allow-Credentials" header
+     *                              untouched\n
+     *                              *MUST MATCH THE newOptionsResponse()
+     *                              PRE-FLIGHT RESPONSE VALUE*
+     *  \param[in] exposedHeaders   Set of exposed headers (for
+     *                              Access-Control-Expose-Headers header)\n
+     *                              These are the headers allowed to be exposed
+     *                              to javascript by the remote browser\n
+     *                              Note: they are *APPENDED* to any already
+     *                              present in the response, they are not
+     *                              REPLACED.\n
+     *                              This allows to complete them in the
+     *                              controller path handler.\n
+     *                              If you want to REPLACE them, remove the
+     *                              header before calling this function.
+     * \note may be use both in the controller path handler and in a
+     *       pre-sending advice
+     */
+    void addCorsHeaders(const HttpRequestPtr &request,
+                        const std::set<std::string_view> &exposedHeaders = {},
+                        const std::optional<bool> &allowCredentials = {});
+
     /**
      * @brief If the response is a file response (i.e. created by
      * newFileResponse) returns the path on the filesystem. Otherwise a
