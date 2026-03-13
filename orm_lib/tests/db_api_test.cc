@@ -51,6 +51,14 @@ DROGON_TEST(DbApiTest)
         client->closeAll();
     }
 #endif
+// [dq 2025-11-19]
+#if USE_DUCKDB
+    {
+        auto client = app().getDbClient("duckdb_non_fast");
+        CHECK(client != nullptr);
+        client->closeAll();
+    }
+#endif
 
     app().getLoop()->runAfter(5, [TEST_CTX]() {});  // wait for some time
 }
