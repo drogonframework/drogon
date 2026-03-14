@@ -231,15 +231,6 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
     }
 
-    void setBody(const char *body, size_t len) override
-    {
-        bodyPtr_ = std::make_shared<HttpMessageStringViewBody>(body, len);
-        if (passThrough_)
-        {
-            addHeader("content-length", std::to_string(bodyPtr_->length()));
-        }
-    }
-
     void redirect(const std::string &url)
     {
         headers_["location"] = url;
@@ -473,6 +464,15 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
   private:
     bool allowCompression_{true};
+
+    void setBody(const char *body, size_t len) override
+    {
+        bodyPtr_ = std::make_shared<HttpMessageStringViewBody>(body, len);
+        if (passThrough_)
+        {
+            addHeader("content-length", std::to_string(bodyPtr_->length()));
+        }
+    }
 
     void setAllowCompression(bool allow) override;
 
