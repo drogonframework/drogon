@@ -14,11 +14,14 @@
 
 #pragma once
 
+#include <cctype>
 #include <string_view>
 #include <utility>
-#include <cctype>
 
-namespace drogon::utils {
+namespace drogon
+{
+namespace utils
+{
 
 /**
  * @brief Check if a string_view starts with another string_view
@@ -40,10 +43,11 @@ inline bool startsWith(const std::string_view &a, const std::string_view &b)
 }
 
 /**
- * @brief Check if a string_view starts with another string_view (case-insensitive)
+ * @brief Check if a string_view starts with another string_view
+ * (case-insensitive)
  */
 inline bool startsWithIgnoreCase(const std::string_view &a,
-                                  const std::string_view &b)
+                                 const std::string_view &b)
 {
     if (a.size() < b.size())
     {
@@ -51,7 +55,9 @@ inline bool startsWithIgnoreCase(const std::string_view &a,
     }
     for (size_t i = 0; i < b.size(); i++)
     {
-        if (::tolower(a[i]) != ::tolower(b[i]))
+        const auto lhs = std::tolower(static_cast<unsigned char>(a[i]));
+        const auto rhs = std::tolower(static_cast<unsigned char>(b[i]));
+        if (lhs != rhs)
         {
             return false;
         }
@@ -90,4 +96,5 @@ inline std::pair<std::string_view, std::string_view> parseLine(
     return std::make_pair(std::string_view(), std::string_view());
 }
 
-}  // namespace drogon::utils
+}  // namespace utils
+}  // namespace drogon

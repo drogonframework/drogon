@@ -732,6 +732,7 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/HttpConstraint.h
     lib/inc/drogon/utils/OStringStream.h
+    lib/inc/drogon/utils/ParsingUtils.h
     lib/inc/drogon/utils/Utilities.h
     lib/inc/drogon/utils/monitoring.h)
 install(FILES ${DROGON_UTIL_HEADERS}

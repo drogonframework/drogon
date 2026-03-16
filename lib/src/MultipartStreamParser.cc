@@ -17,7 +17,9 @@
 #include <drogon/utils/ParsingUtils.h>
 
 using namespace drogon;
-using namespace drogon::utils;
+using drogon::utils::parseLine;
+using drogon::utils::startsWith;
+using drogon::utils::startsWithIgnoreCase;
 
 MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
 {
