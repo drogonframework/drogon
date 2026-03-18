@@ -18,7 +18,7 @@
 #include "HttpFileImpl.h"
 #include <drogon/MultiPart.h>
 #include <drogon/utils/Utilities.h>
-#include <drogon/utils/ParsingUtils.h>
+#include "utils/ParsingUtils.h"
 #include <drogon/config.h>
 #include <algorithm>
 #include <fcntl.h>

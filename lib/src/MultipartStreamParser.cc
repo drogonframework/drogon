@@ -14,7 +14,7 @@
 
 #include "MultipartStreamParser.h"
 #include <cassert>
-#include <drogon/utils/ParsingUtils.h>
+#include "utils/ParsingUtils.h"
 
 using namespace drogon;
 using drogon::utils::parseLine;
