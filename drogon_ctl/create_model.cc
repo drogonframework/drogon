@@ -826,7 +826,42 @@ void create_model::createModel(const std::string &path,
     auto restfulApiConfig = config["restful_api_controllers"];
     auto relationships = getRelationships(config["relationships"]);
     auto convertMethods = getConvertMethods(config["convert"]);
+
     drogon::utils::createPath(path);
+
+    if (cleanupDirectory_)
+    {
+        std::cout << "Source files (*.h, *.cc) in '" << path
+                  << "' folder will be deleted, continue(y/n)?\n";
+        auto in = getchar();
+        (void)getchar();  // get the return key
+        if (in != 'Y' && in != 'y')
+        {
+            std::cout << "Abort!" << std::endl;
+            exit(0);
+        }
+
+        for (const auto &entry : std::filesystem::directory_iterator(path))
+        {
+            if (!entry.is_regular_file())
+                continue;
+
+            const std::filesystem::path &file = entry.path();
+            std::string ext = file.extension().string();
+
+            if (ext == ".h" || ext == ".cc")
+            {
+                std::cout << "Removing: " << file << "\n";
+                std::error_code ret;
+                std::filesystem::remove(file, ret);
+                if (ret)
+                {
+                    std::cerr << "Failed to remove '" << file
+                              << "' : " << ret.message() << "\n";
+                }
+            }
+        }
+    }
     if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
@@ -1228,6 +1263,17 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
             continue;
         }
         ++iter;
+    }
+
+    for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
+    {
+        if ((*iter) == "--clear-output")
+        {
+            cleanupDirectory_ = true;
+            forceOverwrite_ = true;
+            parameters.erase(iter);
+            break;
+        }
     }
 
     for (auto const &path : parameters)

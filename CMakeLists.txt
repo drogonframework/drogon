@@ -134,6 +134,8 @@ if (WIN32)
         PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/mman-win32>)
 endif (WIN32)
 
+add_library(Drogon::Drogon ALIAS ${PROJECT_NAME})
+
 if(USE_SUBMODULE)
 add_subdirectory(trantor)
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
