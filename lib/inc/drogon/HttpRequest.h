@@ -501,6 +501,37 @@ class DROGON_EXPORT HttpRequest
         return toRequest(std::forward<T>(obj));
     }
 
+    /*! \brief Check if the request is a CORS request.
+     *  \details It should contain:
+     *              - Origin: origination page
+     *  \returns true if the Origin header is present
+     */
+    inline bool isCorsRequest() const
+    {
+        // Check presence of required headers
+        return headers().find("origin") != headers().end();
+    }
+
+    /*! \brief Check if the request is a CORS pre-flight request.
+     *  \details Check if the method of the request is OPTIONS and if it is
+     *           a CORS pre-flight request.\n
+     *           It should contain:
+     *              - Origin: origination page
+     *              - Access-Control-Request-Method: method to be used in the
+     *                actual request
+     *  \returns true if the method is OPTIONS and the required CORS pre-flight
+     *                headers are present
+     */
+    inline bool isCorsPreflightRequest() const
+    {
+        if (method() != HttpMethod::Options)
+            return false;
+        // Check presence of required headers
+        return isCorsRequest() &&
+               headers().find("access-control-request-method") !=
+                   headers().end();
+    }
+
     virtual bool isOnSecureConnection() const noexcept = 0;
     virtual void setContentTypeString(const char *typeString,
                                       size_t typeStringLength) = 0;
