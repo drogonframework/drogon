@@ -14,41 +14,12 @@
 
 #include "MultipartStreamParser.h"
 #include <cassert>
+#include "utils/ParsingUtils.h"
 
 using namespace drogon;
-
-static bool startsWith(const std::string_view &a, const std::string_view &b)
-{
-    if (a.size() < b.size())
-    {
-        return false;
-    }
-    for (size_t i = 0; i < b.size(); i++)
-    {
-        if (a[i] != b[i])
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-static bool startsWithIgnoreCase(const std::string_view &a,
-                                 const std::string_view &b)
-{
-    if (a.size() < b.size())
-    {
-        return false;
-    }
-    for (size_t i = 0; i < b.size(); i++)
-    {
-        if (::tolower(a[i]) != ::tolower(b[i]))
-        {
-            return false;
-        }
-    }
-    return true;
-}
+using drogon::utils::parseLine;
+using drogon::utils::startsWith;
+using drogon::utils::startsWithIgnoreCase;
 
 MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
 {
@@ -84,32 +55,6 @@ MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
     boundary_ = contentType.substr(pos, pos2 - pos);
     dashBoundaryCrlf_ = dash_ + boundary_ + crlf_;
     crlfDashBoundary_ = crlf_ + dash_ + boundary_;
-}
-
-// TODO: same function in HttpRequestParser.cc
-static std::pair<std::string_view, std::string_view> parseLine(
-    const char *begin,
-    const char *end)
-{
-    auto p = begin;
-    while (p != end)
-    {
-        if (*p == ':')
-        {
-            if (p + 1 != end && *(p + 1) == ' ')
-            {
-                return std::make_pair(std::string_view(begin, p - begin),
-                                      std::string_view(p + 2, end - p - 2));
-            }
-            else
-            {
-                return std::make_pair(std::string_view(begin, p - begin),
-                                      std::string_view(p + 1, end - p - 1));
-            }
-        }
-        ++p;
-    }
-    return std::make_pair(std::string_view(), std::string_view());
 }
 
 void drogon::MultipartStreamParser::parse(

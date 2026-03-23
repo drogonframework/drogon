@@ -18,6 +18,7 @@
 #include "HttpFileImpl.h"
 #include <drogon/MultiPart.h>
 #include <drogon/utils/Utilities.h>
+#include "utils/ParsingUtils.h"
 #include <drogon/config.h>
 #include <algorithm>
 #include <fcntl.h>
@@ -29,6 +30,7 @@
 #endif
 
 using namespace drogon;
+using drogon::utils::parseLine;
 
 const std::vector<HttpFile> &MultiPartParser::getFiles() const
 {
@@ -85,31 +87,6 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     if (pos2 == std::string::npos)
         pos2 = contentType.size();
     return parse(req, contentType.data() + (pos + 9), pos2 - (pos + 9));
-}
-
-static std::pair<std::string_view, std::string_view> parseLine(
-    const char *begin,
-    const char *end)
-{
-    auto p = begin;
-    while (p != end)
-    {
-        if (*p == ':')
-        {
-            if (p + 1 != end && *(p + 1) == ' ')
-            {
-                return std::make_pair(std::string_view(begin, p - begin),
-                                      std::string_view(p + 2, end - p - 2));
-            }
-            else
-            {
-                return std::make_pair(std::string_view(begin, p - begin),
-                                      std::string_view(p + 1, end - p - 1));
-            }
-        }
-        ++p;
-    }
-    return std::make_pair(std::string_view(), std::string_view());
 }
 
 int MultiPartParser::parseEntity(const HttpRequestPtr &req,

@@ -331,6 +331,7 @@ set(private_headers
     lib/src/ListenerManager.h
     lib/src/PluginsManager.h
     lib/src/SessionManager.h
+    lib/src/utils/ParsingUtils.h
     lib/src/SpinLock.h
     lib/src/StaticFileRouter.h
     lib/src/TaskTimeoutFlag.h
