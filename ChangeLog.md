@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 
 - dg_ctl create models new command line option --clear-output
 
+### Changed
+
+- make utils::isBase64 support padding
 
 ## [1.9.12] - 2026-01-26
 
