@@ -155,9 +155,24 @@ bool isInteger(std::string_view str)
 
 bool isBase64(std::string_view str)
 {
-    for (auto c : str)
-        if (!isBase64(c))
+    if (str.empty())
+        return false;
+
+    size_t padding = 0;
+    if (str.back() == '=')
+        padding++;
+    if (str.size() > 1 && str[str.size() - 2] == '=')
+        padding++;
+
+    for (size_t i = 0; i < str.size() - padding; ++i)
+    {
+        if (!isBase64(str[i]))
             return false;
+    }
+
+    if (padding > 0 && (str.size() % 4 != 0))
+        return false;
+
     return true;
 }
 
