@@ -11,6 +11,7 @@
 #include <drogon/plugins/Plugin.h>
 #include <trantor/utils/AsyncFileLogger.h>
 #include <vector>
+#include <regex>
 
 namespace drogon
 {
