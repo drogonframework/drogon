@@ -13,6 +13,21 @@
 # SQLite3_FOUND   - True if sqlite3 found.
 # SQLite3_lib - The imported target library.
 
+# On Apple Silicon Macs, Homebrew installs to /opt/homebrew instead of
+# /usr/local (Intel Macs). Detect the prefix dynamically so cmake finds
+# dependencies regardless of Mac architecture.
+if(APPLE)
+    execute_process(
+        COMMAND brew --prefix sqlite3
+        OUTPUT_VARIABLE HOMEBREW_SQLITE3_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(HOMEBREW_SQLITE3_PREFIX)
+        list(APPEND CMAKE_PREFIX_PATH ${HOMEBREW_SQLITE3_PREFIX})
+    endif()
+endif()
+
 # Look for the header file.
 find_path(SQLITE3_INCLUDE_DIRS NAMES sqlite3.h)
 

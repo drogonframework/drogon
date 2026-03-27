@@ -5,6 +5,21 @@
 # HIREDIS_INCLUDE_DIRS - hiredis include directories
 # HIREDIS_LIBRARIES    - libraries need to use hiredis
 
+# On Apple Silicon Macs, Homebrew installs to /opt/homebrew instead of
+# /usr/local (Intel Macs). Detect the prefix dynamically so cmake finds
+# dependencies regardless of Mac architecture.
+if(APPLE)
+    execute_process(
+        COMMAND brew --prefix hiredis
+        OUTPUT_VARIABLE HOMEBREW_HIREDIS_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(HOMEBREW_HIREDIS_PREFIX)
+        list(APPEND CMAKE_PREFIX_PATH ${HOMEBREW_HIREDIS_PREFIX})
+    endif()
+endif()
+
 if (HIREDIS_INCLUDE_DIRS AND HIREDIS_LIBRARIES)
     set(HIREDIS_FIND_QUIETLY TRUE)
     set(Hiredis_FOUND TRUE)

@@ -21,6 +21,21 @@
 # ##############################################################################
 include(FindPackageHandleStandardArgs)
 
+# On Apple Silicon Macs, Homebrew installs to /opt/homebrew instead of
+# /usr/local (Intel Macs). Detect the prefix dynamically so cmake finds
+# dependencies regardless of Mac architecture.
+if(APPLE)
+    execute_process(
+        COMMAND brew --prefix brotli
+        OUTPUT_VARIABLE HOMEBREW_BROTLI_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(HOMEBREW_BROTLI_PREFIX)
+        list(APPEND CMAKE_PREFIX_PATH ${HOMEBREW_BROTLI_PREFIX})
+    endif()
+endif()
+
 find_path(BROTLI_INCLUDE_DIR "brotli/decode.h")
 
 find_library(BROTLICOMMON_LIBRARY NAMES brotlicommon brotlicommon-static)
