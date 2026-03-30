@@ -1460,3 +1460,6 @@ void create_model::createRestfulAPIController(
                   << std::endl;
     }
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::create_model>;

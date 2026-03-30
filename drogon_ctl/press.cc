@@ -470,3 +470,6 @@ void press::outputResults()
               << std::endl;
     exit(0);
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::press>;

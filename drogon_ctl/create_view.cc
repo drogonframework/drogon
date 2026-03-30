@@ -552,3 +552,6 @@ void create_view::newViewSourceFile(std::ofstream &file,
     file << "return templ->genText(data);\n";
     file << "}\n}\n";
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::create_view>;
