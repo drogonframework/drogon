@@ -676,7 +676,7 @@ T fromString(const std::string &p) noexcept(false)
             // throw if the whole string could not be parsed
             // ("1a" should not return 1)
             if (!ss.eof())
-                std::runtime_error("Bad type conversion");
+                throw std::runtime_error("Bad type conversion");
         }
         return value;
     }
