@@ -206,13 +206,15 @@ void SharedLibManager::managerLibs()
                             auto r = safeExec(genArgs);
                             if (r != 0)
                             {
-                                LOG_ERROR << "Failed to generate source code for "
-                                          << filename;
-                                
+                                LOG_ERROR
+                                    << "Failed to generate source code for "
+                                    << filename;
+
                                 dlStat.handle = oldHandle;
                                 return;
                             }
-                            dlStat.handle = compileAndLoadLib(srcFile, oldHandle);
+                            dlStat.handle =
+                                compileAndLoadLib(srcFile, oldHandle);
                         }
 #if defined __linux__ || defined __HAIKU__
                         dlStat.mTime = st.st_mtim;
