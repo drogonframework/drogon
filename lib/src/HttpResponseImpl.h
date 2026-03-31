@@ -22,6 +22,7 @@
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -35,6 +36,16 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     friend class HttpResponseParser;
 
   public:
+    static void sanitizeHeaderComponent(std::string &s)
+    {
+        s.erase(std::remove_if(s.begin(),
+                               s.end(),
+                               [](char c) {
+                                   return c == '\r' || c == '\n' || c == '\0';
+                               }),
+                s.end());
+    }
+
     HttpResponseImpl() : creationDate_(trantor::Date::now())
     {
     }
@@ -158,20 +169,25 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     void addHeader(std::string field, const std::string &value) override
     {
         fullHeaderString_.reset();
+        sanitizeHeaderComponent(field);
         transform(field.begin(),
                   field.end(),
                   field.begin(),
                   [](unsigned char c) { return tolower(c); });
-        headers_[std::move(field)] = value;
+        auto sanitizedValue = value;
+        sanitizeHeaderComponent(sanitizedValue);
+        headers_[std::move(field)] = std::move(sanitizedValue);
     }
 
     void addHeader(std::string field, std::string &&value) override
     {
         fullHeaderString_.reset();
+        sanitizeHeaderComponent(field);
         transform(field.begin(),
                   field.end(),
                   field.begin(),
                   [](unsigned char c) { return tolower(c); });
+        sanitizeHeaderComponent(value);
         headers_[std::move(field)] = std::move(value);
     }
 
