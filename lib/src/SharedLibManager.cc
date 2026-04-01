@@ -204,8 +204,15 @@ void SharedLibManager::managerLibs()
                             LOG_TRACE << "drogon_ctl create view " << filename
                                       << " -o " << outDir;
                             auto r = safeExec(genArgs);
-                            // TODO: handle r
-                            (void)(r);
+                            if (r != 0)
+                            {
+                                LOG_ERROR
+                                    << "Failed to generate source code for "
+                                    << filename;
+
+                                dlStat.handle = oldHandle;
+                                return;
+                            }
                             dlStat.handle =
                                 compileAndLoadLib(srcFile, oldHandle);
                         }
