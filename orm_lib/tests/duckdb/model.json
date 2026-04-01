@@ -1,0 +1,20 @@
+{
+    "rdbms": "duckdb",
+    "filename": "test_duckdb.db",
+    "name": "",
+    "host": "127.0.0.1",
+    "port": 5432,
+    "dbname": "test",
+    "user": "",
+    "passwd": "",
+    "is_fast": false,
+    "connection_number": 1,
+    "tables": [        
+    ],
+    "relationships": {
+        "enabled": false,
+        "items": [
+            
+        ]
+    }
+}
