@@ -617,7 +617,8 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         {
             responseParser->setForHeadMethod();
         }
-        if (!responseParser->parseResponse(msg))
+        if (!responseParser->parseResponse(msg,
+                                           firstReq.first->getChunkCallback()))
         {
             onError(ReqResult::BadResponse);
             bytesReceived_ += (msgSize - msg->readableBytes());
