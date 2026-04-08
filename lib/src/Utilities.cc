@@ -1035,11 +1035,20 @@ std::string gzipDecompress(const char *data, const size_t ndata)
 
 static int formatHttpDate(char *buf, size_t len, const trantor::Date &date)
 {
-    static const char *const weekdays[] =
-        {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-    static const char *const months[] =
-        {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    static const char *const weekdays[] = {
+        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    static const char *const months[] = {"Jan",
+                                         "Feb",
+                                         "Mar",
+                                         "Apr",
+                                         "May",
+                                         "Jun",
+                                         "Jul",
+                                         "Aug",
+                                         "Sep",
+                                         "Oct",
+                                         "Nov",
+                                         "Dec"};
     struct tm tm = date.tmStruct();
     return snprintf(buf,
                     len,
