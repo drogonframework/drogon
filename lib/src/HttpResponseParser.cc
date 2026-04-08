@@ -17,6 +17,8 @@
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <algorithm>
+#include <cerrno>
+#include <cstdlib>
 
 using namespace trantor;
 using namespace drogon;
@@ -129,7 +131,16 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     // LOG_INFO << "content len=" << len;
                     if (!len.empty())
                     {
-                        leftBodyLength_ = static_cast<size_t>(std::stoull(len));
+                        try
+                        {
+                            leftBodyLength_ =
+                                static_cast<size_t>(std::stoull(len));
+                        }
+                        catch (...)
+                        {
+                            // Malformed Content-Length from peer.
+                            return false;
+                        }
                         status_ = HttpResponseParseStatus::kExpectBody;
                     }
                     else
@@ -242,12 +253,17 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
             const char *crlf = buf->findCRLF();
             if (crlf)
             {
-                // chunk length line
                 std::string len(buf->peek(), crlf - buf->peek());
-                char *end;
-                currentChunkLength_ = strtol(len.c_str(), &end, 16);
-                // LOG_TRACE << "chun length : " <<
-                // currentChunkLength_;
+                errno = 0;
+                char *end = nullptr;
+                unsigned long long parsed =
+                    std::strtoull(len.c_str(), &end, 16);
+                if (errno == ERANGE || end == len.c_str() ||
+                    (*end != '\0' && *end != ';'))
+                {
+                    return false;
+                }
+                currentChunkLength_ = static_cast<size_t>(parsed);
                 if (currentChunkLength_ != 0)
                 {
                     status_ = HttpResponseParseStatus::kExpectChunkBody;
