@@ -326,9 +326,8 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
 
                 if (file.data() && file.dataLength() > 0)
                 {
-                    std::string str(static_cast<const char *>(file.data()),
-                                    file.dataLength());
-                    content.append(std::move(str));
+                    content.append((const char *)file.data(),
+                                   file.dataLength());
                 }
                 else
                 {

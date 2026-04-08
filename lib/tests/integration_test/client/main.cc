@@ -729,9 +729,9 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                         });
 
     // Test file upload from memory
-    std::string hello = "hello world!";
-    UploadFile memfile(hello.data(),
-                       hello.length(),
+    auto hello = std::make_shared<std::string>("hello world!");
+    UploadFile memfile(hello->data(),
+                       hello->length(),
                        "hello_world.txt",
                        "hellofile",
                        ContentType::CT_TEXT_PLAIN);
@@ -742,7 +742,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                                const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             REQUIRE(resp->contentType() == CT_TEXT_PLAIN);
-                            CHECK(resp->getBody() == hello);
+                            CHECK(resp->getBody() == *hello);
                         });
 
     // Test newFileResponse
