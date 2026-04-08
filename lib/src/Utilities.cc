@@ -1033,6 +1033,237 @@ std::string gzipDecompress(const char *data, const size_t ndata)
     }
 }
 
+static int formatHttpDate(char *buf, size_t len, const trantor::Date &date)
+{
+    static const char *const weekdays[] =
+        {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    static const char *const months[] =
+        {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    struct tm tm = date.tmStruct();
+    return snprintf(buf,
+                    len,
+                    "%s, %02d %s %04d %02d:%02d:%02d GMT",
+                    weekdays[tm.tm_wday],
+                    tm.tm_mday,
+                    months[tm.tm_mon],
+                    tm.tm_year + 1900,
+                    tm.tm_hour,
+                    tm.tm_min,
+                    tm.tm_sec);
+}
+
+static bool isWhitespace(char ch)
+{
+    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+}
+
+static bool consumeLiteral(std::string_view input,
+                           size_t &pos,
+                           std::string_view literal)
+{
+    if (input.substr(pos, literal.size()) != literal)
+    {
+        return false;
+    }
+    pos += literal.size();
+    return true;
+}
+
+static bool consumeWeekday(std::string_view input, size_t &pos)
+{
+    static const std::array<std::string_view, 7> weekdays = {
+        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    for (auto weekday : weekdays)
+    {
+        if (input.substr(pos, weekday.size()) == weekday)
+        {
+            pos += weekday.size();
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool consumeMonth(std::string_view input, size_t &pos, int &month)
+{
+    static const std::array<std::string_view, 12> months = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    for (size_t i = 0; i < months.size(); ++i)
+    {
+        if (input.substr(pos, months[i].size()) == months[i])
+        {
+            month = static_cast<int>(i);
+            pos += months[i].size();
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool consumeNDigits(std::string_view input,
+                           size_t &pos,
+                           size_t count,
+                           int &value)
+{
+    if (pos + count > input.size())
+    {
+        return false;
+    }
+    value = 0;
+    for (size_t i = 0; i < count; ++i)
+    {
+        char ch = input[pos + i];
+        if (ch < '0' || ch > '9')
+        {
+            return false;
+        }
+        value = value * 10 + (ch - '0');
+    }
+    pos += count;
+    return true;
+}
+
+static bool consumeDayOfMonth(std::string_view input,
+                              size_t &pos,
+                              bool allowLeadingSpace,
+                              int &day)
+{
+    if (pos + 2 > input.size())
+    {
+        return false;
+    }
+    if (allowLeadingSpace && input[pos] == ' ' &&
+        input[pos + 1] >= '0' && input[pos + 1] <= '9')
+    {
+        day = input[pos + 1] - '0';
+        pos += 2;
+        return true;
+    }
+    return consumeNDigits(input, pos, 2, day);
+}
+
+static bool consumeTime(std::string_view input,
+                        size_t &pos,
+                        int &hour,
+                        int &minute,
+                        int &second)
+{
+    return consumeNDigits(input, pos, 2, hour) &&
+           consumeLiteral(input, pos, ":") &&
+           consumeNDigits(input, pos, 2, minute) &&
+           consumeLiteral(input, pos, ":") &&
+           consumeNDigits(input, pos, 2, second);
+}
+
+static bool consumeOptionalGmtAndWhitespace(std::string_view input, size_t &pos)
+{
+    while (pos < input.size() && isWhitespace(input[pos]))
+    {
+        ++pos;
+    }
+    if (input.substr(pos, 3) == "GMT")
+    {
+        pos += 3;
+        while (pos < input.size() && isWhitespace(input[pos]))
+        {
+            ++pos;
+        }
+    }
+    return pos == input.size();
+}
+
+static bool parseHttpDate(std::string_view input, struct tm &tmptm)
+{
+    auto buildTm = [](int year,
+                      int month,
+                      int day,
+                      int hour,
+                      int minute,
+                      int second,
+                      struct tm &tm) {
+        if (month < 0 || month > 11 || day < 1 || day > 31 || hour < 0 ||
+            hour > 23 || minute < 0 || minute > 59 || second < 0 ||
+            second > 60)
+        {
+            return false;
+        }
+        tm = {};
+        tm.tm_year = year - 1900;
+        tm.tm_mon = month;
+        tm.tm_mday = day;
+        tm.tm_hour = hour;
+        tm.tm_min = minute;
+        tm.tm_sec = second;
+        tm.tm_isdst = 0;
+        return true;
+    };
+
+    int day = 0;
+    int month = 0;
+    int year = 0;
+    int hour = 0;
+    int minute = 0;
+    int second = 0;
+    size_t pos = 0;
+
+    if (consumeWeekday(input, pos) && consumeLiteral(input, pos, ", ") &&
+        consumeDayOfMonth(input, pos, false, day) &&
+        consumeLiteral(input, pos, " ") && consumeMonth(input, pos, month) &&
+        consumeLiteral(input, pos, " ") &&
+        consumeNDigits(input, pos, 4, year) &&
+        consumeLiteral(input, pos, " ") &&
+        consumeTime(input, pos, hour, minute, second) &&
+        consumeOptionalGmtAndWhitespace(input, pos))
+    {
+        return buildTm(year, month, day, hour, minute, second, tmptm);
+    }
+
+    pos = 0;
+    int shortYear = 0;
+    if (consumeWeekday(input, pos) && consumeLiteral(input, pos, ", ") &&
+        consumeDayOfMonth(input, pos, false, day) &&
+        consumeLiteral(input, pos, "-") && consumeMonth(input, pos, month) &&
+        consumeLiteral(input, pos, "-") &&
+        consumeNDigits(input, pos, 2, shortYear) &&
+        consumeLiteral(input, pos, " ") &&
+        consumeTime(input, pos, hour, minute, second) &&
+        consumeOptionalGmtAndWhitespace(input, pos))
+    {
+        year = shortYear >= 69 ? 1900 + shortYear : 2000 + shortYear;
+        return buildTm(year, month, day, hour, minute, second, tmptm);
+    }
+
+    pos = 0;
+    if (consumeWeekday(input, pos) && consumeLiteral(input, pos, ", ") &&
+        consumeDayOfMonth(input, pos, false, day) &&
+        consumeLiteral(input, pos, "-") && consumeMonth(input, pos, month) &&
+        consumeLiteral(input, pos, "-") &&
+        consumeNDigits(input, pos, 4, year) &&
+        consumeLiteral(input, pos, " ") &&
+        consumeTime(input, pos, hour, minute, second) &&
+        consumeOptionalGmtAndWhitespace(input, pos))
+    {
+        return buildTm(year, month, day, hour, minute, second, tmptm);
+    }
+
+    pos = 0;
+    if (consumeWeekday(input, pos) && consumeLiteral(input, pos, " ") &&
+        consumeMonth(input, pos, month) && consumeLiteral(input, pos, " ") &&
+        consumeDayOfMonth(input, pos, true, day) &&
+        consumeLiteral(input, pos, " ") &&
+        consumeTime(input, pos, hour, minute, second) &&
+        consumeLiteral(input, pos, " ") &&
+        consumeNDigits(input, pos, 4, year) &&
+        consumeOptionalGmtAndWhitespace(input, pos))
+    {
+        return buildTm(year, month, day, hour, minute, second, tmptm);
+    }
+
+    return false;
+}
+
 char *getHttpFullDate(const trantor::Date &date)
 {
     static thread_local int64_t lastSecond = 0;
@@ -1044,9 +1275,7 @@ char *getHttpFullDate(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    date.toCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
-                                 lastTimeString,
-                                 sizeof(lastTimeString));
+    formatHttpDate(lastTimeString, sizeof(lastTimeString), date);
     return lastTimeString;
 }
 
@@ -1054,8 +1283,6 @@ void dateToCustomFormattedString(const std::string &fmtStr,
                                  std::string &str,
                                  const trantor::Date &date)
 {
-    auto nowSecond =
-        date.microSecondsSinceEpoch() / trantor::Date::MICRO_SECONDS_PER_SEC;
     struct tm tm_LValue = date.tmStruct();
     std::stringstream Out;
     Out.imbue(std::locale{"C"});
@@ -1066,7 +1293,7 @@ void dateToCustomFormattedString(const std::string &fmtStr,
 const std::string &getHttpFullDateStr(const trantor::Date &date)
 {
     static thread_local int64_t lastSecond = 0;
-    static thread_local std::string lastTimeString(128, 0);
+    static thread_local std::string lastTimeString;
     auto nowSecond =
         date.microSecondsSinceEpoch() / trantor::Date::MICRO_SECONDS_PER_SEC;
     if (nowSecond == lastSecond)
@@ -1074,32 +1301,20 @@ const std::string &getHttpFullDateStr(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    dateToCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
-                                lastTimeString,
-                                date);
+    lastTimeString.resize(128);
+    int n = formatHttpDate(lastTimeString.data(), lastTimeString.size(), date);
+    n = std::clamp(n, 0, static_cast<int>(lastTimeString.size() - 1));
+    lastTimeString.resize(static_cast<size_t>(n));
     return lastTimeString;
 }
 
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
-    static const std::array<const char *, 4> formats = {
-        // RFC822 (default)
-        "%a, %d %b %Y %H:%M:%S",
-        // RFC 850 (deprecated)
-        "%a, %d-%b-%y %H:%M:%S",
-        // ansi asctime format
-        "%a %b %d %H:%M:%S %Y",
-        // weird RFC 850-hybrid thing that reddit uses
-        "%a, %d-%b-%Y %H:%M:%S",
-    };
     struct tm tmptm;
-    for (const char *format : formats)
+    if (parseHttpDate(httpFullDateString, tmptm))
     {
-        if (strptime(httpFullDateString.c_str(), format, &tmptm) != NULL)
-        {
-            auto epoch = timegm(&tmptm);
-            return trantor::Date(epoch * trantor::Date::MICRO_SECONDS_PER_SEC);
-        }
+        auto epoch = timegm(&tmptm);
+        return trantor::Date(epoch * trantor::Date::MICRO_SECONDS_PER_SEC);
     }
     LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
     return trantor::Date((std::numeric_limits<int64_t>::max)());
