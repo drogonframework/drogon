@@ -1033,6 +1033,35 @@ std::string gzipDecompress(const char *data, const size_t ndata)
     }
 }
 
+static int formatHttpDate(char *buf, size_t len, const trantor::Date &date)
+{
+    static const char *const weekdays[] = {
+        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    static const char *const months[] = {"Jan",
+                                         "Feb",
+                                         "Mar",
+                                         "Apr",
+                                         "May",
+                                         "Jun",
+                                         "Jul",
+                                         "Aug",
+                                         "Sep",
+                                         "Oct",
+                                         "Nov",
+                                         "Dec"};
+    struct tm tm = date.tmStruct();
+    return snprintf(buf,
+                    len,
+                    "%s, %02d %s %04d %02d:%02d:%02d GMT",
+                    weekdays[tm.tm_wday],
+                    tm.tm_mday,
+                    months[tm.tm_mon],
+                    tm.tm_year + 1900,
+                    tm.tm_hour,
+                    tm.tm_min,
+                    tm.tm_sec);
+}
+
 char *getHttpFullDate(const trantor::Date &date)
 {
     static thread_local int64_t lastSecond = 0;
@@ -1044,9 +1073,7 @@ char *getHttpFullDate(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    date.toCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
-                                 lastTimeString,
-                                 sizeof(lastTimeString));
+    formatHttpDate(lastTimeString, sizeof(lastTimeString), date);
     return lastTimeString;
 }
 
@@ -1054,8 +1081,6 @@ void dateToCustomFormattedString(const std::string &fmtStr,
                                  std::string &str,
                                  const trantor::Date &date)
 {
-    auto nowSecond =
-        date.microSecondsSinceEpoch() / trantor::Date::MICRO_SECONDS_PER_SEC;
     struct tm tm_LValue = date.tmStruct();
     std::stringstream Out;
     Out.imbue(std::locale{"C"});
@@ -1066,7 +1091,7 @@ void dateToCustomFormattedString(const std::string &fmtStr,
 const std::string &getHttpFullDateStr(const trantor::Date &date)
 {
     static thread_local int64_t lastSecond = 0;
-    static thread_local std::string lastTimeString(128, 0);
+    static thread_local std::string lastTimeString;
     auto nowSecond =
         date.microSecondsSinceEpoch() / trantor::Date::MICRO_SECONDS_PER_SEC;
     if (nowSecond == lastSecond)
@@ -1074,9 +1099,10 @@ const std::string &getHttpFullDateStr(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    dateToCustomFormattedString("%a, %d %b %Y %H:%M:%S GMT",
-                                lastTimeString,
-                                date);
+    lastTimeString.resize(128);
+    int n = formatHttpDate(lastTimeString.data(), lastTimeString.size(), date);
+    n = std::clamp(n, 0, static_cast<int>(lastTimeString.size() - 1));
+    lastTimeString.resize(static_cast<size_t>(n));
     return lastTimeString;
 }
 
