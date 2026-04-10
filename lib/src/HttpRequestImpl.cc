@@ -323,21 +323,31 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                     content.append(type.data(), type.length());
                 }
                 content.append("\r\n\r\n");
-                std::ifstream infile(utils::toNativePath(file.path()),
-                                     std::ifstream::binary);
-                if (!infile)
+
+                if (file.data() && file.dataLength() > 0)
                 {
-                    LOG_ERROR << file.path() << " not found";
+                    content.append((const char *)file.data(),
+                                   file.dataLength());
                 }
                 else
                 {
-                    std::streambuf *pbuf = infile.rdbuf();
-                    std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
-                    pbuf->pubseekoff(0, infile.beg);  // rewind
-                    std::string str;
-                    str.resize(filesize);
-                    pbuf->sgetn(&str[0], filesize);
-                    content.append(std::move(str));
+                    std::ifstream infile(utils::toNativePath(file.path()),
+                                         std::ifstream::binary);
+                    if (!infile)
+                    {
+                        LOG_ERROR << file.path() << " not found";
+                    }
+                    else
+                    {
+                        std::streambuf *pbuf = infile.rdbuf();
+                        std::streamsize filesize =
+                            pbuf->pubseekoff(0, infile.end);
+                        pbuf->pubseekoff(0, infile.beg);  // rewind
+                        std::string str;
+                        str.resize(filesize);
+                        pbuf->sgetn(&str[0], filesize);
+                        content.append(std::move(str));
+                    }
                 }
                 content.append("\r\n");
             }

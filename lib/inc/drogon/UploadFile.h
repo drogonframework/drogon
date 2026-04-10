@@ -56,6 +56,27 @@ class UploadFile
         }
     }
 
+    /// Constructor
+    /**
+     * @param data Pointer to the data
+     * @param len Data length in bytes
+     * @param fileName The file name provided to the server.
+     * @param itemName The item name on the browser form.
+     * @param contentType The Mime content type for the part
+     */
+    explicit UploadFile(const void *data,
+                        const size_t len,
+                        const std::string &fileName = "memory.bin",
+                        const std::string &itemName = "file",
+                        ContentType contentType = CT_APPLICATION_OCTET_STREAM)
+        : data_(data),
+          len_(len),
+          fileName_(fileName),
+          itemName_(itemName),
+          contentType_(contentType)
+    {
+    }
+
     const std::string &path() const
     {
         return path_;
@@ -76,7 +97,19 @@ class UploadFile
         return contentType_;
     }
 
+    const void *data() const
+    {
+        return data_;
+    }
+
+    const size_t dataLength() const
+    {
+        return len_;
+    }
+
   private:
+    const void *data_ = nullptr;
+    size_t len_ = 0;
     std::string path_;
     std::string fileName_;
     std::string itemName_;
