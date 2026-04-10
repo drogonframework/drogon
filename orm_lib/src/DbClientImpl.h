@@ -52,10 +52,13 @@ class DbClientImpl : public DbClient,
                      &&exceptCallback) override;
     std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback =
-            std::function<void(bool)>()) noexcept(false) override;
+            std::function<void(bool)>(),
+        TransactionType transType =
+            TransactionType::Deferred) noexcept(false) override;
     void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
-            &callback) override;
+            &callback,
+        TransactionType transType = TransactionType::Deferred) override;
     bool hasAvailableConnections() const noexcept override;
 
     void setTimeout(double timeout) override
@@ -78,16 +81,19 @@ class DbClientImpl : public DbClient,
 
     void makeTrans(
         const DbConnectionPtr &conn,
-        std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
+        std::function<void(const std::shared_ptr<Transaction> &)> &&callback,
+        TransactionType transType = TransactionType::Deferred);
 
     mutable std::mutex connectionsMutex_;
     std::unordered_set<DbConnectionPtr> connections_;
     std::unordered_set<DbConnectionPtr> readyConnections_;
     std::unordered_set<DbConnectionPtr> busyConnections_;
 
-    std::list<std::shared_ptr<
-        std::function<void(const std::shared_ptr<Transaction> &)>>>
-        transCallbacks_;
+    using TransCallbackEntry = std::pair<
+        std::shared_ptr<
+            std::function<void(const std::shared_ptr<Transaction> &)>>,
+        TransactionType>;
+    std::list<TransCallbackEntry> transCallbacks_;
 
     std::deque<std::shared_ptr<SqlCmd>> sqlCmdBuffer_;
 

@@ -55,10 +55,13 @@ class DbClientLockFree : public DbClient,
                      &&exceptCallback) override;
     std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback =
-            std::function<void(bool)>()) noexcept(false) override;
+            std::function<void(bool)>(),
+        TransactionType transType =
+            TransactionType::Deferred) noexcept(false) override;
     void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
-            &callback) override;
+            &callback,
+        TransactionType transType = TransactionType::Deferred) override;
     bool hasAvailableConnections() const noexcept override;
 
     void setTimeout(double timeout) override
@@ -78,15 +81,18 @@ class DbClientLockFree : public DbClient,
     std::unordered_set<DbConnectionPtr> transSet_;
     std::deque<std::shared_ptr<SqlCmd>> sqlCmdBuffer_;
 
-    std::list<std::shared_ptr<
-        std::function<void(const std::shared_ptr<Transaction> &)>>>
-        transCallbacks_;
+    using TransCallbackEntry = std::pair<
+        std::shared_ptr<
+            std::function<void(const std::shared_ptr<Transaction> &)>>,
+        TransactionType>;
+    std::list<TransCallbackEntry> transCallbacks_;
 
     double timeout_{-1.0};
 
     void makeTrans(
         const DbConnectionPtr &conn,
-        std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
+        std::function<void(const std::shared_ptr<Transaction> &)> &&callback,
+        TransactionType transType = TransactionType::Deferred);
     void execSqlWithTimeout(
         const char *sql,
         size_t sqlLength,

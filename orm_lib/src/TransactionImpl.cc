@@ -23,11 +23,13 @@ using namespace drogon;
 TransactionImpl::TransactionImpl(ClientType type,
                                  const DbConnectionPtr &connPtr,
                                  std::function<void(bool)> commitCallback,
-                                 std::function<void()> usedUpCallback)
+                                 std::function<void()> usedUpCallback,
+                                 TransactionType transType)
     : connectionPtr_(connPtr),
       usedUpCallback_(std::move(usedUpCallback)),
       loop_(connPtr->loop()),
-      commitCallback_(std::move(commitCallback))
+      commitCallback_(std::move(commitCallback)),
+      transactionType_(transType)
 {
     type_ = type;
 }
@@ -265,6 +267,22 @@ void TransactionImpl::execNewTask()
     }
 }
 
+const char *TransactionImpl::beginSql() const noexcept
+{
+    if (type_ != ClientType::Sqlite3)
+        return "begin";
+    
+    switch (transactionType_)
+    {
+        case TransactionType::Immediate:
+            return "begin immediate";
+        case TransactionType::Exclusive:
+            return "begin exclusive";
+        default:
+            return "begin";
+    }
+}
+
 void TransactionImpl::doBegin()
 {
     loop_->queueInLoop([thisPtr = shared_from_this()]() {
@@ -280,7 +298,7 @@ void TransactionImpl::doBegin()
         thisPtr->isWorking_ = true;
         thisPtr->thisPtr_ = thisPtr;
         thisPtr->connectionPtr_->execSql(
-            "begin",
+            thisPtr->beginSql(),
             0,
             {},
             {},

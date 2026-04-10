@@ -30,7 +30,8 @@ class TransactionImpl : public Transaction,
     TransactionImpl(ClientType type,
                     const DbConnectionPtr &connPtr,
                     std::function<void(bool)> commitCallback,
-                    std::function<void()> usedUpCallback);
+                    std::function<void()> usedUpCallback,
+                    TransactionType transType = TransactionType::Deferred);
     ~TransactionImpl() override;
     void rollback() override;
 
@@ -113,14 +114,16 @@ class TransactionImpl : public Transaction,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
 
     std::shared_ptr<Transaction> newTransaction(
-        const std::function<void(bool)> &) noexcept(false) override
+        const std::function<void(bool)> &,
+        TransactionType) noexcept(false) override
     {
         return shared_from_this();
     }
 
     void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
-            &callback) override
+            &callback,
+        TransactionType) override
     {
         callback(shared_from_this());
     }
@@ -149,10 +152,12 @@ class TransactionImpl : public Transaction,
     friend class DbClientImpl;
     friend class DbClientLockFree;
     void doBegin();
+    const char *beginSql() const noexcept;
     trantor::EventLoop *loop_;
     std::function<void(bool)> commitCallback_;
     std::shared_ptr<TransactionImpl> thisPtr_;
     double timeout_{-1.0};
+    TransactionType transactionType_{TransactionType::Deferred};
 };
 }  // namespace orm
 }  // namespace drogon
