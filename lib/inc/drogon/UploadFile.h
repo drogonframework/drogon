@@ -102,7 +102,7 @@ class UploadFile
         return data_;
     }
 
-    const size_t dataLength() const
+    size_t dataLength() const
     {
         return len_;
     }
