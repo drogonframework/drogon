@@ -175,8 +175,7 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
         assert(isValidSqlIdentifier(table));
         assert(isValidSqlIdentifier(onLeft));
         assert(isValidSqlIdentifier(onRight));
-        this->joins_.push_back(
-            {JoinType::InnerJoin, table, onLeft, onRight});
+        this->joins_.push_back({JoinType::InnerJoin, table, onLeft, onRight});
         return *this;
     }
 
@@ -197,8 +196,7 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
         assert(isValidSqlIdentifier(table));
         assert(isValidSqlIdentifier(onLeft));
         assert(isValidSqlIdentifier(onRight));
-        this->joins_.push_back(
-            {JoinType::LeftJoin, table, onLeft, onRight});
+        this->joins_.push_back({JoinType::LeftJoin, table, onLeft, onRight});
         return *this;
     }
 
@@ -219,8 +217,7 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
         assert(isValidSqlIdentifier(table));
         assert(isValidSqlIdentifier(onLeft));
         assert(isValidSqlIdentifier(onRight));
-        this->joins_.push_back(
-            {JoinType::RightJoin, table, onLeft, onRight});
+        this->joins_.push_back({JoinType::RightJoin, table, onLeft, onRight});
         return *this;
     }
 
@@ -241,8 +238,7 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
         assert(isValidSqlIdentifier(table));
         assert(isValidSqlIdentifier(onLeft));
         assert(isValidSqlIdentifier(onRight));
-        this->joins_.push_back(
-            {JoinType::FullJoin, table, onLeft, onRight});
+        this->joins_.push_back({JoinType::FullJoin, table, onLeft, onRight});
         return *this;
     }
 };

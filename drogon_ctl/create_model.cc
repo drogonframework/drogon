@@ -207,9 +207,10 @@ static void tryAddAutoRelationship(
     {
         Relationship autoRel(relJson);
         allRelationships.push_back(autoRel);
-        std::cout << "    Auto-detected FK: " << originalTable << "."
-                  << fkColumn << " -> " << referencedTable << "."
-                  << referencedColumn << std::endl;
+        std::cout << "    Auto-detected FK: " << originalTable
+                  << "." << fkColumn << " -> "
+                  << referencedTable << "." << referencedColumn
+                  << std::endl;
     }
     catch (const std::runtime_error &e)
     {
