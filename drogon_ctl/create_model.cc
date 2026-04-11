@@ -164,6 +164,60 @@ bool drogon_ctl::ConvertMethod::shouldConvert(const std::string &tableName,
     }  // endif
 }
 
+/**
+ * @brief Try to add an auto-detected FK relationship to the list.
+ *
+ * Checks for duplicates against existing relationships, creates a
+ * Relationship object from the FK info, and appends it to the list.
+ * User-configured relationships always take priority.
+ *
+ * @param allRelationships The mutable vector of relationships.
+ * @param originalTable The table containing the FK column.
+ * @param fkColumn The FK column name.
+ * @param referencedTable The table referenced by the FK.
+ * @param referencedColumn The column referenced by the FK.
+ * @param normalizeNames If true, apply toLower() to table names.
+ */
+static void tryAddAutoRelationship(
+    std::vector<Relationship> &allRelationships,
+    const std::string &originalTable,
+    const std::string &fkColumn,
+    const std::string &referencedTable,
+    const std::string &referencedColumn,
+    bool normalizeNames)
+{
+    for (const auto &r : allRelationships)
+    {
+        if (r.originalKey() == fkColumn &&
+            r.targetTableName() == referencedTable)
+        {
+            return;  // Already exists in user config
+        }
+    }
+    Json::Value relJson;
+    relJson["type"] = "has one";
+    relJson["original_table_name"] =
+        normalizeNames ? toLower(originalTable) : originalTable;
+    relJson["original_key"] = fkColumn;
+    relJson["target_table_name"] =
+        normalizeNames ? toLower(referencedTable) : referencedTable;
+    relJson["target_key"] = referencedColumn;
+    relJson["enable_reverse"] = true;
+    try
+    {
+        Relationship autoRel(relJson);
+        allRelationships.push_back(autoRel);
+        std::cout << "    Auto-detected FK: " << originalTable << "."
+                  << fkColumn << " -> " << referencedTable << "."
+                  << referencedColumn << std::endl;
+    }
+    catch (const std::runtime_error &e)
+    {
+        std::cerr << "Warning: Could not create auto-relationship: "
+                  << e.what() << std::endl;
+    }
+}
+
 #if USE_POSTGRESQL
 void create_model::createModelClassFromPG(
     const std::string &path,
@@ -409,6 +463,7 @@ void create_model::createModelClassFromPG(
                "AND kcu.constraint_schema = rc.constraint_schema "
                "JOIN information_schema.constraint_column_usage ccu "
                "ON rc.unique_constraint_name = ccu.constraint_name "
+               "AND rc.unique_constraint_schema = ccu.constraint_schema "
                "WHERE kcu.table_name = $1 "
                "AND kcu.table_schema = $2"
             << tableName << schema << Mode::Blocking >>
@@ -418,42 +473,12 @@ void create_model::createModelClassFromPG(
             const std::string &referencedColumn) {
             if (!isNull)
             {
-                // Check if this relationship already exists in user config
-                bool exists = false;
-                for (const auto &r : allRelationships)
-                {
-                    if (r.originalKey() == fkColumn &&
-                        r.targetTableName() == referencedTable)
-                    {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists)
-                {
-                    Json::Value relJson;
-                    relJson["type"] = "has one";
-                    relJson["original_table_name"] = tableName;
-                    relJson["original_key"] = fkColumn;
-                    relJson["target_table_name"] = referencedTable;
-                    relJson["target_key"] = referencedColumn;
-                    relJson["enable_reverse"] = true;
-                    try
-                    {
-                        Relationship autoRel(relJson);
-                        allRelationships.push_back(autoRel);
-                        std::cout << "    Auto-detected FK: "
-                                  << tableName << "." << fkColumn
-                                  << " -> " << referencedTable << "."
-                                  << referencedColumn << std::endl;
-                    }
-                    catch (const std::runtime_error &e)
-                    {
-                        std::cerr << "Warning: Could not create "
-                                     "auto-relationship: "
-                                  << e.what() << std::endl;
-                    }
-                }
+                tryAddAutoRelationship(allRelationships,
+                                       tableName,
+                                       fkColumn,
+                                       referencedTable,
+                                       referencedColumn,
+                                       true);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -675,41 +700,12 @@ void create_model::createModelClassFromMysql(
             const std::string &referencedColumn) {
             if (!isNull)
             {
-                bool exists = false;
-                for (const auto &r : allRelationships)
-                {
-                    if (r.originalKey() == fkColumn &&
-                        r.targetTableName() == referencedTable)
-                    {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists)
-                {
-                    Json::Value relJson;
-                    relJson["type"] = "has one";
-                    relJson["original_table_name"] = toLower(tableName);
-                    relJson["original_key"] = fkColumn;
-                    relJson["target_table_name"] = toLower(referencedTable);
-                    relJson["target_key"] = referencedColumn;
-                    relJson["enable_reverse"] = true;
-                    try
-                    {
-                        Relationship autoRel(relJson);
-                        allRelationships.push_back(autoRel);
-                        std::cout << "    Auto-detected FK: "
-                                  << tableName << "." << fkColumn
-                                  << " -> " << referencedTable << "."
-                                  << referencedColumn << std::endl;
-                    }
-                    catch (const std::runtime_error &e)
-                    {
-                        std::cerr << "Warning: Could not create "
-                                     "auto-relationship: "
-                                  << e.what() << std::endl;
-                    }
-                }
+                tryAddAutoRelationship(allRelationships,
+                                       tableName,
+                                       fkColumn,
+                                       referencedTable,
+                                       referencedColumn,
+                                       true);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -902,49 +898,20 @@ void create_model::createModelClassFromSqlite3(
     }
 
     // Auto-detect foreign key relationships from SQLite3 schema
-    std::string fkSql = "PRAGMA foreign_key_list(" + tableName + ");";
+    std::string fkSql =
+        "PRAGMA foreign_key_list(\"" + tableName + "\");";
     *client << fkSql << Mode::Blocking >> [&](const Result &fkResult) {
         for (auto &fkRow : fkResult)
         {
             auto referencedTable = fkRow["table"].as<std::string>();
             auto fkColumn = fkRow["from"].as<std::string>();
             auto referencedColumn = fkRow["to"].as<std::string>();
-
-            bool exists = false;
-            for (const auto &r : allRelationships)
-            {
-                if (r.originalKey() == fkColumn &&
-                    r.targetTableName() == referencedTable)
-                {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists)
-            {
-                Json::Value relJson;
-                relJson["type"] = "has one";
-                relJson["original_table_name"] = toLower(tableName);
-                relJson["original_key"] = fkColumn;
-                relJson["target_table_name"] = toLower(referencedTable);
-                relJson["target_key"] = referencedColumn;
-                relJson["enable_reverse"] = true;
-                try
-                {
-                    Relationship autoRel(relJson);
-                    allRelationships.push_back(autoRel);
-                    std::cout << "    Auto-detected FK: "
-                              << tableName << "." << fkColumn
-                              << " -> " << referencedTable << "."
-                              << referencedColumn << std::endl;
-                }
-                catch (const std::runtime_error &e)
-                {
-                    std::cerr << "Warning: Could not create "
-                                 "auto-relationship: "
-                              << e.what() << std::endl;
-                }
-            }
+            tryAddAutoRelationship(allRelationships,
+                                   tableName,
+                                   fkColumn,
+                                   referencedTable,
+                                   referencedColumn,
+                                   true);
         }
     } >> [](const DrogonDbException &e) {
         std::cerr << "Note: FK auto-detection not available: "

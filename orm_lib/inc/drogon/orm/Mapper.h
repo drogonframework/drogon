@@ -190,6 +190,9 @@ class Mapper
                          const std::string &onLeft,
                          const std::string &onRight)
     {
+        assert(isValidSqlIdentifier(table));
+        assert(isValidSqlIdentifier(onLeft));
+        assert(isValidSqlIdentifier(onRight));
         joinString_ += " INNER JOIN ";
         joinString_ += table;
         joinString_ += " ON ";
@@ -211,6 +214,9 @@ class Mapper
                         const std::string &onLeft,
                         const std::string &onRight)
     {
+        assert(isValidSqlIdentifier(table));
+        assert(isValidSqlIdentifier(onLeft));
+        assert(isValidSqlIdentifier(onRight));
         joinString_ += " LEFT JOIN ";
         joinString_ += table;
         joinString_ += " ON ";
@@ -232,6 +238,9 @@ class Mapper
                          const std::string &onLeft,
                          const std::string &onRight)
     {
+        assert(isValidSqlIdentifier(table));
+        assert(isValidSqlIdentifier(onLeft));
+        assert(isValidSqlIdentifier(onRight));
         joinString_ += " RIGHT JOIN ";
         joinString_ += table;
         joinString_ += " ON ";

@@ -90,9 +90,9 @@ inline std::string to_join_string(JoinType type)
             return "RIGHT JOIN";
         case JoinType::FullJoin:
             return "FULL JOIN";
-        default:
-            return "INNER JOIN";
     }
+    // Should never reach here
+    return "INNER JOIN";
 }
 
 struct JoinClause
@@ -102,6 +102,33 @@ struct JoinClause
     std::string onLeft;   // e.g. "users.id"
     std::string onRight;  // e.g. "posts.user_id"
 };
+
+/**
+ * @brief Validate that a string is a safe SQL identifier.
+ *
+ * Only allows alphanumeric characters, underscores, and dots
+ * (for table.column notation). This prevents SQL injection when
+ * building JOIN clauses from user-provided identifiers.
+ *
+ * @param identifier The identifier to validate.
+ * @return true if the identifier is safe to use in SQL.
+ */
+inline bool isValidSqlIdentifier(const std::string &identifier)
+{
+    if (identifier.empty())
+    {
+        return false;
+    }
+    for (auto c : identifier)
+    {
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_' &&
+            c != '.')
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 // Forward declaration to be a friend
 template <typename T, bool SelectAll, bool Single = false>
