@@ -67,6 +67,42 @@ struct Filter
     std::string value;
 };
 
+/**
+ * @brief Represents a SQL JOIN clause.
+ */
+enum class JoinType
+{
+    InnerJoin,
+    LeftJoin,
+    RightJoin,
+    FullJoin
+};
+
+inline std::string to_join_string(JoinType type)
+{
+    switch (type)
+    {
+        case JoinType::InnerJoin:
+            return "INNER JOIN";
+        case JoinType::LeftJoin:
+            return "LEFT JOIN";
+        case JoinType::RightJoin:
+            return "RIGHT JOIN";
+        case JoinType::FullJoin:
+            return "FULL JOIN";
+        default:
+            return "INNER JOIN";
+    }
+}
+
+struct JoinClause
+{
+    JoinType type;
+    std::string table;
+    std::string onLeft;   // e.g. "users.id"
+    std::string onRight;  // e.g. "posts.user_id"
+};
+
 // Forward declaration to be a friend
 template <typename T, bool SelectAll, bool Single = false>
 class TransformBuilder;
@@ -87,6 +123,7 @@ class BaseBuilder
     std::string from_;
     std::string columns_;
     std::vector<Filter> filters_;
+    std::vector<JoinClause> joins_;
     std::optional<std::uint64_t> limit_;
     std::optional<std::uint64_t> offset_;
     // The order is important; use vector<pair> instead of unordered_map and
@@ -122,6 +159,11 @@ class BaseBuilder
         };
 
         std::string sql = "select " + columns_ + " from " + from_;
+        for (const auto &join : joins_)
+        {
+            sql += " " + to_join_string(join.type) + " " + join.table +
+                   " ON " + join.onLeft + " = " + join.onRight;
+        }
         if (!filters_.empty())
         {
             sql += " where " + filters_[0].column + " " +

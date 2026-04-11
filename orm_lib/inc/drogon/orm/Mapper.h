@@ -178,6 +178,69 @@ class Mapper
      */
     Mapper<T> &forUpdate();
 
+    /**
+     * @brief Add an INNER JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &innerJoin(const std::string &table,
+                         const std::string &onLeft,
+                         const std::string &onRight)
+    {
+        joinString_ += " INNER JOIN ";
+        joinString_ += table;
+        joinString_ += " ON ";
+        joinString_ += onLeft;
+        joinString_ += " = ";
+        joinString_ += onRight;
+        return *this;
+    }
+
+    /**
+     * @brief Add a LEFT JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &leftJoin(const std::string &table,
+                        const std::string &onLeft,
+                        const std::string &onRight)
+    {
+        joinString_ += " LEFT JOIN ";
+        joinString_ += table;
+        joinString_ += " ON ";
+        joinString_ += onLeft;
+        joinString_ += " = ";
+        joinString_ += onRight;
+        return *this;
+    }
+
+    /**
+     * @brief Add a RIGHT JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &rightJoin(const std::string &table,
+                         const std::string &onLeft,
+                         const std::string &onRight)
+    {
+        joinString_ += " RIGHT JOIN ";
+        joinString_ += table;
+        joinString_ += " ON ";
+        joinString_ += onLeft;
+        joinString_ += " = ";
+        joinString_ += onRight;
+        return *this;
+    }
+
     using SingleRowCallback = std::function<void(T)>;
     using MultipleRowsCallback = std::function<void(std::vector<T>)>;
     using CountCallback = std::function<void(const size_t)>;
@@ -719,6 +782,7 @@ class Mapper
     size_t limit_{0};
     size_t offset_{0};
     std::string orderByString_;
+    std::string joinString_;
     bool forUpdate_{false};
 
     void clear()
@@ -726,6 +790,7 @@ class Mapper
         limit_ = 0;
         offset_ = 0;
         orderByString_.clear();
+        joinString_.clear();
         forUpdate_ = false;
     }
 
@@ -792,6 +857,7 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -849,6 +915,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -904,6 +971,7 @@ inline std::future<T> Mapper<T>::findFutureOne(
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -964,6 +1032,7 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -1017,6 +1086,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -1066,6 +1136,7 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -1137,6 +1208,7 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
 {
     std::string sql = "select count(*) from ";
     sql += T::tableName;
+    sql += joinString_;
     if (criteria)
     {
         sql += " where ";
@@ -1164,6 +1236,7 @@ inline void Mapper<T>::count(const Criteria &criteria,
 {
     std::string sql = "select count(*) from ";
     sql += T::tableName;
+    sql += joinString_;
     if (criteria)
     {
         sql += " where ";
@@ -1187,6 +1260,7 @@ inline std::future<size_t> Mapper<T>::countFuture(
 {
     std::string sql = "select count(*) from ";
     sql += T::tableName;
+    sql += joinString_;
     if (criteria)
     {
         sql += " where ";

@@ -157,6 +157,82 @@ class FilterBuilder : public TransformBuilder<T, SelectAll, false>
         this->filters_.push_back({column, CompareOperator::Like, pattern});
         return *this;
     }
+
+    /**
+     * @brief Add an INNER JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of the ON condition (e.g. "users.id").
+     * @param onRight The right side of the ON condition (e.g.
+     * "posts.user_id").
+     *
+     * @return FilterBuilder& The FilterBuilder itself.
+     */
+    inline FilterBuilder &innerJoin(const std::string &table,
+                                    const std::string &onLeft,
+                                    const std::string &onRight)
+    {
+        this->joins_.push_back(
+            {JoinType::InnerJoin, table, onLeft, onRight});
+        return *this;
+    }
+
+    /**
+     * @brief Add a LEFT JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of the ON condition (e.g. "users.id").
+     * @param onRight The right side of the ON condition (e.g.
+     * "posts.user_id").
+     *
+     * @return FilterBuilder& The FilterBuilder itself.
+     */
+    inline FilterBuilder &leftJoin(const std::string &table,
+                                   const std::string &onLeft,
+                                   const std::string &onRight)
+    {
+        this->joins_.push_back(
+            {JoinType::LeftJoin, table, onLeft, onRight});
+        return *this;
+    }
+
+    /**
+     * @brief Add a RIGHT JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of the ON condition (e.g. "users.id").
+     * @param onRight The right side of the ON condition (e.g.
+     * "posts.user_id").
+     *
+     * @return FilterBuilder& The FilterBuilder itself.
+     */
+    inline FilterBuilder &rightJoin(const std::string &table,
+                                    const std::string &onLeft,
+                                    const std::string &onRight)
+    {
+        this->joins_.push_back(
+            {JoinType::RightJoin, table, onLeft, onRight});
+        return *this;
+    }
+
+    /**
+     * @brief Add a FULL JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of the ON condition (e.g. "users.id").
+     * @param onRight The right side of the ON condition (e.g.
+     * "posts.user_id").
+     *
+     * @return FilterBuilder& The FilterBuilder itself.
+     */
+    inline FilterBuilder &fullJoin(const std::string &table,
+                                   const std::string &onLeft,
+                                   const std::string &onRight)
+    {
+        this->joins_.push_back(
+            {JoinType::FullJoin, table, onLeft, onRight});
+        return *this;
+    }
 };
 }  // namespace orm
 }  // namespace drogon

@@ -182,8 +182,9 @@ void create_model::createModelClassFromPG(
     data["primaryKeyName"] = "";
     data["dbName"] = dbname_;
     data["rdbms"] = std::string("postgresql");
-    data["relationships"] = relationships;
     data["convertMethods"] = convertMethods;
+    // Start with user-configured relationships (mutable copy)
+    std::vector<Relationship> allRelationships(relationships);
     if (schema != "public")
     {
         data["schema"] = schema;
@@ -397,6 +398,71 @@ void create_model::createModelClassFromPG(
         data["primaryKeyValNames"] = pkValNames;
     }
 
+    // Auto-detect foreign key relationships from database schema
+    *client << "SELECT "
+               "kcu.column_name AS fk_column, "
+               "ccu.table_name AS referenced_table, "
+               "ccu.column_name AS referenced_column "
+               "FROM information_schema.key_column_usage kcu "
+               "JOIN information_schema.referential_constraints rc "
+               "ON kcu.constraint_name = rc.constraint_name "
+               "AND kcu.constraint_schema = rc.constraint_schema "
+               "JOIN information_schema.constraint_column_usage ccu "
+               "ON rc.unique_constraint_name = ccu.constraint_name "
+               "WHERE kcu.table_name = $1 "
+               "AND kcu.table_schema = $2"
+            << tableName << schema << Mode::Blocking >>
+        [&](bool isNull,
+            const std::string &fkColumn,
+            const std::string &referencedTable,
+            const std::string &referencedColumn) {
+            if (!isNull)
+            {
+                // Check if this relationship already exists in user config
+                bool exists = false;
+                for (const auto &r : allRelationships)
+                {
+                    if (r.originalKey() == fkColumn &&
+                        r.targetTableName() == referencedTable)
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists)
+                {
+                    Json::Value relJson;
+                    relJson["type"] = "has one";
+                    relJson["original_table_name"] = tableName;
+                    relJson["original_key"] = fkColumn;
+                    relJson["target_table_name"] = referencedTable;
+                    relJson["target_key"] = referencedColumn;
+                    relJson["enable_reverse"] = true;
+                    try
+                    {
+                        Relationship autoRel(relJson);
+                        allRelationships.push_back(autoRel);
+                        std::cout << "    Auto-detected FK: "
+                                  << tableName << "." << fkColumn
+                                  << " -> " << referencedTable << "."
+                                  << referencedColumn << std::endl;
+                    }
+                    catch (const std::runtime_error &e)
+                    {
+                        std::cerr << "Warning: Could not create "
+                                     "auto-relationship: "
+                                  << e.what() << std::endl;
+                    }
+                }
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            // FK detection is best-effort; don't fail if unsupported
+            std::cerr << "Note: FK auto-detection not available: "
+                      << e.base().what() << std::endl;
+        };
+
+    data["relationships"] = allRelationships;
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + ".cc",
@@ -467,8 +533,9 @@ void create_model::createModelClassFromMysql(
     data["primaryKeyName"] = "";
     data["dbName"] = dbname_;
     data["rdbms"] = std::string("mysql");
-    data["relationships"] = relationships;
     data["convertMethods"] = convertMethods;
+    // Start with user-configured relationships (mutable copy)
+    std::vector<Relationship> allRelationships(relationships);
     std::vector<ColumnInfo> cols;
     int i = 0;
     *client << "desc `" + tableName + "`" << Mode::Blocking >>
@@ -593,6 +660,64 @@ void create_model::createModelClassFromMysql(
         data["primaryKeyType"] = pkTypes;
         data["primaryKeyValNames"] = pkValNames;
     }
+
+    // Auto-detect foreign key relationships from MySQL schema
+    *client << "SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, "
+               "REFERENCED_COLUMN_NAME "
+               "FROM information_schema.KEY_COLUMN_USAGE "
+               "WHERE TABLE_SCHEMA = DATABASE() "
+               "AND TABLE_NAME = ? "
+               "AND REFERENCED_TABLE_NAME IS NOT NULL"
+            << tableName << Mode::Blocking >>
+        [&](bool isNull,
+            const std::string &fkColumn,
+            const std::string &referencedTable,
+            const std::string &referencedColumn) {
+            if (!isNull)
+            {
+                bool exists = false;
+                for (const auto &r : allRelationships)
+                {
+                    if (r.originalKey() == fkColumn &&
+                        r.targetTableName() == referencedTable)
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists)
+                {
+                    Json::Value relJson;
+                    relJson["type"] = "has one";
+                    relJson["original_table_name"] = toLower(tableName);
+                    relJson["original_key"] = fkColumn;
+                    relJson["target_table_name"] = toLower(referencedTable);
+                    relJson["target_key"] = referencedColumn;
+                    relJson["enable_reverse"] = true;
+                    try
+                    {
+                        Relationship autoRel(relJson);
+                        allRelationships.push_back(autoRel);
+                        std::cout << "    Auto-detected FK: "
+                                  << tableName << "." << fkColumn
+                                  << " -> " << referencedTable << "."
+                                  << referencedColumn << std::endl;
+                    }
+                    catch (const std::runtime_error &e)
+                    {
+                        std::cerr << "Warning: Could not create "
+                                     "auto-relationship: "
+                                  << e.what() << std::endl;
+                    }
+                }
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << "Note: FK auto-detection not available: "
+                      << e.base().what() << std::endl;
+        };
+
+    data["relationships"] = allRelationships;
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + ".cc",
@@ -646,8 +771,9 @@ void create_model::createModelClassFromSqlite3(
     data["primaryKeyName"] = "";
     data["dbName"] = std::string("sqlite3");
     data["rdbms"] = std::string("sqlite3");
-    data["relationships"] = relationships;
     data["convertMethods"] = convertMethods;
+    // Start with user-configured relationships (mutable copy)
+    std::vector<Relationship> allRelationships(relationships);
     std::vector<ColumnInfo> cols;
     std::string sql = "PRAGMA table_info(" + tableName + ");";
     *client << sql << Mode::Blocking >> [&](const Result &result) {
@@ -774,6 +900,58 @@ void create_model::createModelClassFromSqlite3(
         data["primaryKeyType"] = pkTypes;
         data["primaryKeyValNames"] = pkValNames;
     }
+
+    // Auto-detect foreign key relationships from SQLite3 schema
+    std::string fkSql = "PRAGMA foreign_key_list(" + tableName + ");";
+    *client << fkSql << Mode::Blocking >> [&](const Result &fkResult) {
+        for (auto &fkRow : fkResult)
+        {
+            auto referencedTable = fkRow["table"].as<std::string>();
+            auto fkColumn = fkRow["from"].as<std::string>();
+            auto referencedColumn = fkRow["to"].as<std::string>();
+
+            bool exists = false;
+            for (const auto &r : allRelationships)
+            {
+                if (r.originalKey() == fkColumn &&
+                    r.targetTableName() == referencedTable)
+                {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists)
+            {
+                Json::Value relJson;
+                relJson["type"] = "has one";
+                relJson["original_table_name"] = toLower(tableName);
+                relJson["original_key"] = fkColumn;
+                relJson["target_table_name"] = toLower(referencedTable);
+                relJson["target_key"] = referencedColumn;
+                relJson["enable_reverse"] = true;
+                try
+                {
+                    Relationship autoRel(relJson);
+                    allRelationships.push_back(autoRel);
+                    std::cout << "    Auto-detected FK: "
+                              << tableName << "." << fkColumn
+                              << " -> " << referencedTable << "."
+                              << referencedColumn << std::endl;
+                }
+                catch (const std::runtime_error &e)
+                {
+                    std::cerr << "Warning: Could not create "
+                                 "auto-relationship: "
+                              << e.what() << std::endl;
+                }
+            }
+        }
+    } >> [](const DrogonDbException &e) {
+        std::cerr << "Note: FK auto-detection not available: "
+                  << e.base().what() << std::endl;
+    };
+
+    data["relationships"] = allRelationships;
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + ".cc",
