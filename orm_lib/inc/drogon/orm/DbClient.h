@@ -46,9 +46,10 @@ class DbClient;
 /// Transaction locking mode.
 enum class TransactionType
 {
-    Deferred,   ///< BEGIN — lock acquired on first write (default)
+    Deferred,  ///< BEGIN — lock acquired on first write (default)
     Immediate,  ///< BEGIN IMMEDIATE — write lock acquired upfront (SQLite only)
-    Exclusive,  ///< BEGIN EXCLUSIVE — exclusive lock acquired upfront (SQLite only)
+    Exclusive,  ///< BEGIN EXCLUSIVE — exclusive lock acquired upfront (SQLite
+                ///< only)
 };
 
 namespace internal
@@ -81,9 +82,9 @@ struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 struct [[nodiscard]] TransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
-    explicit TransactionAwaiter(DbClient *client,
-                                TransactionType transType =
-                                    TransactionType::Deferred)
+    explicit TransactionAwaiter(
+        DbClient *client,
+        TransactionType transType = TransactionType::Deferred)
         : client_(client), transType_(transType)
     {
     }
@@ -282,8 +283,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     virtual std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback =
             std::function<void(bool)>(),
-        TransactionType transType = TransactionType::Deferred) noexcept(
-        false) = 0;
+        TransactionType transType =
+            TransactionType::Deferred) noexcept(false) = 0;
 
     /// Convenience overload: create a transaction with a specific locking mode.
     std::shared_ptr<Transaction> newTransaction(
@@ -302,8 +303,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
             &callback,
         TransactionType transType = TransactionType::Deferred) = 0;
 
-    /// Convenience overload: create an async transaction with a specific locking
-    /// mode, with transType as the first argument.
+    /// Convenience overload: create an async transaction with a specific
+    /// locking mode, with transType as the first argument.
     void newTransactionAsync(
         TransactionType transType,
         const std::function<void(const std::shared_ptr<Transaction> &)>

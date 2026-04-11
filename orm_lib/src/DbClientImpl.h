@@ -89,10 +89,10 @@ class DbClientImpl : public DbClient,
     std::unordered_set<DbConnectionPtr> readyConnections_;
     std::unordered_set<DbConnectionPtr> busyConnections_;
 
-    using TransCallbackEntry = std::pair<
-        std::shared_ptr<
-            std::function<void(const std::shared_ptr<Transaction> &)>>,
-        TransactionType>;
+    using TransCallbackEntry =
+        std::pair<std::shared_ptr<std::function<void(
+                      const std::shared_ptr<Transaction> &)>>,
+                  TransactionType>;
     std::list<TransCallbackEntry> transCallbacks_;
 
     std::deque<std::shared_ptr<SqlCmd>> sqlCmdBuffer_;

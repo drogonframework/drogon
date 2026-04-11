@@ -230,7 +230,8 @@ void DbClientLockFree::execSql(
 }
 
 std::shared_ptr<Transaction> DbClientLockFree::newTransaction(
-    const std::function<void(bool)> &, TransactionType) noexcept(false)
+    const std::function<void(bool)> &,
+    TransactionType) noexcept(false)
 {
     // Don't support transaction;
     LOG_ERROR

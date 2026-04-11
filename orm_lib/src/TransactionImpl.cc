@@ -271,7 +271,7 @@ const char *TransactionImpl::beginSql() const noexcept
 {
     if (type_ != ClientType::Sqlite3)
         return "begin";
-    
+
     switch (transactionType_)
     {
         case TransactionType::Immediate:

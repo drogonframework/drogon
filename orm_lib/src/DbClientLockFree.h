@@ -81,10 +81,10 @@ class DbClientLockFree : public DbClient,
     std::unordered_set<DbConnectionPtr> transSet_;
     std::deque<std::shared_ptr<SqlCmd>> sqlCmdBuffer_;
 
-    using TransCallbackEntry = std::pair<
-        std::shared_ptr<
-            std::function<void(const std::shared_ptr<Transaction> &)>>,
-        TransactionType>;
+    using TransCallbackEntry =
+        std::pair<std::shared_ptr<std::function<void(
+                      const std::shared_ptr<Transaction> &)>>,
+                  TransactionType>;
     std::list<TransCallbackEntry> transCallbacks_;
 
     double timeout_{-1.0};

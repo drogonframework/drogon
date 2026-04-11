@@ -4075,8 +4075,7 @@ DROGON_TEST(SQLite3TransactionTypeTest)
         clientPtr->execSqlSync(
             "CREATE TABLE IF NOT EXISTS trans_type_test "
             "(id INTEGER PRIMARY KEY, val INTEGER NOT NULL)");
-        clientPtr->execSqlSync(
-            "DELETE FROM trans_type_test");
+        clientPtr->execSqlSync("DELETE FROM trans_type_test");
     }
     catch (const DrogonDbException &e)
     {
