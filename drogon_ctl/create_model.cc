@@ -178,13 +178,12 @@ bool drogon_ctl::ConvertMethod::shouldConvert(const std::string &tableName,
  * @param referencedColumn The column referenced by the FK.
  * @param normalizeNames If true, apply toLower() to table names.
  */
-static void tryAddAutoRelationship(
-    std::vector<Relationship> &allRelationships,
-    const std::string &originalTable,
-    const std::string &fkColumn,
-    const std::string &referencedTable,
-    const std::string &referencedColumn,
-    bool normalizeNames)
+static void tryAddAutoRelationship(std::vector<Relationship> &allRelationships,
+                                   const std::string &originalTable,
+                                   const std::string &fkColumn,
+                                   const std::string &referencedTable,
+                                   const std::string &referencedColumn,
+                                   bool normalizeNames)
 {
     for (const auto &r : allRelationships)
     {
@@ -207,15 +206,14 @@ static void tryAddAutoRelationship(
     {
         Relationship autoRel(relJson);
         allRelationships.push_back(autoRel);
-        std::cout << "    Auto-detected FK: " << originalTable
-                  << "." << fkColumn << " -> "
-                  << referencedTable << "." << referencedColumn
-                  << std::endl;
+        std::cout << "    Auto-detected FK: " << originalTable << "."
+                  << fkColumn << " -> " << referencedTable << "."
+                  << referencedColumn << std::endl;
     }
     catch (const std::runtime_error &e)
     {
-        std::cerr << "Warning: Could not create auto-relationship: "
-                  << e.what() << std::endl;
+        std::cerr << "Warning: Could not create auto-relationship: " << e.what()
+                  << std::endl;
     }
 }
 
@@ -899,8 +897,7 @@ void create_model::createModelClassFromSqlite3(
     }
 
     // Auto-detect foreign key relationships from SQLite3 schema
-    std::string fkSql =
-        "PRAGMA foreign_key_list(\"" + tableName + "\");";
+    std::string fkSql = "PRAGMA foreign_key_list(\"" + tableName + "\");";
     *client << fkSql << Mode::Blocking >> [&](const Result &fkResult) {
         for (auto &fkRow : fkResult)
         {

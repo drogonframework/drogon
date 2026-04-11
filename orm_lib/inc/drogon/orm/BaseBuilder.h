@@ -188,8 +188,8 @@ class BaseBuilder
         std::string sql = "select " + columns_ + " from " + from_;
         for (const auto &join : joins_)
         {
-            sql += " " + to_join_string(join.type) + " " + join.table +
-                   " ON " + join.onLeft + " = " + join.onRight;
+            sql += " " + to_join_string(join.type) + " " + join.table + " ON " +
+                   join.onLeft + " = " + join.onRight;
         }
         if (!filters_.empty())
         {
