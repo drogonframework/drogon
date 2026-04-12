@@ -626,6 +626,12 @@ const char *HttpRequestImpl::versionString() const
             result = "HTTP/1.1";
             break;
 
+#ifdef DROGON_HAS_HTTP3
+        case Version::kHttp3:
+            result = "HTTP/3";
+            break;
+#endif
+
         default:
             break;
     }
