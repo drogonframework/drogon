@@ -415,6 +415,8 @@ class DROGON_EXPORT HttpRequest
     virtual void setMethod(const HttpMethod method) = 0;
 
     /// Set the path of the request
+    /// @note The path is automatically encoded. use
+    /// @c setPathEncode(false) to avoid this.
     virtual void setPath(const std::string &path) = 0;
     virtual void setPath(std::string &&path) = 0;
 
@@ -430,6 +432,20 @@ class DROGON_EXPORT HttpRequest
 
     /// Set the parameter of the request
     virtual void setParameter(const std::string &key,
+                              const std::string &value) = 0;
+
+    /**
+     * Set the parameter to the query,
+     * regardless of the HTTP method or content type
+     */
+    virtual void setQueryParameter(const std::string &key,
+                              const std::string &value) = 0;
+    /**
+     * Set the parameter to the request body.
+     * @warning The content type must be @c application/x-www-form-urlencoded
+     * or @c multipart/form-data
+     */
+    virtual void setBodyParameter(const std::string &key,
                               const std::string &value) = 0;
 
     /// Set or get the content type
