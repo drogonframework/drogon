@@ -439,14 +439,14 @@ class DROGON_EXPORT HttpRequest
      * regardless of the HTTP method or content type
      */
     virtual void setQueryParameter(const std::string &key,
-                              const std::string &value) = 0;
+                                   const std::string &value) = 0;
     /**
      * Set the parameter to the request body.
      * @warning The content type must be @c application/x-www-form-urlencoded
      * or @c multipart/form-data
      */
     virtual void setBodyParameter(const std::string &key,
-                              const std::string &value) = 0;
+                                  const std::string &value) = 0;
 
     /// Set or get the content type
     virtual void setContentTypeCode(const ContentType type) = 0;

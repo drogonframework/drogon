@@ -408,7 +408,8 @@ class HttpRequestImpl : public HttpRequest
         parameters_[key] = value;
     }
 
-    void setQueryParameter(const std::string &key, const std::string &value) override
+    void setQueryParameter(const std::string &key,
+                           const std::string &value) override
     {
         if (!query_.empty())
         {
@@ -419,9 +420,11 @@ class HttpRequestImpl : public HttpRequest
         query_.append(utils::urlEncodeComponent(value));
     }
 
-    void setBodyParameter(const std::string &key, const std::string &value) override
+    void setBodyParameter(const std::string &key,
+                          const std::string &value) override
     {
-        assert(contentType_ == CT_MULTIPART_FORM_DATA || contentType_ == CT_APPLICATION_X_FORM);
+        assert(contentType_ == CT_MULTIPART_FORM_DATA ||
+               contentType_ == CT_APPLICATION_X_FORM);
         flagForParsingParameters_ = true;
         parameters_[key] = value;
     }
