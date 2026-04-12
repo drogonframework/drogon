@@ -14,6 +14,7 @@
 
 #pragma once
 #include <drogon/orm/Criteria.h>
+#include <drogon/orm/BaseBuilder.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/utils/Utilities.h>
 #include <string>
