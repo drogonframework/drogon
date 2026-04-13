@@ -236,7 +236,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
 
     std::string content;
-    if (passThrough_ && !query_.empty())
+    if (!query_.empty())
     {
         output->append("?");
         output->append(query_);
