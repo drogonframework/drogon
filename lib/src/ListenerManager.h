@@ -42,6 +42,9 @@ class ListenerManager : public trantor::NonCopyable
                      bool useOldTLS = false,
                      const std::vector<std::pair<std::string, std::string>>
                          &sslConfCmds = {});
+#ifndef _WIN32
+    void addUnixListener(const std::string &socketPath);
+#endif
     std::vector<trantor::InetAddress> getListeners() const;
     void createListeners(
         const std::string &globalCertFile,
@@ -101,6 +104,20 @@ class ListenerManager : public trantor::NonCopyable
 
     std::vector<ListenerInfo> listeners_;
     std::vector<std::shared_ptr<HttpServer>> servers_;
+
+#ifndef _WIN32
+    struct UnixListenerInfo
+    {
+        explicit UnixListenerInfo(std::string socketPath)
+            : socketPath_(std::move(socketPath))
+        {
+        }
+
+        std::string socketPath_;
+    };
+
+    std::vector<UnixListenerInfo> unixListeners_;
+#endif
 
     // should have value when and only when on OS that one port can only be
     // listened by one thread

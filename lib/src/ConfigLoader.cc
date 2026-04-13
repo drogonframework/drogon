@@ -646,6 +646,16 @@ static void loadListeners(const Json::Value &listeners)
     LOG_TRACE << "Has " << listeners.size() << " listeners";
     for (auto const &listener : listeners)
     {
+#ifndef _WIN32
+        // Check for Unix domain socket listener
+        auto unixSocketPath = listener.get("unix_socket", "").asString();
+        if (!unixSocketPath.empty())
+        {
+            LOG_TRACE << "Add Unix domain socket listener: " << unixSocketPath;
+            drogon::app().addListener(unixSocketPath);
+            continue;
+        }
+#endif
         auto addr = listener.get("address", "0.0.0.0").asString();
         auto port = (uint16_t)listener.get("port", 0).asUInt();
         auto useSSL = listener.get("https", false).asBool();

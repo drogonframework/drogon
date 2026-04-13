@@ -72,6 +72,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         bool useOldTLS,
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
         override;
+#ifndef _WIN32
+    HttpAppFramework &addListener(const std::string &unixSocketPath) override;
+#endif
     HttpAppFramework &setThreadNum(size_t threadNum) override;
 
     size_t getThreadNum() const override

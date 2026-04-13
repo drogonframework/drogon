@@ -871,6 +871,34 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds =
             {}) = 0;
 
+#ifndef _WIN32
+    /// Add a Unix domain socket listener.
+    /**
+     * @param unixSocketPath The filesystem path for the Unix domain socket.
+     *
+     * @note Unix domain sockets provide lower latency than TCP for same-host
+     * communication, making them ideal for reverse proxy setups (e.g.,
+     * Nginx -> Drogon). The socket file is automatically cleaned up when the
+     * server stops.
+     *
+     * This is only supported on POSIX systems (Linux, macOS, FreeBSD).
+     *
+     * Example usage:
+     * @code
+     *   app().addListener("/var/run/drogon.sock");
+     *   // Then use: curl --unix-socket /var/run/drogon.sock http://localhost/
+     * @endcode
+     *
+     * @note
+     * This operation can also be performed via the configuration file:
+     * @code
+     *   "listeners": [{"unix_socket": "/var/run/drogon.sock"}]
+     * @endcode
+     */
+    virtual HttpAppFramework &addListener(
+        const std::string &unixSocketPath) = 0;
+#endif
+
     /// Enable sessions supporting.
     /**
      * @param timeout The number of seconds which is the timeout of a session
