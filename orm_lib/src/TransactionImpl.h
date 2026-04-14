@@ -132,6 +132,8 @@ class TransactionImpl : public Transaction,
     bool isCommitedOrRolledback_{false};
     bool isWorking_{false};
     void execNewTask();
+    void releaseConnection();
+    void failBufferedCommands(const std::exception_ptr &ePtr);
 
     struct SqlCmd
     {

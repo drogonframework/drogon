@@ -246,23 +246,31 @@ void TransactionImpl::execNewTask()
     else
     {
         isWorking_ = false;
-        if (!sqlCmdBuffer_.empty())
+        failBufferedCommands(std::make_exception_ptr(
+            TransactionRollback("The transaction has been rolled back")));
+        releaseConnection();
+    }
+}
+
+void TransactionImpl::releaseConnection()
+{
+    if (usedUpCallback_)
+    {
+        usedUpCallback_();
+        usedUpCallback_ = std::function<void()>();
+    }
+}
+
+void TransactionImpl::failBufferedCommands(const std::exception_ptr &ePtr)
+{
+    std::list<SqlCmdPtr> pendingCmds;
+    pendingCmds.swap(sqlCmdBuffer_);
+    for (auto &cmd : pendingCmds)
+    {
+        cmd->thisPtr_.reset();
+        if (cmd->exceptionCallback_)
         {
-            auto exceptPtr = std::make_exception_ptr(
-                TransactionRollback("The transaction has been rolled back"));
-            for (auto const &cmd : sqlCmdBuffer_)
-            {
-                if (cmd->exceptionCallback_)
-                {
-                    cmd->exceptionCallback_(exceptPtr);
-                }
-            }
-            sqlCmdBuffer_.clear();
-        }
-        if (usedUpCallback_)
-        {
-            usedUpCallback_();
-            usedUpCallback_ = std::function<void()>();
+            cmd->exceptionCallback_(ePtr);
         }
     }
 }
@@ -304,26 +312,10 @@ void TransactionImpl::doBegin()
             {},
             {},
             [](const Result &) { LOG_TRACE << "Transaction begin!"; },
-            [thisPtr](const std::exception_ptr &ePtr) {
+            [thisPtr](const std::exception_ptr &) {
                 LOG_ERROR << "Error occurred in transaction begin";
                 thisPtr->isCommitedOrRolledback_ = true;
                 thisPtr->thisPtr_.reset();
-                if (!thisPtr->sqlCmdBuffer_.empty())
-                {
-                    for (auto const &cmd : thisPtr->sqlCmdBuffer_)
-                    {
-                        if (cmd->exceptionCallback_)
-                        {
-                            cmd->exceptionCallback_(ePtr);
-                        }
-                    }
-                    thisPtr->sqlCmdBuffer_.clear();
-                }
-                if (thisPtr->usedUpCallback_)
-                {
-                    thisPtr->usedUpCallback_();
-                    thisPtr->usedUpCallback_ = std::function<void()>();
-                }
             });
     });
 }
