@@ -205,6 +205,8 @@ void TransactionImpl::execNewTask()
 {
     loop_->assertInLoopThread();
     thisPtr_.reset();
+    if (!isWorking_)
+        return;
     assert(isWorking_);
     if (!isCommitedOrRolledback_)
     {
@@ -315,6 +317,7 @@ void TransactionImpl::doBegin()
             [thisPtr](const std::exception_ptr &) {
                 LOG_ERROR << "Error occurred in transaction begin";
                 thisPtr->isCommitedOrRolledback_ = true;
+                thisPtr->isWorking_ = false;
                 thisPtr->thisPtr_.reset();
                 thisPtr->failBufferedCommands(std::make_exception_ptr(
                     TransactionRollback("Transaction begin failed, cannot "
