@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 using namespace drogon;
 
@@ -100,23 +101,45 @@ DROGON_TEST(RequestStreamTest)
 
     LOG_INFO << "Test request stream";
 
-    std::string filePath = "./中文.txt";
-    std::ifstream file(filePath);
-    std::stringstream content;
-    REQUIRE(file.is_open());
-    content << file.rdbuf();
+    const auto uniqueSuffix = std::to_string(
+        std::chrono::steady_clock::now().time_since_epoch().count());
+    auto tempDir = std::make_shared<std::filesystem::path>(
+        std::filesystem::temp_directory_path() /
+        ("request_stream_upload_test_" + uniqueSuffix));
+    std::filesystem::create_directories(*tempDir);
+    auto tempPath = std::make_shared<std::filesystem::path>(
+        *tempDir / std::filesystem::u8path(std::string(u8"中文.txt")));
+    tempPath->make_preferred();
+    {
+        std::ofstream out(*tempPath, std::ios::binary | std::ios::trunc);
+        REQUIRE(out.is_open());
+        out << "request-stream-upload-content\nline2\n";
+    }
 
-    req = HttpRequest::newFileUploadRequest({UploadFile{filePath}});
+    std::ifstream in(*tempPath, std::ios::binary);
+    REQUIRE(in.is_open());
+    std::stringstream ss;
+    ss << in.rdbuf();
+    const auto uploadContent = std::make_shared<std::string>(ss.str());
+
+    const auto uploadPathUtf8 = std::make_shared<std::string>([&tempPath]() {
+        auto u8Path = tempPath->u8string();
+        return std::string(u8Path.begin(), u8Path.end());
+    }());
+    req = HttpRequest::newFileUploadRequest({UploadFile{*uploadPathUtf8}});
     req->setPath("/stream_upload_echo");
     req->setMethod(Post);
-    client->sendRequest(req,
-                        [TEST_CTX,
-                         content = content.str()](ReqResult r,
-                                                  const HttpResponsePtr &resp) {
-                            CHECK(r == ReqResult::Ok);
-                            CHECK(resp->statusCode() == k200OK);
-                            CHECK(resp->body() == content);
-                        });
+    client->sendRequest(
+        req,
+        [TEST_CTX, tempPath, tempDir, uploadPathUtf8, content = uploadContent](
+            ReqResult r, const HttpResponsePtr &resp) {
+            CHECK(r == ReqResult::Ok);
+            CHECK(resp->statusCode() == k200OK);
+            CHECK(resp->body() == *content);
+            std::error_code ec;
+            std::filesystem::remove(*tempPath, ec);
+            std::filesystem::remove(*tempDir, ec);
+        });
 
     checkStreamRequest(TEST_CTX,
                        client->getLoop(),
