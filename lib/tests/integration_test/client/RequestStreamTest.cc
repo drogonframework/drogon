@@ -108,7 +108,7 @@ DROGON_TEST(RequestStreamTest)
         ("request_stream_upload_test_" + uniqueSuffix));
     std::filesystem::create_directories(*tempDir);
     auto tempPath = std::make_shared<std::filesystem::path>(
-        *tempDir / std::filesystem::u8path(std::string(u8"中文.txt")));
+        *tempDir / std::filesystem::path(u8"中文.txt"));
     tempPath->make_preferred();
     {
         std::ofstream out(*tempPath, std::ios::binary | std::ios::trunc);
@@ -124,7 +124,8 @@ DROGON_TEST(RequestStreamTest)
 
     const auto uploadPathUtf8 = std::make_shared<std::string>([&tempPath]() {
         auto u8Path = tempPath->u8string();
-        return std::string(u8Path.begin(), u8Path.end());
+        return std::string(reinterpret_cast<const char *>(u8Path.data()),
+                           u8Path.size());
     }());
     req = HttpRequest::newFileUploadRequest({UploadFile{*uploadPathUtf8}});
     req->setPath("/stream_upload_echo");
