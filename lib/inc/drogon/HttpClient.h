@@ -295,63 +295,78 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      */
     virtual void setCertPath(const std::string &cert,
                              const std::string &key) = 0;
+                             const std::string &key) = 0;
 
-    /**
-     * @brief Supplies command style options for `SSL_CONF_cmd`
-     *
-     * @param sslConfCmds options for SSL_CONF_cmd
-     * @note this method has no effect if the HTTP client is communicating via
-     * unencrypted HTTP
-     * @code
-       addSSLConfigs({{"-dhparam", "/path/to/dhparam"}, {"-strict", ""}});
-     * @endcode
-     */
-    virtual void addSSLConfigs(
-        const std::vector<std::pair<std::string, std::string>>
-            &sslConfCmds) = 0;
+                             /**
+                              * @brief Supplies command style options for
+                              `SSL_CONF_cmd`
+                              *
+                              * @param sslConfCmds options for SSL_CONF_cmd
+                              * @note this method has no effect if the HTTP
+                              client is communicating via
+                              * unencrypted HTTP
+                              * @code
+                                addSSLConfigs({{"-dhparam", "/path/to/dhparam"},
+                              {"-strict", ""}});
+                              * @endcode
+                              */
+                             virtual void addSSLConfigs(
+                                 const std::vector<
+                                     std::pair<std::string, std::string>>
+                                     &sslConfCmds) = 0;
 
-    /// Create a Http client using the hostString to connect to server
-    /**
-     *
-     * @param hostString this parameter must be prefixed by 'http://' or
-     * 'https://'.
-     *
-     * Examples for hostString:
-     * @code
-       https://www.baidu.com
-       http://www.baidu.com
-       https://127.0.0.1:8080/
-       http://127.0.0.1
-       http://[::1]:8080/   //IPv6 address must be enclosed in [], rfc2732
-       @endcode
-     *
-     * @param loop If the loop parameter is set to nullptr, the client uses the
-     * HttpAppFramework's event loop, otherwise it runs in the loop identified
-     * by the parameter.
-     *
-     * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
-     * enabled for HTTPS.
-     * @note
-     *
-     * @param validateCert If the parameter is set to true, the client validates
-     * the server certificate when SSL handshaking.
-     *
-     * @note Don't add path and parameters in hostString, the request path and
-     * parameters should be set in HttpRequestPtr when calling the sendRequest()
-     * method.
-     *
-     */
-    static HttpClientPtr newHttpClient(const std::string &hostString,
-                                       trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false,
-                                       bool validateCert = true);
+                             /// Create a Http client using the hostString to
+                             /// connect to server
+                             /**
+                              *
+                              * @param hostString this parameter must be
+                              prefixed by 'http://' or
+                              * 'https://'.
+                              *
+                              * Examples for hostString:
+                              * @code
+                                https://www.baidu.com
+                                http://www.baidu.com
+                                https://127.0.0.1:8080/
+                                http://127.0.0.1
+                                http://[::1]:8080/   //IPv6 address must be
+                              enclosed in [], rfc2732
+                                @endcode
+                              *
+                              * @param loop If the loop parameter is set to
+                              nullptr, the client uses the
+                              * HttpAppFramework's event loop, otherwise it runs
+                              in the loop identified
+                              * by the parameter.
+                              *
+                              * @param useOldTLS If the parameter is set to
+                              true, the TLS1.0/1.1 are
+                              * enabled for HTTPS.
+                              * @note
+                              *
+                              * @param validateCert If the parameter is set to
+                              true, the client validates
+                              * the server certificate when SSL handshaking.
+                              *
+                              * @note Don't add path and parameters in
+                              hostString, the request path and
+                              * parameters should be set in HttpRequestPtr when
+                              calling the sendRequest()
+                              * method.
+                              *
+                              */
+                             static HttpClientPtr newHttpClient(
+                                 const std::string &hostString,
+                                 trantor::EventLoop *loop = nullptr,
+                                 bool useOldTLS = false,
+                                 bool validateCert = true);
 
-    virtual ~HttpClient()
-    {
-    }
+                             virtual ~HttpClient()
+                             {
+                             }
 
-  protected:
-    HttpClient() = default;
+                           protected:
+                             HttpClient() = default;
 };
 
 #ifdef __cpp_impl_coroutine
