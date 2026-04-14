@@ -205,6 +205,8 @@ void TransactionImpl::execNewTask()
 {
     loop_->assertInLoopThread();
     thisPtr_.reset();
+    if (!isWorking_)
+        return;
     assert(isWorking_);
     if (!isCommitedOrRolledback_)
     {
@@ -246,23 +248,31 @@ void TransactionImpl::execNewTask()
     else
     {
         isWorking_ = false;
-        if (!sqlCmdBuffer_.empty())
+        failBufferedCommands(std::make_exception_ptr(
+            TransactionRollback("The transaction has been rolled back")));
+        releaseConnection();
+    }
+}
+
+void TransactionImpl::releaseConnection()
+{
+    if (usedUpCallback_)
+    {
+        usedUpCallback_();
+        usedUpCallback_ = std::function<void()>();
+    }
+}
+
+void TransactionImpl::failBufferedCommands(const std::exception_ptr &ePtr)
+{
+    std::list<SqlCmdPtr> pendingCmds;
+    pendingCmds.swap(sqlCmdBuffer_);
+    for (auto &cmd : pendingCmds)
+    {
+        cmd->thisPtr_.reset();
+        if (cmd->exceptionCallback_)
         {
-            auto exceptPtr = std::make_exception_ptr(
-                TransactionRollback("The transaction has been rolled back"));
-            for (auto const &cmd : sqlCmdBuffer_)
-            {
-                if (cmd->exceptionCallback_)
-                {
-                    cmd->exceptionCallback_(exceptPtr);
-                }
-            }
-            sqlCmdBuffer_.clear();
-        }
-        if (usedUpCallback_)
-        {
-            usedUpCallback_();
-            usedUpCallback_ = std::function<void()>();
+            cmd->exceptionCallback_(ePtr);
         }
     }
 }
@@ -307,6 +317,12 @@ void TransactionImpl::doBegin()
             [thisPtr](const std::exception_ptr &) {
                 LOG_ERROR << "Error occurred in transaction begin";
                 thisPtr->isCommitedOrRolledback_ = true;
+                thisPtr->isWorking_ = false;
+                thisPtr->thisPtr_.reset();
+                thisPtr->failBufferedCommands(std::make_exception_ptr(
+                    TransactionRollback("Transaction begin failed, cannot "
+                                        "execute queued SQL")));
+                thisPtr->releaseConnection();
             });
     });
 }

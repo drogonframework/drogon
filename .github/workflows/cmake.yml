@@ -100,14 +100,44 @@ jobs:
       - name: Prepare for testing
         run: |
           brew services restart postgresql@14
+          for _ in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres; then
+              break
+            fi
+            sleep 1
+          done
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres
+
           brew services start mariadb
+          for _ in {1..30}; do
+            if mariadb-admin ping --silent; then
+              break
+            fi
+            sleep 1
+          done
+          mariadb-admin ping --silent
+
           brew services start redis
-          sleep 4
+          for _ in {1..30}; do
+            if redis-cli ping | grep -q PONG; then
+              break
+            fi
+            sleep 1
+          done
+          redis-cli ping | grep -q PONG
+
           mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')"
           mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'"
           mariadb -e "FLUSH PRIVILEGES"
           brew services restart mariadb
-          sleep 4
+          for _ in {1..30}; do
+            if mariadb-admin ping --silent; then
+              break
+            fi
+            sleep 1
+          done
+          mariadb-admin ping --silent
+
           psql -c 'create user postgres superuser;' postgres
 
       - name: Test
@@ -228,7 +258,13 @@ jobs:
       - name: Prepare for testing
         run: |
           sudo systemctl start postgresql
-          sleep 1
+          for _ in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres; then
+              break
+            fi
+            sleep 1
+          done
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres
           sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
 
       - name: Test
