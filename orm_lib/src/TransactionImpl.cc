@@ -316,6 +316,10 @@ void TransactionImpl::doBegin()
                 LOG_ERROR << "Error occurred in transaction begin";
                 thisPtr->isCommitedOrRolledback_ = true;
                 thisPtr->thisPtr_.reset();
+                thisPtr->failBufferedCommands(std::make_exception_ptr(
+                    TransactionRollback("Transaction begin failed, cannot "
+                                        "execute queued SQL")));
+                thisPtr->releaseConnection();
             });
     });
 }
