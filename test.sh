@@ -123,7 +123,7 @@ function do_integration_test()
     pushd "$test_root"
     update_config_line "run_as_daemon" "false" config.example.json
     update_config_line "relaunch_on_error" "false" config.example.json
-    update_config_line "number_of_threads" "0" config.example.json
+    update_config_line "number_of_threads" "1" config.example.json
     update_config_line "use_brotli" "true" config.example.json
 
     if [ "$1" = "stream_mode" ]; then
