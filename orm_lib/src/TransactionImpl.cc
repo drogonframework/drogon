@@ -304,9 +304,27 @@ void TransactionImpl::doBegin()
             {},
             {},
             [](const Result &) { LOG_TRACE << "Transaction begin!"; },
-            [thisPtr](const std::exception_ptr &) {
+            [thisPtr](const std::exception_ptr &ePtr) {
                 LOG_ERROR << "Error occurred in transaction begin";
                 thisPtr->isCommitedOrRolledback_ = true;
+                thisPtr->thisPtr_.reset();
+                thisPtr->isWorking_ = false;
+                if (!thisPtr->sqlCmdBuffer_.empty())
+                {
+                    for (auto const &cmd : thisPtr->sqlCmdBuffer_)
+                    {
+                        if (cmd->exceptionCallback_)
+                        {
+                            cmd->exceptionCallback_(ePtr);
+                        }
+                    }
+                    thisPtr->sqlCmdBuffer_.clear();
+                }
+                if (thisPtr->usedUpCallback_)
+                {
+                    thisPtr->usedUpCallback_();
+                    thisPtr->usedUpCallback_ = std::function<void()>();
+                }
             });
     });
 }
