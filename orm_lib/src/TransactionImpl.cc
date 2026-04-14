@@ -308,7 +308,6 @@ void TransactionImpl::doBegin()
                 LOG_ERROR << "Error occurred in transaction begin";
                 thisPtr->isCommitedOrRolledback_ = true;
                 thisPtr->thisPtr_.reset();
-                thisPtr->isWorking_ = false;
                 if (!thisPtr->sqlCmdBuffer_.empty())
                 {
                     for (auto const &cmd : thisPtr->sqlCmdBuffer_)
