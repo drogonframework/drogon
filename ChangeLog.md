@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Add toString method to all models
+- Vendored in UniGIS: preflight DuckDB open/connect before starting the internal worker loop and restore a valid connection loop after initialization, fixing downstream transaction-path crashes.
+- Vendored in UniGIS: avoid retaining closing SQLite3/DuckDB connection objects inside delayed reconnect callbacks, preventing self-thread `EventLoopThread` destruction and heap corruption on open failure.
 
 ## [1.9.11] - 2025-06-20
 

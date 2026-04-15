@@ -92,6 +92,11 @@ void Sqlite3Connection::init()
     loop_ = loopThread_.getLoop();
     std::call_once(once_, []() {
         auto ret = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
+        if (ret == SQLITE_MISUSE)
+        {
+            LOG_WARN << "sqlite3 is already initialized; skip SQLITE_CONFIG_MULTITHREAD";
+            return;
+        }
         if (ret != SQLITE_OK)
         {
             LOG_FATAL << "SQLITE_CONFIG_MULTITHREAD is not supported!";

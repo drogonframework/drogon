@@ -10,6 +10,16 @@ English | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md)
 ### Overview
 **Drogon** is a C++17/20 based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon from the American TV series *Game of Thrones*, which I really enjoy.
 
+## Vendored changes in this repository
+
+This repository carries a small set of downstream patches on top of upstream Drogon for UniGIS Map Service:
+
+- DuckDB connections perform a preflight open/connect before starting the internal worker loop.
+- DuckDB connections restore a valid exposed loop after successful initialization so transaction paths can safely queue work.
+- SQLite3 and DuckDB reconnect timers avoid retaining closing connection objects, preventing self-thread `EventLoopThread` destruction and related heap corruption during connection-open failures.
+
+These notes only document the local vendored behavior in this repository. Upstream Drogon remains the source of truth for general framework documentation.
+
 Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, OpenBSD, HaikuOS, and Windows. Its main features are as follows:
 
 * Use a non-blocking I/O network lib based on epoll (kqueue under macOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [TFB Tests Results](https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=composite) for more details;

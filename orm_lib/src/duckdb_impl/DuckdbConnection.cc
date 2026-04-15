@@ -16,6 +16,8 @@
 #include "DuckdbResultImpl.h"
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
+#include <chrono>
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -28,6 +30,129 @@ using namespace drogon;
 using namespace drogon::orm;
 
 std::once_flag DuckdbConnection::once_;
+
+namespace
+{
+
+bool shouldRetryWithoutWal(const std::string &errorText)
+{
+    return errorText.find("Failure while replaying WAL file") != std::string::npos ||
+           errorText.find("GetDefaultDatabase with no default database set") != std::string::npos;
+}
+
+std::string buildWalBackupPath(const std::string &filename)
+{
+    namespace fs = std::filesystem;
+    const auto stamp =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    return (fs::path(filename).string() + ".wal.broken." + std::to_string(stamp));
+}
+
+bool moveWalAside(const std::string &filename, std::string &backupPath)
+{
+    namespace fs = std::filesystem;
+    const fs::path walPath = fs::path(filename).string() + ".wal";
+    std::error_code ec;
+    if (!fs::exists(walPath, ec) || ec)
+    {
+        return false;
+    }
+
+    backupPath = buildWalBackupPath(filename);
+    fs::rename(walPath, backupPath, ec);
+    if (ec)
+    {
+        LOG_ERROR << "Failed to move DuckDB WAL aside: " << walPath.string()
+                  << ", backup=" << backupPath << ", error=" << ec.message();
+        backupPath.clear();
+        return false;
+    }
+    return true;
+}
+
+bool applyDuckdbConfig(duckdb_config config,
+                       const std::unordered_map<std::string, std::string> &configOptions)
+{
+    std::unordered_map<std::string, std::string> defaultConfig = {
+        {"access_mode", "READ_WRITE"},
+        {"threads", "4"},
+        {"max_memory", "4GB"},
+    };
+
+    for (const auto &[key, defaultValue] : defaultConfig)
+    {
+        auto it = configOptions.find(key);
+        const std::string &value =
+            (it != configOptions.end()) ? it->second : defaultValue;
+
+        if (duckdb_set_config(config, key.c_str(), value.c_str()) == DuckDBError)
+        {
+            LOG_WARN << "Failed to set DuckDB config option: " << key << "="
+                     << value;
+        }
+    }
+
+    for (const auto &[key, value] : configOptions)
+    {
+        if (defaultConfig.find(key) == defaultConfig.end())
+        {
+            if (duckdb_set_config(config, key.c_str(), value.c_str()) ==
+                DuckDBError)
+            {
+                LOG_WARN << "Failed to set DuckDB config option: " << key
+                         << "=" << value;
+            }
+        }
+    }
+    return true;
+}
+
+bool openDuckdbDatabase(
+    const std::string &filename,
+    const std::unordered_map<std::string, std::string> &configOptions,
+    duckdb_database &db,
+    std::string &errorText)
+{
+    db = nullptr;
+    duckdb_config config = nullptr;
+    if (duckdb_create_config(&config) == DuckDBError)
+    {
+        errorText = "Failed to create DuckDB config";
+        return false;
+    }
+
+    applyDuckdbConfig(config, configOptions);
+
+    char *openError = nullptr;
+    const auto state = duckdb_open_ext(filename.c_str(), &db, config, &openError);
+    duckdb_destroy_config(&config);
+    if (state == DuckDBError)
+    {
+        errorText = openError ? std::string(openError) : "Unknown DuckDB open error";
+        if (openError)
+        {
+            duckdb_free(openError);
+            openError = nullptr;
+        }
+        if (db != nullptr)
+        {
+            duckdb_close(&db);
+            db = nullptr;
+        }
+        return false;
+    }
+
+    if (openError)
+    {
+        duckdb_free(openError);
+        openError = nullptr;
+    }
+    return true;
+}
+
+}  // namespace
 
 void DuckdbConnection::onError(
     const std::string_view &sql,
@@ -64,9 +189,6 @@ DuckdbConnection::DuckdbConnection(
 
 void DuckdbConnection::init()
 {
-    loopThread_.run();
-    loop_ = loopThread_.getLoop();
-
     // Parse connection string
     auto connParams = parseConnString(connInfo_);
     std::string filename = ":memory:";  // Default to in-memory database
@@ -85,67 +207,116 @@ void DuckdbConnection::init()
         }
     }
 
-    // Initialize DuckDB in the loop thread
-    loop_->runInLoop([this, filename = std::move(filename)]() {
-        duckdb_database db;
-        duckdb_config config;
-        duckdb_connection conn;
+    auto notifyCloseAsync = [this]() {
+        auto thisPtr = shared_from_this();
+        auto closeCallback = closeCallback_;
+        std::thread([closeCallback = std::move(closeCallback), thisPtr]() {
+            closeCallback(thisPtr);
+        }).detach();
+    };
 
-        // create the configuration object
-        if (duckdb_create_config(&config) == DuckDBError) {
-            LOG_FATAL << "Failed to config DuckDB database: " << filename;
-            auto thisPtr = shared_from_this();
-            closeCallback_(thisPtr);
-            return;
-        }
-
-        // Apply configuration options
-        // Define default values
-        std::unordered_map<std::string, std::string> defaultConfig = {
-            {"access_mode", "READ_WRITE"},
-            {"threads", "4"},  // Default changed to 4 to avoid excessive resource usage
-            {"max_memory", "4GB"},
-        };
-
-        // merge defaultConfig with user-provided configOptions_
-        for (const auto& [key, defaultValue] : defaultConfig) {
-            auto it = configOptions_.find(key);
-            const std::string& value = (it != configOptions_.end()) ? it->second : defaultValue;
-
-            if (duckdb_set_config(config, key.c_str(), value.c_str()) == DuckDBError) {
-                LOG_WARN << "Failed to set DuckDB config option: " << key << "=" << value;
+    // Fail fast before starting the worker loop thread. This avoids
+    // constructing and tearing down EventLoopThread on the lock-conflict path.
+    duckdb_database preflightDb = nullptr;
+    duckdb_connection preflightConn = nullptr;
+    std::string preflightErrorText;
+    bool preflightOpened =
+        openDuckdbDatabase(filename, configOptions_, preflightDb, preflightErrorText);
+    if (!preflightOpened && shouldRetryWithoutWal(preflightErrorText))
+    {
+        std::string backupWalPath;
+        if (moveWalAside(filename, backupWalPath))
+        {
+            LOG_WARN << "DuckDB WAL replay failed, moved WAL aside and retrying: "
+                     << filename << ".wal"
+                     << ", backup=" << backupWalPath;
+            preflightOpened =
+                openDuckdbDatabase(filename, configOptions_, preflightDb, preflightErrorText);
+            if (preflightOpened)
+            {
+                LOG_WARN << "DuckDB reopened successfully after discarding WAL: "
+                         << filename;
             }
         }
+    }
 
-        // Apply other user-defined configuration options
-        for (const auto& [key, value] : configOptions_) {
-            if (defaultConfig.find(key) == defaultConfig.end()) {
-                if (duckdb_set_config(config, key.c_str(), value.c_str()) == DuckDBError) {
-                    LOG_WARN << "Failed to set DuckDB config option: " << key << "=" << value;
+    if (preflightOpened)
+    {
+        const auto state = duckdb_connect(preflightDb, &preflightConn);
+        if (state == DuckDBError)
+        {
+            preflightErrorText = "Failed to connect to DuckDB database";
+            preflightOpened = false;
+        }
+    }
+
+    if (!preflightOpened)
+    {
+        if (preflightConn != nullptr)
+        {
+            duckdb_disconnect(&preflightConn);
+        }
+        if (preflightDb != nullptr)
+        {
+            duckdb_close(&preflightDb);
+        }
+        LOG_ERROR << "Failed to open DuckDB database: " << filename
+                  << ", error=" << preflightErrorText;
+        status_ = ConnectStatus::Bad;
+        notifyCloseAsync();
+        return;
+    }
+
+    duckdb_disconnect(&preflightConn);
+    duckdb_close(&preflightDb);
+
+    loopThread_.run();
+    auto *workerLoop = loopThread_.getLoop();
+    loop_ = workerLoop;
+
+    // Initialize DuckDB in the loop thread
+    workerLoop->runInLoop(
+        [this,
+         filename = std::move(filename),
+         notifyCloseAsync = std::move(notifyCloseAsync)]() {
+        duckdb_database db = nullptr;
+        duckdb_connection conn = nullptr;
+        std::string openErrorText;
+
+        bool opened = openDuckdbDatabase(filename, configOptions_, db, openErrorText);
+        if (!opened && shouldRetryWithoutWal(openErrorText))
+        {
+            std::string backupWalPath;
+            if (moveWalAside(filename, backupWalPath))
+            {
+                LOG_WARN << "DuckDB WAL replay failed, moved WAL aside and retrying: "
+                         << filename << ".wal"
+                         << ", backup=" << backupWalPath;
+                opened = openDuckdbDatabase(filename, configOptions_, db, openErrorText);
+                if (opened)
+                {
+                    LOG_WARN << "DuckDB reopened successfully after discarding WAL: "
+                             << filename;
                 }
             }
         }
 
-        // Open database
-        //auto state = duckdb_open(filename.c_str(), &db);
-        auto state = duckdb_open_ext(filename.c_str(), &db, config, NULL);
-        if (state == DuckDBError)
+        if (!opened)
         {
-            LOG_FATAL << "Failed to open DuckDB database: " << filename;
-            duckdb_destroy_config(&config);
-            auto thisPtr = shared_from_this();
-            closeCallback_(thisPtr);
+            LOG_ERROR << "Failed to open DuckDB database: " << filename
+                      << ", error=" << openErrorText;
+            status_ = ConnectStatus::Bad;
+            notifyCloseAsync();
             return;
         }
-        duckdb_destroy_config(&config);
 
-        state = duckdb_connect(db, &conn);
+        const auto state = duckdb_connect(db, &conn);
         if (state == DuckDBError)
         {
-            LOG_FATAL << "Failed to connect to DuckDB database";
+            LOG_ERROR << "Failed to connect to DuckDB database: " << filename;
             duckdb_close(&db);
-            auto thisPtr = shared_from_this();
-            closeCallback_(thisPtr);
+            status_ = ConnectStatus::Bad;
+            notifyCloseAsync();
             return;
         }
 

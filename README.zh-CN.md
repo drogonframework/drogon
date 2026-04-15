@@ -11,6 +11,16 @@
 **Drogon**是一个基于C++17/20的Http应用框架，使用Drogon可以方便的使用C++构建各种类型的Web应用服务端程序。
 本版本库是github上[Drogon工程](https://github.com/an-tao/drogon)的镜像库。**Drogon**是作者非常喜欢的美剧《权力的游戏》中的一条龙的名字(汉译作卓耿)，和龙有关但并不是dragon的误写，为了不至于引起不必要的误会这里说明一下。
 
+## 本仓库的本地补丁说明
+
+本仓库 vendored 的 Drogon 在上游基础上带有少量的本地补丁：
+
+- DuckDB 连接会在启动内部 worker loop 之前先做数据库预打开与连接预检。
+- DuckDB 连接初始化成功后会恢复有效的对外 `loop_`，保证事务路径可以安全投递任务。
+- SQLite3 与 DuckDB 的重连定时器不再延迟持有正在关闭的连接对象，避免连接打开失败时出现自线程 `EventLoopThread` 析构与后续堆损坏。
+
+这里的说明仅用于记录本仓库的 vendored 行为，Drogon 的通用使用方式和正式文档仍以上游工程为准。
+
 Drogon是一个跨平台框架，它支持Linux，也支持macOS、FreeBSD，OpenBSD，HaikuOS，和Windows。它的主要特点如下：
 
 * 网络层使用基于epoll(macOS/FreeBSD下是kqueue)的非阻塞IO框架，提供高并发、高性能的网络IO。详细请见[TFB Tests Results](https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=composite)；

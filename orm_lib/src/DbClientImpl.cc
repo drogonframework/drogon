@@ -81,16 +81,16 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
                            ClientType type,
                            const std::unordered_map<std::string, std::string> &configOptions)
     : numberOfConnections_(connNum),
-#if LIBPQ_SUPPORTS_BATCH_MODE
-      autoBatch_(false),
-#endif
-      configOptions_(configOptions),  // Store configuration options
       loops_(type == ClientType::Sqlite3 || type == ClientType::DuckDB
                  ? 1
                  : (connNum < std::thread::hardware_concurrency()
                         ? connNum
                         : std::thread::hardware_concurrency()),
-             "DbLoop")
+             "DbLoop"),
+#if LIBPQ_SUPPORTS_BATCH_MODE
+      autoBatch_(false),
+#endif
+      configOptions_(configOptions)  // Store configuration options
 {
     type_ = type;
     connectionInfo_ = connInfo;
@@ -483,14 +483,27 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
                    thisPtr->connections_.end());
             thisPtr->connections_.erase(closeConnPtr);
         }
-        // Reconnect after 1 second
-        auto loop = closeConnPtr->loop();
-        loop->runAfter(1, [weakPtr, loop, closeConnPtr] {
+        // DuckDB/SQLite connection objects own their own EventLoopThread.
+        // Do not hold the closing connection in the delayed reconnect
+        // callback, otherwise the last reference may be released on that
+        // connection's own loop thread and trigger a self-join in
+        // EventLoopThread destruction.
+        auto *reconnectLoop = closeConnPtr->loop();
+        trantor::EventLoop *newConnLoop = reconnectLoop;
+        if (thisPtr->type_ == ClientType::DuckDB ||
+            thisPtr->type_ == ClientType::Sqlite3)
+        {
+            reconnectLoop = thisPtr->loops_.getLoop(0);
+            newConnLoop = nullptr;
+        }
+        if (!reconnectLoop)
+            return;
+        // Reconnect after 1 second.
+        reconnectLoop->runAfter(1, [weakPtr, newConnLoop] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
-
-            thisPtr->newConnection(loop);
+            thisPtr->newConnection(newConnLoop);
         });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
