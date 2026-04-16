@@ -491,6 +491,8 @@ class HttpRequestImpl : public HttpRequest
         return sessionPtr_;
     }
 
+    const SessionPtr &getOrCreateSession() override;
+
     void setSession(const SessionPtr &session)
     {
         sessionPtr_ = session;
