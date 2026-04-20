@@ -66,6 +66,35 @@ class DROGON_EXPORT Field
         return result_.getLength(row_, column_);
     }
 
+    SqlFieldType sqlType() const noexcept
+    {
+        return result_.getSqlType(column_);
+    }
+
+    /// SQL type name (VARCHAR, INT, DECIMAL, etc.)
+    const std::string &typeName() const noexcept
+    {
+        return result_.getTypeName(column_);
+    }
+
+    /// Character length (VARCHAR)
+    int columnLength() const noexcept
+    {
+        return result_.getColumnLength(column_);
+    }
+
+    /// Numeric precision (DECIMAL / NUMERIC)
+    int precision() const noexcept
+    {
+        return result_.getPrecision(column_);
+    }
+
+    /// Numeric scale (DECIMAL / NUMERIC)
+    int scale() const noexcept
+    {
+        return result_.getScale(column_);
+    }
+
     /// Convert to a type T value
     template <typename T>
     T as() const

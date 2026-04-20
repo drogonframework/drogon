@@ -465,10 +465,6 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
   private:
     bool allowCompression_{true};
 
-    void setAllowCompression(bool allow) override;
-
-    bool allowCompression() const override;
-
     void setBody(const char *body, size_t len) override
     {
         bodyPtr_ = std::make_shared<HttpMessageStringViewBody>(body, len);
@@ -477,6 +473,10 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
+
+    void setAllowCompression(bool allow) override;
+
+    bool allowCompression() const override;
 
     void setContentTypeCodeAndCustomString(ContentType type,
                                            const char *typeString,

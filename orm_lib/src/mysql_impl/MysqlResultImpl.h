@@ -26,6 +26,106 @@ namespace drogon
 {
 namespace orm
 {
+
+inline SqlFieldType mysqlTypeToSql(enum enum_field_types t, unsigned int flags)
+{
+    switch (t)
+    {
+        case MYSQL_TYPE_TINY:
+        case MYSQL_TYPE_SHORT:
+        case MYSQL_TYPE_LONG:
+            return SqlFieldType::Int;
+
+        case MYSQL_TYPE_LONGLONG:
+            return SqlFieldType::BigInt;
+
+        case MYSQL_TYPE_FLOAT:
+            return SqlFieldType::Float;
+
+        case MYSQL_TYPE_DOUBLE:
+            return SqlFieldType::Double;
+
+        case MYSQL_TYPE_NEWDECIMAL:
+            return SqlFieldType::Decimal;
+
+        case MYSQL_TYPE_VAR_STRING:
+        case MYSQL_TYPE_VARCHAR:
+            if (flags & BINARY_FLAG)
+                return SqlFieldType::Binary;
+            return SqlFieldType::Varchar;
+
+        case MYSQL_TYPE_STRING:
+            if (flags & BINARY_FLAG)
+                return SqlFieldType::Binary;
+            return SqlFieldType::Text;
+
+        case MYSQL_TYPE_BLOB:
+            return SqlFieldType::Blob;
+
+        case MYSQL_TYPE_DATE:
+            return SqlFieldType::Date;
+
+        case MYSQL_TYPE_TIME:
+            return SqlFieldType::Time;
+
+        case MYSQL_TYPE_DATETIME:
+        case MYSQL_TYPE_TIMESTAMP:
+            return SqlFieldType::DateTime;
+
+        case MYSQL_TYPE_JSON:
+            return SqlFieldType::Json;
+
+        default:
+            return SqlFieldType::Unknown;
+    }
+}
+
+inline const char *mysqlFieldTypeToName(enum enum_field_types t,
+                                        unsigned int flags)
+{
+    switch (t)
+    {
+        case MYSQL_TYPE_TINY:
+            return "TINYINT";
+        case MYSQL_TYPE_SHORT:
+            return "SMALLINT";
+        case MYSQL_TYPE_LONG:
+            return "INT";
+        case MYSQL_TYPE_LONGLONG:
+            return "BIGINT";
+        case MYSQL_TYPE_FLOAT:
+            return "FLOAT";
+        case MYSQL_TYPE_DOUBLE:
+            return "DOUBLE";
+        case MYSQL_TYPE_NEWDECIMAL:
+            return "DECIMAL";
+
+        case MYSQL_TYPE_VAR_STRING:
+        case MYSQL_TYPE_VARCHAR:
+            return (flags & BINARY_FLAG) ? "VARBINARY" : "VARCHAR";
+
+        case MYSQL_TYPE_STRING:
+            return (flags & BINARY_FLAG) ? "BINARY" : "CHAR";
+
+        case MYSQL_TYPE_BLOB:
+            return (flags & BINARY_FLAG) ? "BLOB" : "TEXT";
+
+        case MYSQL_TYPE_DATE:
+            return "DATE";
+        case MYSQL_TYPE_TIME:
+            return "TIME";
+        case MYSQL_TYPE_DATETIME:
+            return "DATETIME";
+        case MYSQL_TYPE_TIMESTAMP:
+            return "TIMESTAMP";
+        case MYSQL_TYPE_JSON:
+            return "JSON";
+
+        default:
+            return "UNKNOWN";
+    }
+}
+
 class MysqlResultImpl : public ResultImpl
 {
   public:
@@ -39,20 +139,44 @@ class MysqlResultImpl : public ResultImpl
           affectedRows_(affectedRows),
           insertId_(insertId)
     {
-        if (fieldsNumber_ > 0)
+        if (fieldArray_ && fieldsNumber_ > 0)
         {
+            columnMeta_.resize(fieldsNumber_);
+
             fieldsMapPtr_ = std::make_shared<
                 std::unordered_map<std::string, RowSizeType>>();
-            for (RowSizeType i = 0; i < fieldsNumber_; ++i)
+            fieldsMapPtr_->reserve(fieldsNumber_);
+
+            for (unsigned int i = 0; i < fieldsNumber_; ++i)
             {
-                std::string fieldName = fieldArray_[i].name;
+                const MYSQL_FIELD &f = fieldArray_[i];
+                auto &meta = columnMeta_[i];
+
+                meta.sqlType = mysqlTypeToSql(f.type, f.flags);
+
+                const char *typeName = mysqlFieldTypeToName(f.type, f.flags);
+                meta.typeName = typeName ? typeName : "UNKNOWN";
+
+                meta.length = static_cast<int>(f.length);
+
+                meta.precision = (meta.sqlType == SqlFieldType::Decimal)
+                                     ? static_cast<int>(f.length)
+                                     : 0;
+
+                meta.scale = (meta.sqlType == SqlFieldType::Decimal)
+                                 ? static_cast<int>(f.decimals)
+                                 : 0;
+
+                std::string fieldName = f.name;
                 std::transform(fieldName.begin(),
                                fieldName.end(),
                                fieldName.begin(),
-                               [](unsigned char c) { return tolower(c); });
+                               [](unsigned char c) { return std::tolower(c); });
+
                 (*fieldsMapPtr_)[fieldName] = i;
             }
         }
+
         if (size() > 0)
         {
             rowsPtr_ = std::make_shared<
@@ -80,11 +204,13 @@ class MysqlResultImpl : public ResultImpl
     bool isNull(SizeType row, RowSizeType column) const override;
     FieldSizeType getLength(SizeType row, RowSizeType column) const override;
     unsigned long long insertId() const noexcept override;
+    const ColumnMeta &columnMeta(SizeType column) const override;
 
   private:
     const std::shared_ptr<MYSQL_RES> result_;
     const Result::SizeType rowsNumber_;
     const MYSQL_FIELD *fieldArray_;
+    std::vector<ColumnMeta> columnMeta_;
     const Result::RowSizeType fieldsNumber_;
     const SizeType affectedRows_;
     const unsigned long long insertId_;
