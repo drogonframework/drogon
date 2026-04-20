@@ -31,6 +31,13 @@ static const std::string cxx_val_end = "]]";
 static const std::string sub_view_start = "<%view";
 static const std::string sub_view_end = "%>";
 
+enum class CspLeftTagType
+{
+    kCxxStart,
+    kCxxValStart,
+    kSubViewStart,
+};
+
 using namespace drogon_ctl;
 
 static std::string &replace_all(std::string &str,
@@ -52,6 +59,17 @@ static std::string &replace_all(std::string &str,
             break;
     }
     return str;
+}
+
+static std::string parseParameter(const std::string &str)
+{
+    auto iter = str.begin();
+    while (iter != str.end() && *iter == ' ')
+        ++iter;
+    auto keyword_start = iter;
+    while (iter != str.end() && *iter != ' ')
+        ++iter;
+    return std::string(keyword_start, iter);
 }
 
 static void parseCxxLine(std::ofstream &oSrcFile,
@@ -103,12 +121,57 @@ static void outputSubView(std::ofstream &oSrcFile,
     oSrcFile << "}\n";
 }
 
+static void outputText(std::ofstream &oSrcFile,
+                       std::string line,
+                       const std::string &streamName,
+                       bool do_return)
+{
+    if (line.length() == 0)
+    {
+        if (do_return)
+        {
+            oSrcFile << "\t" << streamName << " << \"\\n\";\n";
+        }
+        return;
+    }
+
+    replace_all(line, "\\", "\\\\");
+    replace_all(line, "\"", "\\\"");
+    oSrcFile << "\t" << streamName << " << \"" << line;
+
+    if (do_return)
+        oSrcFile << "\\n\";\n";
+    else
+        oSrcFile << "\";\n";
+}
+
+// if not found, second will be std::string::npos.
+static std::pair<CspLeftTagType, std::string::size_type> findFirstLeftTag(
+    const std::string &text)
+{
+    std::pair<CspLeftTagType, std::string::size_type> find_result[] = {
+        {CspLeftTagType{}, std::string::npos},
+        {CspLeftTagType::kCxxStart, text.find(cxx_lang)},
+        {CspLeftTagType::kCxxValStart, text.find(cxx_val_start)},
+        {CspLeftTagType::kSubViewStart, text.find(sub_view_start)}};
+
+    auto &result = find_result[0];
+    for (const auto &i : find_result)
+    {
+        if (i.second == std::string::npos)
+            continue;
+
+        if (i.second <= result.second)
+            result = i;
+    }
+    return result;
+}
+
 static void parseLine(std::ofstream &oSrcFile,
                       std::string &line,
                       const std::string &streamName,
                       const std::string &viewDataName,
-                      int &cxx_flag,
-                      int returnFlag = 1)
+                      int &cxx_flag)
 {
     std::string::size_type pos(0);
     // std::cout<<line<<"("<<line.length()<<")\n";
@@ -116,112 +179,77 @@ static void parseLine(std::ofstream &oSrcFile,
     {
         line.resize(line.length() - 1);
     }
-    if (line.length() == 0)
-    {
-        // std::cout<<"blank line!"<<std::endl;
-        // std::cout<<streamName<<"<<\"\\n\";\n";
-        if (returnFlag && !cxx_flag)
-            oSrcFile << streamName << "<<\"\\n\";\n";
-        return;
-    }
+
     if (cxx_flag == 0)
     {
-        // find cxx lang begin
-        if ((pos = line.find(cxx_lang)) != std::string::npos)
+        auto found_tag = findFirstLeftTag(line);
+        pos = found_tag.second;
+
+        if (found_tag.second == std::string::npos)
         {
+            // line dose not contain any tags
+            outputText(oSrcFile, line, streamName, true);
+            return;
+        }
+
+        if (pos != 0)
+        {
+            // [output here]<%c++ ...%>...
             std::string oldLine = line.substr(0, pos);
-            if (oldLine.length() > 0)
-                parseLine(
-                    oSrcFile, oldLine, streamName, viewDataName, cxx_flag, 0);
+            outputText(oSrcFile, oldLine, streamName, false);
+        }
+
+        if (found_tag.first == CspLeftTagType::kCxxStart)
+        {
             std::string newLine = line.substr(pos + cxx_lang.length());
             cxx_flag = 1;
             if (newLine.length() > 0)
-                parseLine(oSrcFile,
-                          newLine,
+                parseLine(
+                    oSrcFile, newLine, streamName, viewDataName, cxx_flag);
+        }
+        else if (found_tag.first == CspLeftTagType::kCxxValStart)
+        {
+            std::string newLine = line.substr(pos + cxx_val_start.length());
+            if ((pos = newLine.find(cxx_val_end)) != std::string::npos)
+            {
+                std::string keyName = newLine.substr(0, pos);
+                auto i = keyName.begin();
+                outputVal(oSrcFile,
                           streamName,
                           viewDataName,
-                          cxx_flag,
-                          returnFlag);
-        }
-        else
-        {
-            if ((pos = line.find(cxx_val_start)) != std::string::npos)
-            {
-                std::string oldLine = line.substr(0, pos);
+                          parseParameter(keyName));
+
+                std::string tailLine =
+                    newLine.substr(pos + cxx_val_end.length());
                 parseLine(
-                    oSrcFile, oldLine, streamName, viewDataName, cxx_flag, 0);
-                std::string newLine = line.substr(pos + cxx_val_start.length());
-                if ((pos = newLine.find(cxx_val_end)) != std::string::npos)
-                {
-                    std::string keyName = newLine.substr(0, pos);
-                    auto iter = keyName.begin();
-                    while (iter != keyName.end() && *iter == ' ')
-                        ++iter;
-                    auto iterEnd = iter;
-                    while (iterEnd != keyName.end() && *iterEnd != ' ')
-                        ++iterEnd;
-                    keyName = std::string(iter, iterEnd);
-                    outputVal(oSrcFile, streamName, viewDataName, keyName);
-                    std::string tailLine =
-                        newLine.substr(pos + cxx_val_end.length());
-                    parseLine(oSrcFile,
-                              tailLine,
-                              streamName,
-                              viewDataName,
-                              cxx_flag,
-                              returnFlag);
-                }
-                else
-                {
-                    std::cerr << "format err!" << std::endl;
-                    exit(1);
-                }
-            }
-            else if ((pos = line.find(sub_view_start)) != std::string::npos)
-            {
-                std::string oldLine = line.substr(0, pos);
-                parseLine(
-                    oSrcFile, oldLine, streamName, viewDataName, cxx_flag, 0);
-                std::string newLine =
-                    line.substr(pos + sub_view_start.length());
-                if ((pos = newLine.find(sub_view_end)) != std::string::npos)
-                {
-                    std::string keyName = newLine.substr(0, pos);
-                    auto iter = keyName.begin();
-                    while (iter != keyName.end() && *iter == ' ')
-                        ++iter;
-                    auto iterEnd = iter;
-                    while (iterEnd != keyName.end() && *iterEnd != ' ')
-                        ++iterEnd;
-                    keyName = std::string(iter, iterEnd);
-                    outputSubView(oSrcFile, streamName, viewDataName, keyName);
-                    std::string tailLine =
-                        newLine.substr(pos + sub_view_end.length());
-                    parseLine(oSrcFile,
-                              tailLine,
-                              streamName,
-                              viewDataName,
-                              cxx_flag,
-                              returnFlag);
-                }
-                else
-                {
-                    std::cerr << "format err!" << std::endl;
-                    exit(1);
-                }
+                    oSrcFile, tailLine, streamName, viewDataName, cxx_flag);
             }
             else
             {
-                if (line.length() > 0)
-                {
-                    replace_all(line, "\\", "\\\\");
-                    replace_all(line, "\"", "\\\"");
-                    oSrcFile << "\t" << streamName << " << \"" << line;
-                }
-                if (returnFlag)
-                    oSrcFile << "\\n\";\n";
-                else
-                    oSrcFile << "\";\n";
+                std::cerr << "format err!" << std::endl;
+                exit(1);
+            }
+        }
+        else if (found_tag.first == CspLeftTagType::kSubViewStart)
+        {
+            std::string newLine = line.substr(pos + sub_view_start.length());
+            if ((pos = newLine.find(sub_view_end)) != std::string::npos)
+            {
+                std::string keyName = newLine.substr(0, pos);
+                outputSubView(oSrcFile,
+                              streamName,
+                              viewDataName,
+                              parseParameter(keyName));
+
+                std::string tailLine =
+                    newLine.substr(pos + sub_view_end.length());
+                parseLine(
+                    oSrcFile, tailLine, streamName, viewDataName, cxx_flag);
+            }
+            else
+            {
+                std::cerr << "format err!" << std::endl;
+                exit(1);
             }
         }
     }
@@ -229,17 +257,14 @@ static void parseLine(std::ofstream &oSrcFile,
     {
         if ((pos = line.find(cxx_end)) != std::string::npos)
         {
-            std::string newLine = line.substr(0, pos);
-            parseCxxLine(oSrcFile, newLine, streamName, viewDataName);
-            std::string oldLine = line.substr(pos + cxx_end.length());
+            std::string cxx_part = line.substr(0, pos);
+            parseCxxLine(oSrcFile, cxx_part, streamName, viewDataName);
+
+            std::string tailLine = line.substr(pos + cxx_end.length());
             cxx_flag = 0;
-            if (oldLine.length() > 0)
-                parseLine(oSrcFile,
-                          oldLine,
-                          streamName,
-                          viewDataName,
-                          cxx_flag,
-                          returnFlag);
+            if (tailLine.length() > 0)
+                parseLine(
+                    oSrcFile, tailLine, streamName, viewDataName, cxx_flag);
         }
         else
         {
