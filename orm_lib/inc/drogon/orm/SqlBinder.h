@@ -361,22 +361,22 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
                 // LOG_DEBUG << "ptr callback";
                 isExceptionPtr_ = true;
                 exceptionPtrCallback_ = std::forward<CallbackType>(callback);
-                return *this;
             }
             else
             {
                 isExceptionPtr_ = false;
                 exceptionCallback_ = std::forward<CallbackType>(callback);
-                return *this;
             }
         }
-        else if constexpr (traits::isSqlCallback)
+            
+        if constexpr (traits::isSqlCallback)
         {
             callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
                 new CallbackHolder<typename std::decay<CallbackType>::type>(
                     std::forward<CallbackType>(callback)));
-            return *this;
         }
+        
+        return *this;
     }
 
     template <typename T>
