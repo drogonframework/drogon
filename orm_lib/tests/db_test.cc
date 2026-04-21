@@ -4063,6 +4063,176 @@ DROGON_TEST(SQLite3Test)
 }
 #endif
 
+#if USE_SQLITE3
+DROGON_TEST(SQLite3TransactionTypeTest)
+{
+    auto &clientPtr = sqlite3Client;
+    REQUIRE(clientPtr != nullptr);
+
+    // Ensure the test table exists
+    try
+    {
+        clientPtr->execSqlSync(
+            "CREATE TABLE IF NOT EXISTS trans_type_test "
+            "(id INTEGER PRIMARY KEY, val INTEGER NOT NULL)");
+        clientPtr->execSqlSync("DELETE FROM trans_type_test");
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - TransactionType setup what():", e.base().what());
+        return;
+    }
+
+    // --- Deferred (default) ---
+    {
+        try
+        {
+            auto trans = clientPtr->newTransaction(TransactionType::Deferred);
+            trans->execSqlSync(
+                "INSERT INTO trans_type_test(id, val) VALUES(1, 10)");
+            // trans commits on destruction
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("sqlite3 - TransactionType::Deferred what():",
+                  e.base().what());
+            return;
+        }
+        auto r = clientPtr->execSqlSync(
+            "SELECT val FROM trans_type_test WHERE id=1");
+        MANDATE(r.size() == 1);
+        MANDATE(r[0][0].as<int>() == 10);
+        SUCCESS();
+    }
+
+    // --- Immediate ---
+    {
+        try
+        {
+            auto trans = clientPtr->newTransaction(TransactionType::Immediate);
+            trans->execSqlSync(
+                "INSERT INTO trans_type_test(id, val) VALUES(2, 20)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("sqlite3 - TransactionType::Immediate what():",
+                  e.base().what());
+            return;
+        }
+        auto r = clientPtr->execSqlSync(
+            "SELECT val FROM trans_type_test WHERE id=2");
+        MANDATE(r.size() == 1);
+        MANDATE(r[0][0].as<int>() == 20);
+        SUCCESS();
+    }
+
+    // --- Exclusive ---
+    {
+        try
+        {
+            auto trans = clientPtr->newTransaction(TransactionType::Exclusive);
+            trans->execSqlSync(
+                "INSERT INTO trans_type_test(id, val) VALUES(3, 30)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("sqlite3 - TransactionType::Exclusive what():",
+                  e.base().what());
+            return;
+        }
+        auto r = clientPtr->execSqlSync(
+            "SELECT val FROM trans_type_test WHERE id=3");
+        MANDATE(r.size() == 1);
+        MANDATE(r[0][0].as<int>() == 30);
+        SUCCESS();
+    }
+
+    // --- Rollback works correctly with Immediate ---
+    {
+        try
+        {
+            auto trans = clientPtr->newTransaction(TransactionType::Immediate);
+            trans->execSqlSync(
+                "INSERT INTO trans_type_test(id, val) VALUES(99, 99)");
+            trans->rollback();
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("sqlite3 - TransactionType::Immediate rollback what():",
+                  e.base().what());
+            return;
+        }
+        auto r = clientPtr->execSqlSync(
+            "SELECT val FROM trans_type_test WHERE id=99");
+        MANDATE(r.size() == 0);
+        SUCCESS();
+    }
+}
+
+// Verify the locking mode is actually used by testing observable SQLite
+// locking behaviour. BEGIN IMMEDIATE acquires a RESERVED lock upfront, so a
+// second concurrent BEGIN IMMEDIATE on another connection to the same
+// database must fail with SQLITE_BUSY. If plain BEGIN were used instead, the
+// second connection would succeed (only a SHARED lock is held until the first
+// write).
+DROGON_TEST(SQLite3TransactionTypeLockingTest)
+{
+    // A pool of 2 connections to a shared file-based database gives us two
+    // independent SQLite connections that observe each other's locks.
+    const std::string dbPath = "/tmp/drogon_trans_type_lock_test.db";
+    std::remove(dbPath.c_str());
+
+    auto pool = DbClient::newSqlite3Client("filename=" + dbPath, 2);
+    // WAL mode is required: it changes BEGIN IMMEDIATE from acquiring a
+    // RESERVED lock to acquiring the WAL write lock. This matches production
+    // usage and makes the busy semantics more predictable — only one writer
+    // is ever permitted and SQLITE_BUSY is returned immediately (no timeout
+    // retry) when a second BEGIN IMMEDIATE is attempted.
+    pool->execSqlSync("PRAGMA journal_mode=WAL");
+    // No retry delay: SQLITE_BUSY must surface as an exception immediately.
+    pool->execSqlSync("PRAGMA busy_timeout=0");
+    pool->execSqlSync(
+        "CREATE TABLE IF NOT EXISTS lock_test (id INTEGER PRIMARY KEY)");
+
+    // Hold an IMMEDIATE transaction on connection A.
+    auto transA = pool->newTransaction(TransactionType::Immediate);
+    // doBegin() is asynchronous — the BEGIN IMMEDIATE is queued to the
+    // connection's event loop. Run a synchronous query through the transaction
+    // to flush the queue; once execSqlSync returns, the RESERVED lock is
+    // definitely held.
+    transA->execSqlSync("SELECT 1");
+
+    // Connection B attempting BEGIN IMMEDIATE must fail because A already
+    // holds the RESERVED lock. SQLite's default busy_timeout is 0.
+    bool gotBusy = false;
+    try
+    {
+        auto transB = pool->newTransaction(TransactionType::Immediate);
+        transB->execSqlSync("SELECT 1");
+        transB->rollback();
+    }
+    catch (const DrogonDbException &)
+    {
+        gotBusy = true;
+    }
+
+    transA->rollback();
+    std::remove(dbPath.c_str());
+
+    if (gotBusy)
+    {
+        SUCCESS();
+    }
+    else
+    {
+        FAULT(
+            "sqlite3 - TransactionType::Immediate locking: second BEGIN "
+            "IMMEDIATE should have failed while the first was held, but it "
+            "succeeded. This means BEGIN IMMEDIATE is not being sent.");
+    }
+}
+#endif
+
 using namespace drogon;
 
 int main(int argc, char **argv)
