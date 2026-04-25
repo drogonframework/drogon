@@ -763,6 +763,11 @@ void HttpRequestImpl::reserveBodySize(size_t length)
     {
         // Store data of body to a temporary file
         createTmpFile();
+        if (!content_.empty())
+        {
+            cacheFilePtr_->append(content_);
+            content_.clear();
+        }
     }
 }
 
