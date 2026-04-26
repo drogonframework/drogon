@@ -648,6 +648,18 @@ const char *HttpRequestImpl::methodString() const
         case Patch:
             result = "PATCH";
             break;
+        case Propfind:
+            result = "PROPFIND";
+            break;
+        case Mkcol:
+            result = "MKCOL";
+            break;
+        case Copy:
+            result = "COPY";
+            break;
+        case Move:
+            result = "MOVE";
+            break;
         default:
             break;
     }
@@ -683,6 +695,14 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
             {
                 method_ = Head;
             }
+            else if (m == "COPY")
+            {
+                method_ = Copy;
+            }
+            else if (m == "MOVE")
+            {
+                method_ = Move;
+            }
             else
             {
                 method_ = Invalid;
@@ -692,6 +712,10 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
             if (m == "PATCH")
             {
                 method_ = Patch;
+            }
+            else if (m == "MKCOL")
+            {
+                method_ = Mkcol;
             }
             else
             {
@@ -712,6 +736,16 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
             if (m == "OPTIONS")
             {
                 method_ = Options;
+            }
+            else
+            {
+                method_ = Invalid;
+            }
+            break;
+        case 8:
+            if (m == "PROPFIND")
+            {
+                method_ = Propfind;
             }
             else
             {

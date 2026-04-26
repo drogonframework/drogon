@@ -26,6 +26,7 @@ set(UNITTEST_SOURCES
     unittests/ControllerCreationTest.cc
     unittests/MultiPartParserTest.cc
     unittests/SlashRemoverTest.cc
+    unittests/HttpMethodTest.cc
     unittests/UtilitiesTest.cc
     unittests/UuidUnittest.cc
 )
