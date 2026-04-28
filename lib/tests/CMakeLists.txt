@@ -26,7 +26,6 @@ set(UNITTEST_SOURCES
     unittests/ControllerCreationTest.cc
     unittests/MultiPartParserTest.cc
     unittests/SlashRemoverTest.cc
-    unittests/HttpMethodTest.cc
     unittests/UtilitiesTest.cc
     unittests/UuidUnittest.cc
 )
@@ -44,6 +43,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS)
 else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
                        unittests/HttpFileTest.cc
+                       unittests/HttpMethodTest.cc
                        unittests/WebsocketResponseTest.cc)
 endif()
 
