@@ -215,6 +215,18 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         case Patch:
             output->append("PATCH ");
             break;
+        case Propfind:
+            output->append("PROPFIND ");
+            break;
+        case Mkcol:
+            output->append("MKCOL ");
+            break;
+        case Copy:
+            output->append("COPY ");
+            break;
+        case Move:
+            output->append("MOVE ");
+            break;
         default:
             return;
     }

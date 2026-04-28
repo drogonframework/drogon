@@ -1,5 +1,6 @@
 #include <drogon/drogon_test.h>
 #include <drogon/HttpTypes.h>
+#include <trantor/utils/MsgBuffer.h>
 #include "../../lib/src/HttpRequestImpl.h"
 
 using namespace drogon;
@@ -68,6 +69,35 @@ DROGON_TEST(WebDavMethodStrings)
     CHECK(to_string_view(Mkcol) == "MKCOL");
     CHECK(to_string_view(Copy) == "COPY");
     CHECK(to_string_view(Move) == "MOVE");
+}
+
+// Helper: serialize a request and return the first line (method + path)
+static std::string serializeMethod(HttpMethod method)
+{
+    HttpRequestImpl req(nullptr);
+    req.setMethod(method);
+    req.setPath("/test");
+    trantor::MsgBuffer buf;
+    req.appendToBuffer(&buf);
+    std::string result(buf.peek(), buf.readableBytes());
+    // Return just up to the first space after the method
+    auto pos = result.find(' ');
+    return result.substr(0, pos);
+}
+
+DROGON_TEST(MethodSerialization)
+{
+    CHECK(serializeMethod(Get) == "GET");
+    CHECK(serializeMethod(Post) == "POST");
+    CHECK(serializeMethod(Put) == "PUT");
+    CHECK(serializeMethod(Delete) == "DELETE");
+    CHECK(serializeMethod(Head) == "HEAD");
+    CHECK(serializeMethod(Options) == "OPTIONS");
+    CHECK(serializeMethod(Patch) == "PATCH");
+    CHECK(serializeMethod(Propfind) == "PROPFIND");
+    CHECK(serializeMethod(Mkcol) == "MKCOL");
+    CHECK(serializeMethod(Copy) == "COPY");
+    CHECK(serializeMethod(Move) == "MOVE");
 }
 
 DROGON_TEST(InvalidMethodsRejected)
