@@ -17,12 +17,14 @@
 #include <drogon/DrObject.h>
 #include "CommandHandler.h"
 using namespace drogon;
+
 namespace drogon_ctl
 {
 class create_swagger : public DrObject<create_swagger>, public CommandHandler
 {
   public:
     virtual void handleCommand(std::vector<std::string> &parameters) override;
+
     virtual std::string script() override
     {
         return "create swagger docs controller";

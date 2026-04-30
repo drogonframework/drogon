@@ -77,11 +77,13 @@ static void newModelConfigFile(std::ofstream &configFile)
     auto templ = DrTemplateBase::newTemplate("model_json");
     configFile << templ->genText();
 }
+
 static void newSwaggerConfigFile(std::ofstream &configFile)
 {
     auto templ = DrTemplateBase::newTemplate("swagger_json");
     configFile << templ->genText();
 }
+
 static void newTestMainFile(std::ofstream &mainFile)
 {
     auto templ = DrTemplateBase::newTemplate("test_main");

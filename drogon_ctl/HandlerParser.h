@@ -12,6 +12,7 @@ namespace internal
 {
 class StructNode;
 using StructNodePtr = std::shared_ptr<StructNode>;
+
 class StructNode
 {
   public:
@@ -31,18 +32,22 @@ class StructNode
         if (type != kClass)
             children_ = parse(content);
     }
+
     const std::string &content() const
     {
         return content_;
     }
+
     const std::string &name() const
     {
         return name_;
     }
+
     NodeType type() const
     {
         return type_;
     }
+
     void print() const
     {
         print(0);
@@ -70,6 +75,7 @@ class ParametersInfo
     std::string getType() const;
     std::string getConstraint() const;
 };
+
 class RoutingInfo
 {
   public:
@@ -90,6 +96,7 @@ class HandlerInfo
     std::string getNamespace() const;
     std::vector<RoutingInfo> getRoutingInfo() const;
 };
+
 class HandlerParser
 {
   public:

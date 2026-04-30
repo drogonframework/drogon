@@ -35,6 +35,7 @@ std::pair<std::string, std::string> StructNode::findContentOfClassOrNameSpace(
                                                               pos2 - pos1),
                                                content.substr(pos2 + 1));
 }
+
 std::pair<StructNodePtr, std::string> StructNode::findClass(
     const std::string &content)
 {
@@ -56,6 +57,7 @@ std::pair<StructNodePtr, std::string> StructNode::findClass(
     }
     return std::pair<StructNodePtr, std::string>(nullptr, "");
 }
+
 std::tuple<std::string, StructNodePtr, std::string> StructNode::findNameSpace(
     const std::string &content)
 {
@@ -86,6 +88,7 @@ std::tuple<std::string, StructNodePtr, std::string> StructNode::findNameSpace(
                                                                    "");
     }
 }
+
 std::vector<StructNodePtr> StructNode::parse(const std::string &content)
 {
     std::vector<StructNodePtr> res;
@@ -130,6 +133,7 @@ std::vector<StructNodePtr> StructNode::parse(const std::string &content)
     }
     return res;
 }
+
 void StructNode::print(int indent) const
 {
     std::string ind(indent, ' ');

@@ -53,7 +53,8 @@ struct ContextNode
 static std::string trim(const std::string &s)
 {
     size_t begin = 0;
-    while (begin < s.size() && std::isspace(static_cast<unsigned char>(s[begin])))
+    while (begin < s.size() &&
+           std::isspace(static_cast<unsigned char>(s[begin])))
     {
         ++begin;
     }
@@ -123,8 +124,8 @@ static std::string stripCppComments(const std::string &content)
             }
         }
 
-        if (!inString && !inChar && i + 1 < content.size() && content[i] == '/' &&
-            content[i + 1] == '/')
+        if (!inString && !inChar && i + 1 < content.size() &&
+            content[i] == '/' && content[i + 1] == '/')
         {
             while (i < content.size() && content[i] != '\n')
             {
@@ -137,8 +138,8 @@ static std::string stripCppComments(const std::string &content)
             continue;
         }
 
-        if (!inString && !inChar && i + 1 < content.size() && content[i] == '/' &&
-            content[i + 1] == '*')
+        if (!inString && !inChar && i + 1 < content.size() &&
+            content[i] == '/' && content[i + 1] == '*')
         {
             i += 2;
             while (i + 1 < content.size() &&
@@ -204,8 +205,8 @@ static bool parseMacroInvocation(const std::string &content,
             --depth;
             if (depth == 0)
             {
-                argsContent = content.substr(openParenPos + 1,
-                                             i - openParenPos - 1);
+                argsContent =
+                    content.substr(openParenPos + 1, i - openParenPos - 1);
                 endPos = i;
                 return true;
             }
@@ -260,7 +261,8 @@ static std::vector<std::string> splitTopLevelArgs(const std::string &args)
         else if (ch == ']')
             --bracketDepth;
 
-        if (ch == ',' && parenDepth == 0 && braceDepth == 0 && bracketDepth == 0)
+        if (ch == ',' && parenDepth == 0 && braceDepth == 0 &&
+            bracketDepth == 0)
         {
             out.emplace_back(trim(current));
             current.clear();
@@ -303,7 +305,8 @@ static std::string parseCppStringLiteral(const std::string &token)
     {
         auto open = s.find('(');
         auto close = s.rfind(')');
-        if (open != std::string::npos && close != std::string::npos && close > open)
+        if (open != std::string::npos && close != std::string::npos &&
+            close > open)
         {
             return s.substr(open + 1, close - open - 1);
         }
@@ -360,8 +363,9 @@ static std::string joinClassPath(const std::vector<ContextNode> &context,
     return path;
 }
 
-static std::set<std::string> parseHttpMethods(const std::vector<std::string> &args,
-                                              size_t startIndex)
+static std::set<std::string> parseHttpMethods(
+    const std::vector<std::string> &args,
+    size_t startIndex)
 {
     static const std::unordered_map<std::string, std::string> methodMap = {
         {"get", "get"},
@@ -431,9 +435,11 @@ static std::string normalizePathForSwagger(std::string path)
             {
                 paramName = "param" + std::to_string(autoParamIndex++);
             }
-            else if (std::all_of(inside.begin(), inside.end(), [](unsigned char ch) {
-                         return std::isdigit(ch);
-                     }))
+            else if (std::all_of(inside.begin(),
+                                 inside.end(),
+                                 [](unsigned char ch) {
+                                     return std::isdigit(ch);
+                                 }))
             {
                 paramName = "arg" + inside;
             }
@@ -586,7 +592,8 @@ static std::vector<std::string> extractPathParams(const std::string &routePath)
 {
     std::vector<std::string> params;
     std::regex pathParamRegex(R"(\{([^\}/]+)\})");
-    for (std::sregex_iterator it(routePath.begin(), routePath.end(), pathParamRegex),
+    for (std::sregex_iterator
+             it(routePath.begin(), routePath.end(), pathParamRegex),
          end;
          it != end;
          ++it)
@@ -610,8 +617,8 @@ static void fillSwaggerOperation(Json::Value &operation,
     operation["summary"] = methodName + " " + routePath;
     operation["tags"] = Json::arrayValue;
     operation["tags"].append(controllerName);
-    operation["operationId"] =
-        sanitizeOperationId(controllerName + "_" + methodName + "_" + httpMethod);
+    operation["operationId"] = sanitizeOperationId(
+        controllerName + "_" + methodName + "_" + httpMethod);
 
     auto params = extractPathParams(routePath);
     if (!params.empty())
@@ -634,10 +641,12 @@ static void fillSwaggerOperation(Json::Value &operation,
 static void collectEndpointsFromHeader(const std::string &headerFile,
                                        Json::Value &paths)
 {
-    std::ifstream infile(utils::toNativePath(headerFile), std::ifstream::binary);
+    std::ifstream infile(utils::toNativePath(headerFile),
+                         std::ifstream::binary);
     if (!infile)
     {
-        std::cerr << "Warning: can't open the header file: " << headerFile << "\n";
+        std::cerr << "Warning: can't open the header file: " << headerFile
+                  << "\n";
         return;
     }
 
@@ -745,13 +754,12 @@ static void collectEndpointsFromHeader(const std::string &headerFile,
             break;
         }
 
-        const std::string macroName = isMethodAdd ? "METHOD_ADD" : "ADD_METHOD_TO";
+        const std::string macroName =
+            isMethodAdd ? "METHOD_ADD" : "ADD_METHOD_TO";
         std::string argsText;
         size_t endPos = macroPos;
-        if (parseMacroInvocation(noComment,
-                                 macroPos + macroName.size(),
-                                 argsText,
-                                 endPos))
+        if (parseMacroInvocation(
+                noComment, macroPos + macroName.size(), argsText, endPos))
         {
             auto args = splitTopLevelArgs(argsText);
             if (args.size() >= 2)
@@ -849,9 +857,7 @@ static void forEachControllerHeaderIn(
     }
 
     std::filesystem::recursive_directory_iterator it(
-        fsPath,
-        std::filesystem::directory_options::skip_permission_denied,
-        ec);
+        fsPath, std::filesystem::directory_options::skip_permission_denied, ec);
     std::filesystem::recursive_directory_iterator end;
     while (it != end)
     {
@@ -892,9 +898,10 @@ static std::string makeSwaggerDocument(const Json::Value &config,
     }
 
     Json::Value paths(Json::objectValue);
-    forEachControllerHeaderIn(controllersPath, [&paths](const std::string &header) {
-        collectEndpointsFromHeader(header, paths);
-    });
+    forEachControllerHeaderIn(controllersPath,
+                              [&paths](const std::string &header) {
+                                  collectEndpointsFromHeader(header, paths);
+                              });
 
     ret["paths"] = std::move(paths);
     return ret.toStyledString();
@@ -964,7 +971,8 @@ static void createSwagger(const std::string &path)
             std::filesystem::path projectRoot =
                 std::filesystem::path(path).parent_path();
             auto controllersPath =
-                configJsonRoot.get("controllers_path", "controllers").asString();
+                configJsonRoot.get("controllers_path", "controllers")
+                    .asString();
             std::filesystem::path controllersFsPath(controllersPath);
             if (controllersFsPath.is_relative())
             {
@@ -985,6 +993,7 @@ static void createSwagger(const std::string &path)
         }
     }
 }
+
 void create_swagger::handleCommand(std::vector<std::string> &parameters)
 {
     if (parameters.size() < 1)
