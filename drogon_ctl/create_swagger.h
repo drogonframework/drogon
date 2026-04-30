@@ -23,9 +23,9 @@ namespace drogon_ctl
 class create_swagger : public DrObject<create_swagger>, public CommandHandler
 {
   public:
-    virtual void handleCommand(std::vector<std::string> &parameters) override;
+    void handleCommand(std::vector<std::string> &parameters) override;
 
-    virtual std::string script() override
+    std::string script() override
     {
         return "create swagger docs controller";
     }
