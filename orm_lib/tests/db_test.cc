@@ -2741,11 +2741,9 @@ DROGON_TEST(MySQLTest)
 #endif
 
 #if USE_SQLITE3
-DbClientPtr sqlite3Client;
-
 DROGON_TEST(SQLite3Test)
 {
-    auto &clientPtr = sqlite3Client;
+    auto clientPtr = DbClient::newSqlite3Client("filename=:memory:", 1);
     REQUIRE(clientPtr != nullptr);
 
     // Prepare the test environment
@@ -4181,8 +4179,8 @@ DROGON_TEST(SQLite3TransactionTypeLockingTest)
     // independent SQLite connections that observe each other's locks.
     const auto nonce =
         std::chrono::steady_clock::now().time_since_epoch().count();
-    const std::string dbPath =
-        "/tmp/drogon_trans_type_lock_test_" + std::to_string(nonce) + ".db";
+    const auto dbPath =
+        "drogon_trans_type_lock_test_" + std::to_string(nonce) + ".db";
     std::remove(dbPath.c_str());
 
     auto pool = DbClient::newSqlite3Client("filename=" + dbPath, 2);
@@ -4263,9 +4261,6 @@ int main(int argc, char **argv)
         "client_encoding=utf8",
         1,
         true);
-#endif
-#if USE_SQLITE3
-    sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
 #endif
     const int testStatus = test::run(argc, argv);
     return testStatus;
