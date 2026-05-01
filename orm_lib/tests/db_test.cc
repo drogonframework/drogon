@@ -4066,7 +4066,7 @@ DROGON_TEST(SQLite3Test)
 #if USE_SQLITE3
 DROGON_TEST(SQLite3TransactionTypeTest)
 {
-    auto &clientPtr = sqlite3Client;
+    auto clientPtr = DbClient::newSqlite3Client("filename=:memory:", 1);
     REQUIRE(clientPtr != nullptr);
 
     // Ensure the test table exists
