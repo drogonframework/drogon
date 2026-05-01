@@ -4179,7 +4179,10 @@ DROGON_TEST(SQLite3TransactionTypeLockingTest)
 {
     // A pool of 2 connections to a shared file-based database gives us two
     // independent SQLite connections that observe each other's locks.
-    const std::string dbPath = "/tmp/drogon_trans_type_lock_test.db";
+    const auto nonce =
+        std::chrono::steady_clock::now().time_since_epoch().count();
+    const std::string dbPath =
+        "/tmp/drogon_trans_type_lock_test_" + std::to_string(nonce) + ".db";
     std::remove(dbPath.c_str());
 
     auto pool = DbClient::newSqlite3Client("filename=" + dbPath, 2);
@@ -4194,13 +4197,24 @@ DROGON_TEST(SQLite3TransactionTypeLockingTest)
     pool->execSqlSync(
         "CREATE TABLE IF NOT EXISTS lock_test (id INTEGER PRIMARY KEY)");
 
+    std::shared_ptr<Transaction> transA;
     // Hold an IMMEDIATE transaction on connection A.
-    auto transA = pool->newTransaction(TransactionType::Immediate);
-    // doBegin() is asynchronous — the BEGIN IMMEDIATE is queued to the
-    // connection's event loop. Run a synchronous query through the transaction
-    // to flush the queue; once execSqlSync returns, the RESERVED lock is
-    // definitely held.
-    transA->execSqlSync("SELECT 1");
+    try
+    {
+        transA = pool->newTransaction(TransactionType::Immediate);
+        // doBegin() is asynchronous — the BEGIN IMMEDIATE is queued to the
+        // connection's event loop. Run a synchronous query through the
+        // transaction to flush the queue; once execSqlSync returns, the
+        // RESERVED lock is definitely held.
+        transA->execSqlSync("SELECT 1");
+    }
+    catch (const DrogonDbException &e)
+    {
+        std::remove(dbPath.c_str());
+        FAULT("sqlite3 - TransactionType::Immediate locking setup what():",
+              e.base().what());
+        return;
+    }
 
     // Connection B attempting BEGIN IMMEDIATE must fail because A already
     // holds the RESERVED lock. SQLite's default busy_timeout is 0.
