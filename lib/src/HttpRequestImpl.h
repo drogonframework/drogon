@@ -351,6 +351,11 @@ class HttpRequestImpl : public HttpRequest
         headers_.erase(lowerKey);
     }
 
+    void clearHeaders() override
+    {
+        headers_.clear();
+    }
+
     const std::string &getHeader(std::string field) const override
     {
         std::transform(field.begin(),

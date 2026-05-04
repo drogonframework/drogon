@@ -159,6 +159,9 @@ class DROGON_EXPORT HttpRequest
      */
     virtual void removeHeader(std::string key) = 0;
 
+    // Clear all HTTP headers
+    virtual void clearHeaders() = 0;
+
     /// Get the cookie string identified by the field parameter
     virtual const std::string &getCookie(const std::string &field) const = 0;
 
