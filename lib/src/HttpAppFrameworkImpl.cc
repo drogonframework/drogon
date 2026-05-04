@@ -412,6 +412,16 @@ HttpAppFramework &HttpAppFrameworkImpl::addListener(
     return *this;
 }
 
+#ifndef _WIN32
+HttpAppFramework &HttpAppFrameworkImpl::addListener(
+    const std::string &unixSocketPath)
+{
+    assert(!running_);
+    listenerManagerPtr_->addUnixListener(unixSocketPath);
+    return *this;
+}
+#endif
+
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNum(
     size_t maxConnections)
 {

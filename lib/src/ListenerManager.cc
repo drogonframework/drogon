@@ -65,6 +65,14 @@ void ListenerManager::addListener(
         ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
 }
 
+#ifndef _WIN32
+void ListenerManager::addUnixListener(const std::string &socketPath)
+{
+    LOG_TRACE << "Add Unix domain socket listener: " << socketPath;
+    unixListeners_.emplace_back(socketPath);
+}
+#endif
+
 std::vector<trantor::InetAddress> ListenerManager::getListeners() const
 {
     std::vector<trantor::InetAddress> listeners;
@@ -194,6 +202,48 @@ void ListenerManager::createListeners(
         }
     }
 #endif
+
+#ifndef _WIN32
+    // Create Unix domain socket listeners
+    for (auto const &udsListener : unixListeners_)
+    {
+        InetAddress listenAddress(udsListener.socketPath_,
+                                  trantor::UnixDomainTag{});
+        trantor::EventLoop *loop;
+#ifdef __linux__
+        // On Linux with SO_REUSEPORT, use the main loop for UDS
+        loop = HttpAppFrameworkImpl::instance().getLoop();
+#else
+        if (!listeningThread_)
+        {
+            listeningThread_ =
+                std::make_unique<EventLoopThread>("DrogonListeningLoop");
+            listeningThread_->run();
+        }
+        loop = listeningThread_->getLoop();
+#endif
+        auto serverPtr =
+            std::make_shared<HttpServer>(loop, listenAddress, "drogon-unix");
+        if (beforeListenSetSockOptCallback_)
+        {
+            serverPtr->setBeforeListenSockOptCallback(
+                beforeListenSetSockOptCallback_);
+        }
+        if (afterAcceptSetSockOptCallback_)
+        {
+            serverPtr->setAfterAcceptSockOptCallback(
+                afterAcceptSetSockOptCallback_);
+        }
+        if (connectionCallback_)
+        {
+            serverPtr->setConnectionCallback(connectionCallback_);
+        }
+        serverPtr->setIoLoops(ioLoops);
+        servers_.push_back(serverPtr);
+        LOG_INFO << "Unix domain socket listener created: "
+                 << udsListener.socketPath_;
+    }
+#endif
 }
 
 void ListenerManager::startListening()
@@ -210,6 +260,15 @@ void ListenerManager::stopListening()
     {
         serverPtr->stop();
     }
+#ifndef _WIN32
+    // Clean up Unix domain socket files
+    for (auto const &udsListener : unixListeners_)
+    {
+        ::unlink(udsListener.socketPath_.c_str());
+        LOG_TRACE << "Removed Unix domain socket file: "
+                  << udsListener.socketPath_;
+    }
+#endif
     if (listeningThread_)
     {
         auto loop = listeningThread_->getLoop();
