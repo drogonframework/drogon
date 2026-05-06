@@ -208,9 +208,46 @@ jobs:
       - name: Install g++
         if: startsWith(matrix.compiler.cxx, 'g++') && (matrix.compiler.ver == 13 || matrix.compiler.ver == 9)
         run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get install g++-${{ matrix.compiler.ver }}
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ matrix.compiler.ver }} ${{ matrix.compiler.ver }}
+          requested="g++-${{ matrix.compiler.ver }}"
+
+          if command -v g++-${{ matrix.compiler.ver }} >/dev/null 2>&1; then
+            echo "g++-${{ matrix.compiler.ver }} is already available on the runner"
+          else
+            retry() {
+              local attempts="$1"
+              shift
+              local try=1
+              while true; do
+                "$@" && break
+                if [ "$try" -ge "$attempts" ]; then
+                  return 1
+                fi
+                echo "Command failed, retrying ($try/$attempts): $*"
+                try=$((try + 1))
+                sleep 10
+              done
+            }
+
+            if retry 3 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
+               retry 3 sudo apt-get update && \
+               retry 3 sudo apt-get install -y "$requested"; then
+              echo "Installed $requested from PPA"
+            else
+              echo "::warning::Failed to install $requested from Launchpad PPA (network timeout). Falling back to system g++."
+              if ! command -v g++ >/dev/null 2>&1; then
+                echo "::error::Neither $requested nor system g++ is available."
+                exit 1
+              fi
+              fallback_cxx="$(command -v g++)"
+              echo "CXX=$fallback_cxx" >> "$GITHUB_ENV"
+              echo "Using fallback compiler: $fallback_cxx"
+              exit 0
+            fi
+          fi
+
+          if command -v "$requested" >/dev/null 2>&1; then
+            sudo update-alternatives --install /usr/bin/g++ g++ "$(command -v "$requested")" ${{ matrix.compiler.ver }}
+          fi
 
       - name: Install Clang
         if: startsWith(matrix.compiler.cxx, 'clang') && matrix.compiler.ver < 13

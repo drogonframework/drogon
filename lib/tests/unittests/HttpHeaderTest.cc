@@ -239,3 +239,22 @@ DROGON_TEST(AddHttpCorsHeaders)
     resp->addCorsHeaders(req);
     CHECK(resp->getHeader("Access-Control-Allow-Credentials") == "true");
 }
+
+DROGON_TEST(ClearHeaders)
+{
+    auto req = HttpRequest::newHttpRequest();
+    // set a custom path to ensure it is not cleared
+    req->setPath("/api/test");
+    req->addHeader("X-Test", "value");
+    req->addHeader("Authorization", "Bearer token");
+
+    CHECK(req->headers().size() == 2);
+    CHECK(req->getHeader("X-Test") == "value");
+    CHECK(req->getHeader("Authorization") == "Bearer token");
+
+    req->clearHeaders();
+
+    CHECK(req->headers().empty());
+    // verify path unchanged
+    CHECK(req->path() == "/api/test");
+}

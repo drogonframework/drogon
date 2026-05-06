@@ -130,15 +130,20 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
     else if (conn->disconnected())
     {
         LOG_TRACE << "conn disconnected!";
-        HttpConnectionLimit::instance().releaseConnection(conn);
         auto requestParser = conn->getContext<HttpRequestParser>();
         if (requestParser)
         {
+            // NOTE: if tls handshake fails, `onConnection()` will only be
+            // called once with a broken conn. So we only call
+            // `releaseConnection()` for conn with context.
+            // Never call `conn->clearContext()` in other places
+            HttpConnectionLimit::instance().releaseConnection(conn);
             if (requestParser->webSocketConn())
             {
                 requestParser->webSocketConn()->onClose();
             }
-            else if (requestParser->requestImpl()->isStreamMode())
+            else if (requestParser->requestImpl()->streamStatus() ==
+                     ReqStreamStatus::Open)
             {
                 requestParser->requestImpl()->streamError(
                     std::make_exception_ptr(
@@ -206,13 +211,9 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                     statusCodeToString(code).data()));
             }
             buf->retrieveAll();
-            // NOTE: should we call conn->forceClose() instead?
-            // Calling shutdown() handles socket more elegantly.
+            // stop parser to ignore following illegal data from client
+            requestParser->stop();
             conn->shutdown();
-            // We have to call clearContext() here in order to ignore following
-            // illegal data from client
-            conn->clearContext();
-            requestParser->reset();
             return;
         }
         if (parseRes == 0)
