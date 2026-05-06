@@ -45,7 +45,9 @@ std::string create::detail()
            "drogon_ctl create model <model_path> [-o <output path>] [ "
            "--clear-output]"
            "[--table=<table_name>] [-f]//"
-           "create model classes in model_path\n";
+           "create model classes in model_path\n\n"
+           "drogon_ctl create swagger <swagger_path> //"
+           "create swagger controller in swagger_path\n\n";
 }
 
 void create::handleCommand(std::vector<std::string> &parameters)
