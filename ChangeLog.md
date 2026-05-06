@@ -4,13 +4,77 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.13] - 2026-05-06
+
+### API changes list
+
+- Add `HttpRequest::clearHeaders()` method.
+
+- Add `setQueryParameter()` and `setBodyParameter()` methods.
+
+- Add ability to use `BEGIN IMMEDIATE` and `BEGIN EXCLUSIVE`.
+
+- Add `UploadFile` constructor to create from memory data.
+
+- Add JOIN support to Mapper/BaseBuilder with FK auto-detection in code generator.
+
+- Add WebDAV HTTP methods (PROPFIND, MKCOL, COPY, MOVE).
+
+- Add per-request compression control to `HttpResponse`.
+
 ### Added
 
-- dg_ctl create models new command line option --clear-output
+- Support for custom OPTIONS handling via middleware flagging.
+
+- Alias library for Drogon with name matching installed target.
+
+- `--clear-output` option to drogon_ctl create models.
 
 ### Changed
 
-- make utils::isBase64 support padding
+- vector: reserve before inserting for efficiency.
+
+- make `utils::isBase64` support padding.
+
+- Extract duplicate `parseLine()` function to shared utility header.
+
+- Doxygen documentation adjustments.
+
+- Enhancement for custom OPTIONS handling.
+
+- Forward the path methods.
+
+### Fixed
+
+- Fix sqlite3 test in CI.
+
+- Fix HttpClient not sending WebDAV requests.
+
+- Fix connection limit bug.
+
+- Fix bugs exposed by CI.
+
+- Fix HTTP date formatting to be locale-independent.
+
+- Fix parsing invalid numbers in HTTP headers.
+
+- Fix shared lib view failure handling.
+
+- Fix drogon_ctl compilation with clang-cl.
+
+- Fix missing throw statement.
+
+- Add Homebrew Apple Silicon path detection in CMake finder modules.
+
+- Include missing header files.
+
+- Fix wrong numeric limit for floating types.
+
+- Fix regex WebSocket routes middleware initialization.
+
+- Fix system() replaced with execvp() in SharedLibManager.
+
+- Fix inverted test logic.
 
 ## [1.9.12] - 2026-01-26
 
@@ -1886,7 +1950,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.12...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.13...HEAD
+
+[1.9.13]: https://github.com/an-tao/drogon/compare/v1.9.12...v1.9.13
 
 [1.9.12]: https://github.com/an-tao/drogon/compare/v1.9.11...v1.9.12
 
