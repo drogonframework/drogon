@@ -375,7 +375,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
                 new CallbackHolder<typename std::decay<CallbackType>::type>(
                     std::forward<CallbackType>(callback)));
         }
-        
+
         return *this;
     }
 
