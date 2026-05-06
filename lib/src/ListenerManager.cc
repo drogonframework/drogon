@@ -57,12 +57,14 @@ void ListenerManager::addListener(
     const std::string &certFile,
     const std::string &keyFile,
     bool useOldTLS,
-    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
+    bool enableHttp3)
 {
     if (useSSL && !utils::supportsTls())
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
     listeners_.emplace_back(
-        ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
+        ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds,
+        enableHttp3);
 }
 
 std::vector<trantor::InetAddress> ListenerManager::getListeners() const
@@ -194,6 +196,44 @@ void ListenerManager::createListeners(
         }
     }
 #endif
+
+#ifdef DROGON_HAS_HTTP3
+    // Create QuicServers for listeners with HTTP/3 enabled
+    for (auto const &listener : listeners_)
+    {
+        if (!listener.enableHttp3_)
+            continue;
+
+        auto cert = listener.certFile_;
+        auto key = listener.keyFile_;
+        if (cert.empty())
+            cert = globalCertFile;
+        if (key.empty())
+            key = globalKeyFile;
+
+        if (cert.empty() || key.empty())
+        {
+            LOG_ERROR << "HTTP/3 requires TLS certificate and key files";
+            continue;
+        }
+
+        auto ip = listener.ip_;
+        bool isIpv6 = (ip.find(':') != std::string::npos);
+        InetAddress listenAddress(ip, listener.port_, isIpv6);
+
+        auto quicServer = std::make_shared<QuicServer>(
+            HttpAppFrameworkImpl::instance().getLoop(),
+            listenAddress,
+            cert,
+            key);
+
+        quicServer->setIoLoops(ioLoops);
+        quicServers_.push_back(quicServer);
+
+        LOG_INFO << "HTTP/3 (QUIC) listener configured on "
+                 << listenAddress.toIpPort();
+    }
+#endif
 }
 
 void ListenerManager::startListening()
@@ -202,6 +242,12 @@ void ListenerManager::startListening()
     {
         server->start();
     }
+#ifdef DROGON_HAS_HTTP3
+    for (auto &quicServer : quicServers_)
+    {
+        quicServer->start();
+    }
+#endif
 }
 
 void ListenerManager::stopListening()
@@ -210,6 +256,13 @@ void ListenerManager::stopListening()
     {
         serverPtr->stop();
     }
+#ifdef DROGON_HAS_HTTP3
+    for (auto &quicServer : quicServers_)
+    {
+        quicServer->stop();
+    }
+    quicServers_.clear();
+#endif
     if (listeningThread_)
     {
         auto loop = listeningThread_->getLoop();
