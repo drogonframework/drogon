@@ -368,7 +368,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
                 exceptionCallback_ = std::forward<CallbackType>(callback);
             }
         }
-            
+
         if constexpr (traits::isSqlCallback)
         {
             callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
