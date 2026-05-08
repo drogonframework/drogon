@@ -119,17 +119,27 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     const std::string &getHeader(std::string key) const override
     {
-        transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
-            return tolower(c);
-        });
+        // Transform to lowercase efficiently
+        for (auto &c : key)
+        {
+            if (c >= 'A' && c <= 'Z')
+            {
+                c = c - 'A' + 'a';
+            }
+        }
         return getHeaderBy(key);
     }
 
     void removeHeader(std::string key) override
     {
-        transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
-            return tolower(c);
-        });
+        // Transform to lowercase efficiently
+        for (auto &c : key)
+        {
+            if (c >= 'A' && c <= 'Z')
+            {
+                c = c - 'A' + 'a';
+            }
+        }
         removeHeaderBy(key);
     }
 
@@ -151,27 +161,35 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void removeHeaderBy(const std::string &lowerKey)
     {
-        fullHeaderString_.reset();
+        headerDirty_ = true;
         headers_.erase(lowerKey);
     }
 
     void addHeader(std::string field, const std::string &value) override
     {
-        fullHeaderString_.reset();
-        transform(field.begin(),
-                  field.end(),
-                  field.begin(),
-                  [](unsigned char c) { return tolower(c); });
+        headerDirty_ = true;
+        // Transform to lowercase efficiently
+        for (auto &c : field)
+        {
+            if (c >= 'A' && c <= 'Z')
+            {
+                c = c - 'A' + 'a';
+            }
+        }
         headers_[std::move(field)] = value;
     }
 
     void addHeader(std::string field, std::string &&value) override
     {
-        fullHeaderString_.reset();
-        transform(field.begin(),
-                  field.end(),
-                  field.begin(),
-                  [](unsigned char c) { return tolower(c); });
+        headerDirty_ = true;
+        // Transform to lowercase efficiently
+        for (auto &c : field)
+        {
+            if (c >= 'A' && c <= 'Z')
+            {
+                c = c - 'A' + 'a';
+            }
+        }
         headers_[std::move(field)] = std::move(value);
     }
 
@@ -233,6 +251,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void redirect(const std::string &url)
     {
+        headerDirty_ = true;
         headers_["location"] = url;
     }
 
@@ -247,7 +266,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         datePos_ = std::string::npos;
         if (expriedTime_ < 0 && version_ == Version::kHttp10)
         {
-            fullHeaderString_.reset();
+            headerDirty_ = true;
         }
     }
 
@@ -382,6 +401,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         fullHeaderString_ = std::make_shared<trantor::MsgBuffer>(128);
         makeHeaderString(*fullHeaderString_);
+        headerDirty_ = false;
     }
 
     std::string contentTypeString() const override
@@ -540,6 +560,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
     mutable std::shared_ptr<std::string> jsonParsingErrorPtr_;
+    bool headerDirty_{false};  // Cache invalidation flag
     mutable std::string contentTypeString_{"text/html; charset=utf-8"};
     bool passThrough_{false};
 

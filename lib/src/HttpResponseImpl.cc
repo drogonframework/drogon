@@ -818,9 +818,10 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         return;
     }
 
-    if (!fullHeaderString_)
+    if (!fullHeaderString_ || headerDirty_)
     {
         makeHeaderString(buffer);
+        headerDirty_ = false;
     }
     else
     {
@@ -890,9 +891,10 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
         }
     }
     auto httpString = std::make_shared<trantor::MsgBuffer>(256);
-    if (!fullHeaderString_)
+    if (!fullHeaderString_ || headerDirty_)
     {
         makeHeaderString(*httpString);
+        headerDirty_ = false;
     }
     else
     {
@@ -939,9 +941,10 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
     renderHeaderForHeadMethod()
 {
     auto httpString = std::make_shared<trantor::MsgBuffer>(256);
-    if (!fullHeaderString_)
+    if (!fullHeaderString_ || headerDirty_)
     {
         makeHeaderString(*httpString);
+        headerDirty_ = false;
     }
     else
     {
@@ -978,11 +981,15 @@ void HttpResponseImpl::addHeader(const char *start,
                                  const char *colon,
                                  const char *end)
 {
-    fullHeaderString_.reset();
+    headerDirty_ = true;
     std::string field(start, colon);
-    transform(field.begin(), field.end(), field.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
+    for (auto &c : field)
+    {
+        if (c >= 'A' && c <= 'Z')
+        {
+            c = c - 'A' + 'a';
+        }
+    }
     ++colon;
     while (colon < end && isspace(static_cast<unsigned char>(*colon)))
     {
@@ -1111,6 +1118,7 @@ void HttpResponseImpl::clear()
     version_ = Version::kHttp11;
     statusMessage_ = std::string_view{};
     fullHeaderString_.reset();
+    headerDirty_ = false;
     jsonParsingErrorPtr_.reset();
     sendfileName_.clear();
     if (streamCallback_)

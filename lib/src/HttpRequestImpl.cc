@@ -72,120 +72,112 @@ void HttpRequestImpl::parseJson() const
     }
 }
 
+// Helper function to efficiently decode parameters with fast path
+inline std::string decodeParameterIfNeeded(std::string_view param)
+{
+    // Fast path: if no % and no +, avoid urlDecode entirely
+    if (param.find('%') == std::string_view::npos &&
+        param.find('+') == std::string_view::npos)
+    {
+        return std::string(param);
+    }
+    return utils::urlDecode(param.data(), param.data() + param.length());
+}
+
+// Helper to parse parameter pairs from a string_view
+void parseParameterPairs(std::string_view input,
+                         SafeStringMap<std::string> &params)
+{
+    if (input.empty())
+        return;
+
+    std::string_view value = input;
+    while (!value.empty())
+    {
+        // Find the next parameter separator
+        auto pos = value.find('&');
+        auto coo =
+            (pos != std::string_view::npos) ? value.substr(0, pos) : value;
+
+        // Parse key=value pair
+        auto epos = coo.find('=');
+        if (epos != std::string_view::npos)
+        {
+            auto key = coo.substr(0, epos);
+            // Skip leading whitespace in key
+            std::string_view::size_type cpos = 0;
+            while (cpos < key.length() &&
+                   isspace(static_cast<unsigned char>(key[cpos])))
+                ++cpos;
+            key.remove_prefix(cpos);
+
+            auto pvalue = coo.substr(epos + 1);
+            // Decode only if necessary (fast path check)
+            params[decodeParameterIfNeeded(key)] =
+                decodeParameterIfNeeded(pvalue);
+        }
+        else if (!coo.empty())
+        {
+            // Key without value
+            params[decodeParameterIfNeeded(coo)];
+        }
+
+        if (pos == std::string_view::npos)
+        {
+            break;
+        }
+        value.remove_prefix(pos + 1);
+    }
+}
+
 void HttpRequestImpl::parseParameters() const
 {
+    // Parse query string parameters
     auto input = queryView();
     if (!input.empty())
     {
         std::string_view::size_type pos = 0;
-        while ((input[pos] == '?' ||
-                isspace(static_cast<unsigned char>(input[pos]))) &&
-               pos < input.length())
+        while (pos < input.length() &&
+               (input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))))
         {
             ++pos;
         }
-        auto value = input.substr(pos);
-        while ((pos = value.find('&')) != std::string_view::npos)
+        if (pos < input.length())
         {
-            auto coo = value.substr(0, pos);
-            auto epos = coo.find('=');
-            if (epos != std::string_view::npos)
-            {
-                auto key = coo.substr(0, epos);
-                std::string_view::size_type cpos = 0;
-                while (cpos < key.length() &&
-                       isspace(static_cast<unsigned char>(key[cpos])))
-                    ++cpos;
-                key.remove_prefix(cpos);
-                auto pvalue = coo.substr(epos + 1);
-                parameters_[utils::urlDecode(key)] = utils::urlDecode(pvalue);
-            }
-            else
-            {
-                parameters_[utils::urlDecode(coo)];
-            }
-            value.remove_prefix(pos + 1);
-        }
-        if (value.length() > 0)
-        {
-            auto &coo = value;
-            auto epos = coo.find('=');
-            if (epos != std::string_view::npos)
-            {
-                auto key = coo.substr(0, epos);
-                std::string_view::size_type cpos = 0;
-                while (cpos < key.length() &&
-                       isspace(static_cast<unsigned char>(key[cpos])))
-                    ++cpos;
-                key.remove_prefix(cpos);
-                auto pvalue = coo.substr(epos + 1);
-                parameters_[utils::urlDecode(key)] = utils::urlDecode(pvalue);
-            }
-            else
-            {
-                parameters_[utils::urlDecode(coo)];
-            }
+            auto value = input.substr(pos);
+            parseParameterPairs(value, parameters_);
         }
     }
 
+    // Parse body parameters if form-urlencoded
     input = contentView();
     if (input.empty())
         return;
+
     std::string type = getHeaderBy("content-type");
-    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
+    // Transform to lowercase efficiently
+    for (auto &c : type)
+    {
+        if (c >= 'A' && c <= 'Z')
+        {
+            c = c - 'A' + 'a';
+        }
+    }
     if (type.empty() ||
         type.find("application/x-www-form-urlencoded") != std::string::npos)
     {
         std::string_view::size_type pos = 0;
-        while ((input[pos] == '?' ||
-                isspace(static_cast<unsigned char>(input[pos]))) &&
-               pos < input.length())
+        while (pos < input.length() &&
+               (input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))))
         {
             ++pos;
         }
-        auto value = input.substr(pos);
-        while ((pos = value.find('&')) != std::string_view::npos)
+        if (pos < input.length())
         {
-            auto coo = value.substr(0, pos);
-            auto epos = coo.find('=');
-            if (epos != std::string_view::npos)
-            {
-                auto key = coo.substr(0, epos);
-                std::string_view::size_type cpos = 0;
-                while (cpos < key.length() &&
-                       isspace(static_cast<unsigned char>(key[cpos])))
-                    ++cpos;
-                key.remove_prefix(cpos);
-                auto pvalue = coo.substr(epos + 1);
-                parameters_[utils::urlDecode(key)] = utils::urlDecode(pvalue);
-            }
-            else
-            {
-                parameters_[utils::urlDecode(coo)];
-            }
-            value.remove_prefix(pos + 1);
-        }
-        if (value.length() > 0)
-        {
-            auto &coo = value;
-            auto epos = coo.find('=');
-            if (epos != std::string_view::npos)
-            {
-                auto key = coo.substr(0, epos);
-                std::string_view::size_type cpos = 0;
-                while (cpos < key.length() &&
-                       isspace(static_cast<unsigned char>(key[cpos])))
-                    ++cpos;
-                key.remove_prefix(cpos);
-                auto pvalue = coo.substr(epos + 1);
-                parameters_[utils::urlDecode(key)] = utils::urlDecode(pvalue);
-            }
-            else
-            {
-                parameters_[utils::urlDecode(coo)];
-            }
+            auto value = input.substr(pos);
+            parseParameterPairs(value, parameters_);
         }
     }
 }
@@ -434,10 +426,14 @@ void HttpRequestImpl::addHeader(const char *start,
 {
     std::string field(start, colon);
     // Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
-    std::transform(field.begin(),
-                   field.end(),
-                   field.begin(),
-                   [](unsigned char c) { return tolower(c); });
+    // Transform to lowercase efficiently
+    for (auto &c : field)
+    {
+        if (c >= 'A' && c <= 'Z')
+        {
+            c = c - 'A' + 'a';
+        }
+    }
     ++colon;
     while (colon < end && isspace(static_cast<unsigned char>(*colon)))
     {

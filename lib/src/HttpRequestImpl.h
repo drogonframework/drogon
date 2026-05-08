@@ -358,10 +358,14 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &getHeader(std::string field) const override
     {
-        std::transform(field.begin(),
-                       field.end(),
-                       field.begin(),
-                       [](unsigned char c) { return tolower(c); });
+        // Transform to lowercase efficiently
+        for (auto &c : field)
+        {
+            if (c >= 'A' && c <= 'Z')
+            {
+                c = c - 'A' + 'a';
+            }
+        }
         return getHeaderBy(field);
     }
 
