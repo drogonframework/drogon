@@ -21,6 +21,7 @@
 #include <iostream>
 #include <algorithm>
 #include <memory>
+#include <ctime>
 #include <fcntl.h>
 #ifndef _WIN32
 #include <sys/file.h>
@@ -385,8 +386,24 @@ void StaticFileRouter::sendStaticFileResponse(
                     {
                         resp->addHeader("Last-Modified",
                                         fileStat.modifiedTimeStr_);
-                        resp->addHeader("Expires",
-                                        "Thu, 01 Jan 1970 00:00:00 GMT");
+                        if (staticFilesCacheTime_ > 0)
+                        {
+                            time_t expiry =
+                                time(nullptr) +
+                                static_cast<time_t>(staticFilesCacheTime_);
+                            struct tm expiryTm;
+#ifdef _WIN32
+                            gmtime_s(&expiryTm, &expiry);
+#else
+                            gmtime_r(&expiry, &expiryTm);
+#endif
+                            char buf[64];
+                            size_t len = strftime(buf,
+                                                  sizeof(buf),
+                                                  "%a, %d %b %Y %H:%M:%S GMT",
+                                                  &expiryTm);
+                            resp->addHeader("Expires", std::string(buf, len));
+                        }
                     }
                     callback(resp);
                     return;
@@ -538,7 +555,23 @@ void StaticFileRouter::sendStaticFileResponse(
         if (!fileStat.modifiedTimeStr_.empty())
         {
             resp->addHeader("Last-Modified", fileStat.modifiedTimeStr_);
-            resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+            if (staticFilesCacheTime_ > 0)
+            {
+                time_t expiry =
+                    time(nullptr) + static_cast<time_t>(staticFilesCacheTime_);
+                struct tm expiryTm;
+#ifdef _WIN32
+                gmtime_s(&expiryTm, &expiry);
+#else
+                gmtime_r(&expiry, &expiryTm);
+#endif
+                char buf[64];
+                size_t len = strftime(buf,
+                                      sizeof(buf),
+                                      "%a, %d %b %Y %H:%M:%S GMT",
+                                      &expiryTm);
+                resp->addHeader("Expires", std::string(buf, len));
+            }
         }
         if (enableRange_)
         {
