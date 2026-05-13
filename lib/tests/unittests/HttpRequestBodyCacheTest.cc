@@ -43,9 +43,9 @@ DROGON_TEST(CachedRequestBodyIsSerialized)
                     "drogon-request-body-cache-test";
     std::filesystem::remove_all(tempRoot);
     std::filesystem::create_directories(tempRoot);
-    for (char hi : std::string{"0123456789abcdef"})
+    for (char hi : std::string{"0123456789abcdefABCDEF"})
     {
-        for (char lo : std::string{"0123456789abcdef"})
+        for (char lo : std::string{"0123456789abcdefABCDEF"})
         {
             std::filesystem::create_directories(tempRoot / "tmp" /
                                                 std::string{hi, lo});
