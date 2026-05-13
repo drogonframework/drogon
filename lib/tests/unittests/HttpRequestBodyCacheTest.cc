@@ -48,7 +48,7 @@ DROGON_TEST(CachedRequestBodyIsSerialized)
         for (char lo : std::string{"0123456789abcdef"})
         {
             std::filesystem::create_directories(tempRoot / "tmp" /
-                                               std::string{hi, lo});
+                                                std::string{hi, lo});
         }
     }
     UploadPathGuard uploadGuard{appFramework, appFramework.getUploadPath()};
