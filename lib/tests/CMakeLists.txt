@@ -45,8 +45,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS)
   # that are not exported from the shared drogon library on the CI runner.
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc
                        ../src/HttpRequestImpl.cc
-                       ../src/HttpAppFrameworkImpl.cc
-                       ../src/CacheFile.cc)
+                       ../src/HttpAppFrameworkImpl.cc)
 else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
                        unittests/HttpFileTest.cc
