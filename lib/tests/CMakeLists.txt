@@ -42,9 +42,11 @@ endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS)
   # Follow the existing pattern used by other tests: only compile
   # HttpUtils.cc into the unittest target for MSVC shared builds.
-  # Avoid compiling larger implementation files which pull
-  # platform-specific dependencies into the test target.
-  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc)
+  # Use a minimal test shim to provide symbols needed by tests (like
+  # HttpRequestBodyCacheTest) without pulling in platform-specific
+  # dependencies or unresolved external symbols from the shared library.
+  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc
+                       unittests/test_shim_windows_shared.cc)
 else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
                        unittests/HttpFileTest.cc
