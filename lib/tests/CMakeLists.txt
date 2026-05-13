@@ -40,8 +40,13 @@ if(Brotli_FOUND)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS)
+  # When building shared libraries on MSVC the unittest target must
+  # compile certain implementation sources directly to resolve symbols
+  # that are not exported from the shared drogon library on the CI runner.
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc
-                       ../src/HttpRequestImpl.cc)
+                       ../src/HttpRequestImpl.cc
+                       ../src/HttpAppFrameworkImpl.cc
+                       ../src/CacheFile.cc)
 else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
                        unittests/HttpFileTest.cc
