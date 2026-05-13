@@ -24,6 +24,7 @@ set(UNITTEST_SOURCES
     unittests/CacheMapTest.cc
     unittests/StringOpsTest.cc
     unittests/ControllerCreationTest.cc
+    unittests/HttpRequestBodyCacheTest.cc
     unittests/MultiPartParserTest.cc
     unittests/SlashRemoverTest.cc
     unittests/UtilitiesTest.cc

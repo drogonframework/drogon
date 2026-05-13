@@ -371,14 +371,16 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     assert(!(!content.empty() && !content_.empty()));
     if (!passThrough_)
     {
-        if (!content.empty() || !content_.empty())
+        const auto cachedBodyLength =
+            cacheFilePtr_ ? cacheFilePtr_->getStringView().length() : 0;
+        if (!content.empty() || !content_.empty() || cachedBodyLength != 0)
         {
             char buf[64];
             auto len = snprintf(
                 buf,
                 sizeof(buf),
                 contentLengthFormatString<decltype(content.length())>(),
-                content.length() + content_.length());
+                content.length() + content_.length() + cachedBodyLength);
             output->append(buf, len);
             if (contentTypeString_.empty())
             {
@@ -426,6 +428,12 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         output->append(content);
     if (!content_.empty())
         output->append(content_);
+    if (cacheFilePtr_)
+    {
+        auto bodyPieceView = cacheFilePtr_->getStringView();
+        if (!bodyPieceView.empty())
+            output->append(bodyPieceView.data(), bodyPieceView.length());
+    }
 }
 
 void HttpRequestImpl::addHeader(const char *start,
