@@ -40,7 +40,8 @@ if(Brotli_FOUND)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS)
-  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc)
+  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc
+                       ../src/HttpRequestImpl.cc)
 else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
                        unittests/HttpFileTest.cc
