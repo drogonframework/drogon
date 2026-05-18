@@ -758,19 +758,21 @@ void HttpServer::websocketRequestHandling(
     std::function<void(const HttpResponsePtr &)> &&callback,
     WebSocketConnectionImplPtr &&wsConnPtr)
 {
+    auto request = req;
     auto binder = std::move(binderPtr);
     auto wsConn = std::move(wsConnPtr);
 
     binder->handleRequest(
-        req,
-        [req, callback = std::move(callback)](const HttpResponsePtr &resp) {
-            AopAdvice::instance().passPostHandlingAdvices(req, resp);
+        request,
+        [request, callback = std::move(callback)](
+            const HttpResponsePtr &resp) {
+            AopAdvice::instance().passPostHandlingAdvices(request, resp);
             callback(resp);
         });
 
     // TODO: more elegant?
     static_cast<WebsocketControllerBinder *>(binder.get())
-        ->handleNewConnection(req, wsConn);
+        ->handleNewConnection(request, wsConn);
 }
 
 void HttpServer::handleResponse(
