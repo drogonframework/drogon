@@ -152,33 +152,6 @@ class WebSocketCoroControllerBase : public WebSocketControllerBase
   public:
     ~WebSocketCoroControllerBase() override = default;
 
-    void handleNewMessage(const WebSocketConnectionPtr &conn,
-                          std::string &&message,
-                          const WebSocketMessageType &type) final
-    {
-        drogon::async_run([this,
-                           conn,
-                           message = std::move(message),
-                           type]() mutable -> Task<> {
-            co_await handleNewMessageCoro(conn, std::move(message), type);
-        });
-    }
-
-    void handleNewConnection(const HttpRequestPtr &req,
-                             const WebSocketConnectionPtr &conn) final
-    {
-        drogon::async_run([this, req, conn]() mutable -> Task<> {
-            co_await handleNewConnectionCoro(req, conn);
-        });
-    }
-
-    void handleConnectionClosed(const WebSocketConnectionPtr &conn) final
-    {
-        drogon::async_run([this, conn]() mutable -> Task<> {
-            co_await handleConnectionClosedCoro(conn);
-        });
-    }
-
     virtual Task<> handleNewMessageCoro(const WebSocketConnectionPtr &,
                                         std::string &&,
                                         const WebSocketMessageType &) = 0;
@@ -202,6 +175,38 @@ class WebSocketCoroController : public DrObject<T>,
 
     virtual ~WebSocketCoroController()
     {
+    }
+
+    void handleNewMessage(const WebSocketConnectionPtr &conn,
+                          std::string &&message,
+                          const WebSocketMessageType &type) final
+    {
+        auto objPtr = DrClassMap::getSingleInstance<T>();
+        drogon::async_run([objPtr,
+                           conn,
+                           message = std::move(message),
+                           type]() mutable -> Task<> {
+            co_await objPtr->handleNewMessageCoro(conn,
+                                                  std::move(message),
+                                                  type);
+        });
+    }
+
+    void handleNewConnection(const HttpRequestPtr &req,
+                             const WebSocketConnectionPtr &conn) final
+    {
+        auto objPtr = DrClassMap::getSingleInstance<T>();
+        drogon::async_run([objPtr, req, conn]() mutable -> Task<> {
+            co_await objPtr->handleNewConnectionCoro(req, conn);
+        });
+    }
+
+    void handleConnectionClosed(const WebSocketConnectionPtr &conn) final
+    {
+        auto objPtr = DrClassMap::getSingleInstance<T>();
+        drogon::async_run([objPtr, conn]() mutable -> Task<> {
+            co_await objPtr->handleConnectionClosedCoro(conn);
+        });
     }
 
   protected:
