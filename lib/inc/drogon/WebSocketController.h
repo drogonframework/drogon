@@ -164,7 +164,8 @@ class WebSocketCoroControllerBase : public WebSocketControllerBase
 };
 
 /**
- * @brief Reflection base class template for coroutine WebSocket controllers.
+ * @brief Reflection base class template for coroutine WebSocket
+ * controllers.
  */
 template <typename T, bool AutoCreation = true>
 class WebSocketCoroController : public DrObject<T>,

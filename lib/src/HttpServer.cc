@@ -764,8 +764,7 @@ void HttpServer::websocketRequestHandling(
 
     binder->handleRequest(
         request,
-        [request, callback = std::move(callback)](
-            const HttpResponsePtr &resp) {
+        [request, callback = std::move(callback)](const HttpResponsePtr &resp) {
             AopAdvice::instance().passPostHandlingAdvices(request, resp);
             callback(resp);
         });
