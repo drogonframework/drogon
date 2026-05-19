@@ -114,8 +114,7 @@ std::string findHeader(const std::string &raw, const std::string &name)
                    ::isspace(static_cast<unsigned char>(value[s])))
                 ++s;
             size_t e = value.size();
-            while (e > s &&
-                   ::isspace(static_cast<unsigned char>(value[e - 1])))
+            while (e > s && ::isspace(static_cast<unsigned char>(value[e - 1])))
                 --e;
             return value.substr(s, e - s);
         }
