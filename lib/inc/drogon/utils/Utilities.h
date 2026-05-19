@@ -120,6 +120,60 @@ inline std::vector<std::string> splitString(const std::string &str,
     return trantor::splitString(str, separator, acceptEmptyString);
 }
 
+/**
+ * @brief Count UTF-8 code points in a string.
+ *
+ * @param str UTF-8 string.
+ *
+ * @return Number of UTF-8 code points.
+ */
+inline size_t utf8Length(std::string_view str)
+{
+    size_t length = 0;
+
+    for (size_t i = 0; i < str.size();)
+    {
+        unsigned char ch = static_cast<unsigned char>(str[i]);
+
+        if ((ch & 0b10000000) == 0)
+        {
+            ++i;
+        }
+        else if ((ch & 0b11100000) == 0b11000000 && i + 1 < str.size() &&
+                 (static_cast<unsigned char>(str[i + 1]) & 0b11000000) ==
+                     0b10000000)
+        {
+            i += 2;
+        }
+        else if ((ch & 0b11110000) == 0b11100000 && i + 2 < str.size() &&
+                 (static_cast<unsigned char>(str[i + 1]) & 0b11000000) ==
+                     0b10000000 &&
+                 (static_cast<unsigned char>(str[i + 2]) & 0b11000000) ==
+                     0b10000000)
+        {
+            i += 3;
+        }
+        else if ((ch & 0b11111000) == 0b11110000 && i + 3 < str.size() &&
+                 (static_cast<unsigned char>(str[i + 1]) & 0b11000000) ==
+                     0b10000000 &&
+                 (static_cast<unsigned char>(str[i + 2]) & 0b11000000) ==
+                     0b10000000 &&
+                 (static_cast<unsigned char>(str[i + 3]) & 0b11000000) ==
+                     0b10000000)
+        {
+            i += 4;
+        }
+        else
+        {
+            ++i;
+        }
+
+        ++length;
+    }
+
+    return length;
+}
+
 DROGON_EXPORT std::set<std::string> splitStringToSet(
     const std::string &str,
     const std::string &separator);
