@@ -44,6 +44,7 @@ else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
                        unittests/HttpFileTest.cc
                        unittests/HttpMethodTest.cc
+                       unittests/HttpRequestForwardCacheBodyTest.cc
                        unittests/WebsocketResponseTest.cc)
 endif()
 
