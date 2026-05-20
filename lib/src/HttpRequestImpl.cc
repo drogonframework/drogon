@@ -368,17 +368,27 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             content.append("--");
         }
     }
+    // The body may be stored in either content_ or cacheFilePtr_ when the
+    // request body exceeds clientMaxMemoryBodySize_. The two storages are
+    // mutually exclusive — see appendToBody()/reserveBodySize().
+    std::string_view cachedBody;
+    if (cacheFilePtr_)
+    {
+        cachedBody = cacheFilePtr_->getStringView();
+    }
     assert(!(!content.empty() && !content_.empty()));
+    assert(!(!content.empty() && !cachedBody.empty()));
+    assert(!(!content_.empty() && !cachedBody.empty()));
     if (!passThrough_)
     {
-        if (!content.empty() || !content_.empty())
+        if (!content.empty() || !content_.empty() || !cachedBody.empty())
         {
             char buf[64];
             auto len = snprintf(
                 buf,
                 sizeof(buf),
                 contentLengthFormatString<decltype(content.length())>(),
-                content.length() + content_.length());
+                content.length() + content_.length() + cachedBody.length());
             output->append(buf, len);
             if (contentTypeString_.empty())
             {
@@ -426,6 +436,8 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         output->append(content);
     if (!content_.empty())
         output->append(content_);
+    if (!cachedBody.empty())
+        output->append(cachedBody.data(), cachedBody.length());
 }
 
 void HttpRequestImpl::addHeader(const char *start,

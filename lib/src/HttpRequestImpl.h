@@ -37,6 +37,9 @@
 #include <assert.h>
 #include <stdio.h>
 
+// Forward declaration so we can befriend a global-namespace test helper.
+class HttpRequestImplCacheFileTestAccess;
+
 namespace drogon
 {
 enum class StreamDecompressStatus
@@ -59,6 +62,7 @@ class HttpRequestImpl : public HttpRequest
 {
   public:
     friend class HttpRequestParser;
+    friend class ::HttpRequestImplCacheFileTestAccess;
 
     explicit HttpRequestImpl(trantor::EventLoop *loop)
         : creationDate_(trantor::Date::now()), loop_(loop)
