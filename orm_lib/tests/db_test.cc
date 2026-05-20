@@ -4175,31 +4175,36 @@ DROGON_TEST(SQLite3TransactionTypeTest)
 // write).
 DROGON_TEST(SQLite3TransactionTypeLockingTest)
 {
-    // A pool of 2 connections to a shared file-based database gives us two
-    // independent SQLite connections that observe each other's locks.
+    // Two pools (one connection each) to a shared file-based database give us
+    // deterministic connection ownership for lock checks.
     const auto nonce =
         std::chrono::steady_clock::now().time_since_epoch().count();
     const auto dbPath =
         "drogon_trans_type_lock_test_" + std::to_string(nonce) + ".db";
     std::remove(dbPath.c_str());
 
-    auto pool = DbClient::newSqlite3Client("filename=" + dbPath, 2);
+    {
+        auto setupClient = DbClient::newSqlite3Client("filename=" + dbPath, 1);
+        setupClient->execSqlSync("PRAGMA journal_mode=WAL");
+        setupClient->execSqlSync(
+            "CREATE TABLE IF NOT EXISTS lock_test (id INTEGER PRIMARY KEY)");
+    }
+
+    auto poolA = DbClient::newSqlite3Client("filename=" + dbPath, 1);
+    auto poolB = DbClient::newSqlite3Client("filename=" + dbPath, 1);
+
     // WAL mode is required: it changes BEGIN IMMEDIATE from acquiring a
     // RESERVED lock to acquiring the WAL write lock. This matches production
     // usage and makes the busy semantics more predictable — only one writer
     // is ever permitted and SQLITE_BUSY is returned immediately (no timeout
     // retry) when a second BEGIN IMMEDIATE is attempted.
-    pool->execSqlSync("PRAGMA journal_mode=WAL");
-    // No retry delay: SQLITE_BUSY must surface as an exception immediately.
-    pool->execSqlSync("PRAGMA busy_timeout=0");
-    pool->execSqlSync(
-        "CREATE TABLE IF NOT EXISTS lock_test (id INTEGER PRIMARY KEY)");
+    poolA->execSqlSync("PRAGMA journal_mode=WAL");
 
     std::shared_ptr<Transaction> transA;
     // Hold an IMMEDIATE transaction on connection A.
     try
     {
-        transA = pool->newTransaction(TransactionType::Immediate);
+        transA = poolA->newTransaction(TransactionType::Immediate);
         // doBegin() is asynchronous — the BEGIN IMMEDIATE is queued to the
         // connection's event loop. Run a synchronous query through the
         // transaction to flush the queue; once execSqlSync returns, the
@@ -4214,12 +4219,15 @@ DROGON_TEST(SQLite3TransactionTypeLockingTest)
         return;
     }
 
+    // Disable retry on B so SQLITE_BUSY surfaces immediately.
+    poolB->execSqlSync("PRAGMA busy_timeout=0");
+
     // Connection B attempting BEGIN IMMEDIATE must fail because A already
-    // holds the RESERVED lock. SQLite's default busy_timeout is 0.
+    // holds the RESERVED lock.
     bool gotBusy = false;
     try
     {
-        auto transB = pool->newTransaction(TransactionType::Immediate);
+        auto transB = poolB->newTransaction(TransactionType::Immediate);
         transB->execSqlSync("SELECT 1");
         transB->rollback();
     }
@@ -4229,6 +4237,7 @@ DROGON_TEST(SQLite3TransactionTypeLockingTest)
     }
 
     transA->rollback();
+    poolA->execSqlSync("SELECT 1");
     std::remove(dbPath.c_str());
 
     if (gotBusy)

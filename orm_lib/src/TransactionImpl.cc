@@ -314,8 +314,16 @@ void TransactionImpl::doBegin()
             {},
             {},
             [](const Result &) { LOG_TRACE << "Transaction begin!"; },
-            [thisPtr](const std::exception_ptr &) {
-                LOG_ERROR << "Error occurred in transaction begin";
+            [thisPtr](const std::exception_ptr &ePtr) {
+                try
+                {
+                    std::rethrow_exception(ePtr);
+                }
+                catch (const std::exception &e)
+                {
+                    LOG_ERROR << "Error occurred in transaction begin:"
+                              << e.what();
+                }
                 thisPtr->isCommitedOrRolledback_ = true;
                 thisPtr->isWorking_ = false;
                 thisPtr->thisPtr_.reset();
