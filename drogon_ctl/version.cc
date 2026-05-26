@@ -20,7 +20,6 @@
 #include <trantor/utils/Utilities.h>
 #include <iostream>
 
-using namespace drogon_ctl;
 static const char banner[] =
     R"(     _
   __| |_ __ ___   __ _  ___  _ __
@@ -30,7 +29,7 @@ static const char banner[] =
                  |___/
 )";
 
-void version::handleCommand(std::vector<std::string> &parameters)
+void drogon_ctl::version::handleCommand(std::vector<std::string> &parameters)
 {
     const auto tlsBackend = trantor::utils::tlsBackend();
     const bool tlsSupported = drogon::utils::supportsTls();
