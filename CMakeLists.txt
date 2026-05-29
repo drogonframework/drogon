@@ -14,6 +14,7 @@ option(BUILD_BROTLI "Build Brotli" ON)
 option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
 option(USE_STATIC_LIBS_ONLY "Use only static libraries as dependencies" OFF)
+option(BUILD_HTTP3 "Build with HTTP/3 (QUIC) support via ngtcp2/nghttp3" OFF)
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
@@ -251,6 +252,34 @@ if (BUILD_BROTLI)
         target_link_libraries(${PROJECT_NAME} PRIVATE Brotli_lib)
     endif (Brotli_FOUND)
 endif (BUILD_BROTLI)
+
+if (BUILD_HTTP3)
+    find_package(PkgConfig QUIET)
+    if (PkgConfig_FOUND)
+        pkg_check_modules(NGTCP2 IMPORTED_TARGET libngtcp2)
+        # ngtcp2 v1.x renamed crypto_quictls to crypto_ossl — try both
+        pkg_check_modules(NGTCP2_CRYPTO IMPORTED_TARGET libngtcp2_crypto_quictls)
+        if (NOT NGTCP2_CRYPTO_FOUND)
+            pkg_check_modules(NGTCP2_CRYPTO IMPORTED_TARGET libngtcp2_crypto_ossl)
+        endif()
+        pkg_check_modules(NGHTTP3 IMPORTED_TARGET libnghttp3)
+    endif()
+    if (NGTCP2_FOUND AND NGTCP2_CRYPTO_FOUND AND NGHTTP3_FOUND)
+        message(STATUS "HTTP/3 (QUIC) support enabled")
+        message(STATUS "  ngtcp2: ${NGTCP2_VERSION}")
+        message(STATUS "  ngtcp2_crypto: ${NGTCP2_CRYPTO_VERSION}")
+        message(STATUS "  nghttp3: ${NGHTTP3_VERSION}")
+        target_compile_definitions(${PROJECT_NAME} PUBLIC DROGON_HAS_HTTP3=1)
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+            PkgConfig::NGTCP2
+            PkgConfig::NGTCP2_CRYPTO
+            PkgConfig::NGHTTP3)
+    else()
+        message(WARNING "HTTP/3 requested but ngtcp2/nghttp3 not found. "
+            "Install libngtcp2, libngtcp2_crypto_quictls, and libnghttp3. "
+            "HTTP/3 support will be disabled.")
+    endif()
+endif (BUILD_HTTP3)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
@@ -501,6 +530,19 @@ if (NOT Hiredis_FOUND)
         ${private_headers}
         lib/src/RedisClientManager.h)
 endif (NOT Hiredis_FOUND)
+
+if (BUILD_HTTP3 AND NGTCP2_FOUND AND NGTCP2_CRYPTO_FOUND AND NGHTTP3_FOUND)
+    set(DROGON_SOURCES
+        ${DROGON_SOURCES}
+        lib/src/QuicServer.cc
+        lib/src/QuicConnection.cc
+        lib/src/Http3Handler.cc)
+    set(private_headers
+        ${private_headers}
+        lib/src/QuicServer.h
+        lib/src/QuicConnection.h
+        lib/src/Http3Handler.h)
+endif()
 
 if (BUILD_TESTING)
     add_subdirectory(nosql_lib/redis/tests)
