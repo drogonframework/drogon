@@ -750,7 +750,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         {
             // When the headers are created, it is time to set the transfer
             // encoding to chunked if the contents size is not specified
-            if (!ifCloseConnection() &&
+            if (version_ != Version::kHttp10 &&
                 headers_.find("content-length") == headers_.end())
             {
                 LOG_DEBUG << "send stream with transfer-encoding chunked";

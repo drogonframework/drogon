@@ -985,7 +985,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
         auto &asyncStreamCallback = respImplPtr->asyncStreamCallback();
         if (asyncStreamCallback)
         {
-            if (!respImplPtr->ifCloseConnection())
+            if (respImplPtr->version() != Version::kHttp10)
             {
                 asyncStreamCallback(
                     std::make_unique<ResponseStream>(conn->sendAsyncStream(
@@ -993,7 +993,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
             }
             else
             {
-                LOG_INFO << "Chunking Set CloseConnection !!!";
+                LOG_INFO << "Async stream not supported for HTTP/1.0";
             }
         }
         auto &streamCallback = respImplPtr->streamCallback();
@@ -1069,7 +1069,7 @@ void HttpServer::sendResponses(
             {
                 conn->send(buffer);
                 buffer.retrieveAll();
-                if (!respImplPtr->ifCloseConnection())
+                if (respImplPtr->version() != Version::kHttp10)
                 {
                     asyncStreamCallback(
                         std::make_unique<ResponseStream>(conn->sendAsyncStream(
@@ -1077,7 +1077,7 @@ void HttpServer::sendResponses(
                 }
                 else
                 {
-                    LOG_INFO << "Chunking Set CloseConnection !!!";
+                    LOG_INFO << "Async stream not supported for HTTP/1.0";
                 }
             }
             auto &streamCallback = respImplPtr->streamCallback();
