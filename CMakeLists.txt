@@ -186,7 +186,6 @@ if(TARGET std::filesystem)
     target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
   endif()
 endif()
-set(BUILD_TESTING ON)
 
 # jsoncpp
 find_package(jsoncpp QUIET CONFIG)
