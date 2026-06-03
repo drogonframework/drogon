@@ -189,7 +189,7 @@ endif()
 
 
 # jsoncpp
-find_package(jsoncpp REQUIRED CONFIG)
+find_package(jsoncpp QUIET CONFIG)
 if (jsoncpp_FOUND)
   message(STATUS "jsoncpp found by config")
   if (USE_STATIC_LIBS_ONLY)
