@@ -189,8 +189,18 @@ endif()
 
 
 # jsoncpp
-find_package(Jsoncpp REQUIRED)
-target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
+find_package(jsoncpp REQUIRED CONFIG)
+if (jsoncpp_FOUND)
+  message(STATUS "jsoncpp found by config")
+  if (USE_STATIC_LIBS_ONLY)
+    target_link_libraries(${PROJECT_NAME} PUBLIC jsoncpp_static)
+  else()
+    target_link_libraries(${PROJECT_NAME} PUBLIC jsoncpp_lib)
+   endif()
+ else()
+  find_package(Jsoncpp REQUIRED MODULE)
+  target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
+endif()
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
 # yamlcpp
