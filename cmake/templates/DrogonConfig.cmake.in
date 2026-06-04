@@ -13,9 +13,7 @@ include(CMakeFindDependencyMacro)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 
 find_package(jsoncpp QUIET CONFIG)
-if(jsoncpp_FOUND)
-  find_dependency(jsoncpp CONFIG REQUIRED)
-else()
+if(NOT ${jsoncpp_FOUND})
   find_dependency(Jsoncpp MODULE REQUIRED)
 endif()
 
