@@ -118,6 +118,7 @@ class RequestStreamTestCtrl : public HttpController<RequestStreamTestCtrl>
                 {
                     ctx->firstFileContent.append(data, length);
                 }
+                return true;
             },
             [ctx, callback = std::move(callback)](std::exception_ptr ex) {
                 auto resp = HttpResponse::newHttpResponse();
