@@ -2,7 +2,9 @@
 #include <chrono>
 using namespace drogon;
 using namespace std::chrono_literals;
-
+// NOTE: If you are getting a segmentation fault when
+// enabling these routes make sure to call .enableSession(24h)
+// on app().
 int main()
 {
     app().registerHandler(
