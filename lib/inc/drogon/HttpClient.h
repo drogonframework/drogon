@@ -186,7 +186,8 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual std::size_t requestsBufferSize() = 0;
 
     /**
-     * @brief Get the total number of outstanding requests (buffered + in-flight).
+     * @brief Get the total number of outstanding requests (buffered +
+     * in-flight).
      */
     virtual std::size_t outstandingRequests() const = 0;
 
