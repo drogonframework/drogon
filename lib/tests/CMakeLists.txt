@@ -64,6 +64,7 @@ if (BUILD_CTL)
       integration_test/server/CustomHeaderFilter.cc
       integration_test/server/DoNothingPlugin.cc
       integration_test/server/ForwardCtrl.cc
+      integration_test/server/HttpClientOutstandingRequests.cc
       integration_test/server/JsonTestController.cc
       integration_test/server/ListParaCtl.cc
       integration_test/server/PipeliningTest.cc
