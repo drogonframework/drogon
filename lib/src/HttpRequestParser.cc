@@ -221,9 +221,35 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // and maintainability.
 
                 // process header information
+                const std::string &encode =
+                    request_->getHeaderBy("transfer-encoding");
                 auto &len = request_->getHeaderBy("content-length");
+
+                // RFC 9112 6.1 / RFC 9110 8.6: a request carrying both a
+                // Content-Length and a Transfer-Encoding, or conflicting
+                // Content-Length values, has ambiguous framing and is a
+                // request smuggling vector. Reject it outright rather than
+                // silently favoring one header over the other.
+                if (!encode.empty() && !len.empty())
+                {
+                    return -k400BadRequest;
+                }
+                if (request_->multipleContentLength_)
+                {
+                    return -k400BadRequest;
+                }
+
                 if (!len.empty())
                 {
+                    // Content-Length must be a run of digits only; reject a
+                    // leading sign, whitespace or trailing garbage that
+                    // std::stoull would otherwise silently accept (e.g. "-1"
+                    // wrapping to a huge value, or "5abc").
+                    if (len.find_first_not_of("0123456789") !=
+                        std::string::npos)
+                    {
+                        return -k400BadRequest;
+                    }
                     try
                     {
                         remainContentLength_ =
@@ -246,8 +272,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 else
                 {
-                    const std::string &encode =
-                        request_->getHeaderBy("transfer-encoding");
                     if (encode.empty())
                     {
                         // no content-length and no transfer-encoding,
@@ -367,18 +391,35 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // chunk length line
                 std::string len(buf->peek(), crlf - buf->peek());
                 char *end;
-                currentChunkLength_ = strtol(len.c_str(), &end, 16);
-                if (currentChunkLength_ != 0)
+                // Parse as unsigned; a signed strtol would turn a value such
+                // as "-1" into a huge size_t after the cast.
+                unsigned long long chunkLen = strtoull(len.c_str(), &end, 16);
+                // The field must begin with a valid hex digit and may only be
+                // followed by a chunk extension (";...") or trailing
+                // whitespace; anything else is a malformed chunk size.
+                if (end == len.c_str() ||
+                    (*end != '\0' && *end != ';' && *end != ' ' &&
+                     *end != '\t'))
                 {
-                    if (currentChunkLength_ + remainContentLength_ >
-                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                    return -k400BadRequest;
+                }
+                if (chunkLen != 0)
+                {
+                    auto maxBodySize =
+                        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+                    // Compare on the wide unsigned value and subtract from the
+                    // limit to avoid the size_t overflow that "chunkLen +
+                    // remainContentLength_" could wrap past.
+                    if (chunkLen > maxBodySize - remainContentLength_)
                     {
                         return -k413RequestEntityTooLarge;
                     }
+                    currentChunkLength_ = static_cast<size_t>(chunkLen);
                     status_ = HttpRequestParseStatus::kExpectChunkBody;
                 }
                 else
                 {
+                    currentChunkLength_ = 0;
                     status_ = HttpRequestParseStatus::kExpectLastEmptyChunk;
                 }
                 buf->retrieveUntil(crlf + CRLF_LEN);

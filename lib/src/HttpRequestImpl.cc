@@ -503,6 +503,22 @@ void HttpRequestImpl::addHeader(const char *start,
             }
             break;
 
+            case 14:
+                if (field == "content-length")
+                {
+                    // RFC 9110 8.6: a message with multiple Content-Length
+                    // fields carrying differing values has ambiguous framing
+                    // and must be rejected (request smuggling vector). The
+                    // header map keeps the first value, so record the conflict
+                    // here before it is collapsed.
+                    auto it = headers_.find(field);
+                    if (it != headers_.end() && it->second != value)
+                    {
+                        multipleContentLength_ = true;
+                    }
+                }
+                break;
+
             default:
                 break;
         }
