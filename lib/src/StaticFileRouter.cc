@@ -76,7 +76,15 @@ void StaticFileRouter::route(
     const std::string &path = req->path();
     if (path.find("..") != std::string::npos)
     {
-        auto directories = utils::splitString(path, "/");
+        // Treat the backslash as a path separator as well. On Windows the
+        // filesystem accepts '\\' as a directory separator, so a request
+        // target such as "..%5c..%5c" (which is url-decoded to "..\..\")
+        // must not be able to slip past a traversal check that only splits
+        // on '/'. Normalize a copy of the path used solely for this check;
+        // the path actually used to locate the file is left untouched.
+        std::string normalizedPath = path;
+        std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+        auto directories = utils::splitString(normalizedPath, "/");
         int traversalDepth = 0;
         for (const auto &dir : directories)
         {
