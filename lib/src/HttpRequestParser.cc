@@ -397,9 +397,8 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // The field must begin with a valid hex digit and may only be
                 // followed by a chunk extension (";...") or trailing
                 // whitespace; anything else is a malformed chunk size.
-                if (end == len.c_str() ||
-                    (*end != '\0' && *end != ';' && *end != ' ' &&
-                     *end != '\t'))
+                if (end == len.c_str() || (*end != '\0' && *end != ';' &&
+                                           *end != ' ' && *end != '\t'))
                 {
                     return -k400BadRequest;
                 }
