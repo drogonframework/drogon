@@ -44,8 +44,9 @@ std::string create::detail()
            "create a project named project_name\n\n"
            "drogon_ctl create model <model_path> [-o <output path>] [ "
            "--clear-output]"
-           "[--table=<table_name>] [-f]//"
-           "create model classes in model_path\n";
+           "[--table=<table_name>] [--namespace=<namespace_name>] [-f]//"
+           "create model classes in model_path, namespace defaults to database "
+           "name";
 }
 
 void create::handleCommand(std::vector<std::string> &parameters)

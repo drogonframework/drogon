@@ -234,6 +234,7 @@ void create_model::createModelClassFromPG(
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = dbname_;
+    data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("postgresql");
     data["convertMethods"] = convertMethods;
     // Start with user-configured relationships (mutable copy)
@@ -556,6 +557,7 @@ void create_model::createModelClassFromMysql(
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = dbname_;
+    data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("mysql");
     data["convertMethods"] = convertMethods;
     // Start with user-configured relationships (mutable copy)
@@ -765,6 +767,7 @@ void create_model::createModelClassFromSqlite3(
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = std::string("sqlite3");
+    data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("sqlite3");
     data["convertMethods"] = convertMethods;
     // Start with user-configured relationships (mutable copy)
@@ -1019,6 +1022,10 @@ void create_model::createModel(const std::string &path,
             exit(1);
         }
         dbname_ = dbname;
+        if (!namespaceOverridden_)
+        {
+            namespaceName_ = config.get("namespace", dbname).asString();
+        }
         auto user = config.get("user", "").asString();
         if (user == "")
         {
@@ -1131,6 +1138,10 @@ void create_model::createModel(const std::string &path,
             exit(1);
         }
         dbname_ = dbname;
+        if (!namespaceOverridden_)
+        {
+            namespaceName_ = config.get("namespace", dbname).asString();
+        }
         auto user = config.get("user", "").asString();
         if (user == "")
         {
@@ -1233,6 +1244,10 @@ void create_model::createModel(const std::string &path,
             std::cerr << "Please configure filename in " << path
                       << "/model.json " << std::endl;
             exit(1);
+        }
+        if (!namespaceOverridden_)
+        {
+            namespaceName_ = config.get("namespace", "sqlite3").asString();
         }
         std::string connStr = "filename=" + escapeConnString(filename);
         DbClientPtr client =
@@ -1417,6 +1432,22 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
             parameters.erase(iter);
             break;
         }
+    }
+
+    for (auto iter = parameters.begin(); iter != parameters.end();)
+    {
+        if ((*iter) == "--namespace")
+        {
+            namespaceOverridden_ = true;
+            iter = parameters.erase(iter);
+            if (iter != parameters.end())
+            {
+                namespaceName_ = *iter;
+                iter = parameters.erase(iter);
+            }
+            continue;
+        }
+        ++iter;
     }
 
     for (auto const &path : parameters)

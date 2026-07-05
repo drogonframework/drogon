@@ -39,8 +39,14 @@ using DbClientPtr = std::shared_ptr<DbClient>;
 }
 namespace drogon_model
 {
-namespace [[dbName]]
+<%c++
+auto &namespaceName=@@.get<std::string>("namespaceName");
+if(!namespaceName.empty())
 {
+    $$<<"namespace "<<namespaceName<<"\n";
+    $$<<"{\n";
+}
+%>
 <%c++
 auto &schema=@@.get<std::string>("schema");
     if(!schema.empty())
@@ -565,6 +571,10 @@ if(!schema.empty())
 {
     $$<<"} // namespace "<<schema<<"\n";
 }
+auto &namespaceName2=@@.get<std::string>("namespaceName");
+if(!namespaceName2.empty())
+{
+    $$<<"} // namespace "<<namespaceName2<<"\n";
+}
 %>
-} // namespace [[dbName]]
 } // namespace drogon_model

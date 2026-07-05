@@ -62,16 +62,22 @@ for(auto convertMethod : convertMethods ) {
 
 using namespace drogon;
 using namespace drogon::orm;
-using namespace drogon_model::[[dbName]]<%c++
-auto &schema=@@.get<std::string>("schema");
-if(!schema.empty())
+<%c++
+auto &namespaceName=@@.get<std::string>("namespaceName");
+if(!namespaceName.empty())
 {
-    $$<<"::"<<schema<<";\n";
+    $$<<"using namespace drogon_model::"<<namespaceName;
 }
 else
 {
-    $$<<";\n";
+    $$<<"using namespace drogon_model";
 }
+auto &schema=@@.get<std::string>("schema");
+if(!schema.empty())
+{
+    $$<<"::"<<schema;
+}
+$$<<";\n";
 %>
 
 <%c++for(auto col:cols){
