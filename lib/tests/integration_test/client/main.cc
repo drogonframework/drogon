@@ -673,6 +673,15 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/a-directory");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k301MovedPermanently);
+            CHECK(resp->getHeader("Location") == "/a-directory/");
+        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/a-directory/");
     client->sendRequest(req,
                         [req, TEST_CTX, body](ReqResult result,
                                               const HttpResponsePtr &resp) {
