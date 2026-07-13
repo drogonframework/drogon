@@ -214,7 +214,73 @@ function do_drogon_ctl_test()
         exit -1
     fi
 
-    cd ../views
+    # Test namespace customization feature for model generation
+    cd ..
+    mkdir -p test_models
+    cd test_models
+
+    if command -v sqlite3 > /dev/null 2>&1; then
+        echo "Testing namespace customization feature..."
+        sqlite3 test.db "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL, email TEXT NOT NULL);"
+
+        run_ns_test() {
+            local ns_config="$1"
+            local ns_cli="$2"
+            local expected_ns="$3"
+            local description="$4"
+            local expect_empty="$5"
+
+            cat > model.json <<EOF
+{
+    "rdbms": "sqlite3",
+    "filename": "test.db",
+    "namespace": "$ns_config",
+    "tables": [],
+    "restful_api_controllers": {"enabled": false}
+}
+EOF
+
+            if [ "$ns_cli" != "SKIP" ]; then
+                ${drogon_ctl_exec} create model . --table=users --namespace "$ns_cli" -f > /dev/null 2>&1
+            else
+                ${drogon_ctl_exec} create model . --table=users -f > /dev/null 2>&1
+            fi
+
+            if [ ! -f "Users.h" ] || [ ! -f "Users.cc" ]; then
+                echo "✗ Failed to create model files: $description"
+                exit -1
+            fi
+
+            if [ "$expect_empty" = "true" ]; then
+                if ! grep -q "namespace drogon_model" Users.h || grep -q "namespace drogon_model::" Users.h; then
+                    echo "✗ Empty namespace test failed: $description"
+                    exit -1
+                fi
+            else
+                if ! grep -q "namespace $expected_ns" Users.h || ! grep -q "using namespace drogon_model::$expected_ns" Users.cc; then
+                    echo "✗ Namespace test failed: $description"
+                    exit -1
+                fi
+            fi
+            echo "✓ $description"
+            rm -f Users.h Users.cc
+        }
+
+        run_ns_test "myapp" "SKIP" "myapp" "Custom namespace from config"
+        run_ns_test "" "cli_ns" "cli_ns" "Custom namespace from CLI option"
+        run_ns_test "config_ns" "override_ns" "override_ns" "CLI namespace overrides config"
+        run_ns_test "should_be_ignored" "" "" "Empty namespace from CLI" "true"
+
+        cd ..
+        rm -rf test_models
+        echo "Namespace customization tests passed"
+    else
+        echo "sqlite3 not found, skipping namespace customization tests"
+        cd ..
+        rm -rf test_models
+    fi
+
+    cd views
 
     echo "Hello, world!" >>hello.csp
 
