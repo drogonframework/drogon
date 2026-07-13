@@ -427,7 +427,6 @@ void HttpServer::onHttpRequest(
         return;
     }
 
-    // TODO: move session related codes to its own singleton class
     HttpAppFrameworkImpl::instance().findSessionForRequest(req);
     // pre-routing aop
     auto &aop = AopAdvice::instance();
