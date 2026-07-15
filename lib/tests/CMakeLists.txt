@@ -57,7 +57,6 @@ if (BUILD_CTL)
       integration_test/client/MultipleWsTest.cc
       integration_test/client/HttpPipeliningTest.cc
       integration_test/client/RequestStreamTest.cc)
-  add_executable(integration_test_client ${INTEGRATION_TEST_CLIENT_SOURCES})
 
   set(INTEGRATION_TEST_SERVER_SOURCES
       integration_test/server/CustomCtrl.cc
@@ -87,11 +86,16 @@ if (BUILD_CTL)
     set(INTEGRATION_TEST_SERVER_SOURCES
         ${INTEGRATION_TEST_SERVER_SOURCES}
         integration_test/server/CoroFilter.cpp
-        integration_test/server/api_v1_CoroTest.cc)
+        integration_test/server/api_v1_CoroTest.cc
+        integration_test/server/WebSocketCoroTest.cc)
+    set(INTEGRATION_TEST_CLIENT_SOURCES
+        ${INTEGRATION_TEST_CLIENT_SOURCES}
+        integration_test/client/WebSocketCoroTest.cc)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
   endif(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
 
+  add_executable(integration_test_client ${INTEGRATION_TEST_CLIENT_SOURCES})
   add_executable(integration_test_server ${INTEGRATION_TEST_SERVER_SOURCES})
   drogon_create_views(integration_test_server
                       ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server
