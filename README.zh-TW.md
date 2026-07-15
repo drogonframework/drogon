@@ -47,7 +47,9 @@ Drogon 是一個跨平台框架，支援 Linux、macOS、FreeBSD/OpenBSD、Haiku
 
 ```c++
 #include <drogon/drogon.h>
+
 using namespace drogon;
+
 int main()
 {
     app().setLogPath("./")
@@ -63,7 +65,9 @@ int main()
 
 ```c++
 #include <drogon/drogon.h>
+
 using namespace drogon;
+
 int main()
 {
     app().loadConfigFile("./config.json").run();
@@ -76,40 +80,43 @@ int main()
 app().registerHandler("/test?username={name}",
                     [](const HttpRequestPtr& req,
                        std::function<void (const HttpResponsePtr &)> &&callback,
-                       const std::string &name)
+                       const std::string &name) -> void
                     {
                         Json::Value json;
-                        json["result"]="ok";
-                        json["message"]=std::string("hello,")+name;
-                        auto resp=HttpResponse::newHttpJsonResponse(json);
+                        json["result"] = "ok";
+                        json["message"] = "hello, " + name;
+                        HttpResponsePtr resp = HttpResponse::newHttpJsonResponse(json);
                         callback(resp);
                     },
                     {Get,"LoginFilter"});
 ```
 
-這看起來很方便，但不適用於複雜的場景，試想如果有數十個或數百個處理函式要註冊進框架，`main()` 函式將變得難以閱讀。顯然，讓每個包含處理函式的類別在自己的定義中完成註冊是更好的選擇。所以，除非你的應用邏輯非常簡單，我們不建議使用上述介面，更好的做法是建立一個 HttpSimpleController 類別，如下：
+這看起來很方便，但不適用於複雜的場景，試想如果有數十個或數百個處理函式要註冊進框架，`main()` 函式將變得難以閱讀。顯然，讓每個包含處理函式的類別在自己的定義中完成註冊是更好的選擇。所以，除非你的應用邏輯非常簡單，我們不建議使用上述介面，更好的做法是建立一個 `HttpSimpleController` 類別，如下：
 
 ```c++
 /// The TestCtrl.h file
 #pragma once
 #include <drogon/HttpSimpleController.h>
+
 using namespace drogon;
-class TestCtrl:public drogon::HttpSimpleController<TestCtrl>
+
+class TestCtrl : public HttpSimpleController<TestCtrl>
 {
 public:
     void asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
-    PATH_ADD("/test",Get);
+    PATH_ADD("/test", Get);
     PATH_LIST_END
 };
 
 /// The TestCtrl.cc file
 #include "TestCtrl.h"
+
 void TestCtrl::asyncHandleHttpRequest(const HttpRequestPtr& req,
                                       std::function<void (const HttpResponsePtr &)> &&callback)
 {
-    //write your application logic here
-    auto resp = HttpResponse::newHttpResponse();
+    // write your application logic here
+    HttpResponsePtr resp = HttpResponse::newHttpResponse();
     resp->setBody("<p>Hello, world!</p>");
     resp->setExpiredTime(0);
     callback(resp);
@@ -124,50 +131,53 @@ void TestCtrl::asyncHandleHttpRequest(const HttpRequestPtr& req,
 /// The header file
 #pragma once
 #include <drogon/HttpSimpleController.h>
+
 using namespace drogon;
-class JsonCtrl : public drogon::HttpSimpleController<JsonCtrl>
+
+class JsonCtrl : public HttpSimpleController<JsonCtrl>
 {
   public:
     void asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
-    //list path definitions here;
+    // list path definitions here;
     PATH_ADD("/json", Get);
     PATH_LIST_END
 };
 
 /// The source file
 #include "JsonCtrl.h"
+
 void JsonCtrl::asyncHandleHttpRequest(const HttpRequestPtr &req,
                                       std::function<void(const HttpResponsePtr &)> &&callback)
 {
     Json::Value ret;
     ret["message"] = "Hello, World!";
-    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    HttpResponsePtr resp = HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }
 ```
 
-讓我們更進一步，透過 HttpController 類別建立一個 RESTful API 的範例，如下所示（省略實作檔案）：
+讓我們更進一步，透過 `HttpController` 類別建立一個 RESTful API 的範例，如下所示（省略實作檔案）：
 
 ```c++
 /// The header file
 #pragma once
 #include <drogon/HttpController.h>
+
 using namespace drogon;
-namespace api
+
+namespace api::v1
 {
-namespace v1
-{
-class User : public drogon::HttpController<User>
+class User : public HttpController<User>
 {
   public:
     METHOD_LIST_BEGIN
-    //use METHOD_ADD to add your custom processing function here;
-    METHOD_ADD(User::getInfo, "/{id}", Get);                  //path is /api/v1/User/{arg1}
-    METHOD_ADD(User::getDetailInfo, "/{id}/detailinfo", Get);  //path is /api/v1/User/{arg1}/detailinfo
-    METHOD_ADD(User::newUser, "/{name}", Post);                 //path is /api/v1/User/{arg1}
+    // use METHOD_ADD to add your custom processing function here;
+    METHOD_ADD(User::getInfo, "/{id}", Get); // path is /api/v1/User/{arg1}
+    METHOD_ADD(User::getDetailInfo, "/{id}/detailinfo", Get); // path is /api/v1/User/{arg1}/detailinfo
+    METHOD_ADD(User::newUser, "/{name}", Post); // path is /api/v1/User/{arg1}
     METHOD_LIST_END
-    //your declaration of processing function maybe like this:
+    // your declaration of processing function maybe like this:
     void getInfo(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int userId) const;
     void getDetailInfo(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int userId) const;
     void newUser(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, std::string &&userName);
@@ -177,8 +187,7 @@ class User : public drogon::HttpController<User>
         LOG_DEBUG << "User constructor!";
     }
 };
-} // namespace v1
-} // namespace api
+} // namespace api::v1
 ```
 
 如你所見，透過 `HttpController` 類別，使用者可以同時對應路徑和路徑參數，這對 RESTful API 應用來說非常方便。
