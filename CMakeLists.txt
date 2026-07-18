@@ -7,6 +7,7 @@ message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
+option(BUILD_ORM_REFLECTION "Build experimental C++26 reflection ORM support" OFF)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_SHARED_LIBS "Build drogon as a shared lib" OFF)
 option(BUILD_DOC "Build Doxygen documentation" OFF)
@@ -22,6 +23,45 @@ CMAKE_DEPENDENT_OPTION(BUILD_MYSQL "Build with mysql support" ON "BUILD_ORM" OFF
 CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "USE_SUBMODULE" OFF)
+
+if (BUILD_ORM_REFLECTION)
+    if (CMAKE_VERSION VERSION_LESS 3.25)
+        message(FATAL_ERROR
+            "BUILD_ORM_REFLECTION requires CMake 3.25 or newer")
+    endif ()
+
+    if (NOT BUILD_ORM)
+        message(FATAL_ERROR
+            "BUILD_ORM_REFLECTION requires BUILD_ORM=ON")
+    endif ()
+
+    if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+        OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16)
+        message(FATAL_ERROR
+            "BUILD_ORM_REFLECTION requires GCC 16 or newer. "
+            "Configure with -DCMAKE_CXX_COMPILER.")
+    endif ()
+
+    try_compile(DROGON_HAS_CXX26_REFLECTION
+        ${CMAKE_BINARY_DIR}/cmaketest/orm_reflection
+        ${PROJECT_SOURCE_DIR}/cmake/tests/check_orm_reflection.cc
+        CMAKE_FLAGS
+            -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
+        COMPILE_DEFINITIONS
+            -std=c++26
+            -freflection
+        OUTPUT_VARIABLE DROGON_CXX26_REFLECTION_PROBE_OUTPUT)
+
+    if (NOT DROGON_HAS_CXX26_REFLECTION)
+        message(FATAL_ERROR
+            "BUILD_ORM_REFLECTION requires GCC's C++26 reflection implementation "
+            "with annotations, expansion statements, static storage promotion, "
+            "and splicing. The compile probe with '-std=c++26 -freflection' failed:\n"
+            "${DROGON_CXX26_REFLECTION_PROBE_OUTPUT}")
+    endif ()
+
+    message(STATUS "C++26 reflection support verified")
+endif ()
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 9)
@@ -721,6 +761,7 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/Field.h
     orm_lib/inc/drogon/orm/FunctionTraits.h
     orm_lib/inc/drogon/orm/Mapper.h
+    orm_lib/inc/drogon/orm/ReflectiveMapper.h
     orm_lib/inc/drogon/orm/CoroMapper.h
     orm_lib/inc/drogon/orm/Result.h
     orm_lib/inc/drogon/orm/ResultIterator.h
