@@ -79,6 +79,7 @@ class HttpRequestImpl : public HttpRequest
         cookies_.clear();
         contentLengthHeaderValue_.reset();
         realContentLength_ = 0;
+        multipleContentLength_ = false;
         flagForParsingParameters_ = false;
         path_.clear();
         originalPath_.clear();
@@ -739,6 +740,10 @@ class HttpRequestImpl : public HttpRequest
     SafeStringMap<std::string> cookies_;
     std::optional<size_t> contentLengthHeaderValue_;
     size_t realContentLength_{0};
+    // Set when more than one Content-Length header with differing values is
+    // received. Such a request has ambiguous framing (request smuggling
+    // vector) and is rejected by the parser.
+    bool multipleContentLength_{false};
     mutable SafeStringMap<std::string> parameters_;
     mutable std::shared_ptr<Json::Value> jsonPtr_;
     SessionPtr sessionPtr_;

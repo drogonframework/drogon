@@ -333,6 +333,13 @@ class DROGON_EXPORT Criteria
      * ["id","!=",null] means 'id is not null'
      * ["user_name","in",["Tom","Bob"]] means 'user_name in ('Tom', 'Bob')'
      * ["price","<",1000] means 'price < 1000'
+     *
+     * @note The value (third item) is always bound as a query parameter and is
+     * therefore safe. The comparison operator is validated against a fixed
+     * allowlist and throws if unrecognized. The field name (first item),
+     * however, is concatenated directly into the SQL statement and cannot be
+     * parameterized; do not build a Criteria from an untrusted field name
+     * without validating it against your own allowlist of column names.
      */
     explicit Criteria(const Json::Value &json) noexcept(false);
     Criteria() = default;
