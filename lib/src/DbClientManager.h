@@ -47,6 +47,16 @@ class DbClientManager : public trantor::NonCopyable
         return iter->second.getThreadData();
     }
 
+    bool hasDbClient(const std::string &name) const noexcept
+    {
+        return dbClientsMap_.find(name) != dbClientsMap_.end();
+    }
+
+    bool hasFastDbClient(const std::string &name) const noexcept
+    {
+        return dbFastClientsMap_.find(name) != dbFastClientsMap_.end();
+    }
+
     void addDbClient(const DbConfig &config);
     bool areAllDbClientsAvailable() const noexcept;
 

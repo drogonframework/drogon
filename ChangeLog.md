@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### API changes list
+
+- Add `HttpAppFramework::hasDbClient()` and `hasFastDbClient()` methods.
+
 ## [1.9.13] - 2026-05-06
 
 ### API changes list

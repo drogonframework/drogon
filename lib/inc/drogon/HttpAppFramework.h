@@ -1399,6 +1399,23 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual orm::DbClientPtr getFastDbClient(
         const std::string &name = "default") = 0;
 
+    /// Return true if a database client with the given name has been
+    /// configured
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual bool hasDbClient(const std::string &name = "default") const = 0;
+
+    /// Return true if a 'fast' database client with the given name has been
+    /// configured
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual bool hasFastDbClient(
+        const std::string &name = "default") const = 0;
+
     /**
      * @brief Check if all database clients in the framework are available
      * (connect to the database successfully).
