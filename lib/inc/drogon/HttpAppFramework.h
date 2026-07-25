@@ -1413,8 +1413,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @note
      * This method must be called after the framework has been run.
      */
-    virtual bool hasFastDbClient(
-        const std::string &name = "default") const = 0;
+    virtual bool hasFastDbClient(const std::string &name = "default") const = 0;
 
     /**
      * @brief Check if all database clients in the framework are available
