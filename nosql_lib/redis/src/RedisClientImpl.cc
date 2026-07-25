@@ -27,13 +27,18 @@ std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     unsigned int db,
     const std::string &username)
 {
-    auto client = std::make_shared<RedisClientImpl>(
-        serverAddress, connectionNumber, username, password, db);
+    auto client = std::make_shared<RedisClientImpl>(serverAddress,
+                                                    serverAddress.toIp(),
+                                                    connectionNumber,
+                                                    username,
+                                                    password,
+                                                    db);
     client->init();
     return client;
 }
 
 RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
+                                 std::string hostname,
                                  size_t numberOfConnections,
                                  std::string username,
                                  std::string password,
@@ -43,6 +48,7 @@ RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
                  : std::thread::hardware_concurrency(),
              "RedisLoop"),
       serverAddr_(serverAddress),
+      hostname_(std::move(hostname)),
       username_(std::move(username)),
       password_(std::move(password)),
       db_(db),
@@ -66,7 +72,7 @@ void RedisClientImpl::init()
 RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 {
     auto conn = std::make_shared<RedisConnection>(
-        serverAddr_, username_, password_, db_, loop);
+        serverAddr_, hostname_, username_, password_, db_, loop);
     std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();
@@ -119,7 +125,7 @@ RedisConnectionPtr RedisClientImpl::newSubscribeConnection(
     const std::shared_ptr<RedisSubscriberImpl> &subscriber)
 {
     auto conn = std::make_shared<RedisConnection>(
-        serverAddr_, username_, password_, db_, loop);
+        serverAddr_, hostname_, username_, password_, db_, loop);
     std::weak_ptr<RedisClientImpl> weakThis = shared_from_this();
     std::weak_ptr<RedisSubscriberImpl> weakSub(subscriber);
     conn->setConnectCallback([weakThis, weakSub](RedisConnectionPtr &&conn) {
