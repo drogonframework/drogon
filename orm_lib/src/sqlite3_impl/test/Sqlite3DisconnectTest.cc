@@ -33,11 +33,11 @@ int main()
     // Initialize SQLite and Drogon's database machinery before taking the
     // baseline. A query without parameters does not enter the statement cache.
     runClient(false);
-    sqlite3_release_memory(std::numeric_limits<int>::max());
+    sqlite3_release_memory((std::numeric_limits<int>::max)());
     const auto memoryBefore = sqlite3_memory_used();
 
     runClient(true);
-    sqlite3_release_memory(std::numeric_limits<int>::max());
+    sqlite3_release_memory((std::numeric_limits<int>::max)());
     const auto memoryAfter = sqlite3_memory_used();
 
     if (memoryAfter > memoryBefore)
