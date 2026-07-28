@@ -906,6 +906,16 @@ orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
     return dbClientManagerPtr_->getFastDbClient(name);
 }
 
+bool HttpAppFrameworkImpl::hasDbClient(const std::string &name) const
+{
+    return dbClientManagerPtr_->hasDbClient(name);
+}
+
+bool HttpAppFrameworkImpl::hasFastDbClient(const std::string &name) const
+{
+    return dbClientManagerPtr_->hasFastDbClient(name);
+}
+
 nosql::RedisClientPtr HttpAppFrameworkImpl::getRedisClient(
     const std::string &name)
 {
