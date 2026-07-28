@@ -1,7 +1,7 @@
 #include <drogon/MultiPart.h>
 #include <drogon/drogon_test.h>
 #include <drogon/HttpRequest.h>
-#include <drogon/MultipartStreamParser.h>
+#include "../../lib/src/MultipartStreamParser.h"
 
 DROGON_TEST(MultiPartParser)
 {
