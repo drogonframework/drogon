@@ -22,6 +22,7 @@
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -155,6 +156,20 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         headers_.erase(lowerKey);
     }
 
+    // Strip CR and LF from a header name or value. Untrusted data placed
+    // into a response header would otherwise allow HTTP response splitting /
+    // header injection by embedding a "\r\n" sequence.
+    static std::string sanitizeHeaderField(std::string field)
+    {
+        field.erase(std::remove_if(field.begin(),
+                                   field.end(),
+                                   [](char c) {
+                                       return c == '\r' || c == '\n';
+                                   }),
+                    field.end());
+        return field;
+    }
+
     void addHeader(std::string field, const std::string &value) override
     {
         fullHeaderString_.reset();
@@ -162,7 +177,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                   field.end(),
                   field.begin(),
                   [](unsigned char c) { return tolower(c); });
-        headers_[std::move(field)] = value;
+        auto sanitizedValue = sanitizeHeaderField(value);
+        headers_[sanitizeHeaderField(std::move(field))] =
+            std::move(sanitizedValue);
     }
 
     void addHeader(std::string field, std::string &&value) override
@@ -172,7 +189,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                   field.end(),
                   field.begin(),
                   [](unsigned char c) { return tolower(c); });
-        headers_[std::move(field)] = std::move(value);
+        auto sanitizedValue = sanitizeHeaderField(std::move(value));
+        headers_[sanitizeHeaderField(std::move(field))] =
+            std::move(sanitizedValue);
     }
 
     void addHeader(const char *start, const char *colon, const char *end);
@@ -233,7 +252,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void redirect(const std::string &url)
     {
-        headers_["location"] = url;
+        // Sanitize to prevent header injection when the target is derived
+        // from untrusted input.
+        headers_["location"] = sanitizeHeaderField(url);
     }
 
     std::shared_ptr<trantor::MsgBuffer> renderToBuffer();

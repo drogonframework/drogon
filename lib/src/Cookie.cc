@@ -19,12 +19,26 @@ using namespace drogon;
 
 std::string Cookie::cookieString() const
 {
+    // Strip CR and LF from attacker-influenceable fields so that a value
+    // containing "\r\n" cannot inject additional headers / split the
+    // response via the Set-Cookie line.
+    auto sanitize = [](const std::string &in) {
+        std::string out;
+        out.reserve(in.size());
+        for (char c : in)
+            if (c != '\r' && c != '\n')
+                out.push_back(c);
+        return out;
+    };
+    const std::string key = sanitize(key_);
+    const std::string value = sanitize(value_);
+
     constexpr std::string_view prefix = "Set-Cookie: ";
     std::string ret;
     // reserve space to reduce frequency allocation
-    ret.reserve(prefix.size() + key_.size() + value_.size() + 30);
+    ret.reserve(prefix.size() + key.size() + value.size() + 30);
     ret = prefix;
-    ret.append(key_).append("=").append(value_).append("; ");
+    ret.append(key).append("=").append(value).append("; ");
     if (expiresDate_.microSecondsSinceEpoch() !=
             (std::numeric_limits<int64_t>::max)() &&
         expiresDate_.microSecondsSinceEpoch() >= 0)
@@ -41,11 +55,11 @@ std::string Cookie::cookieString() const
     }
     if (!domain_.empty())
     {
-        ret.append("Domain=").append(domain_).append("; ");
+        ret.append("Domain=").append(sanitize(domain_)).append("; ");
     }
     if (!path_.empty())
     {
-        ret.append("Path=").append(path_).append("; ");
+        ret.append("Path=").append(sanitize(path_)).append("; ");
     }
     if (sameSite_ != SameSite::kNull)
     {
