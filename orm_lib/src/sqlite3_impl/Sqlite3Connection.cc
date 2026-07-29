@@ -117,7 +117,9 @@ void Sqlite3Connection::init()
         sqlite3 *tmp = nullptr;
         auto ret = sqlite3_open(filename.data(), &tmp);
         connectionPtr_ = std::shared_ptr<sqlite3>(tmp, [](sqlite3 *ptr) {
-            sqlite3_close(ptr);
+            // Cached prepared statements may outlive disconnect().
+            // Defer deallocation until the final statement is destroyed.
+            sqlite3_close_v2(ptr);
         });
         auto thisPtr = shared_from_this();
         if (ret != SQLITE_OK)
