@@ -230,7 +230,10 @@ void RedisConnection::startConnectionInLoop()
             thisPtr->handleDisconnect();
             if (thisPtr->disconnectCallback_)
             {
-                thisPtr->disconnectCallback_(thisPtr->shared_from_this());
+                if (auto self = thisPtr->weak_from_this().lock())
+                {
+                    thisPtr->disconnectCallback_(std::move(self));
+                }
             }
 
             LOG_TRACE << "Disconnected from "
@@ -361,7 +364,10 @@ void RedisConnection::handleResult(redisReply *result)
         assert(exceptionCallbacks_.empty());
         if (idleCallback_)
         {
-            idleCallback_(shared_from_this());
+            if (auto self = weak_from_this().lock())
+            {
+                idleCallback_(std::move(self));
+            }
         }
     }
 }
@@ -514,9 +520,11 @@ void RedisConnection::handleSubscribeResult(redisReply *result,
         LOG_ERROR << "Subscribe callback receive error result type: "
                   << result->type;
     }
-
     if (idleCallback_)
     {
-        idleCallback_(shared_from_this());
+        if (auto self = weak_from_this().lock())
+        {
+            idleCallback_(std::move(self));
+        }
     }
 }
