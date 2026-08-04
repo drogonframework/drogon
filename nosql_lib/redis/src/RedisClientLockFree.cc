@@ -21,6 +21,7 @@ using namespace drogon::nosql;
 
 RedisClientLockFree::RedisClientLockFree(
     const trantor::InetAddress &serverAddress,
+    std::string hostname,
     size_t numberOfConnections,
     trantor::EventLoop *loop,
     std::string username,
@@ -28,6 +29,7 @@ RedisClientLockFree::RedisClientLockFree(
     unsigned int db)
     : loop_(loop),
       serverAddr_(serverAddress),
+      hostname_(std::move(hostname)),
       username_(std::move(username)),
       password_(std::move(password)),
       db_(db),
@@ -44,7 +46,7 @@ RedisConnectionPtr RedisClientLockFree::newConnection()
 {
     loop_->assertInLoopThread();
     auto conn = std::make_shared<RedisConnection>(
-        serverAddr_, username_, password_, db_, loop_);
+        serverAddr_, hostname_, username_, password_, db_, loop_);
     std::weak_ptr<RedisClientLockFree> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();
@@ -90,7 +92,7 @@ RedisConnectionPtr RedisClientLockFree::newSubscribeConnection(
 {
     loop_->assertInLoopThread();
     auto conn = std::make_shared<RedisConnection>(
-        serverAddr_, username_, password_, db_, loop_);
+        serverAddr_, hostname_, username_, password_, db_, loop_);
     std::weak_ptr<RedisClientLockFree> weakThis = shared_from_this();
     std::weak_ptr<RedisSubscriberImpl> weakSub(subscriber);
     conn->setConnectCallback([weakThis, weakSub](RedisConnectionPtr &&conn) {

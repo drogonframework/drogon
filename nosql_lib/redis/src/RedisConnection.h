@@ -21,6 +21,7 @@
 #include <trantor/net/InetAddress.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Channel.h>
+#include <trantor/net/Resolver.h>
 #include <hiredis/async.h>
 #include <hiredis/hiredis.h>
 #include <memory>
@@ -45,6 +46,7 @@ class RedisConnection : public trantor::NonCopyable,
 {
   public:
     RedisConnection(const trantor::InetAddress &serverAddress,
+                    const std::string &hostname,
                     const std::string &username,
                     const std::string &password,
                     unsigned int db,
@@ -188,6 +190,8 @@ class RedisConnection : public trantor::NonCopyable,
   private:
     redisAsyncContext *redisContext_{nullptr};
     const trantor::InetAddress serverAddr_;
+    const std::string hostname_;
+    std::shared_ptr<trantor::Resolver> resolver_;
     const std::string username_;
     const std::string password_;
     const unsigned int db_;
@@ -206,6 +210,7 @@ class RedisConnection : public trantor::NonCopyable,
         subContexts_;
 
     void startConnectionInLoop();
+    void connectWithResolvedIp(const std::string &ip);
     static void addWrite(void *userData);
     static void delWrite(void *userData);
     static void addRead(void *userData);
