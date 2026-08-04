@@ -222,6 +222,16 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
 
                 // process header information
                 auto &len = request_->getHeaderBy("content-length");
+                auto &encode = request_->getHeaderBy("transfer-encoding");
+                if (!len.empty() && !encode.empty())
+                {
+                    // RFC 9112 Section 6.3:
+                    // Messages containing both Content-Length and
+                    // Transfer-Encoding are ambiguous and might indicate
+                    // request smuggling. Reject such requests to avoid
+                    // inconsistent message framing.
+                    return -k400BadRequest;
+                }
                 if (!len.empty())
                 {
                     try
@@ -246,8 +256,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 else
                 {
-                    const std::string &encode =
-                        request_->getHeaderBy("transfer-encoding");
                     if (encode.empty())
                     {
                         // no content-length and no transfer-encoding,
