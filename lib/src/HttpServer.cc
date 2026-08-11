@@ -278,8 +278,11 @@ void HttpServer::onRequests(
 {
     assert(!requests.empty());
 
-    // will only be checked for the first request
-    if (requestParser->firstReq() && requests.size() == 1 &&
+    // A WebSocket upgrade may arrive after earlier HTTP requests on the same
+    // keep-alive connection. Reverse proxies commonly reuse their upstream
+    // connections, so limiting upgrade detection to the first request causes
+    // valid reconnects to fall through to ordinary HTTP routing.
+    if (requests.size() == 1 && requestParser->emptyPipelining() &&
         isWebSocket(requests[0]))
     {
         auto &req = requests[0];
@@ -758,16 +761,20 @@ void HttpServer::websocketRequestHandling(
     std::function<void(const HttpResponsePtr &)> &&callback,
     WebSocketConnectionImplPtr &&wsConnPtr)
 {
-    binderPtr->handleRequest(
-        req,
-        [req, callback = std::move(callback)](const HttpResponsePtr &resp) {
-            AopAdvice::instance().passPostHandlingAdvices(req, resp);
+    auto request = req;
+    auto binder = std::move(binderPtr);
+    auto wsConn = std::move(wsConnPtr);
+
+    binder->handleRequest(
+        request,
+        [request, callback = std::move(callback)](const HttpResponsePtr &resp) {
+            AopAdvice::instance().passPostHandlingAdvices(request, resp);
             callback(resp);
         });
 
     // TODO: more elegant?
-    static_cast<WebsocketControllerBinder *>(binderPtr.get())
-        ->handleNewConnection(req, wsConnPtr);
+    static_cast<WebsocketControllerBinder *>(binder.get())
+        ->handleNewConnection(request, wsConn);
 }
 
 void HttpServer::handleResponse(
