@@ -21,8 +21,9 @@ jobs:
       - name: Build Docker image
         run: |
           cd docker/ubuntu
-          docker build -t drogonframework/drogon:latest .
+          docker build -t drogonframework/drogon:latest -t drogonframework/drogon:${{ github.event.release.tag_name }} .
 
       - name: Push Docker image
         run: |
           docker push drogonframework/drogon:latest
+          docker push drogonframework/drogon:${{ github.event.release.tag_name }}
