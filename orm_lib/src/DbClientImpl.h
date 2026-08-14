@@ -41,6 +41,7 @@ class DbClientImpl : public DbClient,
                  ClientType type);
 #endif
     ~DbClientImpl() noexcept override;
+
     void execSql(const char *sql,
                  size_t sqlLength,
                  size_t paraNum,
@@ -71,7 +72,9 @@ class DbClientImpl : public DbClient,
 
   private:
     size_t numberOfConnections_;
-    trantor::EventLoopThreadPool loops_;
+    // Heap-allocated so we can defer destruction when the last reference is
+    // released on one of the pool's own loop threads (see #2552).
+    std::unique_ptr<trantor::EventLoopThreadPool> loops_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
     double timeout_{-1.0};
 #if LIBPQ_SUPPORTS_BATCH_MODE
