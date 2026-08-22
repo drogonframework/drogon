@@ -631,10 +631,16 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         if (responseParser->gotAll())
         {
             auto resp = responseParser->responseImpl();
-            resp->setPeerCertificate(connPtr->peerCertificate());
             responseParser->reset();
             bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
+            if (resp->statusCode() >= k100Continue &&
+                resp->statusCode() < 200 &&
+                resp->statusCode() != k101SwitchingProtocols)
+            {
+                continue;
+            }
+            resp->setPeerCertificate(connPtr->peerCertificate());
             handleResponse(resp, std::move(firstReq), connPtr);
         }
         else

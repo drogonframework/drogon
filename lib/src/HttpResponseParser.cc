@@ -24,6 +24,12 @@
 using namespace trantor;
 using namespace drogon;
 
+static bool responseHasNoBody(HttpStatusCode statusCode)
+{
+    return (statusCode >= k100Continue && statusCode < 200) ||
+           statusCode == k204NoContent || statusCode == k304NotModified;
+}
+
 void HttpResponseParser::reset()
 {
     status_ = HttpResponseParseStatus::kExpectResponseLine;
@@ -136,7 +142,14 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     const std::string &len =
                         responsePtr_->getHeaderBy("content-length");
                     // LOG_INFO << "content len=" << len;
-                    if (!len.empty())
+                    if (parseResponseForHeadMethod_ ||
+                        responseHasNoBody(responsePtr_->statusCode()))
+                    {
+                        leftBodyLength_ = 0;
+                        status_ = HttpResponseParseStatus::kGotAll;
+                        hasMore = false;
+                    }
+                    else if (!len.empty())
                     {
                         if (!utils::parseInteger(len, leftBodyLength_))
                         {
@@ -156,40 +169,11 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                         }
                         else
                         {
-                            if (responsePtr_->statusCode() == k204NoContent ||
-                                (responsePtr_->statusCode() ==
-                                         k101SwitchingProtocols &&
-                                     [this]() -> bool {
-                                    std::string upgradeValue =
-                                        responsePtr_->getHeaderBy("upgrade");
-                                    std::transform(upgradeValue.begin(),
-                                                   upgradeValue.end(),
-                                                   upgradeValue.begin(),
-                                                   [](unsigned char c) {
-                                                       return tolower(c);
-                                                   });
-                                    return upgradeValue == "websocket";
-                                }()))
-                            {
-                                // The Websocket response may not have a
-                                // content-length header.
-                                status_ = HttpResponseParseStatus::kGotAll;
-                                hasMore = false;
-                            }
-                            else
-                            {
-                                status_ = HttpResponseParseStatus::kExpectClose;
-                                auto connPtr = conn_.lock();
-                                connPtr->shutdown();
-                                hasMore = true;
-                            }
+                            status_ = HttpResponseParseStatus::kExpectClose;
+                            auto connPtr = conn_.lock();
+                            connPtr->shutdown();
+                            hasMore = true;
                         }
-                    }
-                    if (parseResponseForHeadMethod_)
-                    {
-                        leftBodyLength_ = 0;
-                        status_ = HttpResponseParseStatus::kGotAll;
-                        hasMore = false;
                     }
                 }
                 buf->retrieveUntil(crlf + 2);
@@ -315,10 +299,25 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         }
         else if (status_ == HttpResponseParseStatus::kExpectLastEmptyChunk)
         {
-            // last empty chunk
             const char *crlf = buf->findCRLF();
-            if (crlf)
+            if (!crlf)
             {
+                hasMore = false;
+            }
+            else
+            {
+                if (crlf != buf->peek())
+                {
+                    const char *colon = std::find(buf->peek(), crlf, ':');
+                    if (colon == buf->peek() || colon == crlf)
+                    {
+                        return false;
+                    }
+                    // Trailers are not represented separately by
+                    // HttpResponse, so validate and discard them.
+                    buf->retrieveUntil(crlf + 2);
+                    continue;
+                }
                 buf->retrieveUntil(crlf + 2);
                 status_ = HttpResponseParseStatus::kGotAll;
                 responsePtr_->addHeader("content-length",
@@ -326,10 +325,6 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                                             responsePtr_->getBody().length()));
                 responsePtr_->removeHeaderBy("transfer-encoding");
                 break;
-            }
-            else
-            {
-                hasMore = false;
             }
         }
     }

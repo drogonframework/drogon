@@ -30,6 +30,25 @@ static constexpr size_t CRLF_LEN = 2;            // strlen("crlf")
 static constexpr size_t METHOD_MAX_LEN = 7;      // strlen("OPTIONS")
 static constexpr size_t TRUNK_LEN_MAX_LEN = 16;  // 0xFFFFFFFF,FFFFFFFF
 
+// NOTE: tolower is locale depent thus not ideal for parsing
+static std::string lowerAscii(const char *begin, const char *end)
+{
+    std::string value(begin, end);
+    for (auto &c : value)
+    {
+        if (c >= 'A' && c <= 'Z')
+        {
+            c += 'a' - 'A';
+        }
+    }
+    return value;
+}
+
+static bool isContentLengthHeader(const char *begin, const char *end)
+{
+    return lowerAscii(begin, end) == "content-length";
+}
+
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
     : status_(HttpRequestParseStatus::kExpectMethod),
       loop_(connPtr->getLoop()),
@@ -211,9 +230,22 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // found colon
                 if (colon != crlf)
                 {
+                    if (isContentLengthHeader(buf->peek(), colon) &&
+                        request_->headers().find("content-length") !=
+                            request_->headers().end())
+                    {
+                        // Reject duplicate Content-Length fields to avoid
+                        // ambiguous message framing.
+                        return -k400BadRequest;
+                    }
                     request_->addHeader(buf->peek(), colon, crlf);
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
+                }
+                if (buf->peek() != crlf)
+                {
+                    // Only an empty line terminates the header section.
+                    return -k400BadRequest;
                 }
                 buf->retrieveUntil(crlf + CRLF_LEN);
                 // end of headers
@@ -240,7 +272,8 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         return -k400BadRequest;
                     }
                     request_->contentLengthHeaderValue_ = remainContentLength_;
-                    if (remainContentLength_ == 0)
+                    if (remainContentLength_ == 0 &&
+                        status_ != HttpRequestParseStatus::kExpectChunkLen)
                     {
                         // content-length = 0, request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
@@ -421,15 +454,22 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             }
             case HttpRequestParseStatus::kExpectLastEmptyChunk:
             {
-                // last empty chunk
-                if (buf->readableBytes() < CRLF_LEN)
+                const char *crlf = buf->findCRLF();
+                if (!crlf)
                 {
                     return 0;
                 }
-                if (*(buf->peek()) != '\r' || *(buf->peek() + 1) != '\n')
+                if (crlf != buf->peek())
                 {
-                    // error!
-                    return -k400BadRequest;
+                    const char *colon = std::find(buf->peek(), crlf, ':');
+                    if (colon == buf->peek() || colon == crlf)
+                    {
+                        return -k400BadRequest;
+                    }
+                    // Trailers are not represented separately by
+                    // HttpRequest, so validate and discard them.
+                    buf->retrieveUntil(crlf + CRLF_LEN);
+                    continue;
                 }
                 buf->retrieve(CRLF_LEN);
 
