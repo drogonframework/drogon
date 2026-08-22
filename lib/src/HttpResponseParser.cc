@@ -14,6 +14,7 @@
 
 #include "HttpResponseParser.h"
 #include "HttpResponseImpl.h"
+#include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <algorithm>
@@ -43,31 +44,37 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
 {
     const char *start = begin;
     const char *space = std::find(start, end, ' ');
-    if (space != end)
+    if (space == end)
     {
-        LOG_TRACE << *(space - 1);
-        if (*(space - 1) == '1')
-        {
-            responsePtr_->setVersion(Version::kHttp11);
-        }
-        else if (*(space - 1) == '0')
-        {
-            responsePtr_->setVersion(Version::kHttp10);
-        }
-        else
-        {
-            return false;
-        }
+        return false;
+    }
+    const std::string_view version(start, space - start);
+    if (version == "HTTP/1.1")
+    {
+        responsePtr_->setVersion(Version::kHttp11);
+    }
+    else if (version == "HTTP/1.0")
+    {
+        responsePtr_->setVersion(Version::kHttp10);
+    }
+    else
+    {
+        return false;
     }
 
     start = space + 1;
     space = std::find(start, end, ' ');
     if (space != end)
     {
-        std::string status_code(start, space - start);
+        std::string_view statusCode(start, space - start);
         std::string status_message(space + 1, end - space - 1);
-        LOG_TRACE << status_code << " " << status_message;
-        auto code = atoi(status_code.c_str());
+        unsigned short code{};
+        if (statusCode.size() != 3 ||
+            !utils::parseInteger(statusCode, code))
+        {
+            return false;
+        }
+        LOG_TRACE << statusCode << " " << status_message;
         responsePtr_->setStatusCode(HttpStatusCode(code));
 
         return true;
@@ -131,12 +138,7 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     // LOG_INFO << "content len=" << len;
                     if (!len.empty())
                     {
-                        try
-                        {
-                            leftBodyLength_ =
-                                static_cast<size_t>(std::stoull(len));
-                        }
-                        catch (...)
+                        if (!utils::parseInteger(len, leftBodyLength_))
                         {
                             // Malformed Content-Length from peer.
                             return false;
@@ -253,17 +255,16 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
             const char *crlf = buf->findCRLF();
             if (crlf)
             {
-                std::string len(buf->peek(), crlf - buf->peek());
-                errno = 0;
-                char *end = nullptr;
-                unsigned long long parsed =
-                    std::strtoull(len.c_str(), &end, 16);
-                if (errno == ERANGE || end == len.c_str() ||
-                    (*end != '\0' && *end != ';'))
+                std::string_view len(buf->peek(), crlf - buf->peek());
+                const auto extension = len.find(';');
+                if (extension != std::string_view::npos)
+                {
+                    len = len.substr(0, extension);
+                }
+                if (!utils::parseInteger(len, currentChunkLength_, 16))
                 {
                     return false;
                 }
-                currentChunkLength_ = static_cast<size_t>(parsed);
                 if (currentChunkLength_ != 0)
                 {
                     status_ = HttpResponseParseStatus::kExpectChunkBody;
@@ -283,7 +284,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         {
             // LOG_TRACE<<"expect chunk
             // len="<<currentChunkLength_;
-            if (buf->readableBytes() >= (currentChunkLength_ + 2))
+            if (buf->readableBytes() >= 2 &&
+                currentChunkLength_ <= buf->readableBytes() - 2)
             {
                 if (*(buf->peek() + currentChunkLength_) == '\r' &&
                     *(buf->peek() + currentChunkLength_ + 1) == '\n')

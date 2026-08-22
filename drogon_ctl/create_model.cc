@@ -635,8 +635,8 @@ void create_model::createModelClassFromMysql(
                     if (pos1 != std::string::npos &&
                         pos2 != std::string::npos && pos2 - pos1 > 1)
                     {
-                        info.colLength_ =
-                            std::stoll(type.substr(pos1 + 1, pos2 - pos1 - 1));
+                        info.colLength_ = drogon::utils::fromString<ssize_t>(
+                            type.substr(pos1 + 1, pos2 - pos1 - 1));
                     }
                 }
                 else

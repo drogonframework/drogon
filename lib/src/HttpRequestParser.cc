@@ -21,6 +21,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpUtils.h"
+#include <drogon/utils/Utilities.h>
 
 using namespace trantor;
 using namespace drogon;
@@ -234,12 +235,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 if (!len.empty())
                 {
-                    try
-                    {
-                        remainContentLength_ =
-                            static_cast<size_t>(std::stoull(len));
-                    }
-                    catch (...)
+                    if (!utils::parseInteger(len, remainContentLength_))
                     {
                         return -k400BadRequest;
                     }
@@ -373,13 +369,23 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return 0;
                 }
                 // chunk length line
-                std::string len(buf->peek(), crlf - buf->peek());
-                char *end;
-                currentChunkLength_ = strtol(len.c_str(), &end, 16);
+                std::string_view len(buf->peek(), crlf - buf->peek());
+                const auto extension = len.find(';');
+                if (extension != std::string_view::npos)
+                {
+                    len = len.substr(0, extension);
+                }
+                if (!utils::parseInteger(len, currentChunkLength_, 16))
+                {
+                    return -k400BadRequest;
+                }
                 if (currentChunkLength_ != 0)
                 {
-                    if (currentChunkLength_ + remainContentLength_ >
-                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                    const auto maxBodySize =
+                        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+                    if (currentChunkLength_ > maxBodySize ||
+                        remainContentLength_ >
+                            maxBodySize - currentChunkLength_)
                     {
                         return -k413RequestEntityTooLarge;
                     }
@@ -394,7 +400,9 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             }
             case HttpRequestParseStatus::kExpectChunkBody:
             {
-                if (buf->readableBytes() < (currentChunkLength_ + CRLF_LEN))
+                if (buf->readableBytes() < CRLF_LEN ||
+                    currentChunkLength_ >
+                        buf->readableBytes() - CRLF_LEN)
                 {
                     return 0;
                 }

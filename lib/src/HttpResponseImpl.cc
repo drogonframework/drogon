@@ -1067,7 +1067,11 @@ void HttpResponseImpl::addHeader(const char *start,
                 }
                 else if (cookie_name == "max-age")
                 {
-                    cookie.setMaxAge(std::stoi(cookie_value));
+                    int maxAge{};
+                    if (utils::parseInteger(cookie_value, maxAge))
+                    {
+                        cookie.setMaxAge(maxAge);
+                    }
                 }
             }
         }

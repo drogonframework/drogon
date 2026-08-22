@@ -26,6 +26,9 @@
 #include <limits>
 #include <sstream>
 #include <algorithm>
+#include <cerrno>
+#include <cctype>
+#include <cstdlib>
 #include <filesystem>
 #include <string_view>
 #include <unordered_map>
@@ -672,35 +675,87 @@ DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
  */
 DROGON_EXPORT std::string secureRandomString(size_t size);
 
+/**
+ * @brief Parse an integer only when the complete input is representable by T.
+ *
+ * Unlike the std::sto* family, this never accepts a numeric prefix followed by
+ * other characters. The parsed value is checked against T before conversion.
+ */
+template <typename T>
+bool parseInteger(std::string_view text, T &out, int base = 10)
+{
+    static_assert(std::is_integral<T>::value && !std::is_same<T, bool>::value,
+                  "parseInteger requires a non-bool integral type");
+    if (text.empty() || base < 2 || base > 36)
+        return false;
+
+    size_t begin = 0;
+    if (text.front() == '-')
+    {
+        if constexpr (!std::is_signed<T>::value)
+        {
+            return false;
+        }
+        begin = 1;
+    }
+    if (begin == text.size())
+        return false;
+    for (size_t i = begin; i < text.size(); ++i)
+    {
+        const auto c = static_cast<unsigned char>(text[i]);
+        const int digit = std::isdigit(c) ? c - '0'
+                          : std::isalpha(c) ? std::tolower(c) - 'a' + 10
+                                            : -1;
+        if (digit < 0 || digit >= base)
+            return false;
+    }
+
+    // strto* needs a null-terminated range; a string_view is not required to
+    // provide one.
+    const std::string valueString{text};
+    char *end = nullptr;
+    errno = 0;
+    if constexpr (std::is_signed<T>::value)
+    {
+        const auto value = std::strtoll(valueString.c_str(), &end, base);
+        if (errno == ERANGE || end != valueString.c_str() + valueString.size() ||
+            value < static_cast<long long>((std::numeric_limits<T>::min)()) ||
+            value > static_cast<long long>((std::numeric_limits<T>::max)()))
+        {
+            return false;
+        }
+        out = static_cast<T>(value);
+        return true;
+    }
+
+    const auto value = std::strtoull(valueString.c_str(), &end, base);
+    if (errno == ERANGE || end != valueString.c_str() + valueString.size() ||
+        value >
+            static_cast<unsigned long long>((std::numeric_limits<T>::max)()))
+    {
+        return false;
+    }
+    out = static_cast<T>(value);
+    return true;
+}
+
 template <typename T>
 T fromString(const std::string &p) noexcept(false)
 {
     if constexpr (std::is_integral<T>::value && std::is_signed<T>::value)
     {
-        std::size_t pos;
-        auto v = std::stoll(p, &pos);
-        // throw if the whole string could not be parsed
-        // ("1a" should not return 1)
-        if (pos != p.size())
+        T value{};
+        if (!parseInteger(p, value))
             throw std::invalid_argument("Invalid value");
-        if ((v < static_cast<long long>((std::numeric_limits<T>::min)())) ||
-            (v > static_cast<long long>((std::numeric_limits<T>::max)())))
-            throw std::out_of_range("Value out of range");
-        return static_cast<T>(v);
+        return value;
     }
     else if constexpr (std::is_integral<T>::value &&
                        (!std::is_signed<T>::value))
     {
-        std::size_t pos;
-        auto v = std::stoull(p, &pos);
-        // throw if the whole string could not be parsed
-        // ("1a" should not return 1)
-        if (pos != p.size())
+        T value{};
+        if (!parseInteger(p, value))
             throw std::invalid_argument("Invalid value");
-        if (v >
-            static_cast<unsigned long long>((std::numeric_limits<T>::max)()))
-            throw std::out_of_range("Value out of range");
-        return static_cast<T>(v);
+        return value;
     }
     else if constexpr (std::is_floating_point<T>::value)
     {

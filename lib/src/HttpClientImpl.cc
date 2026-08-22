@@ -19,6 +19,7 @@
 #include "HttpResponseParser.h"
 
 #include <drogon/config.h>
+#include <drogon/utils/Utilities.h>
 #include <stdlib.h>
 #include <algorithm>
 
@@ -198,8 +199,8 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             {
                 portStr = portStr.substr(0, pos);
             }
-            auto port = atoi(portStr.c_str());
-            if (port > 0 && port < 65536)
+            uint16_t port{};
+            if (utils::parseInteger(portStr, port) && port != 0)
             {
                 serverAddr_ = InetAddress(domain_, port, true);
             }
@@ -228,8 +229,8 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             {
                 portStr = portStr.substr(0, pos);
             }
-            auto port = atoi(portStr.c_str());
-            if (port > 0 && port < 65536)
+            uint16_t port{};
+            if (utils::parseInteger(portStr, port) && port != 0)
             {
                 serverAddr_ = InetAddress(domain_, port);
             }

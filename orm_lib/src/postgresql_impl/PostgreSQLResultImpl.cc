@@ -15,6 +15,7 @@
 #include "PostgreSQLResultImpl.h"
 #include <cassert>
 #include <drogon/orm/Exception.h>
+#include <drogon/utils/Utilities.h>
 
 using namespace drogon::orm;
 
@@ -46,7 +47,8 @@ Result::SizeType PostgreSQLResultImpl::affectedRows() const noexcept
     char *str = PQcmdTuples(result_.get());
     if (str == nullptr || str[0] == '\0')
         return 0;
-    return atol(str);
+    Result::SizeType count{};
+    return drogon::utils::parseInteger(str, count) ? count : 0;
 }
 
 Result::RowSizeType PostgreSQLResultImpl::columnNumber(
