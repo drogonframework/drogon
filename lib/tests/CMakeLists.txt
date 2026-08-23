@@ -5,6 +5,7 @@ endif(WIN32)
 set(UNITTEST_SOURCES
     unittests/main.cc
     unittests/Base64Test.cc
+    unittests/DrogonTestExpansionTest.cc
     unittests/UrlCodecTest.cc
     unittests/GzipTest.cc
     unittests/HttpViewDataTest.cc
