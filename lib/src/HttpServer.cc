@@ -751,8 +751,14 @@ void HttpServer::websocketRequestRouting(
 
     // Not found
     auto resp = drogon::HttpResponse::newNotFoundResponse(req);
-    resp->setCloseConnection(true);
-    callback(resp);
+    // newNotFoundResponse() may hand back a shared custom 404 page or a
+    // per-IO-thread cached response. Mutating it here would mark that shared
+    // object as explicitly close-on-send for every later request that reuses
+    // it, so work on a copy instead.
+    auto respImpl = std::make_shared<HttpResponseImpl>(
+        *static_cast<HttpResponseImpl *>(resp.get()));
+    respImpl->setCloseConnection(true);
+    callback(respImpl);
 }
 
 void HttpServer::websocketRequestHandling(
@@ -806,9 +812,16 @@ void HttpServer::handleResponse(
     resp->setVersion(req->getVersion());
     // Respect application-set closeConnection (e.g., for aborting stream
     // responses on error). Only apply the client's keep-alive preference
-    // when the handler hasn't explicitly requested close.
-    if (!resp->ifCloseConnection())
-        resp->setCloseConnection(!req->keepAlive());
+    // when the handler hasn't explicitly requested close. Checking the
+    // explicit-set flag rather than ifCloseConnection() matters because
+    // setVersion() sets closeConnection_ for HTTP/1.0, and because the
+    // preference must be re-evaluated on every request when a cached or
+    // otherwise reused response object is served more than once.
+    {
+        auto implPtr = static_cast<HttpResponseImpl *>(resp.get());
+        if (!implPtr->closeConnectionSetByUser())
+            implPtr->setCloseConnectionInternal(!req->keepAlive());
+    }
     AopAdvice::instance().passPreSendingAdvices(req, resp);
 
     auto newResp = getCompressedResponse(req, resp, isHeadMethod);
@@ -1233,8 +1246,18 @@ static inline bool passSyncAdvices(
     {
         // Rejected by sync advice
         resp->setVersion(req->getVersion());
-        if (!resp->ifCloseConnection())
-            resp->setCloseConnection(!req->keepAlive());
+        // Respect application-set closeConnection (e.g., for aborting stream
+        // responses on error). Only apply the client's keep-alive preference
+        // when the handler hasn't explicitly requested close. Checking the
+        // explicit-set flag rather than ifCloseConnection() matters because
+        // setVersion() sets closeConnection_ for HTTP/1.0, and because the
+        // preference must be re-evaluated on every request when a cached or
+        // otherwise reused response object is served more than once.
+        {
+            auto implPtr = static_cast<HttpResponseImpl *>(resp.get());
+            if (!implPtr->closeConnectionSetByUser())
+                implPtr->setCloseConnectionInternal(!req->keepAlive());
+        }
         if (!shouldBePipelined)
         {
             requestParser->getResponseBuffer().emplace_back(

@@ -1091,6 +1091,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(version_, that.version_);
     swap(statusMessage_, that.statusMessage_);
     swap(closeConnection_, that.closeConnection_);
+    swap(closeConnectionSetByUser_, that.closeConnectionSetByUser_);
     bodyPtr_.swap(that.bodyPtr_);
     swap(contentType_, that.contentType_);
     swap(flagForParsingContentType_, that.flagForParsingContentType_);
@@ -1110,6 +1111,8 @@ void HttpResponseImpl::clear()
     statusCode_ = kUnknown;
     version_ = Version::kHttp11;
     statusMessage_ = std::string_view{};
+    closeConnection_ = false;
+    closeConnectionSetByUser_ = false;
     fullHeaderString_.reset();
     jsonParsingErrorPtr_.reset();
     sendfileName_.clear();

@@ -89,11 +89,35 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     void setCloseConnection(bool on) override
     {
         closeConnection_ = on;
+        closeConnectionSetByUser_ = true;
     }
 
     bool ifCloseConnection() const override
     {
         return closeConnection_;
+    }
+
+    /**
+     * @brief Set the close-connection flag without marking it as an explicit
+     * application decision.
+     *
+     * Used by the framework to apply the client's keep-alive preference. Kept
+     * off the public HttpResponse interface so that the ABI is unchanged.
+     */
+    void setCloseConnectionInternal(bool on)
+    {
+        closeConnection_ = on;
+    }
+
+    /**
+     * @brief Whether the application explicitly called setCloseConnection().
+     *
+     * Distinguishes a deliberate handler decision from a side effect of
+     * setVersion(), so that the framework only overrides the latter.
+     */
+    bool closeConnectionSetByUser() const
+    {
+        return closeConnectionSetByUser_;
     }
 
     void setContentTypeCode(ContentType type) override
@@ -520,6 +544,10 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     trantor::Date creationDate_;
     Version version_{Version::kHttp11};
     bool closeConnection_{false};
+    // True only when the application called setCloseConnection() itself, as
+    // opposed to the flag being set by setVersion() or by the framework
+    // applying the client's keep-alive preference.
+    bool closeConnectionSetByUser_{false};
     mutable std::shared_ptr<HttpMessageBody> bodyPtr_;
     ssize_t expriedTime_{-1};
     std::string sendfileName_;
