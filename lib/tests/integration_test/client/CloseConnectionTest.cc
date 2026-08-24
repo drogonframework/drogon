@@ -115,14 +115,20 @@ std::shared_ptr<ExchangeResult> exchange(
         }
     };
 
-    client->setConnectionCallback([requests, sent, result, finish](
+    client->setConnectionCallback([requests, sent, result, done, finish](
                                       const trantor::TcpConnectionPtr &conn) {
         if (conn->connected())
         {
             conn->send(requests[sent->fetch_add(1)]);
             return;
         }
-        result->serverClosed = true;
+        // Only a disconnect arriving before the exchange completed means the
+        // server hung up. The teardown disconnect below also lands here and
+        // must not be mistaken for one.
+        if (!done->load())
+        {
+            result->serverClosed = true;
+        }
         finish();
     });
 
