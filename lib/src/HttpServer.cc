@@ -804,7 +804,11 @@ void HttpServer::handleResponse(
         HttpAppFrameworkImpl::instance().handleSessionForResponse(req,
                                                                   response);
     resp->setVersion(req->getVersion());
-    resp->setCloseConnection(!req->keepAlive());
+    // Respect application-set closeConnection (e.g., for aborting stream
+    // responses on error). Only apply the client's keep-alive preference
+    // when the handler hasn't explicitly requested close.
+    if (!resp->ifCloseConnection())
+        resp->setCloseConnection(!req->keepAlive());
     AopAdvice::instance().passPreSendingAdvices(req, resp);
 
     auto newResp = getCompressedResponse(req, resp, isHeadMethod);
@@ -1229,7 +1233,8 @@ static inline bool passSyncAdvices(
     {
         // Rejected by sync advice
         resp->setVersion(req->getVersion());
-        resp->setCloseConnection(!req->keepAlive());
+        if (!resp->ifCloseConnection())
+            resp->setCloseConnection(!req->keepAlive());
         if (!shouldBePipelined)
         {
             requestParser->getResponseBuffer().emplace_back(
