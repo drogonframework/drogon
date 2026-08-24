@@ -398,7 +398,7 @@ std::string getUuid(bool lowercase)
     boost::uuids::uuid uuid = generator();
     char bytes[16];
     std::copy(uuid.begin(), uuid.end(), bytes);
-    return createUuidString(bytes, 16, lowercase);  
+    return createUuidString(bytes, 16, lowercase);
 #elif USE_OSSP_UUID
     uuid_t *uuid;
     uuid_create(&uuid);
