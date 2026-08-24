@@ -88,6 +88,24 @@ int countResponses(const std::string &data)
     return count;
 }
 
+// Pulls the session cookie out of a response. Once a client sends that cookie
+// back, HttpAppFrameworkImpl::handleSessionForResponse stops copying a cached
+// response and hands the shared object to the framework unchanged, which is the
+// window in which the close flag can become sticky.
+std::string sessionCookie(const std::string &data)
+{
+    const std::string prefix = "Set-Cookie: ";
+    auto pos = data.find(prefix);
+    if (pos == std::string::npos)
+    {
+        return {};
+    }
+    pos += prefix.size();
+    auto end = data.find_first_of(";\r", pos);
+    return end == std::string::npos ? data.substr(pos)
+                                    : data.substr(pos, end - pos);
+}
+
 // Opens one connection and sends `requests` in order, each only after the
 // previous response has arrived. Completes as soon as every response has been
 // received -- which positively proves the connection survived -- or as soon as
@@ -192,24 +210,32 @@ DROGON_TEST(CloseConnectionHttp10KeepAliveTest)
 // close-on-send for every later client.
 DROGON_TEST(CloseConnectionCachedResponseNotStickyTest)
 {
-    // First client opts out of keep-alive. A second request is attempted on the
-    // same connection: the server is expected to have hung up instead of
-    // answering it.
-    const std::string closeRequest =
+    const std::string head =
         "GET /this_route_does_not_exist HTTP/1.1\r\n"
-        "Host: 127.0.0.1:8848\r\n"
-        "Connection: close\r\n\r\n";
+        "Host: 127.0.0.1:8848\r\n";
+
+    // Establish a session first. Without the resulting cookie the framework
+    // hands out a fresh copy of the cached 404 on every request, and the shared
+    // object is never reached.
+    auto seed = exchange({head + "Connection: keep-alive\r\n\r\n"});
+    REQUIRE(seed != nullptr);
+    const std::string cookie = sessionCookie(seed->data);
+    REQUIRE(cookie.empty() == false);
+    const std::string withCookie = head + "Cookie: " + cookie + "\r\n";
+
+    // This client opts out of keep-alive, which marks the shared cached 404.
+    // A second request is attempted on the same connection; the server is
+    // expected to have hung up instead of answering it.
+    const std::string closeRequest = withCookie + "Connection: close\r\n\r\n";
 
     auto closing = exchange({closeRequest, closeRequest});
     REQUIRE(closing != nullptr);
     CHECK(closing->serverClosed == true);
     CHECK(closing->responses == 1);
 
-    // A later client must still get keep-alive, on a connection of its own.
+    // A later client on a connection of its own must still get keep-alive.
     const std::string keepAliveRequest =
-        "GET /this_route_does_not_exist HTTP/1.1\r\n"
-        "Host: 127.0.0.1:8848\r\n"
-        "Connection: keep-alive\r\n\r\n";
+        withCookie + "Connection: keep-alive\r\n\r\n";
 
     auto keepAlive = exchange({keepAliveRequest, keepAliveRequest});
     REQUIRE(keepAlive != nullptr);
