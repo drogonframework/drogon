@@ -7,6 +7,7 @@
 #include <future>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace drogon;
 using namespace std::chrono_literals;
@@ -68,16 +69,34 @@ namespace
 {
 struct ExchangeResult
 {
-    std::string response;
+    std::string data;
+    int responses{0};
     bool serverClosed{false};
 };
 
-// Opens a fresh connection, sends a single raw request, and once the response
-// headers have arrived waits `settleMs` to observe whether the server hangs up
-// on its own. A connection still open after that window is treated as kept
-// alive.
-std::shared_ptr<ExchangeResult> exchangeOnce(const std::string &request,
-                                             double settleMs = 800.0)
+// Counts response status lines seen so far. The bodies used by these tests
+// never contain the token, so this is an adequate framing signal for a test.
+int countResponses(const std::string &data)
+{
+    int count = 0;
+    size_t pos = 0;
+    while ((pos = data.find("HTTP/1.", pos)) != std::string::npos)
+    {
+        ++count;
+        pos += 7;
+    }
+    return count;
+}
+
+// Opens one connection and sends `requests` in order, each only after the
+// previous response has arrived. Completes as soon as every response has been
+// received -- which positively proves the connection survived -- or as soon as
+// the server hangs up, whichever comes first.
+//
+// Liveness is proven by obtaining another response rather than by waiting out a
+// timer, so the outcome does not depend on any delay.
+std::shared_ptr<ExchangeResult> exchange(
+    const std::vector<std::string> &requests)
 {
     auto client =
         std::make_shared<trantor::TcpClient>(app().getLoop(),
@@ -86,7 +105,7 @@ std::shared_ptr<ExchangeResult> exchangeOnce(const std::string &request,
                                              "close-connection-regression");
     auto result = std::make_shared<ExchangeResult>();
     auto done = std::make_shared<std::atomic<bool>>(false);
-    auto timerArmed = std::make_shared<std::atomic<bool>>(false);
+    auto sent = std::make_shared<std::atomic<size_t>>(0);
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future();
     auto finish = [done, promise]() {
@@ -96,33 +115,43 @@ std::shared_ptr<ExchangeResult> exchangeOnce(const std::string &request,
         }
     };
 
-    client->setConnectionCallback(
-        [request, result, finish](const trantor::TcpConnectionPtr &conn) {
-            if (conn->connected())
+    client->setConnectionCallback([requests, sent, result, finish](
+                                      const trantor::TcpConnectionPtr &conn) {
+        if (conn->connected())
+        {
+            conn->send(requests[sent->fetch_add(1)]);
+            return;
+        }
+        result->serverClosed = true;
+        finish();
+    });
+
+    client->setMessageCallback(
+        [requests, sent, result, finish](const trantor::TcpConnectionPtr &conn,
+                                         trantor::MsgBuffer *buffer) {
+            result->data.append(buffer->read(buffer->readableBytes()));
+            // Wait for the newest response's headers to be complete before
+            // acting.
+            if (result->data.rfind("\r\n\r\n") == std::string::npos)
             {
-                conn->send(request);
                 return;
             }
-            result->serverClosed = true;
+            const int seen = countResponses(result->data);
+            if (seen < static_cast<int>(sent->load()))
+            {
+                return;
+            }
+            result->responses = seen;
+            if (sent->load() < requests.size())
+            {
+                conn->send(requests[sent->fetch_add(1)]);
+                return;
+            }
             finish();
         });
 
-    client->setMessageCallback(
-        [result, timerArmed, settleMs, finish](
-            const trantor::TcpConnectionPtr &conn, trantor::MsgBuffer *buffer) {
-            result->response.append(buffer->read(buffer->readableBytes()));
-            if (result->response.find("\r\n\r\n") == std::string::npos)
-            {
-                return;
-            }
-            if (!timerArmed->exchange(true))
-            {
-                conn->getLoop()->runAfter(settleMs / 1000.0, finish);
-            }
-        });
-
     client->connect();
-    if (future.wait_for(10s) != std::future_status::ready)
+    if (future.wait_for(15s) != std::future_status::ready)
     {
         return nullptr;
     }
@@ -136,16 +165,19 @@ std::shared_ptr<ExchangeResult> exchangeOnce(const std::string &request,
 // not be mistaken for an explicit application decision.
 DROGON_TEST(CloseConnectionHttp10KeepAliveTest)
 {
-    auto result = exchangeOnce(
+    const std::string request =
         "GET /api/v1/keepalive_probe HTTP/1.0\r\n"
         "Host: 127.0.0.1:8848\r\n"
-        "Connection: keep-alive\r\n\r\n");
+        "Connection: keep-alive\r\n\r\n";
+
+    auto result = exchange({request, request});
 
     REQUIRE(result != nullptr);
-    CHECK(result->response.find("HTTP/1.0 200") == 0);
-    CHECK(result->response.find("connection: close\r\n") == std::string::npos);
-    CHECK(result->response.find("connection: Keep-Alive\r\n") !=
-          std::string::npos);
+    CHECK(result->data.find("HTTP/1.0 200") == 0);
+    CHECK(result->data.find("connection: close\r\n") == std::string::npos);
+    CHECK(result->data.find("connection: Keep-Alive\r\n") != std::string::npos);
+    // Two responses on one connection prove the server honoured keep-alive.
+    CHECK(result->responses == 2);
     CHECK(result->serverClosed == false);
 }
 
@@ -154,20 +186,29 @@ DROGON_TEST(CloseConnectionHttp10KeepAliveTest)
 // close-on-send for every later client.
 DROGON_TEST(CloseConnectionCachedResponseNotStickyTest)
 {
-    auto closing = exchangeOnce(
+    // First client opts out of keep-alive. A second request is attempted on the
+    // same connection: the server is expected to have hung up instead of
+    // answering it.
+    const std::string closeRequest =
         "GET /this_route_does_not_exist HTTP/1.1\r\n"
         "Host: 127.0.0.1:8848\r\n"
-        "Connection: close\r\n\r\n");
+        "Connection: close\r\n\r\n";
+
+    auto closing = exchange({closeRequest, closeRequest});
     REQUIRE(closing != nullptr);
     CHECK(closing->serverClosed == true);
+    CHECK(closing->responses == 1);
 
-    auto keepAlive = exchangeOnce(
+    // A later client must still get keep-alive, on a connection of its own.
+    const std::string keepAliveRequest =
         "GET /this_route_does_not_exist HTTP/1.1\r\n"
         "Host: 127.0.0.1:8848\r\n"
-        "Connection: keep-alive\r\n\r\n");
+        "Connection: keep-alive\r\n\r\n";
+
+    auto keepAlive = exchange({keepAliveRequest, keepAliveRequest});
     REQUIRE(keepAlive != nullptr);
-    CHECK(keepAlive->response.find("connection: close\r\n") ==
-          std::string::npos);
+    CHECK(keepAlive->data.find("connection: close\r\n") == std::string::npos);
+    CHECK(keepAlive->responses == 2);
     CHECK(keepAlive->serverClosed == false);
 }
 
@@ -176,21 +217,24 @@ DROGON_TEST(CloseConnectionCachedResponseNotStickyTest)
 // Later plain 404s must still honour keep-alive.
 DROGON_TEST(CloseConnectionWebSocketNotFoundNotStickyTest)
 {
-    auto wsNotFound = exchangeOnce(
+    auto wsNotFound = exchange({
         "GET /this_ws_route_does_not_exist HTTP/1.1\r\n"
         "Host: 127.0.0.1:8848\r\n"
         "Upgrade: websocket\r\n"
         "Connection: Upgrade\r\n"
         "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
-        "Sec-WebSocket-Version: 13\r\n\r\n");
+        "Sec-WebSocket-Version: 13\r\n\r\n",
+    });
     REQUIRE(wsNotFound != nullptr);
 
-    auto keepAlive = exchangeOnce(
+    const std::string keepAliveRequest =
         "GET /this_route_does_not_exist HTTP/1.1\r\n"
         "Host: 127.0.0.1:8848\r\n"
-        "Connection: keep-alive\r\n\r\n");
+        "Connection: keep-alive\r\n\r\n";
+
+    auto keepAlive = exchange({keepAliveRequest, keepAliveRequest});
     REQUIRE(keepAlive != nullptr);
-    CHECK(keepAlive->response.find("connection: close\r\n") ==
-          std::string::npos);
+    CHECK(keepAlive->data.find("connection: close\r\n") == std::string::npos);
+    CHECK(keepAlive->responses == 2);
     CHECK(keepAlive->serverClosed == false);
 }
