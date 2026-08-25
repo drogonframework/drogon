@@ -245,6 +245,16 @@ int main()
             throw std::runtime_error("this should fail");
         });
 
+    app().registerHandler(
+        "/api/v1/close_connection",
+        [](const HttpRequestPtr &req,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody("closed");
+            resp->setCloseConnection(true);
+            callback(resp);
+        });
+
     app().setDocumentRoot("./");
     app().enableSession(60);
 

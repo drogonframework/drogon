@@ -26,7 +26,12 @@
 #include <io.h>
 #include <iomanip>
 #else
+#if USE_BOOST_UUID
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#else
 #include <uuid.h>
+#endif
 #include <unistd.h>
 #endif
 #include <zlib.h>
@@ -388,7 +393,13 @@ inline std::string createUuidString(const char *str, size_t len, bool lowercase)
 
 std::string getUuid(bool lowercase)
 {
-#if USE_OSSP_UUID
+#if USE_BOOST_UUID
+    static thread_local boost::uuids::random_generator generator;
+    boost::uuids::uuid uuid = generator();
+    char bytes[16];
+    std::copy(uuid.begin(), uuid.end(), bytes);
+    return createUuidString(bytes, 16, lowercase);
+#elif USE_OSSP_UUID
     uuid_t *uuid;
     uuid_create(&uuid);
     uuid_make(uuid, UUID_MAKE_V4);

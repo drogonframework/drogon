@@ -264,5 +264,125 @@ ThreadSafeStream printErr()
     return ThreadSafeStream(std::cerr);
 }
 
+namespace
+{
+// Writes the shared header of an assertion message. The caller owns the locked
+// stream and holds it for the whole statement, so nothing escapes.
+void writeHeader(ThreadSafeStream &out,
+                 const CaseBase &testCase,
+                 const char *file,
+                 int line,
+                 const char *funcName,
+                 const char *expr,
+                 const char *verdictColor,
+                 const char *verdict)
+{
+    out << "\x1B[1;37mIn test case " << testCase.fullname() << "\n"
+        << "\x1B[0;37m↳ " << file << ":" << line << " " << verdictColor
+        << verdict << "\x1B[0m\n"
+        << "  \033[0;34m" << internal::stringifyFuncCall(funcName, expr)
+        << "\x1B[0m\n";
+}
+}  // namespace
+
+void reportCheckFailure(const CaseBase &testCase,
+                        const char *file,
+                        int line,
+                        const char *funcName,
+                        const char *expr,
+                        const std::string &expansion)
+{
+    ThreadSafeStream out = printErr();
+    writeHeader(
+        out, testCase, file, line, funcName, expr, "\x1B[0;31m", " FAILED:");
+    out << "With expansion\n"
+        << "  \033[0;33m" << expansion << "\x1B[0m\n\n";
+}
+
+void reportUnexpectedException(const CaseBase &testCase,
+                               const char *file,
+                               int line,
+                               const char *funcName,
+                               const char *expr,
+                               const char *what)
+{
+    ThreadSafeStream out = printErr();
+    writeHeader(
+        out, testCase, file, line, funcName, expr, "\x1B[0;31m", " FAILED:");
+    out << "An unexpected exception is thrown. what():\n"
+        << "  \033[0;33m" << what << "\x1B[0m\n\n";
+}
+
+void reportUnknownException(const CaseBase &testCase,
+                            const char *file,
+                            int line,
+                            const char *funcName,
+                            const char *expr)
+{
+    ThreadSafeStream out = printErr();
+    writeHeader(
+        out, testCase, file, line, funcName, expr, "\x1B[0;31m", " FAILED:");
+    out << "Unexpected unknown exception is thrown.\n\n";
+}
+
+void reportNoException(const CaseBase &testCase,
+                       const char *file,
+                       int line,
+                       const char *funcName,
+                       const char *expr)
+{
+    ThreadSafeStream out = printErr();
+    writeHeader(
+        out, testCase, file, line, funcName, expr, "\x1B[0;31m", " FAILED:");
+    out << "With expecitation\n"
+        << "  Expected to throw an exception. But none are thrown.\n\n";
+}
+
+void reportUnwantedException(const CaseBase &testCase,
+                             const char *file,
+                             int line,
+                             const char *funcName,
+                             const char *expr)
+{
+    ThreadSafeStream out = printErr();
+    writeHeader(
+        out, testCase, file, line, funcName, expr, "\x1B[0;31m", " FAILED:");
+    out << "With expecitation\n"
+        << "  Should to not throw an exception. But one is thrown.\n\n";
+}
+
+void reportBadExceptionType(const CaseBase &testCase,
+                            const char *file,
+                            int line,
+                            const char *funcName,
+                            const char *expr,
+                            bool exceptionThrown,
+                            const char *expectedType)
+{
+    ThreadSafeStream out = printErr();
+    writeHeader(
+        out, testCase, file, line, funcName, expr, "\x1B[0;31m", " FAILED:");
+    out << "With expecitation\n";
+    if (exceptionThrown)
+        out << "  Exception have been throw but not of type \033[0;33m"
+            << expectedType << "\033[0m.\n\n";
+    else
+        out << "  A \033[0;33m" << expectedType
+            << "\033[0m exception is expected. But nothing was "
+               "thrown\033[0m.\n\n";
+}
+
+void reportPassed(const CaseBase &testCase,
+                  const char *file,
+                  int line,
+                  const char *funcName,
+                  const char *expr)
+{
+    ThreadSafeStream out = print();
+    writeHeader(
+        out, testCase, file, line, funcName, expr, "\x1B[0;32m", " PASSED:");
+    out << "\n";
+}
+
 }  // namespace test
 }  // namespace drogon

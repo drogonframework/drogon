@@ -5,6 +5,7 @@ endif(WIN32)
 set(UNITTEST_SOURCES
     unittests/main.cc
     unittests/Base64Test.cc
+    unittests/DrogonTestExpansionTest.cc
     unittests/UrlCodecTest.cc
     unittests/GzipTest.cc
     unittests/HttpViewDataTest.cc
@@ -55,6 +56,7 @@ if (BUILD_CTL)
       integration_test/client/main.cc
       integration_test/client/WebSocketTest.cc
       integration_test/client/WebSocketKeepAliveUpgradeTest.cc
+      integration_test/client/CloseConnectionTest.cc
       integration_test/client/MultipleWsTest.cc
       integration_test/client/HttpPipeliningTest.cc
       integration_test/client/RequestStreamTest.cc)
