@@ -72,10 +72,15 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void setVersion(const Version v) override
     {
-        version_ = v;
+        if (version_ != v)
+        {
+            version_ = v;
+            // The version is part of the rendered status line.
+            invalidateRenderCache();
+        }
         if (version_ == Version::kHttp10)
         {
-            closeConnection_ = true;
+            setCloseConnectionInternal(true);
         }
     }
 
@@ -88,8 +93,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void setCloseConnection(bool on) override
     {
-        closeConnection_ = on;
         closeConnectionSetByUser_ = true;
+        setCloseConnectionInternal(on);
     }
 
     bool ifCloseConnection() const override
@@ -106,7 +111,14 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
      */
     void setCloseConnectionInternal(bool on)
     {
+        if (closeConnection_ == on)
+            return;
         closeConnection_ = on;
+        // The flag is emitted as a "connection" header, so anything rendered
+        // earlier is now stale. This matters most for responses with an
+        // expired time, whose entire rendering is memoized in httpString_ and
+        // would otherwise keep sending the previous header forever.
+        invalidateRenderCache();
     }
 
     /**
@@ -532,6 +544,24 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         assert(code >= 0);
         customStatusCode_ = code;
         statusMessage_ = std::string_view{message, messageLength};
+    }
+
+    /**
+     * @brief Drop every memoized rendering of this response.
+     *
+     * Must be called after changing anything that is baked into the rendered
+     * bytes but is not covered by the fullHeaderString_ resets scattered
+     * through the header setters -- notably the status line and the
+     * "connection" header. Responses with an expired time memoize their whole
+     * rendering in httpString_, so for them a stale cache means the wrong
+     * bytes go out on every subsequent send.
+     */
+    void invalidateRenderCache()
+    {
+        fullHeaderString_.reset();
+        httpString_.reset();
+        datePos_ = static_cast<size_t>(-1);
+        httpStringDate_ = -1;
     }
 
     SafeStringMap<std::string> headers_;

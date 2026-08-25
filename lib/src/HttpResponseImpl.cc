@@ -1113,7 +1113,7 @@ void HttpResponseImpl::clear()
     statusMessage_ = std::string_view{};
     closeConnection_ = false;
     closeConnectionSetByUser_ = false;
-    fullHeaderString_.reset();
+    invalidateRenderCache();
     jsonParsingErrorPtr_.reset();
     sendfileName_.clear();
     if (streamCallback_)
@@ -1132,7 +1132,6 @@ void HttpResponseImpl::clear()
     bodyPtr_.reset();
     jsonPtr_.reset();
     expriedTime_ = -1;
-    datePos_ = std::string::npos;
     flagForParsingContentType_ = false;
     flagForParsingJson_ = false;
 }
