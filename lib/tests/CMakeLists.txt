@@ -59,6 +59,7 @@ if (BUILD_CTL)
       integration_test/client/CloseConnectionTest.cc
       integration_test/client/MultipleWsTest.cc
       integration_test/client/HttpPipeliningTest.cc
+      integration_test/client/ExpectContinueTest.cc
       integration_test/client/RequestStreamTest.cc)
 
   set(INTEGRATION_TEST_SERVER_SOURCES
