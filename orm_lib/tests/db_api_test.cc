@@ -6,6 +6,19 @@
 using namespace drogon;
 using namespace trantor;
 
+namespace
+{
+const std::string_view makeConstStringView()
+{
+    return "value";
+}
+
+[[maybe_unused]] void bindConstStringViewRvalue(orm::DbClient &client)
+{
+    client.execSqlSync("SELECT $1", makeConstStringView());
+}
+}  // namespace
+
 DROGON_TEST(DbApiTest)
 {
 #if USE_POSTGRESQL
