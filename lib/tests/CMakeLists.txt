@@ -12,6 +12,7 @@ set(UNITTEST_SOURCES
     unittests/ClassNameTest.cc
     unittests/HttpDateTest.cc
     unittests/HttpHeaderTest.cc
+    unittests/HttpResponseSwapTest.cc
     unittests/MD5Test.cc
     unittests/MsgBufferTest.cc
     unittests/OStringStreamTest.cc

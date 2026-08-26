@@ -1082,28 +1082,44 @@ void HttpResponseImpl::addHeader(const char *start,
     }
 }
 
+// Every data member must be listed here, in declaration order. Leaving one out
+// splices the two responses together instead of exchanging them. The paired
+// members are the dangerous ones: contentType_ without contentTypeString_, or
+// statusCode_ without customStatusCode_, renders a response that contradicts
+// what its own accessors report.
 void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
 {
     using std::swap;
     headers_.swap(that.headers_);
     cookies_.swap(that.cookies_);
+    swap(customStatusCode_, that.customStatusCode_);
     swap(statusCode_, that.statusCode_);
-    swap(version_, that.version_);
     swap(statusMessage_, that.statusMessage_);
+    swap(creationDate_, that.creationDate_);
+    swap(version_, that.version_);
     swap(closeConnection_, that.closeConnection_);
     swap(closeConnectionSetByUser_, that.closeConnectionSetByUser_);
     bodyPtr_.swap(that.bodyPtr_);
-    swap(contentType_, that.contentType_);
-    swap(flagForParsingContentType_, that.flagForParsingContentType_);
-    swap(flagForParsingJson_, that.flagForParsingJson_);
+    swap(expriedTime_, that.expriedTime_);
     swap(sendfileName_, that.sendfileName_);
+    swap(sendfileRange_, that.sendfileRange_);
     swap(streamCallback_, that.streamCallback_);
     swap(asyncStreamCallback_, that.asyncStreamCallback_);
+    swap(asyncStreamDisableKickoff_, that.asyncStreamDisableKickoff_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);
+    swap(peerCertificate_, that.peerCertificate_);
     httpString_.swap(that.httpString_);
     swap(datePos_, that.datePos_);
+    swap(httpStringDate_, that.httpStringDate_);
+    swap(flagForParsingJson_, that.flagForParsingJson_);
+    swap(flagForSerializingJson_, that.flagForSerializingJson_);
+    swap(contentType_, that.contentType_);
+    swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
+    swap(contentTypeString_, that.contentTypeString_);
+    swap(passThrough_, that.passThrough_);
+    swap(allowCompression_, that.allowCompression_);
 }
 
 void HttpResponseImpl::clear()
