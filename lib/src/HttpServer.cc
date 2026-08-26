@@ -57,6 +57,8 @@ static inline HttpResponsePtr getCompressedResponse(
     const HttpRequestImplPtr &req,
     const HttpResponsePtr &response,
     bool isHeadMethod);
+static inline void applyConnectionDecision(const HttpRequestImplPtr &req,
+                                           HttpResponsePtr &resp);
 
 static void handleInvalidHttpMethod(
     const HttpRequestImplPtr &req,
@@ -751,8 +753,15 @@ void HttpServer::websocketRequestRouting(
 
     // Not found
     auto resp = drogon::HttpResponse::newNotFoundResponse(req);
-    resp->setCloseConnection(true);
-    callback(resp);
+    // newNotFoundResponse() may hand back a shared custom 404 page or a
+    // per-IO-thread cached response. Mutating it here would mark that shared
+    // object as explicitly close-on-send for every later request that reuses
+    // it, so work on a copy instead.
+    auto respImpl = std::make_shared<HttpResponseImpl>(
+        *static_cast<HttpResponseImpl *>(resp.get()));
+    respImpl->setExpiredTime(-1);  // make it temporary
+    respImpl->setCloseConnection(true);
+    callback(respImpl);
 }
 
 void HttpServer::websocketRequestHandling(
@@ -803,12 +812,7 @@ void HttpServer::handleResponse(
     auto resp =
         HttpAppFrameworkImpl::instance().handleSessionForResponse(req,
                                                                   response);
-    resp->setVersion(req->getVersion());
-    // Respect application-set closeConnection (e.g., for aborting stream
-    // responses on error). Only apply the client's keep-alive preference
-    // when the handler hasn't explicitly requested close.
-    if (!resp->ifCloseConnection())
-        resp->setCloseConnection(!req->keepAlive());
+    applyConnectionDecision(req, resp);
     AopAdvice::instance().passPreSendingAdvices(req, resp);
 
     auto newResp = getCompressedResponse(req, resp, isHeadMethod);
@@ -1232,9 +1236,7 @@ static inline bool passSyncAdvices(
     if (auto resp = AopAdvice::instance().passSyncAdvices(req))
     {
         // Rejected by sync advice
-        resp->setVersion(req->getVersion());
-        if (!resp->ifCloseConnection())
-            resp->setCloseConnection(!req->keepAlive());
+        applyConnectionDecision(req, resp);
         if (!shouldBePipelined)
         {
             requestParser->getResponseBuffer().emplace_back(
@@ -1248,6 +1250,43 @@ static inline bool passSyncAdvices(
         return false;
     }
     return true;
+}
+
+/**
+ * @brief Stamp this request's version and connection decision onto `resp`,
+ * replacing it with a private copy first when it is a shared cached response.
+ *
+ * Responses with an expired time are handed out by the framework's caches (the
+ * custom 404 page, app().cacheResponse(), ...) and are reused across requests.
+ * Deciding keep-alive by mutating such an object leaks one request's decision
+ * into every later request served from the same object, and races with the
+ * other IO threads sharing it. So take a copy whenever this request needs
+ * different framing from what the cached object already carries.
+ *
+ * Application-set closeConnection is respected: only the framework's own
+ * default is overridden. That distinction is made through
+ * closeConnectionSetByUser() rather than ifCloseConnection() because
+ * setVersion() also sets the flag as a side effect for HTTP/1.0.
+ */
+static inline void applyConnectionDecision(const HttpRequestImplPtr &req,
+                                           HttpResponsePtr &resp)
+{
+    auto implPtr = static_cast<HttpResponseImpl *>(resp.get());
+    const bool closeConnection = implPtr->closeConnectionSetByUser()
+                                     ? implPtr->ifCloseConnection()
+                                     : !req->keepAlive();
+    if (implPtr->expiredTime() >= 0 &&
+        (implPtr->version() != req->getVersion() ||
+         implPtr->ifCloseConnection() != closeConnection))
+    {
+        auto newResp = std::make_shared<HttpResponseImpl>(*implPtr);
+        newResp->setExpiredTime(-1);  // make it temporary
+        resp = newResp;
+        implPtr = newResp.get();
+    }
+    implPtr->setVersion(req->getVersion());
+    if (!implPtr->closeConnectionSetByUser())
+        implPtr->setCloseConnectionInternal(!req->keepAlive());
 }
 
 static inline HttpResponsePtr getCompressedResponse(
