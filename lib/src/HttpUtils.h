@@ -16,11 +16,54 @@
 
 #include <trantor/utils/MsgBuffer.h>
 #include <drogon/HttpTypes.h>
+#include <algorithm>
 #include <string>
 #include <string_view>
 
 namespace drogon
 {
+inline bool isHttpTokenCharacter(unsigned char c)
+{
+    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
+        (c >= 'a' && c <= 'z'))
+    {
+        return true;
+    }
+    switch (c)
+    {
+        case '!':
+        case '#':
+        case '$':
+        case '%':
+        case '&':
+        case '\'':
+        case '*':
+        case '+':
+        case '-':
+        case '.':
+        case '^':
+        case '_':
+        case '`':
+        case '|':
+        case '~':
+            return true;
+        default:
+            return false;
+    }
+}
+
+inline bool isValidHttpFieldName(const char *begin, const char *end)
+{
+    if (begin == end)
+        return false;
+    for (char ch : std::string_view(begin, end))
+    {
+        if (!isHttpTokenCharacter(ch))
+            return false;
+    }
+    return true;
+}
+
 const std::string_view &contentTypeToMime(ContentType contentType);
 const std::string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);

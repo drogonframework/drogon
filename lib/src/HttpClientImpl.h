@@ -187,6 +187,7 @@ class HttpClientImpl final : public HttpClient,
     size_t bytesSent_{0};
     size_t bytesReceived_{0};
     bool dns_{false};
+    size_t tcpClientGeneration_{0};
     std::shared_ptr<trantor::Resolver> resolverPtr_;
     bool useOldTLS_{false};
     std::string userAgent_{"DrogonClient"};

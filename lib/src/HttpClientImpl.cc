@@ -22,6 +22,7 @@
 #include <drogon/utils/Utilities.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <stdexcept>
 
 using namespace trantor;
 using namespace drogon;
@@ -34,6 +35,7 @@ static const size_t kDefaultDNSTimeout{600};
 
 void HttpClientImpl::createTcpClient()
 {
+    const auto tcpClientGeneration = ++tcpClientGeneration_;
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
     tcpClientPtr_ =
         std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
@@ -51,6 +53,13 @@ void HttpClientImpl::createTcpClient()
             .setKeyPath(clientKeyPath_);
         tcpClientPtr_->enableSSL(std::move(policy));
     }
+    else if (useSSL_ && !utils::supportsTls())
+    {
+        LOG_ERROR << "HTTP Client wants to create HTTPS connection "
+            "but TLS is disabled in Trantor. Please rebuild with TLS support";
+        throw std::runtime_error("HTTP Client wants to create HTTPS connection "
+            "but TLS is disabled in Trantor");
+    }
 
     auto thisPtr = shared_from_this();
     std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
@@ -62,7 +71,8 @@ void HttpClientImpl::createTcpClient()
             thisPtr->sockOptCallback_(fd);
     });
     tcpClientPtr_->setConnectionCallback(
-        [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
+        [weakPtr,
+         tcpClientGeneration](const trantor::TcpConnectionPtr &connPtr) {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
@@ -88,6 +98,12 @@ void HttpClientImpl::createTcpClient()
             }
             else
             {
+                // A response carrying Connection: close can cause a new
+                // TcpClient to be created before the old connection's close
+                // callback runs.  Do not let the stale callback tear down the
+                // replacement connection or its request queue.
+                if (tcpClientGeneration != thisPtr->tcpClientGeneration_)
+                    return;
                 LOG_TRACE << "connection disconnect";
                 auto responseParser = connPtr->getContext<HttpResponseParser>();
                 if (responseParser && responseParser->parseResponseOnClose() &&
@@ -157,6 +173,8 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
       serverAddr_(addr),
       useSSL_(useSSL),
       validateCert_(validateCert),
+      domain_(addr.toIp()),
+      isDomainName_(false),
       useOldTLS_(useOldTLS)
 {
 }
@@ -338,6 +356,7 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
 
                 callbackParamsPtr->timeoutFlag = true;
 
+                bool wasBuffered = false;
                 for (auto iter = thisPtr->requestsBuffer_.begin();
                      iter != thisPtr->requestsBuffer_.end();
                      ++iter)
@@ -345,9 +364,18 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                     if (iter->first == callbackParamsPtr->requestPtr)
                     {
                         thisPtr->eraseRequest(iter);
+                        wasBuffered = true;
                         break;
                     }
                 }
+
+                // An HTTP/1.x response stream is ordered, so an in-flight
+                // request cannot be removed independently.  Tear down the
+                // connection and release all callbacks before invoking the
+                // timeout callback; this also breaks the callback/client
+                // ownership cycle when the peer never responds.
+                if (!wasBuffered)
+                    thisPtr->onError(ReqResult::NetworkFailure);
 
                 (callbackParamsPtr->callback)(ReqResult::Timeout, nullptr);
             }
@@ -566,6 +594,35 @@ void HttpClientImpl::handleResponse(
     pipeliningCallbacks_.pop();
     pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
     handleCookies(resp);
+
+    if (resp->ifCloseConnection())
+    {
+        // Make the old connection unavailable before callbacks run.  A
+        // callback may immediately submit another request, which must use a
+        // fresh connection.
+        auto closingClient = std::move(tcpClientPtr_);
+        cb.second(ReqResult::Ok, resp);
+
+        // Requests already pipelined on this connection have an ambiguous
+        // outcome.  Do not replay them automatically.
+        while (!pipeliningCallbacks_.empty())
+        {
+            auto pending = std::move(pipeliningCallbacks_.front());
+            pipeliningCallbacks_.pop();
+            pipeliningCallbacksSize_.fetch_sub(1,
+                                               std::memory_order_relaxed);
+            pending.second(ReqResult::NetworkFailure, nullptr);
+        }
+
+        // Requests which have not been written are safe to send over a new
+        // connection.  A response callback above may already have created it.
+        if (!tcpClientPtr_ && !requestsBuffer_.empty())
+            createTcpClient();
+
+        connPtr->forceClose();
+        return;
+    }
+
     cb.second(ReqResult::Ok, resp);
 
     // LOG_TRACE << "pipelining buffer size=" <<
@@ -581,13 +638,6 @@ void HttpClientImpl::handleResponse(
             pipeliningCallbacks_.push(std::move(reqAndCallback));
             pipeliningCallbacksSize_.fetch_add(1, std::memory_order_relaxed);
             popFrontRequest();
-        }
-        else
-        {
-            if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
-            {
-                tcpClientPtr_.reset();
-            }
         }
     }
     else

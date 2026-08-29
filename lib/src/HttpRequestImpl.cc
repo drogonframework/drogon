@@ -412,6 +412,14 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
+        // In normal mode appendToBuffer() owns message framing.  Forwarded
+        // raw framing headers are preserved only by passThrough mode.
+        if (!passThrough_ &&
+            (it->first == "content-length" ||
+             it->first == "transfer-encoding"))
+        {
+            continue;
+        }
         output->append(it->first);
         output->append(": ");
         output->append(it->second);

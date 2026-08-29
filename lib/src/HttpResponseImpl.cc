@@ -995,6 +995,17 @@ void HttpResponseImpl::addHeader(const char *start,
         value.resize(value.size() - 1);
     }
 
+    if (field == "connection")
+    {
+        const auto options = utils::splitStringView(value, ",");
+        if (std::find_if(options.begin(), options.end(), [](const auto option) {
+                return utils::ci_equals(option, "close");
+            }) != options.end())
+        {
+            setCloseConnection(true);
+        }
+    }
+
     if (field == "set-cookie")
     {
         // LOG_INFO<<"cookies!!!:"<<value;

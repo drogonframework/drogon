@@ -35,6 +35,7 @@ void HttpResponseParser::reset()
     status_ = HttpResponseParseStatus::kExpectResponseLine;
     responsePtr_.reset(new HttpResponseImpl);
     parseResponseForHeadMethod_ = false;
+    contentLengthSeen_ = false;
     leftBodyLength_ = 0;
     currentChunkLength_ = 0;
 }
@@ -135,12 +136,32 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 const char *colon = std::find(buf->peek(), crlf, ':');
                 if (colon != crlf)
                 {
+                    if (!isValidHttpFieldName(buf->peek(), colon))
+                    {
+                        return false;
+                    }
+                    constexpr std::string_view contentLength =
+                        "content-length";
+                    const std::string_view field(buf->peek(),
+                                                 colon - buf->peek());
+                    if (utils::ci_equals(field, contentLength))
+                    {
+                        if (contentLengthSeen_)
+                        {
+                            // Do not discard evidence of conflicting framing
+                            // by overwriting the first map entry.
+                            return false;
+                        }
+                        contentLengthSeen_ = true;
+                    }
                     responsePtr_->addHeader(buf->peek(), colon, crlf);
                 }
                 else
                 {
                     const std::string &len =
                         responsePtr_->getHeaderBy("content-length");
+                    const std::string &encode =
+                        responsePtr_->getHeaderBy("transfer-encoding");
                     // LOG_INFO << "content len=" << len;
                     if (parseResponseForHeadMethod_ ||
                         responseHasNoBody(responsePtr_->statusCode()))
@@ -149,19 +170,15 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                         status_ = HttpResponseParseStatus::kGotAll;
                         hasMore = false;
                     }
-                    else if (!len.empty())
+                    else if (!encode.empty())
                     {
-                        if (!utils::parseInteger(len, leftBodyLength_))
+                        if (!len.empty())
                         {
-                            // Malformed Content-Length from peer.
+                            // RFC 9112 Section 6.3 gives Transfer-Encoding
+                            // precedence, but recommends treating TE+CL as an
+                            // error because it can indicate response splitting.
                             return false;
                         }
-                        status_ = HttpResponseParseStatus::kExpectBody;
-                    }
-                    else
-                    {
-                        const std::string &encode =
-                            responsePtr_->getHeaderBy("transfer-encoding");
                         if (encode == "chunked")
                         {
                             status_ = HttpResponseParseStatus::kExpectChunkLen;
@@ -174,6 +191,22 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                             connPtr->shutdown();
                             hasMore = true;
                         }
+                    }
+                    else if (!len.empty())
+                    {
+                        if (!utils::parseInteger(len, leftBodyLength_))
+                        {
+                            // Malformed Content-Length from peer.
+                            return false;
+                        }
+                        status_ = HttpResponseParseStatus::kExpectBody;
+                    }
+                    else
+                    {
+                        status_ = HttpResponseParseStatus::kExpectClose;
+                        auto connPtr = conn_.lock();
+                        connPtr->shutdown();
+                        hasMore = true;
                     }
                 }
                 buf->retrieveUntil(crlf + 2);

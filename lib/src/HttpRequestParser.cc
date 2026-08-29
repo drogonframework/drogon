@@ -49,6 +49,11 @@ static bool isContentLengthHeader(const char *begin, const char *end)
     return lowerAscii(begin, end) == "content-length";
 }
 
+static bool isTransferEncodingHeader(const char *begin, const char *end)
+{
+    return lowerAscii(begin, end) == "transfer-encoding";
+}
+
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
     : status_(HttpRequestParseStatus::kExpectMethod),
       loop_(connPtr->getLoop()),
@@ -63,14 +68,14 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
     const char *space = std::find(start, end, ' ');
     if (space != end)
     {
-        const char *slash = std::find(start, space, '/');
-        if (slash != start && slash + 1 < space && *(slash + 1) == '/')
+        const char *question = std::find(start, space, '?');
+        const char *slash = std::find(start, question, '/');
+        if (slash != start && slash + 1 < question && *(slash + 1) == '/')
         {
             // scheme precedents
-            slash = std::find(slash + 2, space, '/');
+            slash = std::find(slash + 2, question, '/');
         }
-        const char *question = std::find(slash, space, '?');
-        if (slash != space)
+        if (slash != question)
         {
             request_->setPath(slash, question);
         }
@@ -230,12 +235,27 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // found colon
                 if (colon != crlf)
                 {
+                    if (!isValidHttpFieldName(buf->peek(), colon))
+                    {
+                        // RFC 9112 Section 5.1 forbids whitespace between a
+                        // field name and colon. Reject all invalid field names
+                        // so they cannot be interpreted differently upstream.
+                        return -k400BadRequest;
+                    }
                     if (isContentLengthHeader(buf->peek(), colon) &&
                         request_->headers().find("content-length") !=
                             request_->headers().end())
                     {
                         // Reject duplicate Content-Length fields to avoid
                         // ambiguous message framing.
+                        return -k400BadRequest;
+                    }
+                    if (isTransferEncodingHeader(buf->peek(), colon) &&
+                        request_->headers().find("transfer-encoding") !=
+                            request_->headers().end())
+                    {
+                        // Do not discard a repeated framing field. Drogon only
+                        // supports a single chunked transfer coding on requests.
                         return -k400BadRequest;
                     }
                     request_->addHeader(buf->peek(), colon, crlf);
