@@ -56,7 +56,7 @@ inline bool isValidHttpFieldName(const char *begin, const char *end)
 {
     if (begin == end)
         return false;
-    for (char ch : std::string_view(begin, end))
+    for (char ch : std::string_view(begin, static_cast<size_t>(end - begin)))
     {
         if (!isHttpTokenCharacter(ch))
             return false;

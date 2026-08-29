@@ -78,9 +78,9 @@ void HttpRequestImpl::parseParameters() const
     if (!input.empty())
     {
         std::string_view::size_type pos = 0;
-        while ((input[pos] == '?' ||
-                isspace(static_cast<unsigned char>(input[pos]))) &&
-               pos < input.length())
+        while (pos < input.length() &&
+               (input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))))
         {
             ++pos;
         }
@@ -139,9 +139,9 @@ void HttpRequestImpl::parseParameters() const
         type.find("application/x-www-form-urlencoded") != std::string::npos)
     {
         std::string_view::size_type pos = 0;
-        while ((input[pos] == '?' ||
-                isspace(static_cast<unsigned char>(input[pos]))) &&
-               pos < input.length())
+        while (pos < input.length() &&
+               (input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))))
         {
             ++pos;
         }

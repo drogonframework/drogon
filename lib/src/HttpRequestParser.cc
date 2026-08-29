@@ -29,6 +29,8 @@ using namespace drogon;
 static constexpr size_t CRLF_LEN = 2;            // strlen("crlf")
 static constexpr size_t METHOD_MAX_LEN = 7;      // strlen("OPTIONS")
 static constexpr size_t TRUNK_LEN_MAX_LEN = 16;  // 0xFFFFFFFF,FFFFFFFF
+static constexpr size_t HEADER_LINE_MAX_LEN = 64 * 1024;
+static constexpr size_t HEADER_SECTION_MAX_LEN = 1024 * 1024;
 
 // NOTE: tolower is locale depent thus not ideal for parsing
 static std::string lowerAscii(const char *begin, const char *end)
@@ -52,6 +54,17 @@ static bool isContentLengthHeader(const char *begin, const char *end)
 static bool isTransferEncodingHeader(const char *begin, const char *end)
 {
     return lowerAscii(begin, end) == "transfer-encoding";
+}
+
+// RFC 9110 Section 5.5 permits SP, HTAB, visible US-ASCII, and obs-text in a
+// field value.  All other control octets are invalid.  In particular, CR, LF,
+// and NUL must be rejected or replaced before processing or forwarding; reject
+// them here so the received message is never interpreted in two different ways.
+static bool isValidHttpFieldValue(const char *begin, const char *end)
+{
+    return std::all_of(begin, end, [](unsigned char c) {
+        return c == '\t' || c == ' ' || (c >= 0x21 && c <= 0x7e) || c >= 0x80;
+    });
 }
 
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
@@ -143,6 +156,8 @@ void HttpRequestParser::reset()
 {
     assert(loop_->isInLoopThread());
     remainContentLength_ = 0;
+    headerBytes_ = 0;
+    trailerBytes_ = 0;
     status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
     {
@@ -199,7 +214,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 const char *crlf = buf->findCRLF();
                 if (!crlf)
                 {
-                    if (buf->readableBytes() >= 64 * 1024)
+                    if (buf->readableBytes() >= HEADER_SECTION_MAX_LEN)
                     {
                         /// The limit for request line is 64K bytes. response
                         /// k414RequestURITooLarge
@@ -222,14 +237,26 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 const char *crlf = buf->findCRLF();
                 if (!crlf)
                 {
-                    if (buf->readableBytes() >= 64 * 1024)
+                    if (buf->readableBytes() >= HEADER_LINE_MAX_LEN ||
+                        buf->readableBytes() >=
+                        HEADER_SECTION_MAX_LEN - headerBytes_)
                     {
-                        /// The limit for every request header is 64K bytes;
-                        /// TODO: Make this configurable?
+                        /// Limit both an individual request header line and the
+                        /// complete request header section.
+                        /// TODO: Make these configurable?
                         return -k400BadRequest;
                     }
                     return 0;
                 }
+
+                const auto lineBytes =
+                    static_cast<size_t>(crlf - buf->peek()) + CRLF_LEN;
+                if (lineBytes > HEADER_LINE_MAX_LEN ||
+                    lineBytes > HEADER_SECTION_MAX_LEN - headerBytes_)
+                {
+                    return -k400BadRequest;
+                }
+                headerBytes_ += lineBytes;
 
                 const char *colon = std::find(buf->peek(), crlf, ':');
                 // found colon
@@ -240,6 +267,10 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         // RFC 9112 Section 5.1 forbids whitespace between a
                         // field name and colon. Reject all invalid field names
                         // so they cannot be interpreted differently upstream.
+                        return -k400BadRequest;
+                    }
+                    if (!isValidHttpFieldValue(colon + 1, crlf))
+                    {
                         return -k400BadRequest;
                     }
                     if (isContentLengthHeader(buf->peek(), colon) &&
@@ -475,12 +506,28 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 const char *crlf = buf->findCRLF();
                 if (!crlf)
                 {
+                    if (buf->readableBytes() >= HEADER_LINE_MAX_LEN ||
+                        buf->readableBytes() >=
+                        HEADER_SECTION_MAX_LEN - trailerBytes_)
+                    {
+                        return -k400BadRequest;
+                    }
                     return 0;
                 }
+                const auto lineBytes =
+                    static_cast<size_t>(crlf - buf->peek()) + CRLF_LEN;
+                if (lineBytes > HEADER_LINE_MAX_LEN ||
+                    lineBytes > HEADER_SECTION_MAX_LEN - trailerBytes_)
+                {
+                    return -k400BadRequest;
+                }
+                trailerBytes_ += lineBytes;
                 if (crlf != buf->peek())
                 {
                     const char *colon = std::find(buf->peek(), crlf, ':');
-                    if (colon == buf->peek() || colon == crlf)
+                    if (colon == buf->peek() || colon == crlf ||
+                        !isValidHttpFieldName(buf->peek(), colon) ||
+                        !isValidHttpFieldValue(colon + 1, crlf))
                     {
                         return -k400BadRequest;
                     }
