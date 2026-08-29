@@ -246,6 +246,15 @@ int main()
         });
 
     app().registerHandler(
+        "/api/v1/keepalive_probe",
+        [](const HttpRequestPtr &req,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody("alive");
+            callback(resp);
+        });
+
+    app().registerHandler(
         "/api/v1/close_connection",
         [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback) {

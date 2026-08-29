@@ -186,6 +186,10 @@ DROGON_EXPORT void handleException(
     const std::exception &,
     const HttpRequestPtr &,
     std::function<void(const HttpResponsePtr &)> &&);
+DROGON_EXPORT void handleBadPathParameter(
+    const std::exception &,
+    const HttpRequestPtr &,
+    std::function<void(const HttpResponsePtr &)> &&);
 
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 
@@ -306,6 +310,17 @@ class HttpBinder : public HttpBinderBase
                             std::move(value));
                         return;
                     }
+                }
+                catch (const std::invalid_argument &e)
+                {
+                    // Malformed path parameters are client errors (#2551).
+                    handleBadPathParameter(e, req, std::move(callback));
+                    return;
+                }
+                catch (const std::out_of_range &e)
+                {
+                    handleBadPathParameter(e, req, std::move(callback));
+                    return;
                 }
                 catch (const std::exception &e)
                 {
