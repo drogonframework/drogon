@@ -47,6 +47,7 @@ else()
                        unittests/HttpFileTest.cc
                        unittests/HttpMethodTest.cc
                        unittests/HttpRequestForwardCacheBodyTest.cc
+                       unittests/WebSocketMessageParserTest.cc
                        unittests/WebsocketResponseTest.cc)
 endif()
 

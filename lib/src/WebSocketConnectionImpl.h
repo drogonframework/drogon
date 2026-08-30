@@ -29,6 +29,11 @@ using WebSocketConnectionImplPtr = std::shared_ptr<WebSocketConnectionImpl>;
 class WebSocketMessageParser
 {
   public:
+    explicit WebSocketMessageParser(bool expectMasked = true)
+        : expectMasked_(expectMasked)
+    {
+    }
+
     bool parse(trantor::MsgBuffer *buffer);
 
     bool gotAll(std::string &message, WebSocketMessageType &type)
@@ -45,6 +50,7 @@ class WebSocketMessageParser
     std::string message_;
     WebSocketMessageType type_;
     bool gotAll_{false};
+    bool expectMasked_{true};
 };
 
 class WebSocketConnectionImpl final
