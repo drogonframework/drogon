@@ -71,7 +71,9 @@ IPs or users. the default value is 600.
                 "ip_capacity": 0,
                 "user_capacity": 0
             },...
-         ]
+        ],
+        // Trusted proxy ip or cidr
+        "trust_ips": ["127.0.0.1", "172.16.0.0/12"],
      }
   }
   @endcode
@@ -137,12 +139,14 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     std::function<HttpResponsePtr(const drogon::HttpRequestPtr &)>
         rejectResponseFactory_;
 
+    RealIpResolver::CIDRs trustCIDRs_;
+
     void onHttpRequest(const drogon::HttpRequestPtr &,
                        AdviceCallback &&,
                        AdviceChainCallback &&);
     bool checkLimit(const drogon::HttpRequestPtr &req,
                     const LimitStrategy &strategy,
-                    const std::string &ip,
+                    const trantor::InetAddress &ip,
                     const std::optional<std::string> &userId);
     HttpResponsePtr rejectResponse_;
 };

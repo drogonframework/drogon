@@ -4,6 +4,339 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### API changes list
+
+- Add `HttpAppFramework::hasDbClient()` and `hasFastDbClient()` methods.
+
+## [1.9.13] - 2026-05-06
+
+### API changes list
+
+- Add `HttpRequest::clearHeaders()` method.
+
+- Add `setQueryParameter()` and `setBodyParameter()` methods.
+
+- Add ability to use `BEGIN IMMEDIATE` and `BEGIN EXCLUSIVE`.
+
+- Add `UploadFile` constructor to create from memory data.
+
+- Add JOIN support to Mapper/BaseBuilder with FK auto-detection in code generator.
+
+- Add WebDAV HTTP methods (PROPFIND, MKCOL, COPY, MOVE).
+
+- Add per-request compression control to `HttpResponse`.
+
+### Added
+
+- Support for custom OPTIONS handling via middleware flagging.
+
+- Alias library for Drogon with name matching installed target.
+
+- `--clear-output` option to drogon_ctl create models.
+
+### Changed
+
+- vector: reserve before inserting for efficiency.
+
+- make `utils::isBase64` support padding.
+
+- Extract duplicate `parseLine()` function to shared utility header.
+
+- Doxygen documentation adjustments.
+
+- Enhancement for custom OPTIONS handling.
+
+- Forward the path methods.
+
+### Fixed
+
+- Fix sqlite3 test in CI.
+
+- Fix HttpClient not sending WebDAV requests.
+
+- Fix connection limit bug.
+
+- Fix bugs exposed by CI.
+
+- Fix HTTP date formatting to be locale-independent.
+
+- Fix parsing invalid numbers in HTTP headers.
+
+- Fix shared lib view failure handling.
+
+- Fix drogon_ctl compilation with clang-cl.
+
+- Fix missing throw statement.
+
+- Add Homebrew Apple Silicon path detection in CMake finder modules.
+
+- Include missing header files.
+
+- Fix wrong numeric limit for floating types.
+
+- Fix regex WebSocket routes middleware initialization.
+
+- Fix system() replaced with execvp() in SharedLibManager.
+
+- Fix inverted test logic.
+
+## [1.9.12] - 2026-01-26
+
+### API changes list
+
+- Implement when_all coroutine gate.
+
+### Changed
+
+- Models: add toString method.
+
+- changing std::strlen to a string comparison consistent with multibyte chars on model generation templates.
+
+- Enhance error handling in CacheFile methods.
+
+- Mysql exception forward errorNo to SqlError.
+
+- Support unsigned integer types in MySQL ORM.
+
+### Fixed
+
+- Fix errors after database connection interruption.
+
+- Use redisFreeCommand instead of free() function.
+
+- Fix the missing openssl dependency in FindMysql.
+
+- Fix warnings - for range loop no copies, unsigned int always >= 0.
+
+- Fix cross compiling.
+
+- Fix linker errors on mingw64.
+
+- Fix SQL syntax error when UPDATE has no fields to update.
+
+- Fix unused variable warnings.
+
+## [1.9.11] - 2025-06-20
+
+### API changes list
+
+- Add a new overload for execSqlCoro.
+
+### Changed
+
+- Do not write to source directory during build.
+
+- Improve Postgres connection stability.
+
+- Add handleFatalError in handleClosed.
+
+- Add -o|--output option to drogon_ctl create models.
+
+- Add qrcode for WeChat official account to the README file.
+
+- Support for iOS compiling.
+
+- Add cors example to demonstrate cross-origin support in drogon.
+
+- Add support for continuation frame in WebSocketMessageParser.
+
+- Add RawParameter API to pass raw SQL parameters.
+
+- Upgrade Windows image and re-enable tests on Windows.
+
+### Fixed
+
+- Fix a bug in isAutoCreationClass<T>.
+
+- Fix CI on MacOS.
+
+- Fix issue with precision loss of double-type parameters in ORM inputs.
+
+
+## [1.9.10] - 2025-02-20
+
+### API changes list
+
+- Add setConnectionCallback.
+
+### Changed
+
+- ORM:Avoid unnecessary copies when returning search results.
+
+- Improve the zh-TW README translation.
+
+- Make quit function thread safe.
+
+- Added path_exempt in AccessLogger plugin config to exclude desired paths.
+
+### Fixed
+
+- Fix the issue in view generation by including the missing header file.
+
+- Fix ci: codespell.
+
+## [1.9.9] - 2025-01-01
+
+### API changes list
+
+- Added Partitioned flag for cookies.
+
+### Changed
+
+- Update FindFilesystem.cmake to check for GNU instead of GCC for CMAKE_CXX_COMPILER_ID.
+
+- Update README.
+
+- Chore(workflow/cmake.yml): upgrade macos runner.
+
+- Add emptiness check to the LogStream &operator<< with std::string_view.
+
+### Fixed
+
+- Fix a bug in plugin Redirector.
+
+- Fix CMAKE issues mentioned in #2144 and a linking problem which manifest with gcc12.3 when building with shared libs.
+
+- Fix: Remove dependency on locales being installed on the system.
+
+## [1.9.8] - 2024-10-27
+
+### API changes list
+
+- Add in-place base64 encode and decode.
+
+- Add check the client connection status.
+
+### Changed
+
+- Add Hodor whitelists.
+
+- Include exception header for std::exception_ptr.
+
+- Add support for escaped identifiers in Postgresql.
+
+- Remove content-length header from 101 Switching Protocols response.
+
+- Remove websocketResponseTest from windows shared library env.
+
+- Optimize query params and allow for empty values.
+
+- Replace rejection sampling and remove use of rand().
+
+- Add sending customized http requests to drogon_ctl.
+
+### Fixed
+
+- Fix coroutine continuation handle.
+
+- Fix some bugs in plugin PromExporter.
+
+- Fix a bug after removing content-length header in some responses.
+
+## [1.9.7] - 2024-09-10
+
+### API changes list
+
+- Add coroutine mutex.
+
+- Add requestsBufferSize function.
+
+- Refine SQLite3 error types with new exception handling.
+
+- Add a new method to reload SSL files on the fly.
+
+### Changed
+
+- Allow MultiPartParser to be movable.
+
+- Add quotes to the table name in the ORM generator.
+
+- Change stoi to stoul in the Field class.
+
+- Modernize cookies.
+
+- Change a log level.
+
+### Fixed
+
+- Use correct libraries when compiling statically.
+
+## [1.9.6] - 2024-07-20
+
+### API changes list
+
+- Add setsockopt to HttpServer.
+
+- Support request stream.
+
+### Changed
+
+- Allow MultiPartParser to parse PATCH requests.
+
+- Add an example of prometheus.
+
+- Delay parsing json for HttpClient.
+
+- Update README.md.
+
+### Fixed
+
+- Fix some compilation warnings.
+
+- Fix typo in yaml config.
+
+## [1.9.5] - 2024-06-08
+
+### API changes list
+
+- Fix an error in the yaml format config file.
+
+- Support postgresql connection options.
+
+- Add regex support for websocket controller.
+
+- Add the registerMiddleware method.
+
+### Changed
+
+- Add the conan badge to readme files.
+
+- Install gcc in ci.
+
+- Intention to present an alternative to improve the performance of a method in models.
+
+### Fixed
+
+- Fix an error in the yaml format config file.
+
+- Fix CI on Windows.
+
+- Fix some spelling errors.
+
+## [1.9.4] - 2024-05-04
+
+### API changes list
+
+- Add client cert support for websocket.
+
+- Add JSON send overloads for WebSocket connections.
+
+### Changed
+
+- Minor enhancement: move some smart pointers around instead of copying them.
+
+- Remove the request shared_ptr from the multipart parser.
+
+- Fix typo in HttpAppFrameworkImpl.cc.
+
+- Avoid string copy and lowercasing on every request.
+
+- Implemented database reconnection loop.
+
+### Fixed
+
+- Bypass clang thread_local error.
+
 ## [1.9.3] - 2024-02-09
 
 ### API changes list
@@ -299,7 +632,7 @@ All notable changes to this project will be documented in this file.
 
 - Remove unused CI files and Jekyll config.
 
-- Ensure that all filters, AOP advices, and handlers are executed within the IO threads.
+- Ensure that all filters, AOP advice, and handlers are executed within the IO threads.
 
 - Update test.sh and build.sh by appending prefix "X" to string variable comparisons.
 
@@ -631,7 +964,7 @@ All notable changes to this project will be documented in this file.
 
 - Check HTTP client is not sending requests in sync mode on the same event loop.
 
-- Start listening after beginning advices.
+- Start listening after beginning advice.
 
 - Allow using json_cpp in other sublibraries.
 
@@ -1621,7 +1954,27 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.3...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.13...HEAD
+
+[1.9.13]: https://github.com/an-tao/drogon/compare/v1.9.12...v1.9.13
+
+[1.9.12]: https://github.com/an-tao/drogon/compare/v1.9.11...v1.9.12
+
+[1.9.11]: https://github.com/an-tao/drogon/compare/v1.9.10...v1.9.11
+
+[1.9.10]: https://github.com/an-tao/drogon/compare/v1.9.9...v1.9.10
+
+[1.9.9]: https://github.com/an-tao/drogon/compare/v1.9.8...v1.9.9
+
+[1.9.8]: https://github.com/an-tao/drogon/compare/v1.9.7...v1.9.8
+
+[1.9.7]: https://github.com/an-tao/drogon/compare/v1.9.6...v1.9.7
+
+[1.9.6]: https://github.com/an-tao/drogon/compare/v1.9.5...v1.9.6
+
+[1.9.5]: https://github.com/an-tao/drogon/compare/v1.9.4...v1.9.5
+
+[1.9.4]: https://github.com/an-tao/drogon/compare/v1.9.3...v1.9.4
 
 [1.9.3]: https://github.com/an-tao/drogon/compare/v1.9.2...v1.9.3
 

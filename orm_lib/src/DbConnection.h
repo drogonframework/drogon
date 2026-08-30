@@ -88,6 +88,8 @@ class DbConnection : public trantor::NonCopyable
     {
     }
 
+    virtual void init(){};
+
     void setOkCallback(const DbConnectionCallback &cb)
     {
         okCallback_ = cb;
@@ -116,7 +118,7 @@ class DbConnection : public trantor::NonCopyable
 
     virtual ~DbConnection()
     {
-        LOG_TRACE << "Destruct DbConn" << this;
+        LOG_TRACE << "Destruct DbConn " << this;
     }
 
     ConnectStatus status() const

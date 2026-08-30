@@ -61,9 +61,9 @@ template <typename T>
 struct isAutoCreationClass
 {
     template <class C>
-    static constexpr auto check(C *)
-        -> std::enable_if_t<std::is_same_v<decltype(C::isAutoCreation), bool>,
-                            bool>
+    static constexpr auto check(C *) -> std::enable_if_t<
+        std::is_same_v<decltype(C::isAutoCreation), const bool>,
+        bool>
     {
         return C::isAutoCreation;
     }

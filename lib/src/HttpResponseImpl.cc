@@ -54,6 +54,16 @@ static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
 }
 }  // namespace drogon
 
+void HttpResponseImpl::setAllowCompression(bool allow)
+{
+    allowCompression_ = allow;
+}
+
+bool HttpResponseImpl::allowCompression() const
+{
+    return allowCompression_;
+}
+
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_TEXT_HTML);
@@ -222,7 +232,6 @@ HttpResponsePtr HttpResponse::newFileResponse(
     // Check for type and assign proper content type in header
     if (!typeString.empty())
     {
-        // auto contentType = type;
         if (type == CT_NONE)
             type = parseContentType(typeString);
         if (type == CT_NONE)
@@ -344,7 +353,6 @@ HttpResponsePtr HttpResponse::newFileResponse(
         if (!typeString.empty())
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            // auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -368,7 +376,6 @@ HttpResponsePtr HttpResponse::newFileResponse(
         else
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            // auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -423,7 +430,6 @@ HttpResponsePtr HttpResponse::newStreamResponse(
         if (!typeString.empty())
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -443,7 +449,6 @@ HttpResponsePtr HttpResponse::newStreamResponse(
         else
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -476,6 +481,210 @@ HttpResponsePtr HttpResponse::newAsyncStreamResponse(
     resp->setStatusCode(k200OK);
     AopAdvice::instance().passResponseCreationAdvices(resp);
     return resp;
+}
+
+HttpResponsePtr HttpResponse::newOptionsResponse(
+    const HttpRequestPtr &request,
+    const std::function<bool(std::string_view)> &originValidator,
+    bool allowNullOrigin,
+    bool allowCredentials,
+    bool allowPNA,
+    std::optional<unsigned int> maxAgeSeconds,
+    const std::optional<std::set<std::string_view>> &allowedHeaders)
+{
+    if (!request || (request->method() != HttpMethod::Options))
+        return {};
+    // Allowed methods, set by drogon::HttpOptionsMiddlewareImpl
+    auto methods =
+        request->attributes()->get<std::string>("drogon.corsMethods");
+    if (methods.empty())
+        methods = "OPTIONS";
+
+    auto response = newHttpResponse(HttpStatusCode::k204NoContent,
+                                    drogon::ContentType::CT_NONE);
+    // Disable HTTP caching for OPTIONS responses
+    response->addHeader("Cache-Control"s, "no-store"s);
+    // Vary on Origin for bad proxies that do not respect no-store or want
+    // Pragma: no-cache instead
+    response->addHeader("Vary"s, "Origin");
+    // Generic OPTIONS response
+    if (!request->isCorsPreflightRequest())
+    {
+        response->addHeader("Allow", methods);
+        return response;
+    }
+
+    // CORS pre-flight response
+    std::string_view origin = drogon::utils::trim(request->getHeader("Origin"));
+    if (origin.empty())
+    {
+        response->setStatusCode(HttpStatusCode::k400BadRequest);
+        response->addHeader("X-Cors-Error",
+                            "invalid empty Origin");  // diagnose help
+        return response;
+    }
+    // Check whether null origin is allowed (file://, sandboxed iframes, etc.)
+    if (drogon::utils::ci_equals(origin, "null") && !allowNullOrigin)
+    {
+        response->setStatusCode(HttpStatusCode::k403Forbidden);
+        response->addHeader("X-Cors-Error",
+                            "null Origin not allowed");  // diagnose help
+        return response;
+    }
+    // Check whether the origin is allowed
+    if (originValidator && !originValidator(origin))
+    {
+        response->setStatusCode(HttpStatusCode::k403Forbidden);
+        response->addHeader("X-Cors-Error",
+                            "origin not allowed");  // diagnose help
+        return response;
+    }
+    // Reflect the origin (acts like '*', that is forbidden when
+    // allowCredentials is true)
+    response->addHeader("Access-Control-Allow-Origin", std::string(origin));
+    response->addHeader("Access-Control-Allow-Methods", methods);
+    // Check requested method
+    // Policy: explicitly fail preflight with 40x + diagnostic header rather
+    // than silently returning allowed methods
+    auto acrMethod = drogon::utils::trim(
+        request->getHeader("Access-Control-Request-Method"));
+    if (acrMethod.empty())
+    {
+        response->setStatusCode(HttpStatusCode::k400BadRequest);
+        response->addHeader(
+            "X-Cors-Error",
+            "invalid empty Access-Control-Request-Method");  // diagnose help
+        return response;
+    }
+    const auto allowedMethods = drogon::utils::splitStringView(methods, ",");
+    if (std::find_if(allowedMethods.begin(),
+                     allowedMethods.end(),
+                     [&acrMethod](const std::string_view &method) {
+                         return drogon::utils::ci_equals(method, acrMethod);
+                     }) == allowedMethods.end())
+    {
+        response->setStatusCode(HttpStatusCode::k405MethodNotAllowed);
+        response->addHeader("Allow",
+                            methods);  // failing CORS pre-flight with 405 must
+                                       // also return the Allow header
+        response->addHeader("X-Cors-Error",
+                            "method not allowed: "s.append(
+                                acrMethod));  // diagnose help
+        return response;
+    }
+    // Allowed headers (intersection with requested ones on success, all allowed
+    // on error) Note: Browsers typically include only non-safelisted headers in
+    // Access-Control-Request-Headers We validate strictly against
+    // allowedHeaders Policy: explicitly fail preflight with 403 + diagnostic
+    // header rather than silently omitting forbidden CORS headers
+    auto requestedHeaders = drogon::utils::splitStringViewToSet(
+        request->getHeader("Access-Control-Request-Headers"), ",");
+    if (allowedHeaders.has_value())
+    {
+        auto &validHeaders = allowedHeaders.value();
+        if (requestedHeaders.empty())  // noisy, but helpful for diagnosis
+            requestedHeaders = {validHeaders.begin(), validHeaders.end()};
+        else
+        {
+            for (auto it = requestedHeaders.begin();
+                 it != requestedHeaders.end();)
+            {
+                auto &reqHeader = *it;
+                if (std::find_if(validHeaders.begin(),
+                                 validHeaders.end(),
+                                 [&reqHeader](const std::string_view &header) {
+                                     return drogon::utils::ci_equals(
+                                         reqHeader,
+                                         drogon::utils::trim(header));
+                                 }) != validHeaders.end())
+                {
+                    ++it;
+                    continue;
+                }
+                response->setStatusCode(
+                    HttpStatusCode::k403Forbidden);  // Forbidden header
+                response->addHeader("X-Cors-Error",
+                                    "disallowed header: "s.append(
+                                        reqHeader));  // diagnose help
+                // report all allowed headers to help diagnosing what's
+                // wrong
+                requestedHeaders = {validHeaders.begin(), validHeaders.end()};
+                break;
+            }
+        }
+    }
+    if (!requestedHeaders.empty())
+        response->addHeader("Access-Control-Allow-Headers",
+                            drogon::utils::joinStringViews(requestedHeaders,
+                                                           ","));
+    if (response->statusCode() == HttpStatusCode::k403Forbidden)
+        return response;
+    // Allow credentials
+    if (allowCredentials)
+        response->addHeader("Access-Control-Allow-Credentials", "true");
+    // Chromium-based browsers require this header to allow Private Network
+    // Access requests
+    if (allowPNA &&
+        drogon::utils::ci_equals(request->getHeader(
+                                     "Access-Control-Request-Private-Network"),
+                                 "true"))
+        response->addHeader("Access-Control-Allow-Private-Network", "true");
+    // Set a max age only on success
+    if (maxAgeSeconds.has_value())
+        response->addHeader("Access-Control-Max-Age",
+                            std::to_string(maxAgeSeconds.value()));
+    return response;
+}
+
+void HttpResponse::addCorsHeaders(
+    const HttpRequestPtr &request,
+    const std::set<std::string_view> &exposedHeaders,
+    const std::optional<bool> &allowCredentials)
+{
+    if (!request || !request->isCorsRequest() ||
+        request->isCorsPreflightRequest())
+        return;
+    // add/set Origin to the Vary header (needed for cache proxies)
+    auto vary = drogon::utils::splitStringViewToSet(getHeader("Vary"), ",");
+    if (std::find_if(vary.begin(), vary.end(), [](const auto &val) {
+            return drogon::utils::ci_equals(val, "Origin");
+        }) == vary.end())
+    {
+        vary.insert("Origin");
+        addHeader("Vary", drogon::utils::joinStringViews(vary, ","));
+    }
+    // add _MISSING_ CORS header - do not overwrite existing one
+    if (headers().find("access-control-allow-origin") == headers().end())
+        addHeader("Access-Control-Allow-Origin",
+                  std::string(
+                      drogon::utils::trim(request->getHeader("Origin"))));
+    // set (or append) exposed headers
+    if (!exposedHeaders.empty())
+    {
+        auto exposed = drogon::utils::splitStringViewToSet(
+            getHeader("Access-Control-Expose-Headers"), ",");
+        bool changed = false;
+        for (auto &header : exposedHeaders)
+        {
+            if (std::find_if(exposed.begin(),
+                             exposed.end(),
+                             [&header](const auto &val) {
+                                 return drogon::utils::ci_equals(val, header);
+                             }) != exposed.end())
+                continue;
+            exposed.insert(header);
+            changed = true;
+        }
+        if (changed)
+            addHeader("Access-Control-Expose-Headers",
+                      drogon::utils::joinStringViews(exposed, ","));
+    }
+    if (!allowCredentials.has_value())
+        return;
+    if (allowCredentials.value())
+        addHeader("Access-Control-Allow-Credentials", "true");
+    else
+        removeHeader("Access-Control-Allow-Credentials");
 }
 
 void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
@@ -516,6 +725,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                            statusCode_);
         }
     }
+
     buffer.hasWritten(len);
 
     if (!statusMessage_.empty())
@@ -525,11 +735,22 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
     if (!passThrough_)
     {
         buffer.ensureWritableBytes(64);
-        if (streamCallback_ || asyncStreamCallback_)
+        if (!contentLengthIsAllowed())
+        {
+            len = 0;
+            if ((bodyPtr_ && bodyPtr_->length() > 0) ||
+                !sendfileName_.empty() || streamCallback_ ||
+                asyncStreamCallback_)
+            {
+                LOG_ERROR << "The body should be empty when the content-length "
+                             "is not allowed!";
+            }
+        }
+        else if (streamCallback_ || asyncStreamCallback_)
         {
             // When the headers are created, it is time to set the transfer
             // encoding to chunked if the contents size is not specified
-            if (!ifCloseConnection() &&
+            if (version_ != Version::kHttp10 &&
                 headers_.find("content-length") == headers_.end())
             {
                 LOG_DEBUG << "send stream with transfer-encoding chunked";
@@ -620,15 +841,14 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         buffer.append("date: ");
-        buffer.append(utils::getHttpFullDate(trantor::Date::date()),
-                      httpFullDateStringLength);
+        buffer.append(utils::getHttpFullDateStr(trantor::Date::date()));
         buffer.append("\r\n\r\n");
     }
     else
     {
         buffer.append("\r\n");
     }
-    if (bodyPtr_)
+    if (bodyPtr_ && contentLengthIsAllowed())
         buffer.append(bodyPtr_->data(), bodyPtr_->length());
 }
 
@@ -643,13 +863,13 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
             {
                 auto now = trantor::Date::now();
                 bool isDateChanged =
-                    ((now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC) !=
-                     httpStringDate_);
+                    ((now.microSecondsSinceEpoch() /
+                      trantor::Date::MICRO_SECONDS_PER_SEC) != httpStringDate_);
                 assert(httpString_);
                 if (isDateChanged)
                 {
-                    httpStringDate_ =
-                        now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+                    httpStringDate_ = now.microSecondsSinceEpoch() /
+                                      trantor::Date::MICRO_SECONDS_PER_SEC;
                     auto newDate = utils::getHttpFullDate(now);
 
                     httpString_ =
@@ -694,8 +914,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
     {
         httpString->append("date: ");
         auto datePos = httpString->readableBytes();
-        httpString->append(utils::getHttpFullDate(trantor::Date::date()),
-                           httpFullDateStringLength);
+        httpString->append(utils::getHttpFullDateStr(trantor::Date::date()));
         httpString->append("\r\n\r\n");
         datePos_ = datePos;
     }
@@ -854,7 +1073,7 @@ void HttpResponseImpl::addHeader(const char *start,
         }
         if (!cookie.key().empty())
         {
-            cookies_[cookie.key()] = cookie;
+            cookies_[cookie.key()] = std::move(cookie);
         }
     }
     else
@@ -863,27 +1082,49 @@ void HttpResponseImpl::addHeader(const char *start,
     }
 }
 
+// Every data member must be listed here, in declaration order. Leaving one out
+// splices the two responses together instead of exchanging them, and the
+// members that depend on each other make that fatal rather than merely wrong:
+//   - expriedTime_ decides whether renderToBuffer() trusts httpString_, while
+//     datePos_ indexes into it. Swapping the latter two without the former
+//     hands a response a null httpString_ alongside a valid datePos_, and the
+//     next render dereferences it.
+//   - contentType_ without contentTypeString_, or statusCode_ without
+//     customStatusCode_, renders a response that contradicts its own
+//     accessors.
 void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
 {
     using std::swap;
     headers_.swap(that.headers_);
     cookies_.swap(that.cookies_);
+    swap(customStatusCode_, that.customStatusCode_);
     swap(statusCode_, that.statusCode_);
-    swap(version_, that.version_);
     swap(statusMessage_, that.statusMessage_);
+    swap(creationDate_, that.creationDate_);
+    swap(version_, that.version_);
     swap(closeConnection_, that.closeConnection_);
+    swap(closeConnectionSetByUser_, that.closeConnectionSetByUser_);
     bodyPtr_.swap(that.bodyPtr_);
-    swap(contentType_, that.contentType_);
-    swap(flagForParsingContentType_, that.flagForParsingContentType_);
-    swap(flagForParsingJson_, that.flagForParsingJson_);
+    swap(expriedTime_, that.expriedTime_);
     swap(sendfileName_, that.sendfileName_);
+    swap(sendfileRange_, that.sendfileRange_);
     swap(streamCallback_, that.streamCallback_);
     swap(asyncStreamCallback_, that.asyncStreamCallback_);
+    swap(asyncStreamDisableKickoff_, that.asyncStreamDisableKickoff_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);
+    swap(peerCertificate_, that.peerCertificate_);
     httpString_.swap(that.httpString_);
     swap(datePos_, that.datePos_);
+    swap(httpStringDate_, that.httpStringDate_);
+    swap(flagForParsingJson_, that.flagForParsingJson_);
+    swap(flagForSerializingJson_, that.flagForSerializingJson_);
+    swap(contentType_, that.contentType_);
+    swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
+    swap(contentTypeString_, that.contentTypeString_);
+    swap(passThrough_, that.passThrough_);
+    swap(allowCompression_, that.allowCompression_);
 }
 
 void HttpResponseImpl::clear()
@@ -891,7 +1132,9 @@ void HttpResponseImpl::clear()
     statusCode_ = kUnknown;
     version_ = Version::kHttp11;
     statusMessage_ = std::string_view{};
-    fullHeaderString_.reset();
+    closeConnection_ = false;
+    closeConnectionSetByUser_ = false;
+    invalidateRenderCache();
     jsonParsingErrorPtr_.reset();
     sendfileName_.clear();
     if (streamCallback_)
@@ -910,7 +1153,6 @@ void HttpResponseImpl::clear()
     bodyPtr_.reset();
     jsonPtr_.reset();
     expriedTime_ = -1;
-    datePos_ = std::string::npos;
     flagForParsingContentType_ = false;
     flagForParsingJson_ = false;
 }
@@ -955,9 +1197,16 @@ void HttpResponseImpl::parseJson() const
 
 bool HttpResponseImpl::shouldBeCompressed() const
 {
+    // If the developer said "No" stop immediately.
+    if (!allowCompression_)
+    {
+        return false;
+    }
+
     if (streamCallback_ || asyncStreamCallback_ || !sendfileName_.empty() ||
         contentType() >= CT_APPLICATION_OCTET_STREAM ||
-        getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
+        getBody().length() < 1024 ||
+        !(getHeaderBy("content-encoding").empty()) || !contentLengthIsAllowed())
     {
         return false;
     }

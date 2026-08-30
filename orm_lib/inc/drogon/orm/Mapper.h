@@ -14,6 +14,7 @@
 
 #pragma once
 #include <drogon/orm/Criteria.h>
+#include <drogon/orm/BaseBuilder.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/utils/Utilities.h>
 #include <string>
@@ -177,6 +178,78 @@ class Mapper
      * @return Mapper<T>& The Mapper itself.
      */
     Mapper<T> &forUpdate();
+
+    /**
+     * @brief Add an INNER JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &innerJoin(const std::string &table,
+                         const std::string &onLeft,
+                         const std::string &onRight)
+    {
+        assert(isValidSqlIdentifier(table));
+        assert(isValidSqlIdentifier(onLeft));
+        assert(isValidSqlIdentifier(onRight));
+        joinString_ += " INNER JOIN ";
+        joinString_ += table;
+        joinString_ += " ON ";
+        joinString_ += onLeft;
+        joinString_ += " = ";
+        joinString_ += onRight;
+        return *this;
+    }
+
+    /**
+     * @brief Add a LEFT JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &leftJoin(const std::string &table,
+                        const std::string &onLeft,
+                        const std::string &onRight)
+    {
+        assert(isValidSqlIdentifier(table));
+        assert(isValidSqlIdentifier(onLeft));
+        assert(isValidSqlIdentifier(onRight));
+        joinString_ += " LEFT JOIN ";
+        joinString_ += table;
+        joinString_ += " ON ";
+        joinString_ += onLeft;
+        joinString_ += " = ";
+        joinString_ += onRight;
+        return *this;
+    }
+
+    /**
+     * @brief Add a RIGHT JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &rightJoin(const std::string &table,
+                         const std::string &onLeft,
+                         const std::string &onRight)
+    {
+        assert(isValidSqlIdentifier(table));
+        assert(isValidSqlIdentifier(onLeft));
+        assert(isValidSqlIdentifier(onRight));
+        joinString_ += " RIGHT JOIN ";
+        joinString_ += table;
+        joinString_ += " ON ";
+        joinString_ += onLeft;
+        joinString_ += " = ";
+        joinString_ += onRight;
+        return *this;
+    }
 
     using SingleRowCallback = std::function<void(T)>;
     using MultipleRowsCallback = std::function<void(std::vector<T>)>;
@@ -719,6 +792,7 @@ class Mapper
     size_t limit_{0};
     size_t offset_{0};
     std::string orderByString_;
+    std::string joinString_;
     bool forUpdate_{false};
 
     void clear()
@@ -726,6 +800,7 @@ class Mapper
         limit_ = 0;
         offset_ = 0;
         orderByString_.clear();
+        joinString_.clear();
         forUpdate_ = false;
     }
 
@@ -792,6 +867,7 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -849,6 +925,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -904,6 +981,7 @@ inline std::future<T> Mapper<T>::findFutureOne(
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -964,6 +1042,7 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -1003,9 +1082,10 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
         binder.exec();  // exec may be throw exception;
     }
     std::vector<T> ret;
+    ret.reserve(r.size());
     for (auto const &row : r)
     {
-        ret.push_back(T(row));
+        ret.emplace_back(row);
     }
     return ret;
 }
@@ -1017,6 +1097,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -1051,11 +1132,12 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
     clear();
     binder >> [rcb](const Result &r) {
         std::vector<T> ret;
+        ret.reserve(r.size());
         for (auto const &row : r)
         {
-            ret.push_back(T(row));
+            ret.emplace_back(row);
         }
-        rcb(ret);
+        rcb(std::move(ret));
     };
     binder >> ecb;
 }
@@ -1066,6 +1148,7 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    sql += joinString_;
     bool hasParameters = false;
     if (criteria)
     {
@@ -1102,11 +1185,12 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
         std::make_shared<std::promise<std::vector<T>>>();
     binder >> [prom](const Result &r) {
         std::vector<T> ret;
+        ret.reserve(r.size());
         for (auto const &row : r)
         {
-            ret.push_back(T(row));
+            ret.emplace_back(row);
         }
-        prom->set_value(ret);
+        prom->set_value(std::move(ret));
     };
     binder >> [prom](const std::exception_ptr &e) { prom->set_exception(e); };
     binder.exec();
@@ -1137,6 +1221,7 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
 {
     std::string sql = "select count(*) from ";
     sql += T::tableName;
+    sql += joinString_;
     if (criteria)
     {
         sql += " where ";
@@ -1164,6 +1249,7 @@ inline void Mapper<T>::count(const Criteria &criteria,
 {
     std::string sql = "select count(*) from ";
     sql += T::tableName;
+    sql += joinString_;
     if (criteria)
     {
         sql += " where ";
@@ -1187,6 +1273,7 @@ inline std::future<size_t> Mapper<T>::countFuture(
 {
     std::string sql = "select count(*) from ";
     sql += T::tableName;
+    sql += joinString_;
     if (criteria)
     {
         sql += " where ";
@@ -1342,10 +1429,15 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     clear();
     static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
+    std::vector<std::string> colNames = obj.updateColumns();
+    if (colNames.empty())
+    {
+        return 0;
+    }
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto const &colName : obj.updateColumns())
+    for (auto const &colName : colNames)
     {
         sql += colName;
         sql += " = $?,";
@@ -1415,10 +1507,17 @@ inline void Mapper<T>::update(const T &obj,
     clear();
     static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
+
+    std::vector<std::string> colNames = obj.updateColumns();
+    if (colNames.empty())
+    {
+        rcb(0);
+        return;
+    }
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto const &colName : obj.updateColumns())
+    for (auto const &colName : colNames)
     {
         sql += colName;
         sql += " = $?,";
@@ -1478,10 +1577,18 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     clear();
     static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                   "No primary key in the table!");
+    std::vector<std::string> colNames = obj.updateColumns();
+    if (colNames.empty())
+    {
+        std::shared_ptr<std::promise<size_t>> prom =
+            std::make_shared<std::promise<size_t>>();
+        prom->set_value(0);
+        return prom->get_future();
+    }
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto const &colName : obj.updateColumns())
+    for (auto const &colName : colNames)
     {
         sql += colName;
         sql += " = $?,";

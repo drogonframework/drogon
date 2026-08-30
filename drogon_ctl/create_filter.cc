@@ -116,3 +116,6 @@ void create_filter::handleCommand(std::vector<std::string> &parameters)
         createFilterSourceFile(oSourceFile, className, fileName);
     }
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::create_filter>;

@@ -66,3 +66,6 @@ void version::handleCommand(std::vector<std::string> &parameters)
     std::cout << "  yaml-cpp: no\n";
 #endif
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::version>;

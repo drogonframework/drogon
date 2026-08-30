@@ -19,16 +19,18 @@ using namespace drogon;
 
 std::string Cookie::cookieString() const
 {
-    std::string ret = "Set-Cookie: ";
+    constexpr std::string_view prefix = "Set-Cookie: ";
+    std::string ret;
     // reserve space to reduce frequency allocation
-    ret.reserve(ret.size() + key_.size() + value_.size() + 30);
+    ret.reserve(prefix.size() + key_.size() + value_.size() + 30);
+    ret = prefix;
     ret.append(key_).append("=").append(value_).append("; ");
     if (expiresDate_.microSecondsSinceEpoch() !=
             (std::numeric_limits<int64_t>::max)() &&
         expiresDate_.microSecondsSinceEpoch() >= 0)
     {
         ret.append("Expires=")
-            .append(utils::getHttpFullDate(expiresDate_))
+            .append(utils::getHttpFullDateStr(expiresDate_))
             .append("; ");
     }
     if (maxAge_.has_value())
@@ -67,13 +69,17 @@ std::string Cookie::cookieString() const
                 ret.append("SameSite=Lax; ");
         }
     }
-    if (secure_ && sameSite_ != SameSite::kNone)
+    if ((secure_ && sameSite_ != SameSite::kNone) || partitioned_)
     {
         ret.append("Secure; ");
     }
     if (httpOnly_)
     {
         ret.append("HttpOnly; ");
+    }
+    if (partitioned_)
+    {
+        ret.append("Partitioned; ");
     }
     ret.resize(ret.length() - 2);  // delete last semicolon
     ret.append("\r\n");

@@ -57,7 +57,6 @@ class DROGON_EXPORT RealIpResolver : public drogon::Plugin<RealIpResolver>
   private:
     const trantor::InetAddress &getRealAddr(
         const drogon::HttpRequestPtr &req) const;
-    bool matchCidr(const trantor::InetAddress &addr) const;
 
     struct CIDR
     {
@@ -66,7 +65,12 @@ class DROGON_EXPORT RealIpResolver : public drogon::Plugin<RealIpResolver>
         in_addr_t mask_{32};
     };
 
-    std::vector<CIDR> trustCIDRs_;
+    using CIDRs = std::vector<CIDR>;
+    static bool matchCidr(const trantor::InetAddress &addr,
+                          const CIDRs &trustCIDRs);
+
+    friend class Hodor;
+    CIDRs trustCIDRs_;
     std::string fromHeader_;
     std::string attributeKey_;
     bool useXForwardedFor_{false};

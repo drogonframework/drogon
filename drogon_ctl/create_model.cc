@@ -66,6 +66,17 @@ static std::string escapeConnString(const std::string &str)
     return escaped;
 }
 
+std::string drogon_ctl::escapeIdentifier(const std::string &identifier,
+                                         const std::string &rdbms)
+{
+    if (rdbms != "postgresql")
+    {
+        return identifier;
+    }
+
+    return "\\\"" + identifier + "\\\"";
+}
+
 static std::map<std::string, std::vector<ConvertMethod>> getConvertMethods(
     const Json::Value &convertColumns)
 {
@@ -153,6 +164,59 @@ bool drogon_ctl::ConvertMethod::shouldConvert(const std::string &tableName,
     }  // endif
 }
 
+/**
+ * @brief Try to add an auto-detected FK relationship to the list.
+ *
+ * Checks for duplicates against existing relationships, creates a
+ * Relationship object from the FK info, and appends it to the list.
+ * User-configured relationships always take priority.
+ *
+ * @param allRelationships The mutable vector of relationships.
+ * @param originalTable The table containing the FK column.
+ * @param fkColumn The FK column name.
+ * @param referencedTable The table referenced by the FK.
+ * @param referencedColumn The column referenced by the FK.
+ * @param normalizeNames If true, apply toLower() to table names.
+ */
+static void tryAddAutoRelationship(std::vector<Relationship> &allRelationships,
+                                   const std::string &originalTable,
+                                   const std::string &fkColumn,
+                                   const std::string &referencedTable,
+                                   const std::string &referencedColumn,
+                                   bool normalizeNames)
+{
+    for (const auto &r : allRelationships)
+    {
+        if (r.originalKey() == fkColumn &&
+            r.targetTableName() == referencedTable)
+        {
+            return;  // Already exists in user config
+        }
+    }
+    Json::Value relJson;
+    relJson["type"] = "has one";
+    relJson["original_table_name"] =
+        normalizeNames ? toLower(originalTable) : originalTable;
+    relJson["original_key"] = fkColumn;
+    relJson["target_table_name"] =
+        normalizeNames ? toLower(referencedTable) : referencedTable;
+    relJson["target_key"] = referencedColumn;
+    relJson["enable_reverse"] = true;
+    try
+    {
+        Relationship autoRel(relJson);
+        allRelationships.push_back(autoRel);
+        std::cout << "    Auto-detected FK: " << originalTable << "."
+                  << fkColumn << " -> " << referencedTable << "."
+                  << referencedColumn << std::endl;
+    }
+    catch (const std::runtime_error &e)
+    {
+        std::cerr << "Warning: Could not create auto-relationship: " << e.what()
+                  << std::endl;
+    }
+}
+
 #if USE_POSTGRESQL
 void create_model::createModelClassFromPG(
     const std::string &path,
@@ -166,13 +230,15 @@ void create_model::createModelClassFromPG(
     auto className = nameTransform(tableName, true);
     HttpViewData data;
     data["className"] = className;
-    data["tableName"] = toLower(tableName);
+    data["tableName"] = tableName;
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = dbname_;
+    data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("postgresql");
-    data["relationships"] = relationships;
     data["convertMethods"] = convertMethods;
+    // Start with user-configured relationships (mutable copy)
+    std::vector<Relationship> allRelationships(relationships);
     if (schema != "public")
     {
         data["schema"] = schema;
@@ -386,6 +452,42 @@ void create_model::createModelClassFromPG(
         data["primaryKeyValNames"] = pkValNames;
     }
 
+    // Auto-detect foreign key relationships from database schema
+    *client << "SELECT "
+               "kcu.column_name AS fk_column, "
+               "ccu.table_name AS referenced_table, "
+               "ccu.column_name AS referenced_column "
+               "FROM information_schema.key_column_usage kcu "
+               "JOIN information_schema.referential_constraints rc "
+               "ON kcu.constraint_name = rc.constraint_name "
+               "AND kcu.constraint_schema = rc.constraint_schema "
+               "JOIN information_schema.constraint_column_usage ccu "
+               "ON rc.unique_constraint_name = ccu.constraint_name "
+               "AND rc.unique_constraint_schema = ccu.constraint_schema "
+               "WHERE kcu.table_name = $1 "
+               "AND kcu.table_schema = $2"
+            << tableName << schema << Mode::Blocking >>
+        [&](bool isNull,
+            const std::string &fkColumn,
+            const std::string &referencedTable,
+            const std::string &referencedColumn) {
+            if (!isNull)
+            {
+                tryAddAutoRelationship(allRelationships,
+                                       tableName,
+                                       fkColumn,
+                                       referencedTable,
+                                       referencedColumn,
+                                       true);
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            // FK detection is best-effort; don't fail if unsupported
+            std::cerr << "Note: FK auto-detection not available: "
+                      << e.base().what() << std::endl;
+        };
+
+    data["relationships"] = allRelationships;
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + ".cc",
@@ -455,12 +557,14 @@ void create_model::createModelClassFromMysql(
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = dbname_;
+    data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("mysql");
-    data["relationships"] = relationships;
     data["convertMethods"] = convertMethods;
+    // Start with user-configured relationships (mutable copy)
+    std::vector<Relationship> allRelationships(relationships);
     std::vector<ColumnInfo> cols;
     int i = 0;
-    *client << "desc " + tableName << Mode::Blocking >>
+    *client << "desc `" + tableName + "`" << Mode::Blocking >>
         [&i, &cols](bool isNull,
                     const std::string &field,
                     const std::string &type,
@@ -582,6 +686,35 @@ void create_model::createModelClassFromMysql(
         data["primaryKeyType"] = pkTypes;
         data["primaryKeyValNames"] = pkValNames;
     }
+
+    // Auto-detect foreign key relationships from MySQL schema
+    *client << "SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, "
+               "REFERENCED_COLUMN_NAME "
+               "FROM information_schema.KEY_COLUMN_USAGE "
+               "WHERE TABLE_SCHEMA = DATABASE() "
+               "AND TABLE_NAME = ? "
+               "AND REFERENCED_TABLE_NAME IS NOT NULL"
+            << tableName << Mode::Blocking >>
+        [&](bool isNull,
+            const std::string &fkColumn,
+            const std::string &referencedTable,
+            const std::string &referencedColumn) {
+            if (!isNull)
+            {
+                tryAddAutoRelationship(allRelationships,
+                                       tableName,
+                                       fkColumn,
+                                       referencedTable,
+                                       referencedColumn,
+                                       true);
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << "Note: FK auto-detection not available: "
+                      << e.base().what() << std::endl;
+        };
+
+    data["relationships"] = allRelationships;
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + ".cc",
@@ -634,9 +767,11 @@ void create_model::createModelClassFromSqlite3(
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = std::string("sqlite3");
+    data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("sqlite3");
-    data["relationships"] = relationships;
     data["convertMethods"] = convertMethods;
+    // Start with user-configured relationships (mutable copy)
+    std::vector<Relationship> allRelationships(relationships);
     std::vector<ColumnInfo> cols;
     std::string sql = "PRAGMA table_info(" + tableName + ");";
     *client << sql << Mode::Blocking >> [&](const Result &result) {
@@ -763,6 +898,28 @@ void create_model::createModelClassFromSqlite3(
         data["primaryKeyType"] = pkTypes;
         data["primaryKeyValNames"] = pkValNames;
     }
+
+    // Auto-detect foreign key relationships from SQLite3 schema
+    std::string fkSql = "PRAGMA foreign_key_list(\"" + tableName + "\");";
+    *client << fkSql << Mode::Blocking >> [&](const Result &fkResult) {
+        for (auto &fkRow : fkResult)
+        {
+            auto referencedTable = fkRow["table"].as<std::string>();
+            auto fkColumn = fkRow["from"].as<std::string>();
+            auto referencedColumn = fkRow["to"].as<std::string>();
+            tryAddAutoRelationship(allRelationships,
+                                   tableName,
+                                   fkColumn,
+                                   referencedTable,
+                                   referencedColumn,
+                                   true);
+        }
+    } >> [](const DrogonDbException &e) {
+        std::cerr << "Note: FK auto-detection not available: "
+                  << e.base().what() << std::endl;
+    };
+
+    data["relationships"] = allRelationships;
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + ".cc",
@@ -815,6 +972,42 @@ void create_model::createModel(const std::string &path,
     auto restfulApiConfig = config["restful_api_controllers"];
     auto relationships = getRelationships(config["relationships"]);
     auto convertMethods = getConvertMethods(config["convert"]);
+
+    drogon::utils::createPath(path);
+
+    if (cleanupDirectory_)
+    {
+        std::cout << "Source files (*.h, *.cc) in '" << path
+                  << "' folder will be deleted, continue(y/n)?\n";
+        auto in = getchar();
+        (void)getchar();  // get the return key
+        if (in != 'Y' && in != 'y')
+        {
+            std::cout << "Abort!" << std::endl;
+            exit(0);
+        }
+
+        for (const auto &entry : std::filesystem::directory_iterator(path))
+        {
+            if (!entry.is_regular_file())
+                continue;
+
+            const std::filesystem::path &file = entry.path();
+            std::string ext = file.extension().string();
+
+            if (ext == ".h" || ext == ".cc")
+            {
+                std::cout << "Removing: " << file << "\n";
+                std::error_code ret;
+                std::filesystem::remove(file, ret);
+                if (ret)
+                {
+                    std::cerr << "Failed to remove '" << file
+                              << "' : " << ret.message() << "\n";
+                }
+            }
+        }
+    }
     if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
@@ -829,6 +1022,10 @@ void create_model::createModel(const std::string &path,
             exit(1);
         }
         dbname_ = dbname;
+        if (!namespaceOverridden_)
+        {
+            namespaceName_ = config.get("namespace", dbname).asString();
+        }
         auto user = config.get("user", "").asString();
         if (user == "")
         {
@@ -941,6 +1138,10 @@ void create_model::createModel(const std::string &path,
             exit(1);
         }
         dbname_ = dbname;
+        if (!namespaceOverridden_)
+        {
+            namespaceName_ = config.get("namespace", dbname).asString();
+        }
         auto user = config.get("user", "").asString();
         if (user == "")
         {
@@ -1043,6 +1244,10 @@ void create_model::createModel(const std::string &path,
             std::cerr << "Please configure filename in " << path
                       << "/model.json " << std::endl;
             exit(1);
+        }
+        if (!namespaceOverridden_)
+        {
+            namespaceName_ = config.get("namespace", "sqlite3").asString();
         }
         std::string connStr = "filename=" + escapeConnString(filename);
         DbClientPtr client =
@@ -1162,7 +1367,9 @@ void create_model::createModel(const std::string &path,
         try
         {
             infile >> configJsonRoot;
-            createModel(path, configJsonRoot, singleModelName);
+            createModel(outputPath_.empty() ? path : outputPath_,
+                        configJsonRoot,
+                        singleModelName);
         }
         catch (const std::exception &exception)
         {
@@ -1200,6 +1407,49 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
             break;
         }
     }
+    for (auto iter = parameters.begin(); iter != parameters.end();)
+    {
+        auto &file = *iter;
+        if (file == "-o" || file == "--output")
+        {
+            iter = parameters.erase(iter);
+            if (iter != parameters.end())
+            {
+                outputPath_ = *iter;
+                iter = parameters.erase(iter);
+            }
+            continue;
+        }
+        ++iter;
+    }
+
+    for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
+    {
+        if ((*iter) == "--clear-output")
+        {
+            cleanupDirectory_ = true;
+            forceOverwrite_ = true;
+            parameters.erase(iter);
+            break;
+        }
+    }
+
+    for (auto iter = parameters.begin(); iter != parameters.end();)
+    {
+        if ((*iter) == "--namespace")
+        {
+            namespaceOverridden_ = true;
+            iter = parameters.erase(iter);
+            if (iter != parameters.end())
+            {
+                namespaceName_ = *iter;
+                iter = parameters.erase(iter);
+            }
+            continue;
+        }
+        ++iter;
+    }
+
     for (auto const &path : parameters)
     {
         createModel(path, singleModelName);
@@ -1384,3 +1634,6 @@ void create_model::createRestfulAPIController(
                   << std::endl;
     }
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::create_model>;

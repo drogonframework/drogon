@@ -728,6 +728,23 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK((*json)["P2"] == "test");
                         });
 
+    // Test file upload from memory
+    auto hello = std::make_shared<std::string>("hello world!");
+    UploadFile memfile(hello->data(),
+                       hello->length(),
+                       "hello_world.txt",
+                       "hellofile",
+                       ContentType::CT_TEXT_PLAIN);
+    req = HttpRequest::newFileUploadRequest({memfile});
+    req->setPath("/api/attachment/uploadMemory");
+    client->sendRequest(req,
+                        [req, TEST_CTX, hello](ReqResult result,
+                                               const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            REQUIRE(resp->contentType() == CT_TEXT_PLAIN);
+                            CHECK(resp->getBody() == *hello);
+                        });
+
     // Test newFileResponse
     req = HttpRequest::newHttpRequest();
     req->setPath("/RangeTestController/");
@@ -1046,6 +1063,25 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                         });
 #endif
 
+    // Test middleware
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/test-middleware");
+    client->sendRequest(req,
+                        [TEST_CTX, req](ReqResult r,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(r == ReqResult::Ok);
+                            CHECK(resp->body() == "1234test4321");
+                        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/test-middleware-block");
+    client->sendRequest(req,
+                        [TEST_CTX, req](ReqResult r,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(r == ReqResult::Ok);
+                            CHECK(resp->body() == "12block21");
+                        });
+
 #if defined(__cpp_impl_coroutine)
     async_run([client, TEST_CTX]() -> Task<> {
         // Test coroutine requests
@@ -1137,6 +1173,19 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             auto resp = co_await client->sendRequestCoro(req);
             CHECK(resp->getStatusCode() == k200OK);
             CHECK(resp->getBody() == "some_data");
+        }
+        catch (const std::exception &e)
+        {
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
+        }
+
+        // Test coroutine middleware
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/test-middleware-coro");
+            auto resp = co_await client->sendRequestCoro(req);
+            CHECK(resp->body() == "12corotestcoro21");
         }
         catch (const std::exception &e)
         {

@@ -17,7 +17,7 @@
 #        ParseAndAddDrogonTests(${PROJECT_NAME})                                                   #
 #==================================================================================================#
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.31)
 
 # This removes the contents between
 #  - block comments (i.e. /* ... */) 

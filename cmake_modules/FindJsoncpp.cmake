@@ -10,6 +10,22 @@
 # false, do not try to use jsoncpp. 
 # Jsoncpp_lib - The imported target library.
 
+# On Apple Silicon Macs, Homebrew installs to /opt/homebrew instead of
+# /usr/local (Intel Macs). Detect the prefix dynamically so cmake finds
+# dependencies regardless of Mac architecture.
+if(APPLE)
+    execute_process(
+        COMMAND brew --prefix jsoncpp
+        OUTPUT_VARIABLE HOMEBREW_JSONCPP_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(HOMEBREW_JSONCPP_PREFIX)
+        list(APPEND CMAKE_PREFIX_PATH ${HOMEBREW_JSONCPP_PREFIX})
+    endif()
+endif()
+
+
 # only look in default directories
 find_path(JSONCPP_INCLUDE_DIRS
           NAMES json/json.h
@@ -51,7 +67,9 @@ if(Jsoncpp_FOUND)
       COMMAND awk "{ printf \$3 }"
       COMMAND sed -e "s/\"//g"
       OUTPUT_VARIABLE jsoncpp_ver)
-    message(STATUS "jsoncpp version:" ${jsoncpp_ver})
+    if(NOT Jsoncpp_FIND_QUIETLY)
+      message(STATUS "jsoncpp version:" ${jsoncpp_ver})
+    endif()
     if(jsoncpp_ver LESS 1.7)
       message(
         FATAL_ERROR

@@ -60,8 +60,10 @@ class Collector : public CollectorBase
     {
     }
 
+    template <typename... Arguments>
     const std::shared_ptr<T> &metric(
-        const std::vector<std::string> &labelValues) noexcept(false)
+        const std::vector<std::string> &labelValues,
+        Arguments... args) noexcept(false)
     {
         if (labelValues.size() != labelsNames_.size())
         {
@@ -75,7 +77,8 @@ class Collector : public CollectorBase
         {
             return iter->second;
         }
-        auto metric = std::make_shared<T>(name_, labelsNames_, labelValues);
+        auto metric =
+            std::make_shared<T>(name_, labelsNames_, labelValues, args...);
         metrics_[labelValues] = metric;
         return metrics_[labelValues];
     }

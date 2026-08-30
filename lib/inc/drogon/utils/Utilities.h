@@ -120,9 +120,222 @@ inline std::vector<std::string> splitString(const std::string &str,
     return trantor::splitString(str, separator, acceptEmptyString);
 }
 
+/**
+ * @brief Count UTF-8 code points in a string.
+ *
+ * @param str UTF-8 string.
+ *
+ * @return Number of UTF-8 code points.
+ */
+inline size_t utf8Length(std::string_view str)
+{
+    size_t length = 0;
+
+    for (size_t i = 0; i < str.size();)
+    {
+        unsigned char ch = static_cast<unsigned char>(str[i]);
+
+        if ((ch & 0b10000000) == 0)
+        {
+            ++i;
+        }
+        else if ((ch & 0b11100000) == 0b11000000 && i + 1 < str.size() &&
+                 (static_cast<unsigned char>(str[i + 1]) & 0b11000000) ==
+                     0b10000000)
+        {
+            i += 2;
+        }
+        else if ((ch & 0b11110000) == 0b11100000 && i + 2 < str.size() &&
+                 (static_cast<unsigned char>(str[i + 1]) & 0b11000000) ==
+                     0b10000000 &&
+                 (static_cast<unsigned char>(str[i + 2]) & 0b11000000) ==
+                     0b10000000)
+        {
+            i += 3;
+        }
+        else if ((ch & 0b11111000) == 0b11110000 && i + 3 < str.size() &&
+                 (static_cast<unsigned char>(str[i + 1]) & 0b11000000) ==
+                     0b10000000 &&
+                 (static_cast<unsigned char>(str[i + 2]) & 0b11000000) ==
+                     0b10000000 &&
+                 (static_cast<unsigned char>(str[i + 3]) & 0b11000000) ==
+                     0b10000000)
+        {
+            i += 4;
+        }
+        else
+        {
+            ++i;
+        }
+
+        ++length;
+    }
+
+    return length;
+}
+
 DROGON_EXPORT std::set<std::string> splitStringToSet(
     const std::string &str,
     const std::string &separator);
+
+/*! \brief Compare two string_views for equality, ignoring case.
+ *  \warning This is locale dependent
+ *  \param[in] str1 The first string_view.
+ *  \param[in] str2 The second string_view.
+ *  \return true if the string_views are equal, ignoring case; false otherwise.
+ */
+inline bool ci_equals(std::string_view str1, std::string_view str2)
+{
+    if (str1.size() != str2.size())
+        return false;
+    return std::equal(str1.begin(),
+                      str1.end(),
+                      str2.begin(),
+                      [](unsigned char a, unsigned char b) {
+                          return std::tolower(a) == std::tolower(b);
+                      });
+}
+
+/*! \details Trim leading and trailing spaces and tabs from a string_view,
+ *           modifying it.
+ *  \param[in,out] str The string_view to trim.
+ *  \return The trimmed string_view.
+ */
+inline std::string_view &trim_inplace(std::string_view &str)
+{
+    auto pos = str.find_first_not_of(" \t");
+    // defeat Windows macro "min"
+    str.remove_prefix((std::min)(pos, str.size()));
+    if (str.empty())
+        return str;
+    pos = str.find_last_not_of(" \t");
+    str.remove_suffix(str.size() - pos - 1);
+    return str;
+}
+
+/*! \brief Trim leading and trailing spaces and tabs from a string_view.
+ *  \param[in] str The string_view to trim.
+ *  \return A string_view with leading and trailing spaces and tabs removed.
+ */
+inline std::string_view trim(std::string_view str)
+{
+    return trim_inplace(str);
+}
+
+/*! \brief Trim leading and trailing spaces and tabs from a rvalue string.
+ *  \param[in] str The string to trim.
+ *  \return The string with leading and trailing spaces and tabs removed.
+ */
+inline std::string trim(std::string &&str)
+{
+    auto pos = str.find_last_not_of(" \t");
+    if (pos == std::string::npos)
+        return {};
+    str.resize(pos + 1);
+    pos = str.find_first_not_of(" \t");
+    if (pos > 0)
+        str.erase(0, pos);
+    return str;
+}
+
+/*! \brief Split a string_view into a vector of string_views.
+ *  \param[in] str The string_view to split.
+ *  \param[in] separator The separator to use for splitting.
+ *  \param[in] trimValues Whether to trim whitespace from the resulting
+ *                        string_views.
+ *  \param[in] acceptEmptyString Whether to include empty strings in the result.
+ *  \return A vector of string_views obtained by splitting the input
+ *          string_view.
+ */
+inline std::vector<std::string_view> splitStringView(
+    std::string_view str,
+    std::string_view separator,
+    bool trimValues = true,
+    bool acceptEmptyString = false)
+{
+    std::vector<std::string_view> result;
+    if (separator.empty())
+    {
+        if (trimValues)
+            trim_inplace(str);
+        if (acceptEmptyString || !str.empty())
+            result.push_back(str);
+        return result;
+    }
+    size_t start = 0;
+    size_t end = 0;
+    while ((end = str.find(separator, start)) != std::string_view::npos)
+    {
+        auto token = str.substr(start, end - start);
+        if (trimValues)
+            trim_inplace(token);
+        if (acceptEmptyString || !token.empty())
+            result.push_back(token);
+        start = end + separator.size();
+    }
+    auto token = str.substr(start);
+    if (trimValues)
+        trim_inplace(token);
+    if (acceptEmptyString || !token.empty())
+    {
+        result.push_back(token);
+    }
+    return result;
+}
+
+/*! \brief Split a string_view into a set of string_views.
+ *  \copyparams splitStringView
+ *  \return A set of (unique) string_views obtained by splitting the input
+ *          string_view.
+ *  \note Uniqueness is case-sensitive: "A" and "a" are considered different
+ *        values.
+ */
+inline std::set<std::string_view> splitStringViewToSet(
+    std::string_view str,
+    std::string_view separator,
+    bool trimValues = true,
+    bool acceptEmptyString = false)
+{
+    auto v = splitStringView(str, separator, trimValues, acceptEmptyString);
+    return std::set<std::string_view>(v.begin(), v.end());
+}
+
+/*! \brief Join a vector of string_view into a string.
+ *  \param[in] strs The vector of string_views to join.
+ *  \param[in] separator The separator to use between string_views.
+ *  \return A single string obtained by joining the input string_views with the
+ *          specified separator.
+ *  \note Empty values are skipped.
+ */
+inline std::string joinStringViews(const std::vector<std::string_view> &strs,
+                                   std::string_view separator)
+{
+    std::string result;
+    for (std::string_view str : strs)
+    {
+        if (trim_inplace(str).empty())
+            continue;
+        if (!result.empty())
+            result.append(separator);
+        result.append(str);
+    }
+    return result;
+}
+
+/*! \brief Join a set of string_view into a string.
+ *  \param[in] strs The set of string_views to join.
+ *  \param[in] separator The separator to use between string_views.
+ *  \return A single string obtained by joining the input string_views with the
+ *          specified separator.
+ *  \note Empty values are skipped.
+ */
+inline std::string joinStringViews(const std::set<std::string_view> &strs,
+                                   std::string_view separator)
+{
+    return joinStringViews(std::vector<std::string_view>{strs.begin(),
+                                                         strs.end()},
+                           separator);
+}
 
 /// Get UUID string.
 DROGON_EXPORT std::string getUuid(bool lowercase = true);
@@ -134,47 +347,85 @@ constexpr size_t base64EncodedLength(size_t in_len, bool padded = true)
 }
 
 /// Encode the string to base64 format.
-DROGON_EXPORT std::string base64Encode(const unsigned char *bytes_to_encode,
-                                       size_t in_len,
-                                       bool url_safe = false,
-                                       bool padded = true);
+DROGON_EXPORT void base64Encode(const unsigned char *bytesToEncode,
+                                size_t inLen,
+                                unsigned char *outputBuffer,
+                                bool urlSafe = false,
+                                bool padded = true);
+
+/// Encode the string to base64 format.
+inline std::string base64Encode(const unsigned char *bytesToEncode,
+                                size_t inLen,
+                                bool urlSafe = false,
+                                bool padded = true)
+{
+    std::string ret;
+    ret.resize(base64EncodedLength(inLen, padded));
+    base64Encode(
+        bytesToEncode, inLen, (unsigned char *)ret.data(), urlSafe, padded);
+    return ret;
+}
 
 /// Encode the string to base64 format.
 inline std::string base64Encode(std::string_view data,
-                                bool url_safe = false,
+                                bool urlSafe = false,
                                 bool padded = true)
 {
     return base64Encode((unsigned char *)data.data(),
                         data.size(),
-                        url_safe,
+                        urlSafe,
                         padded);
 }
 
 /// Encode the string to base64 format with no padding.
-inline std::string base64EncodeUnpadded(const unsigned char *bytes_to_encode,
-                                        size_t in_len,
-                                        bool url_safe = false)
+inline void base64EncodeUnpadded(const unsigned char *bytesToEncode,
+                                 size_t inLen,
+                                 unsigned char *outputBuffer,
+                                 bool urlSafe = false)
 {
-    return base64Encode(bytes_to_encode, in_len, url_safe, false);
+    base64Encode(bytesToEncode, inLen, outputBuffer, urlSafe, false);
+}
+
+/// Encode the string to base64 format with no padding.
+inline std::string base64EncodeUnpadded(const unsigned char *bytesToEncode,
+                                        size_t inLen,
+                                        bool urlSafe = false)
+{
+    return base64Encode(bytesToEncode, inLen, urlSafe, false);
 }
 
 /// Encode the string to base64 format with no padding.
 inline std::string base64EncodeUnpadded(std::string_view data,
-                                        bool url_safe = false)
+                                        bool urlSafe = false)
 {
-    return base64Encode(data, url_safe, false);
+    return base64Encode(data, urlSafe, false);
 }
 
 /// Get the decoded length of base64.
-constexpr size_t base64DecodedLength(size_t in_len)
+constexpr size_t base64DecodedLength(size_t inLen)
 {
-    return (in_len * 3) / 4;
+    return (inLen * 3) / 4;
 }
 
 /// Decode the base64 format string.
-DROGON_EXPORT std::string base64Decode(std::string_view encoded_string);
+/// Return the number of bytes written.
+DROGON_EXPORT size_t base64Decode(const char *encodedString,
+                                  size_t inLen,
+                                  unsigned char *outputBuffer);
+
+/// Decode the base64 format string.
+inline std::string base64Decode(std::string_view encodedString)
+{
+    auto inLen = encodedString.size();
+    std::string ret;
+    ret.resize(base64DecodedLength(inLen));
+    ret.resize(
+        base64Decode(encodedString.data(), inLen, (unsigned char *)ret.data()));
+    return ret;
+}
+
 DROGON_EXPORT std::vector<char> base64DecodeToVector(
-    std::string_view encoded_string);
+    std::string_view encodedString);
 
 /// Check if the string need decoding
 DROGON_EXPORT bool needUrlDecoding(const char *begin, const char *end);
@@ -263,6 +514,12 @@ DROGON_EXPORT std::string brotliDecompress(const char *data,
 DROGON_EXPORT char *getHttpFullDate(
     const trantor::Date &date = trantor::Date::now());
 
+DROGON_EXPORT const std::string &getHttpFullDateStr(
+    const trantor::Date &date = trantor::Date::now());
+
+DROGON_EXPORT void dateToCustomFormattedString(const std::string &fmtStr,
+                                               std::string &str,
+                                               const trantor::Date &date);
 /// Get the trantor::Date object according to the http full date string
 /**
  * Returns trantor::Date(std::numeric_limits<int64_t>::max()) upon failure.
@@ -453,7 +710,8 @@ T fromString(const std::string &p) noexcept(false)
         // ("1a" should not return 1)
         if (pos != p.size())
             throw std::invalid_argument("Invalid value");
-        if ((v < static_cast<long double>((std::numeric_limits<T>::min)())) ||
+        if ((v <
+             static_cast<long double>((std::numeric_limits<T>::lowest)())) ||
             (v > static_cast<long double>((std::numeric_limits<T>::max)())))
             throw std::out_of_range("Value out of range");
         return static_cast<T>(v);
@@ -472,7 +730,7 @@ T fromString(const std::string &p) noexcept(false)
             // throw if the whole string could not be parsed
             // ("1a" should not return 1)
             if (!ss.eof())
-                std::runtime_error("Bad type conversion");
+                throw std::runtime_error("Bad type conversion");
         }
         return value;
     }
@@ -540,7 +798,8 @@ namespace trantor
 {
 inline LogStream &operator<<(LogStream &ls, const std::string_view &v)
 {
-    ls.append(v.data(), v.length());
+    if (!v.empty())
+        ls.append(v.data(), v.length());
     return ls;
 }
 

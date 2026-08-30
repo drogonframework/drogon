@@ -39,8 +39,14 @@ using DbClientPtr = std::shared_ptr<DbClient>;
 }
 namespace drogon_model
 {
-namespace [[dbName]]
+<%c++
+auto &namespaceName=@@.get<std::string>("namespaceName");
+if(!namespaceName.empty())
 {
+    $$<<"namespace "<<namespaceName<<"\n";
+    $$<<"{\n";
+}
+%>
 <%c++
 auto &schema=@@.get<std::string>("schema");
     if(!schema.empty())
@@ -204,6 +210,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
+    std::string toString() const;
     Json::Value toMasqueradedJson(const std::vector<std::string> &pMasqueradingVector) const;
     /// Relationship interfaces
 <%c++
@@ -564,6 +571,10 @@ if(!schema.empty())
 {
     $$<<"} // namespace "<<schema<<"\n";
 }
+auto &namespaceName2=@@.get<std::string>("namespaceName");
+if(!namespaceName2.empty())
+{
+    $$<<"} // namespace "<<namespaceName2<<"\n";
+}
 %>
-} // namespace [[dbName]]
 } // namespace drogon_model

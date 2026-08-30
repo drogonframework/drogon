@@ -184,7 +184,7 @@ static void TERMFunction(int sig)
 HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
 {
 // Destroy the following objects before the loop destruction
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     sharedLibManagerPtr_.reset();
 #endif
     sessionManagerPtr_.reset();
@@ -236,7 +236,7 @@ const std::string &HttpAppFrameworkImpl::getImplicitPage() const
 {
     return StaticFileRouter::instance().getImplicitPage();
 }
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
 HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
     const std::vector<std::string> &libPaths,
     const std::string &outputPath)
@@ -285,22 +285,35 @@ HttpAppFramework &HttpAppFrameworkImpl::setFileTypes(
 HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!routersInit_);
-    HttpControllersRouter::instance().registerWebSocketController(
-        pathName, ctrlName, filtersAndMethods);
+    HttpControllersRouter::instance().registerWebSocketController(pathName,
+                                                                  ctrlName,
+                                                                  constraints);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketControllerRegex(
+    const std::string &regExp,
+    const std::string &ctrlName,
+    const std::vector<internal::HttpConstraint> &constraints)
+{
+    assert(!routersInit_);
+    HttpControllersRouter::instance().registerWebSocketControllerRegex(
+        regExp, ctrlName, constraints);
     return *this;
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!routersInit_);
-    HttpControllersRouter::instance().registerHttpSimpleController(
-        pathName, ctrlName, filtersAndMethods);
+    HttpControllersRouter::instance().registerHttpSimpleController(pathName,
+                                                                   ctrlName,
+                                                                   constraints);
     return *this;
 }
 
@@ -308,28 +321,28 @@ void HttpAppFrameworkImpl::registerHttpController(
     const std::string &pathPattern,
     const internal::HttpBinderBasePtr &binder,
     const std::vector<HttpMethod> &validMethods,
-    const std::vector<std::string> &filters,
+    const std::vector<std::string> &middlewareNames,
     const std::string &handlerName)
 {
     assert(!pathPattern.empty());
     assert(binder);
     assert(!routersInit_);
     HttpControllersRouter::instance().addHttpPath(
-        pathPattern, binder, validMethods, filters, handlerName);
+        pathPattern, binder, validMethods, middlewareNames, handlerName);
 }
 
 void HttpAppFrameworkImpl::registerHttpControllerViaRegex(
     const std::string &regExp,
     const internal::HttpBinderBasePtr &binder,
     const std::vector<HttpMethod> &validMethods,
-    const std::vector<std::string> &filters,
+    const std::vector<std::string> &middlewareNames,
     const std::string &handlerName)
 {
     assert(!regExp.empty());
     assert(binder);
     assert(!routersInit_);
     HttpControllersRouter::instance().addHttpRegex(
-        regExp, binder, validMethods, filters, handlerName);
+        regExp, binder, validMethods, middlewareNames, handlerName);
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
@@ -363,7 +376,7 @@ void HttpAppFrameworkImpl::addPlugin(
     Json::Value pluginConfig;
     pluginConfig["name"] = name;
     Json::Value deps(Json::arrayValue);
-    for (const auto dep : dependencies)
+    for (const auto &dep : dependencies)
     {
         deps.append(dep);
     }
@@ -378,7 +391,7 @@ void HttpAppFrameworkImpl::addPlugins(const Json::Value &configs)
     assert(!isRunning());
     assert(configs.isArray());
     auto &plugins = jsonRuntimeConfig_["plugins"];
-    for (const auto config : configs)
+    for (const auto &config : configs)
     {
         plugins.append(config);
     }
@@ -498,6 +511,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
     return *this;
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::reloadSSLFiles()
+{
+    listenerManagerPtr_->reloadSSLFiles();
+    return *this;
+}
+
 void HttpAppFrameworkImpl::run()
 {
     if (!getLoop()->isInLoopThread())
@@ -580,7 +599,7 @@ void HttpAppFrameworkImpl::run()
         LOG_INFO << "Start child process";
     }
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     if (!libFilePaths_.empty())
     {
         sharedLibManagerPtr_ =
@@ -624,12 +643,12 @@ void HttpAppFrameworkImpl::run()
     running_ = true;
     // Initialize plugins
     auto &pluginConfig = jsonConfig_["plugins"];
-    const auto &runtumePluginConfig = jsonRuntimeConfig_["plugins"];
+    const auto &runtimePluginConfig = jsonRuntimeConfig_["plugins"];
     if (!pluginConfig.isNull())
     {
-        if (!runtumePluginConfig.isNull() && runtumePluginConfig.isArray())
+        if (!runtimePluginConfig.isNull() && runtimePluginConfig.isArray())
         {
-            for (const auto &plugin : runtumePluginConfig)
+            for (const auto &plugin : runtimePluginConfig)
             {
                 pluginConfig.append(plugin);
             }
@@ -637,7 +656,7 @@ void HttpAppFrameworkImpl::run()
     }
     else
     {
-        jsonConfig_["plugins"] = runtumePluginConfig;
+        jsonConfig_["plugins"] = runtimePluginConfig;
     }
     if (!pluginConfig.isNull())
     {
@@ -887,6 +906,16 @@ orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
     return dbClientManagerPtr_->getFastDbClient(name);
 }
 
+bool HttpAppFrameworkImpl::hasDbClient(const std::string &name) const
+{
+    return dbClientManagerPtr_->hasDbClient(name);
+}
+
+bool HttpAppFrameworkImpl::hasFastDbClient(const std::string &name) const
+{
+    return dbClientManagerPtr_->hasFastDbClient(name);
+}
+
 nosql::RedisClientPtr HttpAppFrameworkImpl::getRedisClient(
     const std::string &name)
 {
@@ -899,35 +928,99 @@ nosql::RedisClientPtr HttpAppFrameworkImpl::getFastRedisClient(
     return redisClientManagerPtr_->getFastRedisClient(name);
 }
 
+// deprecated
 HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     const std::string &dbType,
     const std::string &host,
-    const unsigned short port,
+    unsigned short port,
     const std::string &databaseName,
     const std::string &userName,
     const std::string &password,
-    const size_t connectionNum,
+    size_t connectionNum,
     const std::string &filename,
     const std::string &name,
-    const bool isFast,
+    bool isFast,
     const std::string &characterSet,
     double timeout,
-    const bool autoBatch)
+    bool autoBatch)
 {
     assert(!running_);
-    dbClientManagerPtr_->createDbClient(dbType,
-                                        host,
+    addDbClient(dbType,
+                host,
+                port,
+                databaseName,
+                userName,
+                password,
+                connectionNum,
+                filename,
+                name,
+                isFast,
+                characterSet,
+                timeout,
+                autoBatch,
+                {});
+    return *this;
+}
+
+void HttpAppFrameworkImpl::addDbClient(
+    const std::string &dbType,
+    const std::string &host,
+    unsigned short port,
+    const std::string &databaseName,
+    const std::string &userName,
+    const std::string &password,
+    size_t connectionNum,
+    const std::string &filename,
+    const std::string &name,
+    bool isFast,
+    const std::string &characterSet,
+    double timeout,
+    bool autoBatch,
+    std::unordered_map<std::string, std::string> options)
+{
+    if (dbType == "postgresql" || dbType == "postgres")
+    {
+        addDbClient(orm::PostgresConfig{host,
                                         port,
                                         databaseName,
                                         userName,
                                         password,
                                         connectionNum,
-                                        filename,
                                         name,
                                         isFast,
                                         characterSet,
                                         timeout,
-                                        autoBatch);
+                                        autoBatch,
+                                        std::move(options)});
+    }
+    else if (dbType == "mysql")
+    {
+        addDbClient(orm::MysqlConfig{host,
+                                     port,
+                                     databaseName,
+                                     userName,
+                                     password,
+                                     connectionNum,
+                                     name,
+                                     isFast,
+                                     characterSet,
+                                     timeout});
+    }
+    else if (dbType == "sqlite3")
+    {
+        addDbClient(orm::Sqlite3Config{connectionNum, filename, name, timeout});
+    }
+    else
+    {
+        LOG_ERROR << "Unsupported database type: " << dbType
+                  << ", should be one of (postgresql, mysql, sqlite3)";
+    }
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::addDbClient(const orm::DbConfig &config)
+{
+    assert(!running_);
+    dbClientManagerPtr_->addDbClient(config);
     return *this;
 }
 
@@ -950,7 +1043,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
 
 void HttpAppFrameworkImpl::quit()
 {
-    if (getLoop()->isRunning())
+    if (getLoop()->isRunning() && running_.exchange(false))
     {
         getLoop()->queueInLoop([this]() {
             // Release members in the reverse order of initialization
@@ -961,7 +1054,6 @@ void HttpAppFrameworkImpl::quit()
             pluginsManagerPtr_.reset();
             redisClientManagerPtr_.reset();
             dbClientManagerPtr_.reset();
-            running_ = false;
             getLoop()->quit();
             for (trantor::EventLoop *loop : ioLoopThreadPool_->getLoops())
             {
@@ -1013,7 +1105,7 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
     bool isCaseSensitive,
     bool allowAll,
     bool isRecursive,
-    const std::vector<std::string> &filters)
+    const std::vector<std::string> &middlewareNames)
 {
     StaticFileRouter::instance().addALocation(uriPrefix,
                                               defaultContentType,
@@ -1021,7 +1113,7 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
                                               isCaseSensitive,
                                               allowAll,
                                               isRecursive,
-                                              filters);
+                                              middlewareNames);
     return *this;
 }
 
@@ -1169,6 +1261,17 @@ int64_t HttpAppFrameworkImpl::getConnectionCount() const
     return HttpConnectionLimit::instance().getConnectionNum();
 }
 
+HttpAppFramework &HttpAppFrameworkImpl::enableRequestStream(bool enable)
+{
+    enableRequestStream_ = enable;
+    return *this;
+}
+
+bool HttpAppFrameworkImpl::isRequestStreamEnabled() const
+{
+    return enableRequestStream_;
+}
+
 // AOP registration methods
 
 HttpAppFramework &HttpAppFrameworkImpl::registerNewConnectionAdvice(
@@ -1257,5 +1360,26 @@ HttpAppFramework &HttpAppFrameworkImpl::registerPreSendingAdvice(
         &advice)
 {
     AopAdvice::instance().registerPreSendingAdvice(advice);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setBeforeListenSockOptCallback(
+    std::function<void(int)> cb)
+{
+    listenerManagerPtr_->setBeforeListenSockOptCallback(std::move(cb));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setAfterAcceptSockOptCallback(
+    std::function<void(int)> cb)
+{
+    listenerManagerPtr_->setAfterAcceptSockOptCallback(std::move(cb));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setConnectionCallback(
+    std::function<void(const trantor::TcpConnectionPtr &)> cb)
+{
+    listenerManagerPtr_->setConnectionCallback(std::move(cb));
     return *this;
 }

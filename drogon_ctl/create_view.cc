@@ -411,6 +411,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
             "automatically,don't modify it!\n";
     file << "#include \"" << namespacePrefix << className << ".h\"\n";
     file << "#include <drogon/utils/OStringStream.h>\n";
+    file << "#include <drogon/utils/Utilities.h>\n";
     file << "#include <string>\n";
     file << "#include <map>\n";
     file << "#include <vector>\n";
@@ -551,3 +552,6 @@ void create_view::newViewSourceFile(std::ofstream &file,
     file << "return templ->genText(data);\n";
     file << "}\n}\n";
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::create_view>;

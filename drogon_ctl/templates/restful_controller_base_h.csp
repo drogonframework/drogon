@@ -21,16 +21,21 @@ bool hasPrimaryKey = (tableInfo.get<int>("hasPrimaryKey")==1);
 $$<<"using namespace drogon;\n";
 $$<<"using namespace drogon::orm;\n";
 
-$$<<"using namespace drogon_model::"<<tableInfo.get<std::string>("dbName");
-auto &schema=tableInfo.get<std::string>("schema");
-if(!schema.empty())
+auto &namespaceName=tableInfo.get<std::string>("namespaceName");
+if(!namespaceName.empty())
 {
-    $$<<"::"<<schema<<";\n";
+    $$<<"using namespace drogon_model::"<<namespaceName;
 }
 else
 {
-    $$<<";\n";
+    $$<<"using namespace drogon_model";
 }
+auto &schema=tableInfo.get<std::string>("schema");
+if(!schema.empty())
+{
+    $$<<"::"<<schema;
+}
+$$<<";\n";
 
 auto namespaceVector=@@.get<std::vector<std::string>>("namespaceVector");
 for(auto &name:namespaceVector)

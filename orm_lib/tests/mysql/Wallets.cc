@@ -677,9 +677,7 @@ bool Wallets::validJsonOfField(size_t index,
                 err = "Type error in the " + fieldName + " field";
                 return false;
             }
-            // asString().length() creates a string object, is there any better
-            // way to validate the length?
-            if (pJson.isString() && pJson.asString().length() > 32)
+            if (pJson.isString() && std::strlen(pJson.asCString()) > 32)
             {
                 err = "String length exceeds limit for the " + fieldName +
                       " field (the maximum value is 32)";

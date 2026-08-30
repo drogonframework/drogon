@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.31)
 
 project(drogon)
 
@@ -9,10 +9,12 @@ option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_SHARED_LIBS "Build drogon as a shared lib" OFF)
+option(DROGON_USE_BOOST_UUID "Use Boost.UUID instead of the OS uuid library" OFF)
 option(BUILD_DOC "Build Doxygen documentation" OFF)
 option(BUILD_BROTLI "Build Brotli" ON)
 option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
+option(USE_STATIC_LIBS_ONLY "Use only static libraries as dependencies" OFF)
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
@@ -24,7 +26,7 @@ CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 9)
-set(DROGON_PATCH_VERSION 3)
+set(DROGON_PATCH_VERSION 13)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
@@ -41,7 +43,7 @@ set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   # Force MSVC to use UTF-8 because that's what we use. Otherwise it uses
   # the default of whatever Windows sets and causes encoding issues.
-  message(STATUS "You are using MSVC. Forceing to use UTF-8")
+  message(STATUS "You are using MSVC. Forcing to use UTF-8")
   add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
   add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
   if (MSVC_VERSION GREATER_EQUAL 1914)
@@ -76,6 +78,10 @@ if (BUILD_SHARED_LIBS)
         endif ()
     endif ()
 endif (BUILD_SHARED_LIBS)
+
+if(USE_STATIC_LIBS_ONLY)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_STATIC_LIBRARY_SUFFIX}")
+endif(USE_STATIC_LIBS_ONLY)
 
 if(USE_SPDLOG)
   find_package(spdlog CONFIG)
@@ -116,6 +122,7 @@ endif()
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/lib/inc>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/nosql_lib/redis/inc>
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
@@ -127,6 +134,8 @@ if (WIN32)
         ${PROJECT_NAME}
         PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/mman-win32>)
 endif (WIN32)
+
+add_library(Drogon::Drogon ALIAS ${PROJECT_NAME})
 
 if(USE_SUBMODULE)
 add_subdirectory(trantor)
@@ -179,10 +188,19 @@ if(TARGET std::filesystem)
   endif()
 endif()
 
-
 # jsoncpp
-find_package(Jsoncpp REQUIRED)
-target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
+find_package(jsoncpp QUIET CONFIG)
+if (jsoncpp_FOUND)
+  message(STATUS "jsoncpp found by config")
+  if (USE_STATIC_LIBS_ONLY)
+    target_link_libraries(${PROJECT_NAME} PUBLIC jsoncpp_static)
+  else()
+    target_link_libraries(${PROJECT_NAME} PUBLIC jsoncpp_lib)
+  endif()
+else()
+  find_package(Jsoncpp REQUIRED MODULE)
+  target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
+endif()
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
 # yamlcpp
@@ -213,23 +231,30 @@ endif(BUILD_YAML_CONFIG)
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
     AND NOT WIN32)
-    find_package(UUID REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
-
-    try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
-        ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-        LINK_LIBRARIES UUID_lib
-        OUTPUT_VARIABLE NORMAL_UUID_COMPILE_OUTPUT)
-    try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
-        ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-        LINK_LIBRARIES UUID_lib
-        OUTPUT_VARIABLE OSSP_UUID_COMPILE_OUTPUT)
-    if (normal_uuid)
-        add_definitions(-DUSE_OSSP_UUID=0)
-    elseif (ossp_uuid)
-        add_definitions(-DUSE_OSSP_UUID=1)
+    if (DROGON_USE_BOOST_UUID)
+        find_package(Boost REQUIRED)
+        target_link_libraries(${PROJECT_NAME} PRIVATE Boost::boost)
+        add_definitions(-DUSE_BOOST_UUID=1)
     else ()
-        message(FATAL_ERROR "uuid lib error:\n${NORMAL_UUID_COMPILE_OUTPUT}\n${OSSP_UUID_COMPILE_OUTPUT}")
+        add_definitions(-DUSE_BOOST_UUID=0)
+        find_package(UUID REQUIRED)
+        target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
+
+        try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
+            ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
+            LINK_LIBRARIES UUID_lib
+            OUTPUT_VARIABLE NORMAL_UUID_COMPILE_OUTPUT)
+        try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
+            ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
+            LINK_LIBRARIES UUID_lib
+            OUTPUT_VARIABLE OSSP_UUID_COMPILE_OUTPUT)
+        if (normal_uuid)
+            add_definitions(-DUSE_OSSP_UUID=0)
+        elseif (ossp_uuid)
+            add_definitions(-DUSE_OSSP_UUID=1)
+        else ()
+            message(FATAL_ERROR "uuid lib error:\n${NORMAL_UUID_COMPILE_OUTPUT}\n${OSSP_UUID_COMPILE_OUTPUT}")
+        endif ()
     endif ()
 endif (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
@@ -253,7 +278,7 @@ set(DROGON_SOURCES
     lib/src/Cookie.cc
     lib/src/DrClassMap.cc
     lib/src/DrTemplateBase.cc
-    lib/src/FiltersFunction.cc
+    lib/src/MiddlewaresFunction.cc
     lib/src/FixedWindowRateLimiter.cc
     lib/src/GlobalFilters.cc
     lib/src/Histogram.cc
@@ -268,6 +293,7 @@ set(DROGON_SOURCES
     lib/src/HttpFileUploadRequest.cc
     lib/src/HttpRequestImpl.cc
     lib/src/HttpRequestParser.cc
+    lib/src/RequestStream.cc
     lib/src/HttpResponseImpl.cc
     lib/src/HttpResponseParser.cc
     lib/src/HttpServer.cc
@@ -278,6 +304,7 @@ set(DROGON_SOURCES
     lib/src/ListenerManager.cc
     lib/src/LocalHostFilter.cc
     lib/src/MultiPart.cc
+    lib/src/MultipartStreamParser.cc
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
     lib/src/PromExporter.cc
@@ -302,7 +329,7 @@ set(private_headers
     lib/src/CacheFile.h
     lib/src/ConfigLoader.h
     lib/src/ControllerBinderBase.h
-    lib/src/FiltersFunction.h
+    lib/src/MiddlewaresFunction.h
     lib/src/HttpAppFrameworkImpl.h
     lib/src/HttpClientImpl.h
     lib/src/HttpConnectionLimit.h
@@ -321,6 +348,7 @@ set(private_headers
     lib/src/ListenerManager.h
     lib/src/PluginsManager.h
     lib/src/SessionManager.h
+    lib/src/utils/ParsingUtils.h
     lib/src/SpinLock.h
     lib/src/StaticFileRouter.h
     lib/src/TaskTimeoutFlag.h
@@ -332,23 +360,24 @@ set(private_headers
     lib/src/ConfigAdapterManager.h
     lib/src/JsonConfigAdapter.h
     lib/src/YamlConfigAdapter.h
-    lib/src/ConfigAdapter.h)
+    lib/src/ConfigAdapter.h
+    lib/src/MultipartStreamParser.h)
 
-if (NOT WIN32)
+if (NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(DROGON_SOURCES
         ${DROGON_SOURCES}
         lib/src/SharedLibManager.cc)
     set(private_headers
         ${private_headers}
         lib/src/SharedLibManager.h)
-else (NOT WIN32)
+elseif(WIN32)
     set(DROGON_SOURCES
         ${DROGON_SOURCES}
         third_party/mman-win32/mman.c)
     set(private_headers
         ${private_headers}
         third_party/mman-win32/mman.h)
-endif (NOT WIN32)
+endif()
 
 if (BUILD_POSTGRESQL)
     # find postgres
@@ -502,7 +531,7 @@ execute_process(COMMAND "git" rev-parse HEAD
     OUTPUT_VARIABLE GIT_SHA1
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/version.h.in"
-    "${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h" @ONLY)
+    "${CMAKE_CURRENT_BINARY_DIR}/lib/inc/drogon/version.h" @ONLY)
 
 if (DROGON_CXX_STANDARD EQUAL 20)
     option(USE_COROUTINE "Enable C++20 coroutine support" ON)
@@ -515,6 +544,15 @@ if (BUILD_EXAMPLES)
 endif (BUILD_EXAMPLES)
 
 if (BUILD_CTL)
+    if (CMAKE_CROSSCOMPILING)
+        find_program(HOST_DROGON_CTL _drogon_ctl)
+        if (NOT HOST_DROGON_CTL)
+            message(FATAL_ERROR "_drogon_ctl not found on host system")
+        endif()
+        set(DROGON_CTL "${HOST_DROGON_CTL}")
+    else (CMAKE_CROSSCOMPILING)
+        set(DROGON_CTL "$<TARGET_FILE:_drogon_ctl>")
+    endif (CMAKE_CROSSCOMPILING)
     add_subdirectory(drogon_ctl)
 endif (BUILD_CTL)
 
@@ -557,7 +595,9 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpClient.h
     lib/inc/drogon/HttpController.h
     lib/inc/drogon/HttpFilter.h
+    lib/inc/drogon/HttpMiddleware.h
     lib/inc/drogon/HttpRequest.h
+    lib/inc/drogon/RequestStream.h
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h
     lib/inc/drogon/HttpTypes.h
@@ -573,7 +613,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/WebSocketConnection.h
     lib/inc/drogon/WebSocketController.h
     lib/inc/drogon/drogon.h
-    lib/inc/drogon/version.h
+    ${CMAKE_CURRENT_BINARY_DIR}/lib/inc/drogon/version.h
     lib/inc/drogon/drogon_callbacks.h
     lib/inc/drogon/PubSubService.h
     lib/inc/drogon/drogon_test.h
@@ -682,6 +722,7 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/BaseBuilder.h
     orm_lib/inc/drogon/orm/Criteria.h
     orm_lib/inc/drogon/orm/DbClient.h
+    orm_lib/inc/drogon/orm/DbConfig.h
     orm_lib/inc/drogon/orm/DbListener.h
     orm_lib/inc/drogon/orm/DbTypes.h
     orm_lib/inc/drogon/orm/Exception.h

@@ -62,21 +62,27 @@ for(auto convertMethod : convertMethods ) {
 
 using namespace drogon;
 using namespace drogon::orm;
-using namespace drogon_model::[[dbName]]<%c++
-auto &schema=@@.get<std::string>("schema");
-if(!schema.empty())
+<%c++
+auto &namespaceName=@@.get<std::string>("namespaceName");
+if(!namespaceName.empty())
 {
-    $$<<"::"<<schema<<";\n";
+    $$<<"using namespace drogon_model::"<<namespaceName;
 }
 else
 {
-    $$<<";\n";
+    $$<<"using namespace drogon_model";
 }
+auto &schema=@@.get<std::string>("schema");
+if(!schema.empty())
+{
+    $$<<"::"<<schema;
+}
+$$<<";\n";
 %>
 
 <%c++for(auto col:cols){
 %>
-const std::string [[className]]::Cols::_{%col.colName_%} = "{%col.colName_%}";
+const std::string [[className]]::Cols::_{%col.colName_%} = "{%escapeIdentifier(col.colName_, rdbms)%}";
 <%c++
 }%>
 <%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
@@ -102,7 +108,7 @@ if(!schema.empty())
 {
     $$<<schema<<".";
 }
-%>[[tableName]]";
+%>{%escapeIdentifier(@@.get<std::string>("tableName"), rdbms)%}";
 
 const std::vector<typename [[className]]::MetaData> [[className]]::metaData_={
 <%c++for(size_t i=0;i<cols.size();i++){
@@ -138,6 +144,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            auto daysStr = r[\""<<col.colName_<<"\"].as<std::string>();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
 //                $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
@@ -154,6 +161,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            auto timeStr = r[\""<<col.colName_<<"\"].as<std::string>();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
                 $$<<"            size_t decimalNum = 0;\n";
@@ -229,6 +237,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            auto daysStr = r[index].as<std::string>();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
  //               $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
@@ -245,6 +254,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            auto timeStr = r[index].as<std::string>();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
                 $$<<"            size_t decimalNum = 0;\n";
@@ -336,6 +346,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            auto daysStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
  //               $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
@@ -355,6 +366,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            auto timeStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
                 $$<<"            size_t decimalNum = 0;\n";
@@ -499,6 +511,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            auto daysStr = pJson[\""<<col.colName_<<"\"].asString();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
  //               $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
@@ -518,6 +531,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            auto timeStr = pJson[\""<<col.colName_<<"\"].asString();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
                 $$<<"            size_t decimalNum = 0;\n";
@@ -671,6 +685,7 @@ void [[className]]::updateByMasqueradedJson(const Json::Value &pJson,
                 $$<<"            auto daysStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
  //               $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
@@ -690,6 +705,7 @@ void [[className]]::updateByMasqueradedJson(const Json::Value &pJson,
                 $$<<"            auto timeStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
                 $$<<"            size_t decimalNum = 0;\n";
@@ -837,6 +853,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                 $$<<"            auto daysStr = pJson[\""<<col.colName_<<"\"].asString();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
  //               $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
@@ -856,6 +873,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                 $$<<"            auto timeStr = pJson[\""<<col.colName_<<"\"].asString();\n";
                 $$<<"            struct tm stm;\n";
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            stm.tm_isdst = -1;\n";
                 $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
                 $$<<"            size_t decimalNum = 0;\n";
@@ -1208,6 +1226,11 @@ Json::Value [[className]]::toJson() const
     return ret;
 }
 
+std::string [[className]]::toString() const
+{
+    return toJson().toStyledString();
+}
+
 Json::Value [[className]]::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
@@ -1534,15 +1557,13 @@ if(!col.notNull_){%>
                 if(col.colType_ == "std::string" && col.colLength_>0)
                 {
 %>
-            // asString().length() creates a string object, is there any better way to validate the length?
-            if(pJson.isString() && pJson.asString().length() > {%col.colLength_%})
+            if(pJson.isString() && drogon::utils::utf8Length(pJson.asCString()) > {%col.colLength_%})
             {
                 err="String length exceeds limit for the " +
                     fieldName +
                     " field (the maximum value is {%col.colLength_%})";
                 return false;
             }
-
 <%c++
                 }
             }

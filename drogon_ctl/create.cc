@@ -42,8 +42,11 @@ std::string create::detail()
            "create a plugin named class_name\n\n"
            "drogon_ctl create project <project_name> //"
            "create a project named project_name\n\n"
-           "drogon_ctl create model <model_path> [--table=<table_name>] [-f]//"
-           "create model classes in model_path\n";
+           "drogon_ctl create model <model_path> [-o <output path>] [ "
+           "--clear-output]"
+           "[--table=<table_name>] [--namespace=<namespace_name>] [-f]//"
+           "create model classes in model_path, namespace defaults to database "
+           "name";
 }
 
 void create::handleCommand(std::vector<std::string> &parameters)
@@ -54,3 +57,14 @@ void create::handleCommand(std::vector<std::string> &parameters)
     parameters[0] = createObjName;
     exeCommand(parameters);
 }
+
+// Prevent clang-cl/lld-link from discarding DrObject<T>::alloc_ on Windows.
+// On COFF targets, clang places the CRT initializer for the template static
+// member in the same COMDAT group as the variable itself.  When no code in the
+// translation unit takes the address of alloc_ (clang inlines className()),
+// the entire COMDAT is eligible for elimination — and lld-link's /OPT:REF
+// removes it, so DrClassMap is never populated.
+// Explicit template instantiation forces a strong (non-COMDAT) definition,
+// which the linker must keep.  This is a no-op on MSVC, GCC, and ELF targets
+// (where .init_array entries are GC roots and are never discarded).
+template class drogon::DrObject<drogon_ctl::create>;

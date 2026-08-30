@@ -103,6 +103,32 @@ void Attachment::uploadImage(
     callback(resp);
 }
 
+void Attachment::uploadMemory(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    MultiPartParser fileUpload;
+
+    if (fileUpload.parse(req) == 0 && fileUpload.getFiles().size() == 1)
+    {
+        auto &file = fileUpload.getFiles()[0];
+        if (file.getItemName() == "hellofile")
+        {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setStatusCode(HttpStatusCode::k200OK);
+            resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+            std::string hello = std::string(file.fileData(), file.fileLength());
+            resp->setBody(std::move(hello));
+            callback(resp);
+            return;
+        }
+    }
+    LOG_DEBUG << "upload text from memory error!";
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setStatusCode(HttpStatusCode::k400BadRequest);
+    callback(resp);
+}
+
 void Attachment::download(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)

@@ -37,6 +37,7 @@ class RedisClientLockFree final
 {
   public:
     RedisClientLockFree(const trantor::InetAddress &serverAddress,
+                        std::string hostname,
                         size_t numberOfConnections,
                         trantor::EventLoop *loop,
                         std::string username = "",
@@ -76,6 +77,7 @@ class RedisClientLockFree final
     std::vector<RedisConnectionPtr> readyConnections_;
     size_t connectionPos_{0};
     const trantor::InetAddress serverAddr_;
+    const std::string hostname_;
     const std::string username_;
     const std::string password_;
     const unsigned int db_;

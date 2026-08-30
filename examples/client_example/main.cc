@@ -72,6 +72,8 @@ int main()
                     std::cout << "count=" << nth_resp << std::endl;
                 });
         }
+        std::cout << "requestsBufferSize:" << client->requestsBufferSize()
+                  << std::endl;
     }
 
     app().run();

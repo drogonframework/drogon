@@ -78,6 +78,9 @@ inline std::string nameTransform(const std::string &origName, bool isType)
     return ret;
 }
 
+std::string escapeIdentifier(const std::string &identifier,
+                             const std::string &rdbms);
+
 class PivotTable
 {
   public:
@@ -425,6 +428,10 @@ class create_model : public DrObject<create_model>, public CommandHandler
     void createRestfulAPIController(const DrTemplateData &tableInfo,
                                     const Json::Value &restfulApiConfig);
     std::string dbname_;
+    std::string namespaceName_;
+    bool namespaceOverridden_{false};
     bool forceOverwrite_{false};
+    std::string outputPath_;
+    bool cleanupDirectory_{false};
 };
 }  // namespace drogon_ctl

@@ -2,6 +2,15 @@
 #include <drogon/utils/coroutine.h>
 #include <drogon/HttpAppFramework.h>
 #include <trantor/net/EventLoopThread.h>
+#include <trantor/net/EventLoopThreadPool.h>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <exception>
+#include <future>
+#include <memory>
+#include <mutex>
+#include <optional>
 #include <type_traits>
 
 using namespace drogon;
@@ -198,17 +207,124 @@ DROGON_TEST(AsyncWaitLifetime)
 
 DROGON_TEST(SwitchThread)
 {
-    thread_local int num{0};
     trantor::EventLoopThread thread;
+    thread.getLoop()->setIndex(12345);
     thread.run();
-    thread.getLoop()->queueInLoop([]() { num = 100; });
 
     auto switch_thread = [TEST_CTX, &thread]() -> Task<> {
-        CHECK(num == 0);
         co_await switchThreadCoro(thread.getLoop());
-        CHECK(num == 100);
-        thread.getLoop()->quit();
+        auto currentLoop = trantor::EventLoop::getEventLoopOfCurrentThread();
+        MANDATE(currentLoop != nullptr);
+        CHECK(currentLoop->index() == 12345);
+        currentLoop->quit();
     };
     sync_wait(switch_thread());
     thread.wait();
+}
+
+DROGON_TEST(Mutex)
+{
+    trantor::EventLoopThreadPool pool{3};
+    pool.start();
+    Mutex mutex;
+    async_run([&]() -> Task<> {
+        co_await switchThreadCoro(pool.getLoop(0));
+        auto guard = co_await mutex.scoped_lock();
+        co_await sleepCoro(pool.getLoop(1), std::chrono::seconds(2));
+        co_return;
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::promise<void> done;
+    async_run([&]() -> Task<> {
+        co_await switchThreadCoro(pool.getLoop(2));
+        auto id = std::this_thread::get_id();
+        co_await mutex.lock();
+        CHECK(id == std::this_thread::get_id());
+        mutex.unlock();
+        CHECK(id == std::this_thread::get_id());
+        done.set_value();
+        co_return;
+    });
+    done.get_future().wait();
+    for (int16_t i = 0; i < 3; i++)
+        pool.getLoop(i)->quit();
+    pool.wait();
+}
+
+DROGON_TEST(WhenAll)
+{
+    using TestCtx = std::shared_ptr<drogon::test::Case>;
+    [](TestCtx TEST_CTX) -> AsyncTask {
+        size_t counter = 0;
+        auto t1 = [](TestCtx TEST_CTX, size_t *counter) -> Task<> {
+            co_await drogon::sleepCoro(app().getLoop(), 0.2);
+            (*counter)++;
+        }(TEST_CTX, &counter);
+        auto t2 = [](TestCtx TEST_CTX, size_t *counter) -> Task<> {
+            co_await drogon::sleepCoro(app().getLoop(), 0.1);
+            (*counter)++;
+        }(TEST_CTX, &counter);
+        std::vector<Task<void>> tasks;
+        tasks.emplace_back(std::move(t1));
+        tasks.emplace_back(std::move(t2));
+
+        co_await when_all(std::move(tasks));
+        CHECK(counter == 2);
+    }(TEST_CTX);
+
+    [](TestCtx TEST_CTX) -> AsyncTask {
+        std::vector<Task<void>> tasks;
+        co_await when_all(std::move(tasks));
+        SUCCESS();
+    }(TEST_CTX);
+
+    [](TestCtx TEST_CTX) -> AsyncTask {
+        auto t1 = [](TestCtx TEST_CTX) -> Task<int> { co_return 1; }(TEST_CTX);
+        auto t2 = [](TestCtx TEST_CTX) -> Task<int> { co_return 2; }(TEST_CTX);
+        std::vector<Task<int>> tasks;
+        tasks.emplace_back(std::move(t1));
+        tasks.emplace_back(std::move(t2));
+
+        auto res = co_await when_all(std::move(tasks));
+        CO_REQUIRE(res.size() == 2);
+        CHECK(res[0] == 1);
+        CHECK(res[1] == 2);
+    }(TEST_CTX);
+
+    [](TestCtx TEST_CTX) -> AsyncTask {
+        auto t1 = [](TestCtx TEST_CTX) -> Task<int> { co_return 1; }(TEST_CTX);
+        auto t2 = [](TestCtx TEST_CTX) -> Task<std::string> {
+            co_return "Hello";
+        }(TEST_CTX);
+        auto [num, str] = co_await when_all(std::move(t1), std::move(t2));
+        CHECK(num == 1);
+        CHECK(str == "Hello");
+    }(TEST_CTX);
+
+    [](TestCtx TEST_CTX) -> AsyncTask {
+        size_t counter = 0;
+        // Even on corutine throws, other coroutins run to completion
+        auto t1 = [](TestCtx TEST_CTX, size_t *counter) -> Task<int> {
+            co_await drogon::sleepCoro(app().getLoop(), 0.2);
+            (*counter)++;
+            co_return 1;
+        }(TEST_CTX, &counter);
+        auto t2 = [](TestCtx TEST_CTX) -> Task<std::string> {
+            co_await drogon::sleepCoro(app().getLoop(), 0.1);
+            throw std::runtime_error("Test exception");
+        }(TEST_CTX);
+        CO_REQUIRE_THROWS(co_await when_all(std::move(t1), std::move(t2)));
+        CHECK(counter == 1);
+    }(TEST_CTX);
+
+    [](TestCtx TEST_CTX) -> AsyncTask {
+        size_t counter = 0;
+        // void retuens gets mapped to std::false_type in the tuple API
+        auto t1 = [](TestCtx TEST_CTX, size_t *counter) -> Task<> {
+            (*counter)++;
+            co_return;
+        }(TEST_CTX, &counter);
+        auto [res] = co_await when_all(std::move(t1));
+        CHECK(counter == 1);
+    }(TEST_CTX);
 }

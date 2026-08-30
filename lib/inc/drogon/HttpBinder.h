@@ -164,6 +164,7 @@ class HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual size_t paramCount() = 0;
     virtual const std::string &handlerName() const = 0;
+    virtual bool isStreamHandler() = 0;
 
     virtual ~HttpBinderBase()
     {
@@ -182,6 +183,10 @@ T &getControllerObj()
 }
 
 DROGON_EXPORT void handleException(
+    const std::exception &,
+    const HttpRequestPtr &,
+    std::function<void(const HttpResponsePtr &)> &&);
+DROGON_EXPORT void handleBadPathParameter(
     const std::exception &,
     const HttpRequestPtr &,
     std::function<void(const HttpResponsePtr &)> &&);
@@ -216,6 +221,11 @@ class HttpBinder : public HttpBinderBase
     size_t paramCount() override
     {
         return traits::arity;
+    }
+
+    bool isStreamHandler() override
+    {
+        return traits::isStreamHandler;
     }
 
     HttpBinder(FUNCTION &&func) : func_(std::forward<FUNCTION>(func))
@@ -266,6 +276,7 @@ class HttpBinder : public HttpBinderBase
 
     template <typename... Values,
               std::size_t Boundary = argument_count,
+              bool isStreamHandler = traits::isStreamHandler,
               bool isCoroutine = traits::isCoroutine>
     void run(std::deque<std::string> &pathArguments,
              const HttpRequestPtr &req,
@@ -299,6 +310,17 @@ class HttpBinder : public HttpBinderBase
                             std::move(value));
                         return;
                     }
+                }
+                catch (const std::invalid_argument &e)
+                {
+                    // Malformed path parameters are client errors (#2551).
+                    handleBadPathParameter(e, req, std::move(callback));
+                    return;
+                }
+                catch (const std::out_of_range &e)
+                {
+                    handleBadPathParameter(e, req, std::move(callback));
+                    return;
                 }
                 catch (const std::exception &e)
                 {
@@ -344,7 +366,17 @@ class HttpBinder : public HttpBinderBase
                 {
                     // Explicit copy because `callFunction` moves it
                     auto cb = callback;
-                    callFunction(req, cb, std::move(values)...);
+                    if constexpr (isStreamHandler)
+                    {
+                        callFunction(req,
+                                     createRequestStream(req),
+                                     cb,
+                                     std::move(values)...);
+                    }
+                    else
+                    {
+                        callFunction(req, cb, std::move(values)...);
+                    }
                 }
                 catch (const std::exception &except)
                 {
@@ -359,6 +391,7 @@ class HttpBinder : public HttpBinderBase
 #ifdef __cpp_impl_coroutine
             else
             {
+                static_assert(!isStreamHandler);
                 [this](HttpRequestPtr req,
                        std::function<void(const HttpResponsePtr &)> callback,
                        Values &&...values) -> AsyncTask {

@@ -84,17 +84,22 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         override;
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
+
+    HttpAppFramework &reloadSSLFiles() override;
+
     void run() override;
     HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods)
-        override;
+        const std::vector<internal::HttpConstraint> &constraints) override;
+    HttpAppFramework &registerWebSocketControllerRegex(
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &constraints) override;
     HttpAppFramework &registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods)
-        override;
+        const std::vector<internal::HttpConstraint> &constraints) override;
 
     HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp,
                                        bool set404) override
@@ -246,7 +251,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         bool isCaseSensitive,
         bool allowAll,
         bool isRecursive,
-        const std::vector<std::string> &filters) override;
+        const std::vector<std::string> &middlewareNames) override;
 
     const std::string &getUploadPath() const override
     {
@@ -262,7 +267,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &setUploadPath(const std::string &uploadPath) override;
     HttpAppFramework &setFileTypes(
         const std::vector<std::string> &types) override;
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     HttpAppFramework &enableDynamicViewsLoading(
         const std::vector<std::string> &libPaths,
         const std::string &outputPath) override;
@@ -532,6 +537,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     orm::DbClientPtr getDbClient(const std::string &name) override;
     orm::DbClientPtr getFastDbClient(const std::string &name) override;
+    bool hasDbClient(const std::string &name) const override;
+    bool hasFastDbClient(const std::string &name) const override;
+
     HttpAppFramework &createDbClient(const std::string &dbType,
                                      const std::string &host,
                                      unsigned short port,
@@ -544,7 +552,24 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                                      bool isFast,
                                      const std::string &characterSet,
                                      double timeout,
-                                     const bool autoBatch) override;
+                                     bool autoBatch) override;
+    // a helper method
+    void addDbClient(const std::string &dbType,
+                     const std::string &host,
+                     unsigned short port,
+                     const std::string &databaseName,
+                     const std::string &userName,
+                     const std::string &password,
+                     size_t connectionNum,
+                     const std::string &filename,
+                     const std::string &name,
+                     bool isFast,
+                     const std::string &characterSet,
+                     double timeout,
+                     bool autoBatch,
+                     std::unordered_map<std::string, std::string> options);
+    HttpAppFramework &addDbClient(const orm::DbConfig &config) override;
+
     HttpAppFramework &createRedisClient(const std::string &ip,
                                         unsigned short port,
                                         const std::string &name,
@@ -638,17 +663,27 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpResponsePtr handleSessionForResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &resp);
 
+    HttpAppFramework &setBeforeListenSockOptCallback(
+        std::function<void(int)> cb) override;
+    HttpAppFramework &setAfterAcceptSockOptCallback(
+        std::function<void(int)> cb) override;
+    HttpAppFramework &setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb) override;
+
+    HttpAppFramework &enableRequestStream(bool enable) override;
+    bool isRequestStreamEnabled() const override;
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
                                 const std::vector<HttpMethod> &validMethods,
-                                const std::vector<std::string> &filters,
+                                const std::vector<std::string> &middlewareNames,
                                 const std::string &handlerName) override;
     void registerHttpControllerViaRegex(
         const std::string &regExp,
         const internal::HttpBinderBasePtr &binder,
         const std::vector<HttpMethod> &validMethods,
-        const std::vector<std::string> &filters,
+        const std::vector<std::string> &middlewareNames,
         const std::string &handlerName) override;
 
     // We use an uuid string as session id;
@@ -676,7 +711,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t threadNum_{1};
     std::unique_ptr<trantor::EventLoopThreadPool> ioLoopThreadPool_;
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     std::vector<std::string> libFilePaths_;
     std::string libFileOutputPath_;
     std::unique_ptr<SharedLibManager> sharedLibManagerPtr_;
@@ -728,6 +763,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     ExceptionHandler exceptionHandler_{defaultExceptionHandler};
     bool enableCompressedRequest_{false};
+
+    bool enableRequestStream_{false};
 };
 
 }  // namespace drogon

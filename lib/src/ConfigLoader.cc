@@ -81,6 +81,7 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
             case '3':
             case '4':
             case '5':
+            case '6':
             case '7':
             case '8':
             case '9':
@@ -383,7 +384,7 @@ static void loadApp(const Json::Value &app)
     {
         drogon::app().setMaxConnectionNumPerIP(maxConnsPerIP);
     }
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     // dynamic views
     auto enableDynamicViews = app.get("load_dynamic_views", false).asBool();
     if (enableDynamicViews)
@@ -524,6 +525,9 @@ static void loadApp(const Json::Value &app)
     bool enableCompressedRequests =
         app.get("enabled_compressed_request", false).asBool();
     drogon::app().enableCompressedRequest(enableCompressedRequests);
+
+    drogon::app().enableRequestStream(
+        app.get("enable_request_stream", false).asBool());
 }
 
 static void loadDbClients(const Json::Value &dbClients)
@@ -538,9 +542,9 @@ static void loadDbClients(const Json::Value &dbClients)
                        type.begin(),
                        [](unsigned char c) { return tolower(c); });
         auto host = client.get("host", "127.0.0.1").asString();
-        auto port = client.get("port", 5432).asUInt();
+        unsigned short port = client.get("port", 5432).asUInt();
         auto dbname = client.get("dbname", "").asString();
-        if (dbname == "" && type != "sqlite3")
+        if (dbname.empty() && type != "sqlite3")
         {
             throw std::runtime_error(
                 "Please configure dbname in the configuration file");
@@ -564,21 +568,33 @@ static void loadDbClients(const Json::Value &dbClients)
         {
             characterSet = client.get("client_encoding", "").asString();
         }
+        auto connectOptions = client.get("connect_options", Json::Value());
         auto timeout = client.get("timeout", -1.0).asDouble();
         auto autoBatch = client.get("auto_batch", false).asBool();
-        drogon::app().createDbClient(type,
-                                     host,
-                                     (unsigned short)port,
-                                     dbname,
-                                     user,
-                                     password,
-                                     connNum,
-                                     filename,
-                                     name,
-                                     isFast,
-                                     characterSet,
-                                     timeout,
-                                     autoBatch);
+
+        std::unordered_map<std::string, std::string> options;
+        if (connectOptions.isObject() && !connectOptions.empty())
+        {
+            for (const auto &key : connectOptions.getMemberNames())
+            {
+                options[key] = connectOptions[key].asString();
+            }
+        }
+
+        HttpAppFrameworkImpl::instance().addDbClient(type,
+                                                     host,
+                                                     port,
+                                                     dbname,
+                                                     user,
+                                                     password,
+                                                     connNum,
+                                                     filename,
+                                                     name,
+                                                     isFast,
+                                                     characterSet,
+                                                     timeout,
+                                                     autoBatch,
+                                                     std::move(options));
     }
 }
 
@@ -588,13 +604,7 @@ static void loadRedisClients(const Json::Value &redisClients)
         return;
     for (auto const &client : redisClients)
     {
-        std::promise<std::string> promise;
-        auto future = promise.get_future();
         auto host = client.get("host", "127.0.0.1").asString();
-        trantor::Resolver::newResolver()->resolve(
-            host, [&promise](const trantor::InetAddress &address) {
-                promise.set_value(address.toIp());
-            });
         auto port = client.get("port", 6379).asUInt();
         auto username = client.get("username", "").asString();
         auto password = client.get("passwd", "").asString();
@@ -611,16 +621,8 @@ static void loadRedisClients(const Json::Value &redisClients)
         auto isFast = client.get("is_fast", false).asBool();
         auto timeout = client.get("timeout", -1.0).asDouble();
         auto db = client.get("db", 0).asUInt();
-        auto hostIp = future.get();
-        drogon::app().createRedisClient(hostIp,
-                                        port,
-                                        name,
-                                        password,
-                                        connNum,
-                                        isFast,
-                                        timeout,
-                                        db,
-                                        username);
+        drogon::app().createRedisClient(
+            host, port, name, password, connNum, isFast, timeout, db, username);
     }
 }
 

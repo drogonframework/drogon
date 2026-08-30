@@ -55,6 +55,10 @@ auto getAwaiter(T &&value) noexcept(
     return getAwaiterImpl(static_cast<T &&>(value));
 }
 
+template <typename T>
+using void_to_false_t =
+    std::conditional_t<std::is_same_v<T, void>, std::false_type, T>;
+
 }  // end namespace internal
 
 template <typename T>
@@ -245,7 +249,7 @@ struct [[nodiscard]] Task
 
         std::optional<T> value;
         std::exception_ptr exception_;
-        std::coroutine_handle<> continuation_;
+        std::coroutine_handle<> continuation_{std::noop_coroutine()};
     };
 
     auto operator co_await() const noexcept
@@ -332,7 +336,7 @@ struct [[nodiscard]] Task<void>
         }
 
         std::exception_ptr exception_;
-        std::coroutine_handle<> continuation_;
+        std::coroutine_handle<> continuation_{std::noop_coroutine()};
     };
 
     auto operator co_await() const noexcept
@@ -420,6 +424,11 @@ struct CallbackAwaiter : public trantor::NonCopyable
         return false;
     }
 
+    bool hasException() const noexcept
+    {
+        return exception_ != nullptr;
+    }
+
     const T &await_resume() const noexcept(false)
     {
         // await_resume() should always be called after co_await
@@ -468,6 +477,11 @@ struct CallbackAwaiter<void> : public trantor::NonCopyable
     {
         if (exception_)
             std::rethrow_exception(exception_);
+    }
+
+    bool hasException() const noexcept
+    {
+        return exception_ != nullptr;
     }
 
   private:
@@ -798,6 +812,180 @@ struct [[nodiscard]] EventLoopAwaiter : public drogon::CallbackAwaiter<T>
     std::function<T()> task_;
     trantor::EventLoop *loop_;
 };
+
+template <typename... Tasks>
+struct WhenAllAwaiter
+    : public CallbackAwaiter<
+          std::tuple<internal::void_to_false_t<await_result_t<Tasks>>...>>
+{
+    WhenAllAwaiter(Tasks... tasks)
+        : tasks_(std::forward<Tasks>(tasks)...), counter_(sizeof...(tasks))
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        if (counter_ == 0)
+        {
+            handle.resume();
+            return;
+        }
+
+        await_suspend_impl(handle, std::index_sequence_for<Tasks...>{});
+    }
+
+  private:
+    std::tuple<Tasks...> tasks_;
+    std::atomic<size_t> counter_;
+    std::tuple<internal::void_to_false_t<await_result_t<Tasks>>...> results_;
+    std::atomic_flag exceptionFlag_;
+
+    template <size_t Idx>
+    void launch_task(std::coroutine_handle<> handle)
+    {
+        using Self = WhenAllAwaiter<Tasks...>;
+        [](Self *self, std::coroutine_handle<> handle) -> AsyncTask {
+            try
+            {
+                using TaskType = std::tuple_element_t<
+                    Idx,
+                    std::remove_cvref_t<decltype(results_)>>;
+                if constexpr (std::is_same_v<TaskType, std::false_type>)
+                {
+                    co_await std::get<Idx>(self->tasks_);
+                    std::get<Idx>(self->results_) = std::false_type{};
+                }
+                else
+                {
+                    std::get<Idx>(self->results_) =
+                        co_await std::get<Idx>(self->tasks_);
+                }
+            }
+            catch (...)
+            {
+                if (self->exceptionFlag_.test_and_set() == false)
+                    self->setException(std::current_exception());
+            }
+
+            if (self->counter_.fetch_sub(1, std::memory_order_acq_rel) == 1)
+            {
+                if (!self->hasException())
+                    self->setValue(std::move(self->results_));
+                handle.resume();
+            }
+        }(this, handle);
+    }
+
+    template <size_t... Is>
+    void await_suspend_impl(std::coroutine_handle<> handle,
+                            std::index_sequence<Is...>)
+    {
+        ((launch_task<Is>(handle)), ...);
+    }
+};
+
+template <typename T>
+struct WhenAllAwaiter<std::vector<Task<T>>>
+    : public CallbackAwaiter<std::vector<T>>
+{
+    WhenAllAwaiter(std::vector<Task<T>> tasks)
+        : tasks_(std::move(tasks)),
+          counter_(tasks_.size()),
+          results_(tasks_.size())
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        if (tasks_.empty())
+        {
+            this->setValue(std::vector<T>{});
+            handle.resume();
+            return;
+        }
+
+        const size_t count = tasks_.size();
+        for (size_t i = 0; i < count; ++i)
+        {
+            [](WhenAllAwaiter *self,
+               std::coroutine_handle<> handle,
+               Task<T> task,
+               size_t index) -> AsyncTask {
+                try
+                {
+                    auto result = co_await task;
+                    self->results_[index] = std::move(result);
+                }
+                catch (...)
+                {
+                    if (self->exceptionFlag_.test_and_set() == false)
+                        self->setException(std::current_exception());
+                }
+
+                if (self->counter_.fetch_sub(1, std::memory_order_acq_rel) == 1)
+                {
+                    if (!self->hasException())
+                    {
+                        self->setValue(std::move(self->results_));
+                    }
+                    handle.resume();
+                }
+            }(this, handle, std::move(tasks_[i]), i);
+        }
+    }
+
+  private:
+    std::vector<Task<T>> tasks_;
+    std::atomic<size_t> counter_;
+    std::vector<T> results_;
+    std::atomic_flag exceptionFlag_;
+};
+
+template <>
+struct WhenAllAwaiter<std::vector<Task<void>>> : public CallbackAwaiter<void>
+{
+    WhenAllAwaiter(std::vector<Task<void>> &&t)
+        : tasks_(std::move(t)), counter_(tasks_.size())
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        if (tasks_.empty())
+        {
+            handle.resume();
+            return;
+        }
+
+        const size_t count =
+            tasks_
+                .size();  // capture the size fist (see lifetime comment beflow)
+        for (size_t i = 0; i < count; ++i)
+        {
+            [](WhenAllAwaiter *self,
+               std::coroutine_handle<> handle,
+               Task<> task) -> AsyncTask {
+                try
+                {
+                    co_await task;
+                }
+                catch (...)
+                {
+                    if (self->exceptionFlag_.test_and_set() == false)
+                        self->setException(std::current_exception());
+                }
+                if (self->counter_.fetch_sub(1, std::memory_order_acq_rel) == 1)
+                    // This line CAN delete `this` at last iteration. We MUST
+                    // NOT depend on this after last iteration
+                    handle.resume();
+            }(this, handle, std::move(tasks_[i]));
+        }
+    }
+
+    std::vector<Task<void>> tasks_;
+    std::atomic<size_t> counter_;
+    std::atomic_flag exceptionFlag_;
+};
 }  // namespace internal
 
 /**
@@ -809,6 +997,201 @@ inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
                                                      std::function<T()> task)
 {
     return internal::EventLoopAwaiter<T>(std::move(task), loop);
+}
+
+class Mutex final
+{
+    class ScopedCoroMutexAwaiter;
+    class CoroMutexAwaiter;
+
+  public:
+    Mutex() noexcept : state_(unlockedValue()), waiters_(nullptr)
+    {
+    }
+
+    Mutex(const Mutex &) = delete;
+    Mutex(Mutex &&) = delete;
+    Mutex &operator=(const Mutex &) = delete;
+    Mutex &operator=(Mutex &&) = delete;
+
+    ~Mutex()
+    {
+        [[maybe_unused]] auto state = state_.load(std::memory_order_relaxed);
+        assert(state == unlockedValue() || state == nullptr);
+        assert(waiters_ == nullptr);
+    }
+
+    bool try_lock() noexcept
+    {
+        void *oldValue = unlockedValue();
+        return state_.compare_exchange_strong(oldValue,
+                                              nullptr,
+                                              std::memory_order_acquire,
+                                              std::memory_order_relaxed);
+    }
+
+    [[nodiscard]] ScopedCoroMutexAwaiter scoped_lock(
+        trantor::EventLoop *loop =
+            trantor::EventLoop::getEventLoopOfCurrentThread()) noexcept
+    {
+        return ScopedCoroMutexAwaiter(*this, loop);
+    }
+
+    [[nodiscard]] CoroMutexAwaiter lock(
+        trantor::EventLoop *loop =
+            trantor::EventLoop::getEventLoopOfCurrentThread()) noexcept
+    {
+        return CoroMutexAwaiter(*this, loop);
+    }
+
+    void unlock() noexcept
+    {
+        assert(state_.load(std::memory_order_relaxed) != unlockedValue());
+        auto *waitersHead = waiters_;
+        if (waitersHead == nullptr)
+        {
+            void *currentState = state_.load(std::memory_order_relaxed);
+            if (currentState == nullptr)
+            {
+                const bool releasedLock =
+                    state_.compare_exchange_strong(currentState,
+                                                   unlockedValue(),
+                                                   std::memory_order_release,
+                                                   std::memory_order_relaxed);
+                if (releasedLock)
+                {
+                    return;
+                }
+            }
+            currentState = state_.exchange(nullptr, std::memory_order_acquire);
+            assert(currentState != unlockedValue());
+            assert(currentState != nullptr);
+            auto *waiter = static_cast<CoroMutexAwaiter *>(currentState);
+            do
+            {
+                auto *temp = waiter->next_;
+                waiter->next_ = waitersHead;
+                waitersHead = waiter;
+                waiter = temp;
+            } while (waiter != nullptr);
+        }
+        assert(waitersHead != nullptr);
+        waiters_ = waitersHead->next_;
+        if (waitersHead->loop_)
+        {
+            auto handle = waitersHead->handle_;
+            waitersHead->loop_->runInLoop([handle] { handle.resume(); });
+        }
+        else
+        {
+            waitersHead->handle_.resume();
+        }
+    }
+
+  private:
+    class CoroMutexAwaiter
+    {
+      public:
+        CoroMutexAwaiter(Mutex &mutex, trantor::EventLoop *loop) noexcept
+            : mutex_(mutex), loop_(loop)
+        {
+        }
+
+        bool await_ready() noexcept
+        {
+            return mutex_.try_lock();
+        }
+
+        bool await_suspend(std::coroutine_handle<> handle) noexcept
+        {
+            handle_ = handle;
+            return mutex_.asynclockImpl(this);
+        }
+
+        void await_resume() noexcept
+        {
+        }
+
+      private:
+        friend class Mutex;
+
+        Mutex &mutex_;
+        trantor::EventLoop *loop_;
+        std::coroutine_handle<> handle_;
+        CoroMutexAwaiter *next_;
+    };
+
+    class ScopedCoroMutexAwaiter : public CoroMutexAwaiter
+    {
+      public:
+        ScopedCoroMutexAwaiter(Mutex &mutex, trantor::EventLoop *loop)
+            : CoroMutexAwaiter(mutex, loop)
+        {
+        }
+
+        [[nodiscard]] auto await_resume() noexcept
+        {
+            return std::unique_lock<Mutex>{mutex_, std::adopt_lock};
+        }
+    };
+
+    bool asynclockImpl(CoroMutexAwaiter *awaiter)
+    {
+        void *oldValue = state_.load(std::memory_order_relaxed);
+        while (true)
+        {
+            if (oldValue == unlockedValue())
+            {
+                void *newValue = nullptr;
+                if (state_.compare_exchange_weak(oldValue,
+                                                 newValue,
+                                                 std::memory_order_acquire,
+                                                 std::memory_order_relaxed))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                void *newValue = awaiter;
+                awaiter->next_ = static_cast<CoroMutexAwaiter *>(oldValue);
+                if (state_.compare_exchange_weak(oldValue,
+                                                 newValue,
+                                                 std::memory_order_release,
+                                                 std::memory_order_relaxed))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    void *unlockedValue() noexcept
+    {
+        return this;
+    }
+
+    std::atomic<void *> state_;
+    CoroMutexAwaiter *waiters_;
+};
+
+template <typename... Tasks>
+internal::WhenAllAwaiter<Tasks...> when_all(Tasks... tasks)
+{
+    return internal::WhenAllAwaiter<Tasks...>(std::move(tasks)...);
+}
+
+template <typename T>
+internal::WhenAllAwaiter<std::vector<Task<T>>> when_all(
+    std::vector<Task<T>> tasks)
+{
+    return internal::WhenAllAwaiter(std::move(tasks));
+}
+
+inline internal::WhenAllAwaiter<std::vector<Task<void>>> when_all(
+    std::vector<Task<void>> tasks)
+{
+    return internal::WhenAllAwaiter(std::move(tasks));
 }
 
 }  // namespace drogon

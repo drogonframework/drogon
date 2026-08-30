@@ -39,6 +39,12 @@ class HttpControllerBinder : public ControllerBinderBase
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) const override;
 
+    bool isStreamHandler() const override
+    {
+        assert(binderPtr_);
+        return binderPtr_->isStreamHandler();
+    }
+
     internal::HttpBinderBasePtr binderPtr_;
     std::vector<size_t> parameterPlaces_;
     std::vector<std::pair<std::string, size_t>> queryParametersPlaces_;

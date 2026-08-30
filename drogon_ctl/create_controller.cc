@@ -469,3 +469,6 @@ void create_controller::createARestfulController(const std::string &className,
     std::cout << "File name: " << ctlName << ".h and " << ctlName << ".cc"
               << std::endl;
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::create_controller>;

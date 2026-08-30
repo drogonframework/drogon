@@ -43,7 +43,7 @@ foreach(cspFile ${SCP_LIST})
   get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
   add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                     COMMAND $<TARGET_FILE:_drogon_ctl>
+                     COMMAND ${DROGON_CTL}
                              ARGS
                              create
                              view
@@ -63,6 +63,7 @@ if(APPLE)
   target_link_libraries(drogon_ctl PRIVATE resolv)
 endif()
 message(STATUS "bin:" ${INSTALL_BIN_DIR})
+install(TARGETS _drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
 install(TARGETS drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
 if(WIN32)
   set(CTL_FILE $<TARGET_FILE:drogon_ctl>)

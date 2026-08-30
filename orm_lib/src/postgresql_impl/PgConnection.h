@@ -45,6 +45,8 @@ class PgConnection : public DbConnection,
                  const std::string &connInfo,
                  bool autoBatch);
 
+    void init() override;
+
     void execSql(std::string_view &&sql,
                  size_t paraNum,
                  std::vector<const char *> &&parameters,

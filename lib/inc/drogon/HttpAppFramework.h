@@ -30,6 +30,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/orm/DbClient.h>
+#include <drogon/orm/DbConfig.h>
 #include <drogon/nosql/RedisClient.h>
 #include <drogon/Cookie.h>
 #include <trantor/net/Resolver.h>
@@ -41,6 +42,16 @@
 #include <type_traits>
 #include <vector>
 #include <chrono>
+
+#if defined(__APPLE__) && defined(__MACH__) && \
+    (defined(__ENVIRONMENT_IPHONE_OS__) ||     \
+     defined(__IPHONE_OS_VERSION_MIN_REQUIRED))
+// iOS
+#define TARGET_OS_IOS 1
+#else
+// not iOS
+#define TARGET_OS_IOS 0
+#endif
 
 namespace drogon
 {
@@ -322,7 +333,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                          [Check Method]---------------->[405]----------->+
                                |                                         |
                                v                                         |
-                           [Filters]------->[Filter callback]----------->+
+                     [Filters/Middlewares]------>[Filter callback]------>+
                                |                                         |
                                v             Y                           |
                       [Is OPTIONS method?]------------->[200]----------->+
@@ -335,6 +346,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                                |                                         |
                                v                                         |
       Post-handling join point o---------------------------------------->+
+                               |                                         |
+                               v                                         |
+                    [Middlewares post logic]--->[Middleware callback]--->+
 
       @endcode
      *
@@ -345,7 +359,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 
     /// Register an advice called before routing
     /**
-     * @param advice is called after all the synchronous advices return
+     * @param advice is called after all the synchronous advice return
      * nullptr and before the request is routed to any handler. The parameters
      * of the advice are same as those of the doFilter method of the Filter
      * class.
@@ -368,7 +382,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /// Register an advice called after routing
     /**
      * @param advice is called immediately after the request matches a handler
-     * path and before any 'doFilter' method of filters applies. The parameters
+     * path and before any filters/middlewares applies. The parameters
      * of the advice are same as those of the doFilter method of the Filter
      * class.
      */
@@ -390,8 +404,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /// Register an advice called before the request is handled
     /**
      * @param advice is called immediately after the request is approved by all
-     * filters and before it is handled. The parameters of the advice are
-     * same as those of the doFilter method of the Filter class.
+     * filters/middlewares and before it is handled. The parameters of the
+     * advice are same as those of the doFilter method of the Filter class.
      */
     virtual HttpAppFramework &registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
@@ -472,8 +486,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * called.
      * @param ctrlName is the name of the controller. It includes the namespace
      * to which the controller belongs.
-     * @param filtersAndMethods is a vector containing Http methods or filter
-     * name constraints.
+     * @param constraints is a vector containing Http methods or middleware
+     names
      *
      *   Example:
      * @code
@@ -487,8 +501,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods =
-            std::vector<internal::HttpConstraint>{}) = 0;
+        const std::vector<internal::HttpConstraint> &constraints = {}) = 0;
 
     /// Register a handler into the framework.
     /**
@@ -496,7 +509,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * pathPattern, the handler indicated by the function parameter is called.
      * @param function indicates any type of callable object with a valid
      * processing interface.
-     * @param filtersAndMethods is the same as the third parameter in the above
+     * @param constraints is the same as the third parameter in the above
      * method.
      *
      *   Example:
@@ -522,8 +535,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     HttpAppFramework &registerHandler(
         const std::string &pathPattern,
         FUNCTION &&function,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods =
-            std::vector<internal::HttpConstraint>{},
+        const std::vector<internal::HttpConstraint> &constraints = {},
         const std::string &handlerName = "")
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
@@ -533,17 +545,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         getLoop()->queueInLoop([binder]() { binder->createHandlerInstance(); });
 
         std::vector<HttpMethod> validMethods;
-        std::vector<std::string> filters;
-        for (auto const &filterOrMethod : filtersAndMethods)
+        std::vector<std::string> middlewares;
+        for (auto const &constraint : constraints)
         {
-            if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
+            if (constraint.type() == internal::ConstraintType::HttpMiddleware)
             {
-                filters.push_back(filterOrMethod.getFilterName());
+                middlewares.push_back(constraint.getMiddlewareName());
             }
-            else if (filterOrMethod.type() ==
-                     internal::ConstraintType::HttpMethod)
+            else if (constraint.type() == internal::ConstraintType::HttpMethod)
             {
-                validMethods.push_back(filterOrMethod.getHttpMethod());
+                validMethods.push_back(constraint.getHttpMethod());
             }
             else
             {
@@ -552,7 +563,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
             }
         }
         registerHttpController(
-            pathPattern, binder, validMethods, filters, handlerName);
+            pathPattern, binder, validMethods, middlewares, handlerName);
         return *this;
     }
 
@@ -566,8 +577,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * subexpression is sequentially mapped to a handler parameter.
      * @param function indicates any type of callable object with a valid
      * processing interface.
-     * @param filtersAndMethods is the same as the third parameter in the above
-     * method.
+     * @param constraints is the same as the third parameter in the
+     * above method.
      * @param handlerName a name for the handler.
      * @return HttpAppFramework&
      */
@@ -575,8 +586,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     HttpAppFramework &registerHandlerViaRegex(
         const std::string &regExp,
         FUNCTION &&function,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods =
-            std::vector<internal::HttpConstraint>{},
+        const std::vector<internal::HttpConstraint> &constraints = {},
         const std::string &handlerName = "")
     {
         LOG_TRACE << "regex:" << regExp;
@@ -586,17 +596,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
             std::forward<FUNCTION>(function));
 
         std::vector<HttpMethod> validMethods;
-        std::vector<std::string> filters;
-        for (auto const &filterOrMethod : filtersAndMethods)
+        std::vector<std::string> middlewares;
+        for (auto const &constraint : constraints)
         {
-            if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
+            if (constraint.type() == internal::ConstraintType::HttpMiddleware)
             {
-                filters.push_back(filterOrMethod.getFilterName());
+                middlewares.push_back(constraint.getMiddlewareName());
             }
-            else if (filterOrMethod.type() ==
-                     internal::ConstraintType::HttpMethod)
+            else if (constraint.type() == internal::ConstraintType::HttpMethod)
             {
-                validMethods.push_back(filterOrMethod.getHttpMethod());
+                validMethods.push_back(constraint.getHttpMethod());
             }
             else
             {
@@ -605,7 +614,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
             }
         }
         registerHttpControllerViaRegex(
-            regExp, binder, validMethods, filters, handlerName);
+            regExp, binder, validMethods, middlewares, handlerName);
         return *this;
     }
 
@@ -617,7 +626,18 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods =
+        const std::vector<internal::HttpConstraint> &constraints = {}) = 0;
+
+    /// Register a WebSocketController into the framework.
+    /**
+     * The parameters of this method are the same as those in the
+     * registerHttpSimpleController() method but using regular
+     * expression string for path.
+     */
+    virtual HttpAppFramework &registerWebSocketControllerRegex(
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &constraints =
             std::vector<internal::HttpConstraint>{}) = 0;
 
     /// Register controller objects created and initialized by the user
@@ -678,6 +698,24 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                       "automatically by drogon cannot be "
                       "registered here");
         DrClassMap::setSingleInstance(filterPtr);
+        return *this;
+    }
+
+    /// Register middleware objects created and initialized by the user
+    /**
+     * This method is similar to the above method.
+     */
+    template <typename T>
+    HttpAppFramework &registerMiddleware(
+        const std::shared_ptr<T> &middlewarePtr)
+    {
+        static_assert(std::is_base_of<HttpMiddlewareBase, T>::value,
+                      "Error! Only middleware objects can be registered here");
+        static_assert(!T::isAutoCreation,
+                      "Middleware created and initialized "
+                      "automatically by drogon cannot be "
+                      "registered here");
+        DrClassMap::setSingleInstance(middlewarePtr);
         return *this;
     }
 
@@ -777,6 +815,15 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setSSLConfigCommands(
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
+
+    /// Reload the global cert file and private key file for https server
+    /// Note: The goal of this method is not to make the framework
+    /// use the new SSL path, but rather to reload the new content
+    /// from the old path while the framework is still running.
+    /// Typically, when our SSL is about to expire,
+    /// we need to reload the SSL. The purpose of this function
+    /// is to use the new SSL certificate without stopping the framework.
+    virtual HttpAppFramework &reloadSSLFiles() = 0;
 
     /// Add plugins
     /**
@@ -919,7 +966,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * extension can be accessed.
      * @param isRecursive If it is set to false, files in sub directories can't
      * be accessed.
-     * @param filters The list of filters which acting on the location.
+     * @param middlewareNames The list of middlewares which acting on the
+     * location.
      * @return HttpAppFramework&
      */
     virtual HttpAppFramework &addALocation(
@@ -929,7 +977,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         bool isCaseSensitive = false,
         bool allowAll = true,
         bool isRecursive = true,
-        const std::vector<std::string> &filters = {}) = 0;
+        const std::vector<std::string> &middlewareNames = {}) = 0;
 
     /// Set the path to store uploaded files.
     /**
@@ -959,7 +1007,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setFileTypes(
         const std::vector<std::string> &types) = 0;
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !TARGET_OS_IOS
     /// Enable supporting for dynamic views loading.
     /**
      *
@@ -1351,6 +1399,22 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual orm::DbClientPtr getFastDbClient(
         const std::string &name = "default") = 0;
 
+    /// Return true if a database client with the given name has been
+    /// configured
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual bool hasDbClient(const std::string &name = "default") const = 0;
+
+    /// Return true if a 'fast' database client with the given name has been
+    /// configured
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual bool hasFastDbClient(const std::string &name = "default") const = 0;
+
     /**
      * @brief Check if all database clients in the framework are available
      * (connect to the database successfully).
@@ -1444,20 +1508,22 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @note
      * This operation can be performed by an option in the configuration file.
      */
-    virtual HttpAppFramework &createDbClient(
-        const std::string &dbType,
-        const std::string &host,
-        const unsigned short port,
-        const std::string &databaseName,
-        const std::string &userName,
-        const std::string &password,
-        const size_t connectionNum = 1,
-        const std::string &filename = "",
-        const std::string &name = "default",
-        const bool isFast = false,
-        const std::string &characterSet = "",
-        double timeout = -1.0,
-        const bool autoBatch = false) = 0;
+    [[deprecated("Use addDbClient() instead")]] virtual HttpAppFramework &
+    createDbClient(const std::string &dbType,
+                   const std::string &host,
+                   unsigned short port,
+                   const std::string &databaseName,
+                   const std::string &userName,
+                   const std::string &password,
+                   size_t connectionNum = 1,
+                   const std::string &filename = "",
+                   const std::string &name = "default",
+                   bool isFast = false,
+                   const std::string &characterSet = "",
+                   double timeout = -1.0,
+                   bool autoBatch = false) = 0;
+
+    virtual HttpAppFramework &addDbClient(const orm::DbConfig &config) = 0;
 
     /// Create a redis client
     /**
@@ -1559,18 +1625,46 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual int64_t getConnectionCount() const = 0;
 
+    /**
+     * @brief Set the before listen setsockopt callback.
+     *
+     * @param cb This callback will be called before the listen
+     */
+    virtual HttpAppFramework &setBeforeListenSockOptCallback(
+        std::function<void(int)> cb) = 0;
+
+    /**
+     * @brief Set the after accept setsockopt callback.
+     *
+     * @param cb This callback will be called after accept
+     */
+    virtual HttpAppFramework &setAfterAcceptSockOptCallback(
+        std::function<void(int)> cb) = 0;
+
+    /**
+     * @brief Set the client disconnect or connect callback.
+     *
+     * @param cb This callback will be called, when the client disconnect or
+     * connect
+     */
+    virtual HttpAppFramework &setConnectionCallback(
+        std::function<void(const trantor::TcpConnectionPtr &)> cb) = 0;
+
+    virtual HttpAppFramework &enableRequestStream(bool enable = true) = 0;
+    virtual bool isRequestStreamEnabled() const = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,
         const internal::HttpBinderBasePtr &binder,
-        const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
-        const std::vector<std::string> &filters = std::vector<std::string>(),
+        const std::vector<HttpMethod> &validMethods = {},
+        const std::vector<std::string> &middlewareNames = {},
         const std::string &handlerName = "") = 0;
     virtual void registerHttpControllerViaRegex(
         const std::string &regExp,
         const internal::HttpBinderBasePtr &binder,
         const std::vector<HttpMethod> &validMethods,
-        const std::vector<std::string> &filters,
+        const std::vector<std::string> &middlewareNames,
         const std::string &handlerName) = 0;
 };
 

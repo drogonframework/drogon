@@ -33,6 +33,10 @@ enum FieldType
     MySqlNull,
     MySqlString,
     DrogonDefaultValue,
+    MySqlUTiny,
+    MySqlUShort,
+    MySqlULong,
+    MySqlULongLong,
 };
 
 }  // namespace internal

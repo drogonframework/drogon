@@ -57,12 +57,6 @@ void HttpConnectionLimit::releaseConnection(
     const trantor::TcpConnectionPtr &conn)
 {
     assert(!conn->connected());
-    if (!conn->hasContext())
-    {
-        // If the connection is connected to the SSL port and then
-        // disconnected before the SSL handshake.
-        return;
-    }
     connectionNum_.fetch_sub(1, std::memory_order_relaxed);
     if (maxConnectionNumPerIP_ > 0)
     {

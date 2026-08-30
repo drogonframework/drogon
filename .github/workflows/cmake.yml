@@ -17,7 +17,7 @@ env:
 jobs:
   windows:
     name: windows/msvc - ${{ matrix.link }}
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -70,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        osver: [12, 13]
+        osver: [14, 15]
     steps:
       - name: Checkout Drogon source code
         uses: actions/checkout@v4
@@ -99,16 +99,45 @@ jobs:
 
       - name: Prepare for testing
         run: |
-          brew tap homebrew/services
           brew services restart postgresql@14
+          for _ in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres; then
+              break
+            fi
+            sleep 1
+          done
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres
+
           brew services start mariadb
+          for _ in {1..30}; do
+            if mariadb-admin ping --silent; then
+              break
+            fi
+            sleep 1
+          done
+          mariadb-admin ping --silent
+
           brew services start redis
-          sleep 4
+          for _ in {1..30}; do
+            if redis-cli ping | grep -q PONG; then
+              break
+            fi
+            sleep 1
+          done
+          redis-cli ping | grep -q PONG
+
           mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')"
           mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'"
           mariadb -e "FLUSH PRIVILEGES"
           brew services restart mariadb
-          sleep 4
+          for _ in {1..30}; do
+            if mariadb-admin ping --silent; then
+              break
+            fi
+            sleep 1
+          done
+          mariadb-admin ping --silent
+
           psql -c 'create user postgres superuser;' postgres
 
       - name: Test
@@ -176,6 +205,50 @@ jobs:
           sudo apt-get --purge remove postgresql postgresql-doc postgresql-common postgresql-client-common
           sudo apt-get -y install postgresql-all
 
+      - name: Install g++
+        if: startsWith(matrix.compiler.cxx, 'g++') && (matrix.compiler.ver == 13 || matrix.compiler.ver == 9)
+        run: |
+          requested="g++-${{ matrix.compiler.ver }}"
+
+          if command -v g++-${{ matrix.compiler.ver }} >/dev/null 2>&1; then
+            echo "g++-${{ matrix.compiler.ver }} is already available on the runner"
+          else
+            retry() {
+              local attempts="$1"
+              shift
+              local try=1
+              while true; do
+                "$@" && break
+                if [ "$try" -ge "$attempts" ]; then
+                  return 1
+                fi
+                echo "Command failed, retrying ($try/$attempts): $*"
+                try=$((try + 1))
+                sleep 10
+              done
+            }
+
+            if retry 3 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
+               retry 3 sudo apt-get update && \
+               retry 3 sudo apt-get install -y "$requested"; then
+              echo "Installed $requested from PPA"
+            else
+              echo "::warning::Failed to install $requested from Launchpad PPA (network timeout). Falling back to system g++."
+              if ! command -v g++ >/dev/null 2>&1; then
+                echo "::error::Neither $requested nor system g++ is available."
+                exit 1
+              fi
+              fallback_cxx="$(command -v g++)"
+              echo "CXX=$fallback_cxx" >> "$GITHUB_ENV"
+              echo "Using fallback compiler: $fallback_cxx"
+              exit 0
+            fi
+          fi
+
+          if command -v "$requested" >/dev/null 2>&1; then
+            sudo update-alternatives --install /usr/bin/g++ g++ "$(command -v "$requested")" ${{ matrix.compiler.ver }}
+          fi
+
       - name: Install Clang
         if: startsWith(matrix.compiler.cxx, 'clang') && matrix.compiler.ver < 13
         run: sudo apt-get install clang-${{ matrix.compiler.ver }}
@@ -222,7 +295,13 @@ jobs:
       - name: Prepare for testing
         run: |
           sudo systemctl start postgresql
-          sleep 1
+          for _ in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres; then
+              break
+            fi
+            sleep 1
+          done
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres
           sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
 
       - name: Test

@@ -68,6 +68,7 @@ class DROGON_EXPORT Histogram : public Metric
             }
         }
         timeBuckets_.emplace_back();
+        timeBuckets_.back().buckets.resize(bucketBoundaries.size() + 1);
         // check the bucket boundaries are sorted
         for (size_t i = 1; i < bucketBoundaries.size(); i++)
         {

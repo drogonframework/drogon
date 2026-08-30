@@ -123,6 +123,8 @@ class DROGON_EXPORT MultiPartParser
 {
   public:
     MultiPartParser(){};
+    MultiPartParser(const MultiPartParser &other) = default;  // Copyable
+    MultiPartParser(MultiPartParser &&other) = default;       // Movable
     ~MultiPartParser(){};
     /// Get files, This method should be called after calling the parse()
     /// method.

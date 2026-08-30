@@ -141,3 +141,6 @@ void create_project::createProject(const std::string &projectName)
     std::ofstream testCmakeFile("test/CMakeLists.txt", std::ofstream::out);
     newTestCmakeFile(testCmakeFile, projectName);
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::create_project>;

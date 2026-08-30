@@ -21,6 +21,7 @@
 #include <iostream>
 #include <algorithm>
 #include <memory>
+#include <ctime>
 #include <fcntl.h>
 #ifndef _WIN32
 #include <sys/file.h>
@@ -44,7 +45,7 @@ void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
                    size_t i) {
             assert(i == ioLoops[i]->index());
             mapPtr = std::make_unique<CacheMap<std::string, char>>(ioLoops[i],
-                                                                   1.0,
+                                                                   1.0f,
                                                                    4,
                                                                    50);
         });
@@ -205,7 +206,7 @@ void StaticFileRouter::route(
                 }
             }
 
-            if (location.filters_.empty())
+            if (location.middlewares_.empty())
             {
                 sendStaticFileResponse(filePath,
                                        req,
@@ -215,27 +216,21 @@ void StaticFileRouter::route(
             }
             else
             {
-                filters_function::doFilters(
-                    location.filters_,
+                middlewares_function::passMiddlewares(
+                    location.middlewares_,
                     req,
+                    std::move(callback),
                     [this,
                      req,
                      filePath = std::move(filePath),
                      contentType =
-                         std::string_view{location.defaultContentType_},
-                     callback = std::move(callback)](
-                        const HttpResponsePtr &resp) mutable {
-                        if (resp)
-                        {
-                            callback(resp);
-                        }
-                        else
-                        {
-                            sendStaticFileResponse(filePath,
-                                                   req,
-                                                   std::move(callback),
-                                                   contentType);
-                        }
+                         std::string_view{location.defaultContentType_}](
+                        std::function<void(const HttpResponsePtr &)>
+                            &&middlewarePostCb) mutable {
+                        sendStaticFileResponse(filePath,
+                                               req,
+                                               std::move(middlewarePostCb),
+                                               contentType);
                     });
             }
             return;
@@ -391,8 +386,24 @@ void StaticFileRouter::sendStaticFileResponse(
                     {
                         resp->addHeader("Last-Modified",
                                         fileStat.modifiedTimeStr_);
-                        resp->addHeader("Expires",
-                                        "Thu, 01 Jan 1970 00:00:00 GMT");
+                        if (staticFilesCacheTime_ > 0)
+                        {
+                            time_t expiry =
+                                time(nullptr) +
+                                static_cast<time_t>(staticFilesCacheTime_);
+                            struct tm expiryTm;
+#ifdef _WIN32
+                            gmtime_s(&expiryTm, &expiry);
+#else
+                            gmtime_r(&expiry, &expiryTm);
+#endif
+                            char buf[64];
+                            size_t len = strftime(buf,
+                                                  sizeof(buf),
+                                                  "%a, %d %b %Y %H:%M:%S GMT",
+                                                  &expiryTm);
+                            resp->addHeader("Expires", std::string(buf, len));
+                        }
                     }
                     callback(resp);
                     return;
@@ -544,7 +555,23 @@ void StaticFileRouter::sendStaticFileResponse(
         if (!fileStat.modifiedTimeStr_.empty())
         {
             resp->addHeader("Last-Modified", fileStat.modifiedTimeStr_);
-            resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+            if (staticFilesCacheTime_ > 0)
+            {
+                time_t expiry =
+                    time(nullptr) + static_cast<time_t>(staticFilesCacheTime_);
+                struct tm expiryTm;
+#ifdef _WIN32
+                gmtime_s(&expiryTm, &expiry);
+#else
+                gmtime_r(&expiry, &expiryTm);
+#endif
+                char buf[64];
+                size_t len = strftime(buf,
+                                      sizeof(buf),
+                                      "%a, %d %b %Y %H:%M:%S GMT",
+                                      &expiryTm);
+                resp->addHeader("Expires", std::string(buf, len));
+            }
         }
         if (enableRange_)
         {

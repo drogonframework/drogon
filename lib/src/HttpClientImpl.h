@@ -19,6 +19,10 @@
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/TcpClient.h>
+#include <atomic>
+#include <cstddef>
+#include <functional>
+#include <future>
 #include <list>
 #include <mutex>
 #include <queue>
@@ -115,6 +119,42 @@ class HttpClientImpl final : public HttpClient,
         sockOptCallback_ = std::move(cb);
     }
 
+    std::size_t outstandingRequests() const override
+    {
+        return requestsBufferSize_.load(std::memory_order_relaxed) +
+               pipeliningCallbacksSize_.load(std::memory_order_relaxed);
+    }
+
+    std::size_t requestsBufferSize() override
+    {
+        return requestsBufferSize_.load(std::memory_order_relaxed);
+    }
+
+    void enqueueRequest(const HttpRequestPtr &req,
+                        const HttpReqCallback &callback)
+    {
+        requestsBuffer_.push_back({req, callback});
+        requestsBufferSize_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void popFrontRequest()
+    {
+        if (!requestsBuffer_.empty())
+        {
+            requestsBuffer_.pop_front();
+            requestsBufferSize_.fetch_sub(1, std::memory_order_relaxed);
+        }
+    }
+
+    using RequestBufferIter =
+        std::list<std::pair<HttpRequestPtr, HttpReqCallback>>::iterator;
+
+    void eraseRequest(RequestBufferIter iter)
+    {
+        requestsBuffer_.erase(iter);
+        requestsBufferSize_.fetch_sub(1, std::memory_order_relaxed);
+    }
+
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
@@ -139,6 +179,8 @@ class HttpClientImpl final : public HttpClient,
     void onError(ReqResult result);
     std::string domain_;
     bool isDomainName_{true};  // true if domain_ is name
+    std::atomic<std::size_t> requestsBufferSize_{0};
+    std::atomic<std::size_t> pipeliningCallbacksSize_{0};
     size_t pipeliningDepth_{0};
     bool enableCookies_{false};
     std::vector<Cookie> validCookies_;

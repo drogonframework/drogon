@@ -154,6 +154,30 @@ std::string_view fromRequest(const HttpRequest &req)
 }
 }  // namespace drogon
 
+class Middleware4 : public drogon::HttpMiddleware<Middleware4, false>
+{
+  public:
+    Middleware4()
+    {
+        LOG_DEBUG << "Middleware4\n";
+    };
+
+    void invoke(const HttpRequestPtr &req,
+                MiddlewareNextCallback &&nextCb,
+                MiddlewareCallback &&mcb) override
+    {
+        auto ptr = req->attributes()->get<std::shared_ptr<std::string>>(
+            "test-middleware");
+        ptr->append("4");
+
+        nextCb([req, ptr, mcb = std::move(mcb)](const HttpResponsePtr &resp) {
+            ptr->append("4");
+            resp->setBody(*ptr);
+            mcb(resp);
+        });
+    }
+};
+
 /// Some examples in the main function show some common functions of drogon. In
 /// practice, we don't need such a lengthy main function.
 int main()
@@ -221,6 +245,25 @@ int main()
             throw std::runtime_error("this should fail");
         });
 
+    app().registerHandler(
+        "/api/v1/keepalive_probe",
+        [](const HttpRequestPtr &req,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody("alive");
+            callback(resp);
+        });
+
+    app().registerHandler(
+        "/api/v1/close_connection",
+        [](const HttpRequestPtr &req,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody("closed");
+            resp->setCloseConnection(true);
+            callback(resp);
+        });
+
     app().setDocumentRoot("./");
     app().enableSession(60);
 
@@ -267,6 +310,10 @@ int main()
         std::make_shared<CustomHeaderFilter>("custom_header", "yes");
     app().registerFilter(filterPtr);
     app().setIdleConnectionTimeout(30s);
+
+    // Install custom Middleware
+    auto middlewarePtr = std::make_shared<Middleware4>();
+    app().registerMiddleware(middlewarePtr);
 
     // AOP example
     app().registerBeginningAdvice(
@@ -380,8 +427,7 @@ int main()
     app().registerCustomExtensionMime("md", "text/markdown");
     app().setFileTypes({"md", "html", "jpg", "cc", "txt"});
     std::cout << "Date: "
-              << std::string{drogon::utils::getHttpFullDate(
-                     trantor::Date::now())}
+              << drogon::utils::getHttpFullDateStr(trantor::Date::now())
               << std::endl;
 
     app().registerBeginningAdvice(

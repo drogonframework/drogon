@@ -43,6 +43,15 @@ using ExceptionCallback = std::function<void(const DrogonDbException &)>;
 class Transaction;
 class DbClient;
 
+/// Transaction locking mode.
+enum class TransactionType
+{
+    Deferred,  ///< BEGIN — lock acquired on first write (default)
+    Immediate,  ///< BEGIN IMMEDIATE — write lock acquired upfront (SQLite only)
+    Exclusive,  ///< BEGIN EXCLUSIVE — exclusive lock acquired upfront (SQLite
+                ///< only)
+};
+
 namespace internal
 {
 #ifdef __cpp_impl_coroutine
@@ -73,7 +82,10 @@ struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 struct [[nodiscard]] TransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
-    explicit TransactionAwaiter(DbClient *client) : client_(client)
+    explicit TransactionAwaiter(
+        DbClient *client,
+        TransactionType transType = TransactionType::Deferred)
+        : client_(client), transType_(transType)
     {
     }
 
@@ -81,6 +93,7 @@ struct [[nodiscard]] TransactionAwaiter
 
   private:
     DbClient *client_;
+    TransactionType transType_;
 };
 
 #endif
@@ -214,6 +227,28 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
             (binder << std::forward<Arguments>(args), 0)...};
         return internal::SqlAwaiter(std::move(binder));
     }
+
+    /**
+     * @brief Execute a SQL query asynchronously using coroutine support.
+     *        This overload accepts a vector of arguments to bind to the query.
+     * @tparam T The type of the elements in the vector.
+     * @param sql The SQL query string to execute.
+     * @param args A vector of arguments to bind to the query.
+     * @return A SqlAwaiter object that can be co_awaited to retrieve the query
+     * result.
+     * @note This method is only available when coroutine support is enabled.
+     */
+    template <typename T>
+    internal::SqlAwaiter execSqlCoro(const std::string &sql,
+                                     const std::vector<T> &args) noexcept
+    {
+        auto binder = *this << sql;
+        for (const auto &arg : args)
+        {
+            binder << arg;
+        }
+        return internal::SqlAwaiter(std::move(binder));
+    }
 #endif
 
     /// Streaming-like method for sql execution. For more information, see the
@@ -247,7 +282,16 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      */
     virtual std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback =
-            std::function<void(bool)>()) noexcept(false) = 0;
+            std::function<void(bool)>(),
+        TransactionType transType =
+            TransactionType::Deferred) noexcept(false) = 0;
+
+    /// Convenience overload: create a transaction with a specific locking mode.
+    std::shared_ptr<Transaction> newTransaction(
+        TransactionType transType) noexcept(false)
+    {
+        return newTransaction(std::function<void(bool)>(), transType);
+    }
 
     /// Create a transaction object in asynchronous mode.
     /**
@@ -256,12 +300,24 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      */
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
-            &callback) = 0;
+            &callback,
+        TransactionType transType = TransactionType::Deferred) = 0;
+
+    /// Convenience overload: create an async transaction with a specific
+    /// locking mode, with transType as the first argument.
+    void newTransactionAsync(
+        TransactionType transType,
+        const std::function<void(const std::shared_ptr<Transaction> &)>
+            &callback)
+    {
+        newTransactionAsync(callback, transType);
+    }
 
 #ifdef __cpp_impl_coroutine
-    orm::internal::TransactionAwaiter newTransactionCoro()
+    orm::internal::TransactionAwaiter newTransactionCoro(
+        TransactionType transType = TransactionType::Deferred)
     {
-        return orm::internal::TransactionAwaiter(this);
+        return orm::internal::TransactionAwaiter(this, transType);
     }
 #endif
 
@@ -386,7 +442,8 @@ inline void internal::TransactionAwaiter::await_suspend(
             else
                 setValue(transaction);
             handle.resume();
-        });
+        },
+        transType_);
 }
 #endif
 

@@ -7,6 +7,21 @@
 # PostgreSQL.
 # pg_lib - The imported target library.
 
+# On Apple Silicon Macs, Homebrew installs to /opt/homebrew instead of
+# /usr/local (Intel Macs). Detect the prefix dynamically so cmake finds
+# dependencies regardless of Mac architecture.
+if(APPLE)
+    execute_process(
+        COMMAND brew --prefix libpq
+        OUTPUT_VARIABLE HOMEBREW_PG_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(HOMEBREW_PG_PREFIX)
+        list(APPEND CMAKE_PREFIX_PATH ${HOMEBREW_PG_PREFIX})
+    endif()
+endif()
+
 find_package(PostgreSQL)
 if(PostgreSQL_FOUND)
   set(PG_LIBRARIES ${PostgreSQL_LIBRARIES})

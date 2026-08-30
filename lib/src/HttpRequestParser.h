@@ -43,7 +43,6 @@ class HttpRequestParser : public trantor::NonCopyable,
 
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
 
-    // return false if any error
     int parseRequest(trantor::MsgBuffer *buf);
 
     bool gotAll() const
@@ -56,16 +55,6 @@ class HttpRequestParser : public trantor::NonCopyable,
     const HttpRequestImplPtr &requestImpl() const
     {
         return request_;
-    }
-
-    bool firstReq()
-    {
-        if (firstRequest_)
-        {
-            firstRequest_ = false;
-            return true;
-        }
-        return false;
     }
 
     const WebSocketConnectionImplPtr &webSocketConn() const
@@ -138,12 +127,10 @@ class HttpRequestParser : public trantor::NonCopyable,
 
   private:
     HttpRequestImplPtr makeRequestForPool(HttpRequestImpl *p);
-    void shutdownConnection(HttpStatusCode code);
     bool processRequestLine(const char *begin, const char *end);
     HttpRequestParseStatus status_;
     trantor::EventLoop *loop_;
     HttpRequestImplPtr request_;
-    bool firstRequest_{true};
     WebSocketConnectionImplPtr websockConnPtr_;
     std::deque<std::pair<HttpRequestPtr, std::pair<HttpResponsePtr, bool>>>
         requestPipelining_;
@@ -156,7 +143,7 @@ class HttpRequestParser : public trantor::NonCopyable,
     std::unique_ptr<std::vector<HttpRequestImplPtr>> requestBuffer_;
     std::vector<HttpRequestImplPtr> requestsPool_;
     size_t currentChunkLength_{0};
-    size_t currentContentLength_{0};
+    size_t remainContentLength_{0};
 };
 
 }  // namespace drogon

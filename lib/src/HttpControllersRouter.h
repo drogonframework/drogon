@@ -27,7 +27,7 @@ namespace drogon
 {
 class HttpControllerBinder;
 class HttpSimpleControllerBinder;
-class WebsocketControllerBinder;
+struct WebsocketControllerBinder;
 
 class HttpControllersRouter : public trantor::NonCopyable
 {
@@ -45,20 +45,24 @@ class HttpControllersRouter : public trantor::NonCopyable
     void registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods);
+        const std::vector<internal::HttpConstraint> &constraints);
     void registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods);
+        const std::vector<internal::HttpConstraint> &constraints);
+    void registerWebSocketControllerRegex(
+        const std::string &regExp,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &constraints);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
-                     const std::vector<std::string> &filters,
+                     const std::vector<std::string> &middlewareNames,
                      const std::string &handlerName = "");
     void addHttpRegex(const std::string &regExp,
                       const internal::HttpBinderBasePtr &binder,
                       const std::vector<HttpMethod> &validMethods,
-                      const std::vector<std::string> &filters,
+                      const std::vector<std::string> &middlewareNames,
                       const std::string &handlerName = "");
     RouteResult route(const HttpRequestImplPtr &req);
     RouteResult routeWs(const HttpRequestImplPtr &req);
@@ -89,9 +93,17 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::shared_ptr<WebsocketControllerBinder> binders_[Invalid]{nullptr};
     };
 
+    struct RegExWebSocketControllerRouterItem
+    {
+        std::string pathPattern_;
+        std::regex regex_;
+        std::shared_ptr<WebsocketControllerBinder> binders_[Invalid]{nullptr};
+    };
+
     std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
     std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
     std::vector<HttpControllerRouterItem> ctrlVector_;  // for regexp path
     std::unordered_map<std::string, WebSocketControllerRouterItem> wsCtrlMap_;
+    std::vector<RegExWebSocketControllerRouterItem> wsCtrlVector_;
 };
 }  // namespace drogon

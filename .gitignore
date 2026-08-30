@@ -35,7 +35,6 @@ build/
 cmake-build-debug/
 cmake-build-debug-visual-studio/
 .idea/
-lib/inc/drogon/version.h
 html/
 latex/
 .vscode
@@ -48,3 +47,5 @@ CMakeSettings.json
 install
 trace.json
 .cache/
+build_examples/
+.kiro

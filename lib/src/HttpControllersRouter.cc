@@ -15,9 +15,8 @@
 #include "HttpControllersRouter.h"
 #include "HttpControllerBinder.h"
 #include "HttpRequestImpl.h"
-#include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
-#include "FiltersFunction.h"
+#include "MiddlewaresFunction.h"
 #include <drogon/HttpSimpleController.h>
 #include <drogon/WebSocketController.h>
 #include <algorithm>
@@ -27,15 +26,15 @@ using namespace drogon;
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> & /*ioLoops*/)
 {
-    auto initFiltersAndCorsMethods = [](const auto &item) {
+    auto initMiddlewaresAndCorsMethods = [](const auto &item) {
         auto corsMethods = std::make_shared<std::string>("OPTIONS,");
         for (size_t i = 0; i < Invalid; ++i)
         {
             auto &binder = item.binders_[i];
             if (binder)
             {
-                binder->filters_ =
-                    filters_function::createFilters(binder->filterNames_);
+                binder->middlewares_ = middlewares_function::createMiddlewares(
+                    binder->middlewareNames_);
                 binder->corsMethods_ = corsMethods;
                 if (binder->isCORS_)
                 {
@@ -56,19 +55,24 @@ void HttpControllersRouter::init(
 
     for (auto &iter : simpleCtrlMap_)
     {
-        initFiltersAndCorsMethods(iter.second);
+        initMiddlewaresAndCorsMethods(iter.second);
     }
 
     for (auto &iter : wsCtrlMap_)
     {
-        initFiltersAndCorsMethods(iter.second);
+        initMiddlewaresAndCorsMethods(iter.second);
+    }
+
+    for (auto &router : wsCtrlVector_)
+    {
+        initMiddlewaresAndCorsMethods(router);
     }
 
     for (auto &router : ctrlVector_)
     {
         router.regex_ = std::regex(router.pathParameterPattern_,
                                    std::regex_constants::icase);
-        initFiltersAndCorsMethods(router);
+        initMiddlewaresAndCorsMethods(router);
     }
 
     for (auto &p : ctrlMap_)
@@ -76,7 +80,7 @@ void HttpControllersRouter::init(
         auto &router = p.second;
         router.regex_ = std::regex(router.pathParameterPattern_,
                                    std::regex_constants::icase);
-        initFiltersAndCorsMethods(router);
+        initMiddlewaresAndCorsMethods(router);
     }
 }
 
@@ -86,6 +90,7 @@ void HttpControllersRouter::reset()
     ctrlMap_.clear();
     ctrlVector_.clear();
     wsCtrlMap_.clear();
+    wsCtrlVector_.clear();
 }
 
 std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
@@ -106,7 +111,10 @@ std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
                 }
                 else if constexpr (std::is_same_v<
                                        std::decay_t<decltype(item)>,
-                                       WebSocketControllerRouterItem>)
+                                       WebSocketControllerRouterItem> ||
+                                   std::is_same_v<
+                                       std::decay_t<decltype(item)>,
+                                       RegExWebSocketControllerRouterItem>)
                 {
                     description = std::string("WebsocketController: ") +
                                   item.binders_[i]->handlerName_;
@@ -140,6 +148,10 @@ std::vector<HttpHandlerInfo> HttpControllersRouter::getHandlersInfo() const
     for (auto &[path, item] : wsCtrlMap_)
     {
         gatherInfo(path, item);
+    }
+    for (auto &item : wsCtrlVector_)
+    {
+        gatherInfo(item.pathPattern_, item);
     }
     return ret;
 }
@@ -175,12 +187,12 @@ struct SimpleControllerProcessResult
 {
     std::string lowerPath;
     std::vector<HttpMethod> validMethods;
-    std::vector<std::string> filters;
+    std::vector<std::string> middlewares;
 };
 
 static SimpleControllerProcessResult processSimpleControllerParams(
     const std::string &pathName,
-    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     std::string path(pathName);
     std::transform(pathName.begin(),
@@ -188,16 +200,16 @@ static SimpleControllerProcessResult processSimpleControllerParams(
                    path.begin(),
                    [](unsigned char c) { return tolower(c); });
     std::vector<HttpMethod> validMethods;
-    std::vector<std::string> filters;
-    for (const auto &filterOrMethod : filtersAndMethods)
+    std::vector<std::string> middlewareNames;
+    for (const auto &constraint : constraints)
     {
-        if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
+        if (constraint.type() == internal::ConstraintType::HttpMiddleware)
         {
-            filters.push_back(filterOrMethod.getFilterName());
+            middlewareNames.push_back(constraint.getMiddlewareName());
         }
-        else if (filterOrMethod.type() == internal::ConstraintType::HttpMethod)
+        else if (constraint.type() == internal::ConstraintType::HttpMethod)
         {
-            validMethods.push_back(filterOrMethod.getHttpMethod());
+            validMethods.push_back(constraint.getHttpMethod());
         }
         else
         {
@@ -208,26 +220,26 @@ static SimpleControllerProcessResult processSimpleControllerParams(
     return {
         std::move(path),
         std::move(validMethods),
-        std::move(filters),
+        std::move(middlewareNames),
     };
 }
 
 void HttpControllersRouter::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
     // Note: some compiler version failed to handle structural bindings with
     // lambda capture
-    auto result = processSimpleControllerParams(pathName, filtersAndMethods);
+    auto result = processSimpleControllerParams(pathName, constraints);
     std::string path = std::move(result.lowerPath);
 
     auto &item = simpleCtrlMap_[path];
     auto binder = std::make_shared<HttpSimpleControllerBinder>();
     binder->handlerName_ = ctrlName;
-    binder->filterNames_ = result.filters;
+    binder->middlewareNames_ = result.middlewares;
     drogon::app().getLoop()->queueInLoop([this, binder, ctrlName, path]() {
         auto &object_ = DrClassMap::getSingleInstance(ctrlName);
         auto controller =
@@ -249,17 +261,17 @@ void HttpControllersRouter::registerHttpSimpleController(
 void HttpControllersRouter::registerWebSocketController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &constraints)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
-    auto result = processSimpleControllerParams(pathName, filtersAndMethods);
+    auto result = processSimpleControllerParams(pathName, constraints);
     std::string path = std::move(result.lowerPath);
 
     auto &item = wsCtrlMap_[path];
     auto binder = std::make_shared<WebsocketControllerBinder>();
     binder->handlerName_ = ctrlName;
-    binder->filterNames_ = result.filters;
+    binder->middlewareNames_ = result.middlewares;
     drogon::app().getLoop()->queueInLoop([this, binder, ctrlName, path]() {
         auto &object_ = DrClassMap::getSingleInstance(ctrlName);
         auto controller =
@@ -277,15 +289,39 @@ void HttpControllersRouter::registerWebSocketController(
     addCtrlBinderToRouterItem(binder, item, result.validMethods);
 }
 
+void HttpControllersRouter::registerWebSocketControllerRegex(
+    const std::string &regExp,
+    const std::string &ctrlName,
+    const std::vector<internal::HttpConstraint> &constraints)
+{
+    assert(!regExp.empty());
+    assert(!ctrlName.empty());
+    auto result = processSimpleControllerParams(regExp, constraints);
+    auto binder = std::make_shared<WebsocketControllerBinder>();
+    binder->handlerName_ = ctrlName;
+    binder->middlewareNames_ = result.middlewares;
+    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+        auto &object_ = DrClassMap::getSingleInstance(ctrlName);
+        auto controller =
+            std::dynamic_pointer_cast<WebSocketControllerBase>(object_);
+        binder->controller_ = controller;
+    });
+    struct RegExWebSocketControllerRouterItem router;
+    router.pathPattern_ = regExp;
+    router.regex_ = regExp;
+    addCtrlBinderToRouterItem(binder, router, result.validMethods);
+    wsCtrlVector_.push_back(std::move(router));
+}
+
 void HttpControllersRouter::addHttpRegex(
     const std::string &regExp,
     const internal::HttpBinderBasePtr &binder,
     const std::vector<HttpMethod> &validMethods,
-    const std::vector<std::string> &filters,
+    const std::vector<std::string> &middlewareNames,
     const std::string &handlerName)
 {
     auto binderInfo = std::make_shared<HttpControllerBinder>();
-    binderInfo->filterNames_ = filters;
+    binderInfo->middlewareNames_ = middlewareNames;
     binderInfo->handlerName_ = handlerName;
     binderInfo->binderPtr_ = binder;
     drogon::app().getLoop()->queueInLoop([binderInfo]() {
@@ -300,7 +336,7 @@ void HttpControllersRouter::addHttpPath(
     const std::string &path,
     const internal::HttpBinderBasePtr &binder,
     const std::vector<HttpMethod> &validMethods,
-    const std::vector<std::string> &filters,
+    const std::vector<std::string> &middlewareNames,
     const std::string &handlerName)
 {
     // Path is like /api/v1/service/method/{1}/{2}/xxx...
@@ -513,7 +549,7 @@ void HttpControllersRouter::addHttpPath(
 
     // Create new ControllerBinder
     auto binderInfo = std::make_shared<HttpControllerBinder>();
-    binderInfo->filterNames_ = filters;
+    binderInfo->middlewareNames_ = middlewareNames;
     binderInfo->handlerName_ = handlerName;
     binderInfo->binderPtr_ = binder;
     binderInfo->parameterPlaces_ = std::move(places);
@@ -681,6 +717,24 @@ RouteResult HttpControllersRouter::routeWs(const HttpRequestImplPtr &req)
                 return {RouteResult::MethodNotAllowed, nullptr};
             }
             return {RouteResult::Success, binder};
+        }
+        else
+        {
+            for (auto &ctrlInfo : wsCtrlVector_)
+            {
+                auto const &wsCtrlRegex = ctrlInfo.regex_;
+                std::smatch result;
+                if (std::regex_match(req->path(), result, wsCtrlRegex))
+                {
+                    req->setMatchedPathPattern(ctrlInfo.pathPattern_);
+                    auto &binder = ctrlInfo.binders_[req->method()];
+                    if (!binder)
+                    {
+                        return {RouteResult::MethodNotAllowed, nullptr};
+                    }
+                    return {RouteResult::Success, binder};
+                }
+            }
         }
     }
     return {RouteResult::NotFound, nullptr};

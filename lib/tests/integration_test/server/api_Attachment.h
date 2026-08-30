@@ -12,6 +12,7 @@ class Attachment : public drogon::HttpController<Attachment>
     METHOD_ADD(Attachment::get, "", Get);  // Path is '/api/attachment'
     METHOD_ADD(Attachment::upload, "/upload", Post);
     METHOD_ADD(Attachment::uploadImage, "/uploadImage", Post);
+    METHOD_ADD(Attachment::uploadMemory, "/uploadMemory", Post);
     METHOD_ADD(Attachment::download, "/download", Get);
     METHOD_LIST_END
     // your declaration of processing function maybe like this:
@@ -21,6 +22,8 @@ class Attachment : public drogon::HttpController<Attachment>
                 std::function<void(const HttpResponsePtr &)> &&callback);
     void uploadImage(const HttpRequestPtr &req,
                      std::function<void(const HttpResponsePtr &)> &&callback);
+    void uploadMemory(const HttpRequestPtr &req,
+                      std::function<void(const HttpResponsePtr &)> &&callback);
     void download(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback);
 };

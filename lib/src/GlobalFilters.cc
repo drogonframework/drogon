@@ -1,7 +1,7 @@
 #include <drogon/plugins/GlobalFilters.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpAppFramework.h>
-#include "FiltersFunction.h"
+#include "MiddlewaresFunction.h"
 #include "HttpRequestImpl.h"
 #include "HttpAppFrameworkImpl.h"
 
@@ -85,7 +85,7 @@ void GlobalFilters::initAndStart(const Json::Value &config)
                 }
             }
 
-            drogon::filters_function::doFilters(
+            drogon::middlewares_function::doFilters(
                 thisPtr->filters_,
                 std::static_pointer_cast<HttpRequestImpl>(req),
                 [acb = std::move(acb),

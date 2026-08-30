@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <optional>
 #include <string_view>
+#include <trantor/net/TcpConnection.h>
 
 namespace drogon
 {
@@ -158,6 +159,9 @@ class DROGON_EXPORT HttpRequest
      */
     virtual void removeHeader(std::string key) = 0;
 
+    // Clear all HTTP headers
+    virtual void clearHeaders() = 0;
+
     /// Get the cookie string identified by the field parameter
     virtual const std::string &getCookie(const std::string &field) const = 0;
 
@@ -177,6 +181,17 @@ class DROGON_EXPORT HttpRequest
     const SafeStringMap<std::string> &getCookies() const
     {
         return cookies();
+    }
+
+    /**
+     * @brief Return content length parsed from the Content-Length header
+     * If no Content-Length header, return null.
+     */
+    virtual size_t realContentLength() const = 0;
+
+    size_t getRealContentLength() const
+    {
+        return realContentLength();
     }
 
     /// Get the query string of the request.
@@ -403,6 +418,8 @@ class DROGON_EXPORT HttpRequest
     virtual void setMethod(const HttpMethod method) = 0;
 
     /// Set the path of the request
+    /// @note The path is automatically encoded. use
+    /// @c setPathEncode(false) to avoid this.
     virtual void setPath(const std::string &path) = 0;
     virtual void setPath(std::string &&path) = 0;
 
@@ -419,6 +436,20 @@ class DROGON_EXPORT HttpRequest
     /// Set the parameter of the request
     virtual void setParameter(const std::string &key,
                               const std::string &value) = 0;
+
+    /**
+     * Set the parameter to the query,
+     * regardless of the HTTP method or content type
+     */
+    virtual void setQueryParameter(const std::string &key,
+                                   const std::string &value) = 0;
+    /**
+     * Set the parameter to the request body.
+     * @warning The content type must be @c application/x-www-form-urlencoded
+     * or @c multipart/form-data
+     */
+    virtual void setBodyParameter(const std::string &key,
+                                  const std::string &value) = 0;
 
     /// Set or get the content type
     virtual void setContentTypeCode(const ContentType type) = 0;
@@ -438,8 +469,7 @@ class DROGON_EXPORT HttpRequest
     virtual void setCustomContentTypeString(const std::string &type) = 0;
 
     /// Add a cookie
-    virtual void addCookie(const std::string &key,
-                           const std::string &value) = 0;
+    virtual void addCookie(std::string key, std::string value) = 0;
 
     /**
      * @brief Set the request object to the pass-through mode or not. It's not
@@ -490,9 +520,45 @@ class DROGON_EXPORT HttpRequest
         return toRequest(std::forward<T>(obj));
     }
 
+    /*! \brief Check if the request is a CORS request.
+     *  \details It should contain:
+     *              - Origin: origination page
+     *  \returns true if the Origin header is present
+     */
+    inline bool isCorsRequest() const
+    {
+        // Check presence of required headers
+        return headers().find("origin") != headers().end();
+    }
+
+    /*! \brief Check if the request is a CORS pre-flight request.
+     *  \details Check if the method of the request is OPTIONS and if it is
+     *           a CORS pre-flight request.\n
+     *           It should contain:
+     *              - Origin: origination page
+     *              - Access-Control-Request-Method: method to be used in the
+     *                actual request
+     *  \returns true if the method is OPTIONS and the required CORS pre-flight
+     *                headers are present
+     */
+    inline bool isCorsPreflightRequest() const
+    {
+        if (method() != HttpMethod::Options)
+            return false;
+        // Check presence of required headers
+        return isCorsRequest() &&
+               headers().find("access-control-request-method") !=
+                   headers().end();
+    }
+
     virtual bool isOnSecureConnection() const noexcept = 0;
     virtual void setContentTypeString(const char *typeString,
                                       size_t typeStringLength) = 0;
+
+    virtual bool connected() const noexcept = 0;
+
+    virtual const std::weak_ptr<trantor::TcpConnection> &getConnectionPtr()
+        const noexcept = 0;
 
     virtual ~HttpRequest()
     {

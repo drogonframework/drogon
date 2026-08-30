@@ -211,6 +211,54 @@ class CoroMapper : public Mapper<T>
         return *this;
     }
 
+    /**
+     * @brief Add an INNER JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &innerJoin(const std::string &table,
+                             const std::string &onLeft,
+                             const std::string &onRight)
+    {
+        Mapper<T>::innerJoin(table, onLeft, onRight);
+        return *this;
+    }
+
+    /**
+     * @brief Add a LEFT JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &leftJoin(const std::string &table,
+                            const std::string &onLeft,
+                            const std::string &onRight)
+    {
+        Mapper<T>::leftJoin(table, onLeft, onRight);
+        return *this;
+    }
+
+    /**
+     * @brief Add a RIGHT JOIN clause to the query.
+     *
+     * @param table The table to join.
+     * @param onLeft The left side of ON (e.g. "users.id").
+     * @param onRight The right side of ON (e.g. "posts.user_id").
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &rightJoin(const std::string &table,
+                             const std::string &onLeft,
+                             const std::string &onRight)
+    {
+        Mapper<T>::rightJoin(table, onLeft, onRight);
+        return *this;
+    }
+
     // Read api for coroutines
 
     inline internal::MapperAwaiter<std::vector<T>> findAll()
@@ -225,6 +273,7 @@ class CoroMapper : public Mapper<T>
                                    ExceptPtrCallback &&errCallback) {
             std::string sql = "select count(*) from ";
             sql += T::tableName;
+            sql += this->joinString_;
             if (criteria)
             {
                 sql += " where ";
@@ -250,6 +299,7 @@ class CoroMapper : public Mapper<T>
                                    ExceptPtrCallback &&errCallback) {
             std::string sql = "select * from ";
             sql += T::tableName;
+            sql += this->joinString_;
             bool hasParameters = false;
             if (criteria)
             {
@@ -311,6 +361,7 @@ class CoroMapper : public Mapper<T>
                                    ExceptPtrCallback &&errCallback) {
             std::string sql = "select * from ";
             sql += T::tableName;
+            sql += this->joinString_;
             bool hasParameters = false;
             if (criteria)
             {
@@ -418,10 +469,16 @@ class CoroMapper : public Mapper<T>
             this->clear();
             static_assert(!std::is_same_v<typename T::PrimaryKeyType, void>,
                           "No primary key in the table!");
+            std::vector<std::string> colNames = obj.updateColumns();
+            if (colNames.empty())
+            {
+                callback(0);
+                return;
+            }
             std::string sql = "update ";
             sql += T::tableName;
             sql += " set ";
-            for (auto const &colName : obj.updateColumns())
+            for (auto const &colName : colNames)
             {
                 sql += colName;
                 sql += " = $?,";

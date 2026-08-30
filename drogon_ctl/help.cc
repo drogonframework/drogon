@@ -68,3 +68,6 @@ void help::handleCommand(std::vector<std::string> &parameters)
         }
     }
 }
+
+// See create.cc for rationale.
+template class drogon::DrObject<drogon_ctl::help>;

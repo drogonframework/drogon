@@ -31,4 +31,9 @@ using AdviceDestroySessionCallback = std::function<void(const std::string &)>;
 using FilterCallback = std::function<void(const HttpResponsePtr &)>;
 using FilterChainCallback = std::function<void()>;
 using HttpReqCallback = std::function<void(ReqResult, const HttpResponsePtr &)>;
+
+using MiddlewareCallback = std::function<void(const HttpResponsePtr &)>;
+using MiddlewareNextCallback =
+    std::function<void(std::function<void(const HttpResponsePtr &)> &&)>;
+
 }  // namespace drogon
