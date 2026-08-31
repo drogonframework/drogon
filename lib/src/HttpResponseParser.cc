@@ -173,7 +173,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                         if (!len.empty())
                         {
                             // RFC 9112 Section 6.3 gives Transfer-Encoding
-                            // precedence, but recommends treating TE+CL as an
+                            // precedence, but recommends treating
+                            // Transfer-Encoding plus Content-Length as an
                             // error because it can indicate response splitting.
                             return false;
                         }
