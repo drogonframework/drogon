@@ -51,6 +51,11 @@ static bool pathIsWithinBase(const std::string &base, std::string relativePath)
                         .lexically_normal();
     if (error)
         return false;
+    // A trailing separator is represented as an empty final component. Remove
+    // it before comparing path components, otherwise every child of a root
+    // such as "./" is rejected as being outside that root.
+    if (basePath.filename().empty())
+        basePath = basePath.parent_path();
     auto candidate =
         (basePath / std::filesystem::path(utils::toNativePath(relativePath)))
             .lexically_normal();
