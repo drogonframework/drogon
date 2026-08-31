@@ -239,7 +239,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     if (buf->readableBytes() >= HEADER_LINE_MAX_LEN ||
                         buf->readableBytes() >=
-                        HEADER_SECTION_MAX_LEN - headerBytes_)
+                            HEADER_SECTION_MAX_LEN - headerBytes_)
                     {
                         /// Limit both an individual request header line and the
                         /// complete request header section.
@@ -286,7 +286,8 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                             request_->headers().end())
                     {
                         // Do not discard a repeated framing field. Drogon only
-                        // supports a single chunked transfer coding on requests.
+                        // supports a single chunked transfer coding on
+                        // requests.
                         return -k400BadRequest;
                     }
                     request_->addHeader(buf->peek(), colon, crlf);
@@ -483,8 +484,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             case HttpRequestParseStatus::kExpectChunkBody:
             {
                 if (buf->readableBytes() < CRLF_LEN ||
-                    currentChunkLength_ >
-                        buf->readableBytes() - CRLF_LEN)
+                    currentChunkLength_ > buf->readableBytes() - CRLF_LEN)
                 {
                     return 0;
                 }
@@ -508,7 +508,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     if (buf->readableBytes() >= HEADER_LINE_MAX_LEN ||
                         buf->readableBytes() >=
-                        HEADER_SECTION_MAX_LEN - trailerBytes_)
+                            HEADER_SECTION_MAX_LEN - trailerBytes_)
                     {
                         return -k400BadRequest;
                     }

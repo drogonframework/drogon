@@ -56,8 +56,10 @@ void HttpClientImpl::createTcpClient()
     else if (useSSL_ && !utils::supportsTls())
     {
         LOG_ERROR << "HTTP Client wants to create HTTPS connection "
-            "but TLS is disabled in Trantor. Please rebuild with TLS support";
-        throw std::runtime_error("HTTP Client wants to create HTTPS connection "
+                     "but TLS is disabled in Trantor. Please rebuild with TLS "
+                     "support";
+        throw std::runtime_error(
+            "HTTP Client wants to create HTTPS connection "
             "but TLS is disabled in Trantor");
     }
 
@@ -609,8 +611,7 @@ void HttpClientImpl::handleResponse(
         {
             auto pending = std::move(pipeliningCallbacks_.front());
             pipeliningCallbacks_.pop();
-            pipeliningCallbacksSize_.fetch_sub(1,
-                                               std::memory_order_relaxed);
+            pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
             pending.second(ReqResult::NetworkFailure, nullptr);
         }
 

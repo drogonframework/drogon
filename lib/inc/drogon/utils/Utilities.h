@@ -703,7 +703,7 @@ bool parseInteger(std::string_view text, T &out, int base = 10)
     for (size_t i = begin; i < text.size(); ++i)
     {
         const auto c = static_cast<unsigned char>(text[i]);
-        const int digit = std::isdigit(c) ? c - '0'
+        const int digit = std::isdigit(c)   ? c - '0'
                           : std::isalpha(c) ? std::tolower(c) - 'a' + 10
                                             : -1;
         if (digit < 0 || digit >= base)
@@ -718,7 +718,8 @@ bool parseInteger(std::string_view text, T &out, int base = 10)
     if constexpr (std::is_signed<T>::value)
     {
         const auto value = std::strtoll(valueString.c_str(), &end, base);
-        if (errno == ERANGE || end != valueString.c_str() + valueString.size() ||
+        if (errno == ERANGE ||
+            end != valueString.c_str() + valueString.size() ||
             value < static_cast<long long>((std::numeric_limits<T>::min)()) ||
             value > static_cast<long long>((std::numeric_limits<T>::max)()))
         {

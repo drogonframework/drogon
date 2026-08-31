@@ -76,8 +76,7 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
         std::string_view statusCode(start, space - start);
         std::string status_message(space + 1, end - space - 1);
         unsigned short code{};
-        if (statusCode.size() != 3 ||
-            !utils::parseInteger(statusCode, code))
+        if (statusCode.size() != 3 || !utils::parseInteger(statusCode, code))
         {
             return false;
         }
@@ -140,8 +139,7 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     {
                         return false;
                     }
-                    constexpr std::string_view contentLength =
-                        "content-length";
+                    constexpr std::string_view contentLength = "content-length";
                     const std::string_view field(buf->peek(),
                                                  colon - buf->peek());
                     if (utils::ci_equals(field, contentLength))

@@ -109,9 +109,8 @@ void MysqlConnection::init()
         MYSQL *ret;
         status_ = ConnectStatus::Connecting;
         unsigned int port = 3306;
-        if (!port_.empty() &&
-            (!drogon::utils::parseInteger(port_, port) || port == 0 ||
-             port > 65535))
+        if (!port_.empty() && (!drogon::utils::parseInteger(port_, port) ||
+                               port == 0 || port > 65535))
         {
             LOG_ERROR << "Invalid MySQL port: " << port_;
             status_ = ConnectStatus::Bad;

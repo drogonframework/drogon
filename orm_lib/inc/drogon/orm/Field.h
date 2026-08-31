@@ -269,7 +269,8 @@ inline unsigned long long Field::as<unsigned long long>() const
 {
     if (isNull())
         return 0;
-    return utils::fromString<unsigned long long>(result_.getValue(row_, column_));
+    return utils::fromString<unsigned long long>(
+        result_.getValue(row_, column_));
 }
 
 // std::vector<int32_t> Field::as<std::vector<int32_t>>() const;
