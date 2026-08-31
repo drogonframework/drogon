@@ -32,7 +32,7 @@ static constexpr size_t TRUNK_LEN_MAX_LEN = 16;  // 0xFFFFFFFF,FFFFFFFF
 static constexpr size_t HEADER_LINE_MAX_LEN = 64 * 1024;
 static constexpr size_t HEADER_SECTION_MAX_LEN = 1024 * 1024;
 
-// NOTE: tolower is locale depent thus not ideal for parsing
+// NOTE: tolower is locale dependent thus not ideal for parsing
 static std::string lowerAscii(const char *begin, const char *end)
 {
     std::string value(begin, end);
