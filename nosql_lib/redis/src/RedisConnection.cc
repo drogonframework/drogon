@@ -24,11 +24,13 @@
 using namespace drogon::nosql;
 
 RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
+                                 const std::string &hostname,
                                  const std::string &username,
                                  const std::string &password,
                                  unsigned int db,
                                  trantor::EventLoop *loop)
     : serverAddr_(serverAddress),
+      hostname_(hostname),
       username_(username),
       password_(password),
       db_(db),
@@ -43,8 +45,35 @@ void RedisConnection::startConnectionInLoop()
     loop_->assertInLoopThread();
     assert(!redisContext_);
 
-    redisContext_ =
-        ::redisAsyncConnect(serverAddr_.toIp().c_str(), serverAddr_.toPort());
+    if (!resolver_)
+        resolver_ = trantor::Resolver::newResolver(loop_);
+
+    auto thisPtr = shared_from_this();
+    resolver_->resolve(hostname_, [thisPtr](const trantor::InetAddress &addr) {
+        thisPtr->loop_->runInLoop([thisPtr, addr]() {
+            // trantor::Resolver signals a lookup failure by returning the
+            // unspecified address.
+            if (addr.toIp() == "0.0.0.0")
+            {
+                LOG_ERROR << "Failed to resolve Redis hostname: "
+                          << thisPtr->hostname_;
+                if (thisPtr->disconnectCallback_)
+                {
+                    auto connPtr = thisPtr;
+                    thisPtr->disconnectCallback_(std::move(connPtr));
+                }
+                return;
+            }
+            thisPtr->connectWithResolvedIp(addr.toIp());
+        });
+    });
+}
+
+void RedisConnection::connectWithResolvedIp(const std::string &ip)
+{
+    loop_->assertInLoopThread();
+
+    redisContext_ = ::redisAsyncConnect(ip.c_str(), serverAddr_.toPort());
     status_ = ConnectStatus::kConnecting;
     if (redisContext_->err)
     {
@@ -78,8 +107,8 @@ void RedisConnection::startConnectionInLoop()
             auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
             if (status != REDIS_OK)
             {
-                LOG_ERROR << "Failed to connect to "
-                          << thisPtr->serverAddr_.toIpPort() << "! "
+                LOG_ERROR << "Failed to connect to " << thisPtr->hostname_
+                          << ":" << thisPtr->serverAddr_.toPort() << "! "
                           << context->errstr;
                 thisPtr->handleDisconnect();
                 if (thisPtr->disconnectCallback_)
@@ -89,8 +118,8 @@ void RedisConnection::startConnectionInLoop()
             }
             else
             {
-                LOG_TRACE << "Connected successfully to "
-                          << thisPtr->serverAddr_.toIpPort();
+                LOG_TRACE << "Connected successfully to " << thisPtr->hostname_
+                          << ":" << thisPtr->serverAddr_.toPort();
                 if (thisPtr->password_.empty())
                 {
                     if (thisPtr->db_ == 0)
@@ -230,7 +259,10 @@ void RedisConnection::startConnectionInLoop()
             thisPtr->handleDisconnect();
             if (thisPtr->disconnectCallback_)
             {
-                thisPtr->disconnectCallback_(thisPtr->shared_from_this());
+                if (auto self = thisPtr->weak_from_this().lock())
+                {
+                    thisPtr->disconnectCallback_(std::move(self));
+                }
             }
 
             LOG_TRACE << "Disconnected from "
@@ -361,7 +393,10 @@ void RedisConnection::handleResult(redisReply *result)
         assert(exceptionCallbacks_.empty());
         if (idleCallback_)
         {
-            idleCallback_(shared_from_this());
+            if (auto self = weak_from_this().lock())
+            {
+                idleCallback_(std::move(self));
+            }
         }
     }
 }
@@ -514,9 +549,11 @@ void RedisConnection::handleSubscribeResult(redisReply *result,
         LOG_ERROR << "Subscribe callback receive error result type: "
                   << result->type;
     }
-
     if (idleCallback_)
     {
-        idleCallback_(shared_from_this());
+        if (auto self = weak_from_this().lock())
+        {
+            idleCallback_(std::move(self));
+        }
     }
 }

@@ -9,6 +9,7 @@ option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_SHARED_LIBS "Build drogon as a shared lib" OFF)
+option(DROGON_USE_BOOST_UUID "Use Boost.UUID instead of the OS uuid library" OFF)
 option(BUILD_DOC "Build Doxygen documentation" OFF)
 option(BUILD_BROTLI "Build Brotli" ON)
 option(BUILD_YAML_CONFIG "Build yaml config" ON)
@@ -230,23 +231,30 @@ endif(BUILD_YAML_CONFIG)
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
     AND NOT WIN32)
-    find_package(UUID REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
-
-    try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
-        ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-        LINK_LIBRARIES UUID_lib
-        OUTPUT_VARIABLE NORMAL_UUID_COMPILE_OUTPUT)
-    try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
-        ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-        LINK_LIBRARIES UUID_lib
-        OUTPUT_VARIABLE OSSP_UUID_COMPILE_OUTPUT)
-    if (normal_uuid)
-        add_definitions(-DUSE_OSSP_UUID=0)
-    elseif (ossp_uuid)
-        add_definitions(-DUSE_OSSP_UUID=1)
+    if (DROGON_USE_BOOST_UUID)
+        find_package(Boost REQUIRED)
+        target_link_libraries(${PROJECT_NAME} PRIVATE Boost::boost)
+        add_definitions(-DUSE_BOOST_UUID=1)
     else ()
-        message(FATAL_ERROR "uuid lib error:\n${NORMAL_UUID_COMPILE_OUTPUT}\n${OSSP_UUID_COMPILE_OUTPUT}")
+        add_definitions(-DUSE_BOOST_UUID=0)
+        find_package(UUID REQUIRED)
+        target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
+
+        try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
+            ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
+            LINK_LIBRARIES UUID_lib
+            OUTPUT_VARIABLE NORMAL_UUID_COMPILE_OUTPUT)
+        try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
+            ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
+            LINK_LIBRARIES UUID_lib
+            OUTPUT_VARIABLE OSSP_UUID_COMPILE_OUTPUT)
+        if (normal_uuid)
+            add_definitions(-DUSE_OSSP_UUID=0)
+        elseif (ossp_uuid)
+            add_definitions(-DUSE_OSSP_UUID=1)
+        else ()
+            message(FATAL_ERROR "uuid lib error:\n${NORMAL_UUID_COMPILE_OUTPUT}\n${OSSP_UUID_COMPILE_OUTPUT}")
+        endif ()
     endif ()
 endif (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"

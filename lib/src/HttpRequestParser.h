@@ -57,16 +57,6 @@ class HttpRequestParser : public trantor::NonCopyable,
         return request_;
     }
 
-    bool firstReq()
-    {
-        if (firstRequest_)
-        {
-            firstRequest_ = false;
-            return true;
-        }
-        return false;
-    }
-
     const WebSocketConnectionImplPtr &webSocketConn() const
     {
         return websockConnPtr_;
@@ -141,7 +131,6 @@ class HttpRequestParser : public trantor::NonCopyable,
     HttpRequestParseStatus status_;
     trantor::EventLoop *loop_;
     HttpRequestImplPtr request_;
-    bool firstRequest_{true};
     WebSocketConnectionImplPtr websockConnPtr_;
     std::deque<std::pair<HttpRequestPtr, std::pair<HttpResponsePtr, bool>>>
         requestPipelining_;
