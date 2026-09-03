@@ -740,7 +740,7 @@ HttpResponsePtr HttpAppFrameworkImpl::handleSessionForResponse(
         {
             sessionManagerPtr_->changeSessionId(sessionPtr);
         }
-        if (sessionPtr->needSetToClient())
+        if (sessionPtr->consumeNeedSetToClient())
         {
             if (resp->expiredTime() >= 0)
             {
@@ -754,7 +754,6 @@ HttpResponsePtr HttpAppFrameworkImpl::handleSessionForResponse(
                 if (sessionMaxAge_ >= 0)
                     sessionid.setMaxAge(sessionMaxAge_);
                 newResp->addCookie(std::move(sessionid));
-                sessionPtr->hasSet();
 
                 return newResp;
             }
@@ -767,7 +766,6 @@ HttpResponsePtr HttpAppFrameworkImpl::handleSessionForResponse(
                 if (sessionMaxAge_ >= 0)
                     sessionid.setMaxAge(sessionMaxAge_);
                 resp->addCookie(std::move(sessionid));
-                sessionPtr->hasSet();
 
                 return resp;
             }
