@@ -893,6 +893,40 @@ DROGON_TEST(PostgreTest)
         FAULT("postgresql - ORM QueryBuilder synchronous interface(3) what():",
               e.base().what());
     }
+    try
+    {
+        const Users user =
+            QueryBuilder<Users>{}
+                .from("users")
+                .selectAll()
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .eq("user_name", "postgres")
+                .single()
+                .execSync(clientPtr);
+        MANDATE(user.getValueOfUserName() == "postgres");
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM QueryBuilder JOIN + single() model what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row wallet =
+            QueryBuilder<Users>{}
+                .from("users")
+                .select("wallets.amount")
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .limit(1)
+                .single()
+                .execSync(clientPtr);
+        MANDATE(wallet["amount"].isNull());
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM QueryBuilder JOIN + single() row what():",
+              e.base().what());
+    }
 
     /// execAsyncFuture
     {
@@ -2272,6 +2306,40 @@ DROGON_TEST(MySQLTest)
         FAULT("mysql - ORM QueryBuilder synchronous interface(3) what():",
               e.base().what());
     }
+    try
+    {
+        const Users user =
+            QueryBuilder<Users>{}
+                .from("users")
+                .selectAll()
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .eq("user_name", "postgres")
+                .single()
+                .execSync(clientPtr);
+        MANDATE(user.getValueOfUserName() == "postgres");
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM QueryBuilder JOIN + single() model what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row wallet =
+            QueryBuilder<Users>{}
+                .from("users")
+                .select("wallets.amount")
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .limit(1)
+                .single()
+                .execSync(clientPtr);
+        MANDATE(wallet["amount"].isNull());
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM QueryBuilder JOIN + single() row what():",
+              e.base().what());
+    }
 
     /// execAsyncFuture
     {
@@ -3547,6 +3615,40 @@ DROGON_TEST(SQLite3Test)
     catch (const DrogonDbException &e)
     {
         FAULT("sqlite3 - ORM QueryBuilder synchronous interface(3) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Users user =
+            QueryBuilder<Users>{}
+                .from("users")
+                .selectAll()
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .eq("user_name", "postgres")
+                .single()
+                .execSync(clientPtr);
+        MANDATE(user.getValueOfUserName() == "postgres");
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - ORM QueryBuilder JOIN + single() model what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row wallet =
+            QueryBuilder<Users>{}
+                .from("users")
+                .select("wallets.amount")
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .limit(1)
+                .single()
+                .execSync(clientPtr);
+        MANDATE(wallet["amount"].isNull());
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - ORM QueryBuilder JOIN + single() row what():",
               e.base().what());
     }
 

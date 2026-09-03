@@ -47,6 +47,7 @@ class TransformBuilder : public BaseBuilder<T, SelectAll, Single>
         this->from_ = tb.from_;
         this->columns_ = tb.columns_;
         this->filters_ = tb.filters_;
+        this->joins_ = tb.joins_;
         this->limit_ = tb.limit_;
         this->offset_ = tb.offset_;
         this->orders_ = tb.orders_;
