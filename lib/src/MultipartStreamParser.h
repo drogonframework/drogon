@@ -22,6 +22,13 @@ namespace drogon
 class DROGON_EXPORT MultipartStreamParser
 {
   public:
+    enum class ExceptionType
+    {
+        kNoException = 0,
+        kServerCancel = 1,
+    };
+
+  public:
     MultipartStreamParser(const std::string &contentType);
 
     void parse(const char *data,
@@ -37,6 +44,10 @@ class DROGON_EXPORT MultipartStreamParser
     bool isValid() const
     {
         return isValid_;
+    }
+
+    ExceptionType exceptionType() const {
+        return exception_type_;
     }
 
   private:
@@ -69,6 +80,8 @@ class DROGON_EXPORT MultipartStreamParser
         kExpectBody = 3,
         kExpectEndOrNewEntry = 4,
     } status_{Status::kExpectFirstBoundary};
+
+    ExceptionType exception_type_{ExceptionType::kNoException};
 
     MultipartHeader currentHeader_;
     bool isValid_{true};
