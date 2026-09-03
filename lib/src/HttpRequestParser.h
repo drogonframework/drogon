@@ -43,6 +43,9 @@ class HttpRequestParser : public trantor::NonCopyable,
 
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
 
+    // For parser tests that do not need a socket.
+    explicit HttpRequestParser(trantor::EventLoop *loop);
+
     int parseRequest(trantor::MsgBuffer *buf);
 
     bool gotAll() const
@@ -146,6 +149,9 @@ class HttpRequestParser : public trantor::NonCopyable,
     size_t remainContentLength_{0};
     size_t headerBytes_{0};
     size_t trailerBytes_{0};
+    bool contentLengthHeaderSeen_{false};
+    bool transferEncodingHeaderSeen_{false};
+    bool hostHeaderSeen_{false};
 };
 
 }  // namespace drogon

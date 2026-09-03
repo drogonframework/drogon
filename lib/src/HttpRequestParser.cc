@@ -32,30 +32,6 @@ static constexpr size_t TRUNK_LEN_MAX_LEN = 16;  // 0xFFFFFFFF,FFFFFFFF
 static constexpr size_t HEADER_LINE_MAX_LEN = 64 * 1024;
 static constexpr size_t HEADER_SECTION_MAX_LEN = 1024 * 1024;
 
-// NOTE: tolower is locale dependent thus not ideal for parsing
-static std::string lowerAscii(const char *begin, const char *end)
-{
-    std::string value(begin, end);
-    for (auto &c : value)
-    {
-        if (c >= 'A' && c <= 'Z')
-        {
-            c += 'a' - 'A';
-        }
-    }
-    return value;
-}
-
-static bool isContentLengthHeader(const char *begin, const char *end)
-{
-    return lowerAscii(begin, end) == "content-length";
-}
-
-static bool isTransferEncodingHeader(const char *begin, const char *end)
-{
-    return lowerAscii(begin, end) == "transfer-encoding";
-}
-
 // RFC 9110 Section 5.5 permits SP, HTAB, visible US-ASCII, and obs-text in a
 // field value.  All other control octets are invalid.  In particular, CR, LF,
 // and NUL must be rejected or replaced before processing or forwarding; reject
@@ -68,58 +44,68 @@ static bool isValidHttpFieldValue(const char *begin, const char *end)
 }
 
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
-    : status_(HttpRequestParseStatus::kExpectMethod),
-      loop_(connPtr->getLoop()),
-      conn_(connPtr)
+    : HttpRequestParser(connPtr->getLoop())
+{
+    conn_ = connPtr;
+}
+
+HttpRequestParser::HttpRequestParser(trantor::EventLoop *loop)
+    : status_(HttpRequestParseStatus::kExpectMethod), loop_(loop)
 {
 }
 
 bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
 {
-    bool succeed = false;
-    const char *start = begin;
-    const char *space = std::find(start, end, ' ');
-    if (space != end)
+    const char *space = std::find(begin, end, ' ');
+    if (space == begin || space == end)
+        return false;
+
+    const char *version = space + 1;
+    if (end - version != 8 || !std::equal(version, end - 1, "HTTP/1.") ||
+        (*(end - 1) != '0' && *(end - 1) != '1'))
     {
-        const char *question = std::find(start, space, '?');
-        const char *slash = std::find(start, question, '/');
-        if (slash != start && slash + 1 < question && *(slash + 1) == '/')
-        {
-            // scheme precedents
-            slash = std::find(slash + 2, question, '/');
-        }
-        if (slash != question)
-        {
-            request_->setPath(slash, question);
-        }
-        else
-        {
-            // An empty abs_path is equivalent to an abs_path of "/"
-            request_->setPath("/");
-        }
-        if (question != space)
-        {
-            request_->setQuery(question + 1, space);
-        }
-        start = space + 1;
-        succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
-        if (succeed)
-        {
-            if (*(end - 1) == '1')
-            {
-                request_->setVersion(Version::kHttp11);
-            }
-            else if (*(end - 1) == '0')
-            {
-                request_->setVersion(Version::kHttp10);
-            }
-            else
-            {
-                succeed = false;
-            }
-        }
+        return false;
     }
-    return succeed;
+
+    if (std::find_if(begin, space, [](unsigned char c) {
+            return c <= 0x20 || c == 0x7f || c == '#';
+        }) != space)
+    {
+        return false;
+    }
+
+    const char *question = std::find(begin, space, '?');
+    if (question == begin)
+        return false;
+
+    const char *pathBegin = begin;
+    if (question - begin == 1 && *begin == '*')
+    {
+        if (request_->method() != Options || question != space)
+            return false;
+    }
+    else if (*begin != '/')
+    {
+        const char *scheme = std::search(begin, question, "://", "://" + 3);
+        if (scheme == begin || scheme == question)
+            return false;
+        const char *authority = scheme + 3;
+        pathBegin = std::find(authority, question, '/');
+        if (authority == pathBegin)
+            return false;
+    }
+
+    if (pathBegin == question)
+        request_->setPath("/");
+    else
+        request_->setPath(pathBegin, question);
+    if (question != space)
+    {
+        request_->setQuery(question + 1, space);
+    }
+    request_->setVersion(*(end - 1) == '1' ? Version::kHttp11
+                                           : Version::kHttp10);
+    return true;
 }
 
 HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
@@ -158,6 +144,9 @@ void HttpRequestParser::reset()
     remainContentLength_ = 0;
     headerBytes_ = 0;
     trailerBytes_ = 0;
+    contentLengthHeaderSeen_ = false;
+    transferEncodingHeaderSeen_ = false;
+    hostHeaderSeen_ = false;
     status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
     {
@@ -273,22 +262,28 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         return -k400BadRequest;
                     }
-                    if (isContentLengthHeader(buf->peek(), colon) &&
-                        request_->headers().find("content-length") !=
-                            request_->headers().end())
+                    const std::string_view field(buf->peek(),
+                                                 static_cast<size_t>(
+                                                     colon - buf->peek()));
+                    if (utils::ci_equals(field, "host"))
                     {
-                        // Reject duplicate Content-Length fields to avoid
-                        // ambiguous message framing.
-                        return -k400BadRequest;
+                        if (hostHeaderSeen_)
+                        {
+                            return -k400BadRequest;
+                        }
+                        hostHeaderSeen_ = true;
                     }
-                    if (isTransferEncodingHeader(buf->peek(), colon) &&
-                        request_->headers().find("transfer-encoding") !=
-                            request_->headers().end())
+                    if (utils::ci_equals(field, "content-length"))
                     {
-                        // Do not discard a repeated framing field. Drogon only
-                        // supports a single chunked transfer coding on
-                        // requests.
-                        return -k400BadRequest;
+                        if (contentLengthHeaderSeen_)
+                            return -k400BadRequest;
+                        contentLengthHeaderSeen_ = true;
+                    }
+                    if (utils::ci_equals(field, "transfer-encoding"))
+                    {
+                        if (transferEncodingHeaderSeen_)
+                            return -k400BadRequest;
+                        transferEncodingHeaderSeen_ = true;
                     }
                     request_->addHeader(buf->peek(), colon, crlf);
                     buf->retrieveUntil(crlf + CRLF_LEN);
@@ -306,9 +301,20 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // and maintainability.
 
                 // process header information
-                auto &len = request_->getHeaderBy("content-length");
-                auto &encode = request_->getHeaderBy("transfer-encoding");
-                if (!len.empty() && !encode.empty())
+                const auto &len = request_->getHeaderBy("content-length");
+                const auto &encode = request_->getHeaderBy("transfer-encoding");
+                const auto &host = request_->getHeaderBy("host");
+                if ((request_->getVersion() == Version::kHttp11 &&
+                     !hostHeaderSeen_) ||
+                    (hostHeaderSeen_ && host.empty()))
+                {
+                    return -k400BadRequest;
+                }
+                if (transferEncodingHeaderSeen_ && encode.empty())
+                {
+                    return -k400BadRequest;
+                }
+                if (contentLengthHeaderSeen_ && transferEncodingHeaderSeen_)
                 {
                     // RFC 9112 Section 6.3:
                     // Messages containing both Content-Length and
@@ -317,7 +323,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     // inconsistent message framing.
                     return -k400BadRequest;
                 }
-                if (!len.empty())
+                if (contentLengthHeaderSeen_)
                 {
                     if (!utils::parseInteger(len, remainContentLength_))
                     {
@@ -337,7 +343,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 else
                 {
-                    if (encode.empty())
+                    if (!transferEncodingHeaderSeen_)
                     {
                         // no content-length and no transfer-encoding,
                         // request is over.
@@ -483,21 +489,25 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             }
             case HttpRequestParseStatus::kExpectChunkBody:
             {
-                if (buf->readableBytes() < CRLF_LEN ||
-                    currentChunkLength_ > buf->readableBytes() - CRLF_LEN)
+                const auto bytesToConsume =
+                    std::min(currentChunkLength_, buf->readableBytes());
+                if (bytesToConsume != 0)
+                {
+                    request_->appendToBody(buf->peek(), bytesToConsume);
+                    buf->retrieve(bytesToConsume);
+                    currentChunkLength_ -= bytesToConsume;
+                    remainContentLength_ += bytesToConsume;
+                }
+                if (currentChunkLength_ != 0 || buf->readableBytes() < CRLF_LEN)
                 {
                     return 0;
                 }
-                if (*(buf->peek() + currentChunkLength_) != '\r' ||
-                    *(buf->peek() + currentChunkLength_ + 1) != '\n')
+                if (buf->peek()[0] != '\r' || buf->peek()[1] != '\n')
                 {
                     // error!
                     return -k400BadRequest;
                 }
-                request_->appendToBody(buf->peek(), currentChunkLength_);
-                buf->retrieve(currentChunkLength_ + CRLF_LEN);
-                remainContentLength_ += currentChunkLength_;
-                currentChunkLength_ = 0;
+                buf->retrieve(CRLF_LEN);
                 status_ = HttpRequestParseStatus::kExpectChunkLen;
                 continue;
             }
