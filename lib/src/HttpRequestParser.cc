@@ -490,7 +490,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             case HttpRequestParseStatus::kExpectChunkBody:
             {
                 const auto bytesToConsume =
-                    std::min(currentChunkLength_, buf->readableBytes());
+                    (std::min)(currentChunkLength_, buf->readableBytes());
                 if (bytesToConsume != 0)
                 {
                     request_->appendToBody(buf->peek(), bytesToConsume);
