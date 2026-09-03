@@ -27,7 +27,6 @@
 #include "sqlite3_impl/Sqlite3Connection.h"
 #endif
 #include "TransactionImpl.h"
-#include <drogon/drogon.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/Exception.h>
 #include <iostream>
@@ -41,6 +40,7 @@
 #include <thread>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Channel.h>
+#include <trantor/utils/Logger.h>
 #include <unordered_set>
 #include <vector>
 
