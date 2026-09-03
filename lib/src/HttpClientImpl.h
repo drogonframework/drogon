@@ -26,11 +26,39 @@
 #include <list>
 #include <mutex>
 #include <queue>
+#include <string_view>
 #include <vector>
 #include "impl_forwards.h"
 
 namespace drogon
 {
+namespace internal
+{
+inline bool cookiePathMatches(std::string_view requestPath,
+                              std::string_view cookiePath)
+{
+    if (cookiePath.empty())
+        return true;
+    if (requestPath.size() < cookiePath.size() ||
+        requestPath.compare(0, cookiePath.size(), cookiePath) != 0)
+    {
+        return false;
+    }
+    return requestPath.size() == cookiePath.size() ||
+           cookiePath.back() == '/' || requestPath[cookiePath.size()] == '/';
+}
+
+inline std::string defaultCookiePath(std::string_view requestPath)
+{
+    if (requestPath.empty() || requestPath.front() != '/')
+        return "/";
+    auto lastSlash = requestPath.rfind('/');
+    if (lastSlash == 0)
+        return "/";
+    return std::string(requestPath.substr(0, lastSlash));
+}
+}  // namespace internal
+
 class HttpClientImpl final : public HttpClient,
                              public std::enable_shared_from_this<HttpClientImpl>
 {
@@ -168,7 +196,8 @@ class HttpClientImpl final : public HttpClient,
     void sendRequestInLoop(const HttpRequestPtr &req,
                            HttpReqCallback &&callback,
                            double timeout);
-    void handleCookies(const HttpResponseImplPtr &resp);
+    void handleCookies(const HttpResponseImplPtr &resp,
+                       const HttpRequestPtr &req);
     void handleResponse(const HttpResponseImplPtr &resp,
                         std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
                         const trantor::TcpConnectionPtr &connPtr);

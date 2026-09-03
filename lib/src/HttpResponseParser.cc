@@ -156,6 +156,13 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 }
                 else
                 {
+                    // Only an empty line terminates the header section.  A
+                    // non-empty line without a colon is a malformed header,
+                    // not an end-of-headers marker.
+                    if (crlf != buf->peek())
+                    {
+                        return false;
+                    }
                     const std::string &len =
                         responsePtr_->getHeaderBy("content-length");
                     const std::string &encode =

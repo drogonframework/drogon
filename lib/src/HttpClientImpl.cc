@@ -108,7 +108,8 @@ void HttpClientImpl::createTcpClient()
                     return;
                 LOG_TRACE << "connection disconnect";
                 auto responseParser = connPtr->getContext<HttpResponseParser>();
-                if (responseParser && responseParser->parseResponseOnClose() &&
+                if (responseParser && !thisPtr->pipeliningCallbacks_.empty() &&
+                    responseParser->parseResponseOnClose() &&
                     responseParser->gotAll())
                 {
                     auto &firstReq = thisPtr->pipeliningCallbacks_.front();
@@ -443,7 +444,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     {
         if ((cookie.expiresDate().microSecondsSinceEpoch() == 0 ||
              cookie.expiresDate() > trantor::Date::now()) &&
-            (cookie.path().empty() || req->path().find(cookie.path()) == 0))
+            internal::cookiePathMatches(req->path(), cookie.path()))
         {
             req->addCookie(cookie.key(), cookie.value());
         }
@@ -595,7 +596,7 @@ void HttpClientImpl::handleResponse(
     auto cb = std::move(reqAndCb);
     pipeliningCallbacks_.pop();
     pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
-    handleCookies(resp);
+    handleCookies(resp, cb.first);
 
     if (resp->ifCloseConnection())
     {
@@ -748,17 +749,22 @@ void HttpClientImpl::onError(ReqResult result)
     tcpClientPtr_.reset();
 }
 
-void HttpClientImpl::handleCookies(const HttpResponseImplPtr &resp)
+void HttpClientImpl::handleCookies(const HttpResponseImplPtr &resp,
+                                   const HttpRequestPtr &req)
 {
     loop_->assertInLoopThread();
     if (!enableCookies_)
         return;
     for (auto &iter : resp->getCookies())
     {
-        auto &cookie = iter.second;
+        auto cookie = iter.second;
         if (!cookie.domain().empty() && cookie.domain() != domain_)
         {
             continue;
+        }
+        if (cookie.path().empty() || cookie.path().front() != '/')
+        {
+            cookie.setPath(internal::defaultCookiePath(req->path()));
         }
         if (cookie.isSecure())
         {
