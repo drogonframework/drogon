@@ -129,11 +129,19 @@ int MultiPartParser::parseEntity(const HttpRequestPtr &req,
                 return -1;
             }
             namePos += 5;
+            if (namePos == valueEnd)
+            {
+                return -1;
+            }
             const char *nameEnd;
             if (*namePos == '"')
             {
                 ++namePos;
                 nameEnd = std::find(namePos, valueEnd, '"');
+                if (nameEnd == valueEnd)
+                {
+                    return -1;
+                }
             }
             else
             {
@@ -150,11 +158,19 @@ int MultiPartParser::parseEntity(const HttpRequestPtr &req,
             else
             {
                 fileNamePos += 9;
+                if (fileNamePos == valueEnd)
+                {
+                    return -1;
+                }
                 const char *fileNameEnd;
                 if (*fileNamePos == '"')
                 {
                     ++fileNamePos;
                     fileNameEnd = std::find(fileNamePos, valueEnd, '"');
+                    if (fileNameEnd == valueEnd)
+                    {
+                        return -1;
+                    }
                 }
                 else
                 {
@@ -203,8 +219,13 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
                            size_t boundaryLen)
 {
     std::string_view boundary{boundaryData, boundaryLen};
-    if (boundary.size() > 2 && boundary[0] == '\"')
+    if (boundary.size() >= 2 && boundary.front() == '\"' &&
+        boundary.back() == '\"')
         boundary = boundary.substr(1, boundary.size() - 2);
+    else if (!boundary.empty() && boundary.front() == '\"')
+        return -1;
+    if (boundary.empty())
+        return -1;
     std::string_view::size_type pos1, pos2;
     pos1 = 0;
     auto content = static_cast<HttpRequestImpl *>(req.get())->bodyView();
@@ -215,12 +236,16 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
         if (pos1 == std::string_view::npos)
             break;
         pos1 += boundary.length();
+        if (pos1 + 1 >= content.size())
+            return -1;
         if (content[pos1] == '\r' && content[pos1 + 1] == '\n')
             pos1 += 2;
         pos2 = content.find(boundary, pos1);
         if (pos2 == std::string_view::npos)
             break;
         bool flag = false;
+        if (pos2 < 4)
+            return -1;
         if (content[pos2 - 4] == '\r' && content[pos2 - 3] == '\n' &&
             content[pos2 - 2] == '-' && content[pos2 - 1] == '-')
         {

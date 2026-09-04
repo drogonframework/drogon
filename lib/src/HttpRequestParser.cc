@@ -21,6 +21,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpUtils.h"
+#include <drogon/utils/Utilities.h>
 
 using namespace trantor;
 using namespace drogon;
@@ -28,60 +29,83 @@ using namespace drogon;
 static constexpr size_t CRLF_LEN = 2;            // strlen("crlf")
 static constexpr size_t METHOD_MAX_LEN = 7;      // strlen("OPTIONS")
 static constexpr size_t TRUNK_LEN_MAX_LEN = 16;  // 0xFFFFFFFF,FFFFFFFF
+static constexpr size_t HEADER_LINE_MAX_LEN = 64 * 1024;
+static constexpr size_t HEADER_SECTION_MAX_LEN = 1024 * 1024;
+
+// RFC 9110 Section 5.5 permits SP, HTAB, visible US-ASCII, and obs-text in a
+// field value.  All other control octets are invalid.  In particular, CR, LF,
+// and NUL must be rejected or replaced before processing or forwarding; reject
+// them here so the received message is never interpreted in two different ways.
+static bool isValidHttpFieldValue(const char *begin, const char *end)
+{
+    return std::all_of(begin, end, [](unsigned char c) {
+        return c == '\t' || c == ' ' || (c >= 0x21 && c <= 0x7e) || c >= 0x80;
+    });
+}
 
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
-    : status_(HttpRequestParseStatus::kExpectMethod),
-      loop_(connPtr->getLoop()),
-      conn_(connPtr)
+    : HttpRequestParser(connPtr->getLoop())
+{
+    conn_ = connPtr;
+}
+
+HttpRequestParser::HttpRequestParser(trantor::EventLoop *loop)
+    : status_(HttpRequestParseStatus::kExpectMethod), loop_(loop)
 {
 }
 
 bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
 {
-    bool succeed = false;
-    const char *start = begin;
-    const char *space = std::find(start, end, ' ');
-    if (space != end)
+    const char *space = std::find(begin, end, ' ');
+    if (space == begin || space == end)
+        return false;
+
+    const char *version = space + 1;
+    if (end - version != 8 || !std::equal(version, end - 1, "HTTP/1.") ||
+        (*(end - 1) != '0' && *(end - 1) != '1'))
     {
-        const char *slash = std::find(start, space, '/');
-        if (slash != start && slash + 1 < space && *(slash + 1) == '/')
-        {
-            // scheme precedents
-            slash = std::find(slash + 2, space, '/');
-        }
-        const char *question = std::find(slash, space, '?');
-        if (slash != space)
-        {
-            request_->setPath(slash, question);
-        }
-        else
-        {
-            // An empty abs_path is equivalent to an abs_path of "/"
-            request_->setPath("/");
-        }
-        if (question != space)
-        {
-            request_->setQuery(question + 1, space);
-        }
-        start = space + 1;
-        succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
-        if (succeed)
-        {
-            if (*(end - 1) == '1')
-            {
-                request_->setVersion(Version::kHttp11);
-            }
-            else if (*(end - 1) == '0')
-            {
-                request_->setVersion(Version::kHttp10);
-            }
-            else
-            {
-                succeed = false;
-            }
-        }
+        return false;
     }
-    return succeed;
+
+    if (std::find_if(begin, space, [](unsigned char c) {
+            return c <= 0x20 || c == 0x7f || c == '#';
+        }) != space)
+    {
+        return false;
+    }
+
+    const char *question = std::find(begin, space, '?');
+    if (question == begin)
+        return false;
+
+    const char *pathBegin = begin;
+    if (question - begin == 1 && *begin == '*')
+    {
+        if (request_->method() != Options || question != space)
+            return false;
+    }
+    else if (*begin != '/')
+    {
+        const char *scheme = std::search(begin, question, "://", "://" + 3);
+        if (scheme == begin || scheme == question)
+            return false;
+        const char *authority = scheme + 3;
+        pathBegin = std::find(authority, question, '/');
+        if (authority == pathBegin)
+            return false;
+    }
+
+    if (pathBegin == question)
+        request_->setPath("/");
+    else
+        request_->setPath(pathBegin, question);
+    if (question != space)
+    {
+        request_->setQuery(question + 1, space);
+    }
+    request_->setVersion(*(end - 1) == '1' ? Version::kHttp11
+                                           : Version::kHttp10);
+    return true;
 }
 
 HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
@@ -118,6 +142,11 @@ void HttpRequestParser::reset()
 {
     assert(loop_->isInLoopThread());
     remainContentLength_ = 0;
+    headerBytes_ = 0;
+    trailerBytes_ = 0;
+    contentLengthHeaderSeen_ = false;
+    transferEncodingHeaderSeen_ = false;
+    hostHeaderSeen_ = false;
     status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
     {
@@ -174,7 +203,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 const char *crlf = buf->findCRLF();
                 if (!crlf)
                 {
-                    if (buf->readableBytes() >= 64 * 1024)
+                    if (buf->readableBytes() >= HEADER_SECTION_MAX_LEN)
                     {
                         /// The limit for request line is 64K bytes. response
                         /// k414RequestURITooLarge
@@ -197,22 +226,73 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 const char *crlf = buf->findCRLF();
                 if (!crlf)
                 {
-                    if (buf->readableBytes() >= 64 * 1024)
+                    if (buf->readableBytes() >= HEADER_LINE_MAX_LEN ||
+                        buf->readableBytes() >=
+                            HEADER_SECTION_MAX_LEN - headerBytes_)
                     {
-                        /// The limit for every request header is 64K bytes;
-                        /// TODO: Make this configurable?
+                        /// Limit both an individual request header line and the
+                        /// complete request header section.
+                        /// TODO: Make these configurable?
                         return -k400BadRequest;
                     }
                     return 0;
                 }
 
+                const auto lineBytes =
+                    static_cast<size_t>(crlf - buf->peek()) + CRLF_LEN;
+                if (lineBytes > HEADER_LINE_MAX_LEN ||
+                    lineBytes > HEADER_SECTION_MAX_LEN - headerBytes_)
+                {
+                    return -k400BadRequest;
+                }
+                headerBytes_ += lineBytes;
+
                 const char *colon = std::find(buf->peek(), crlf, ':');
                 // found colon
                 if (colon != crlf)
                 {
+                    if (!isValidHttpFieldName(buf->peek(), colon))
+                    {
+                        // RFC 9112 Section 5.1 forbids whitespace between a
+                        // field name and colon. Reject all invalid field names
+                        // so they cannot be interpreted differently upstream.
+                        return -k400BadRequest;
+                    }
+                    if (!isValidHttpFieldValue(colon + 1, crlf))
+                    {
+                        return -k400BadRequest;
+                    }
+                    const std::string_view field(buf->peek(),
+                                                 static_cast<size_t>(
+                                                     colon - buf->peek()));
+                    if (utils::ci_equals(field, "host"))
+                    {
+                        if (hostHeaderSeen_)
+                        {
+                            return -k400BadRequest;
+                        }
+                        hostHeaderSeen_ = true;
+                    }
+                    if (utils::ci_equals(field, "content-length"))
+                    {
+                        if (contentLengthHeaderSeen_)
+                            return -k400BadRequest;
+                        contentLengthHeaderSeen_ = true;
+                    }
+                    if (utils::ci_equals(field, "transfer-encoding"))
+                    {
+                        if (transferEncodingHeaderSeen_)
+                            return -k400BadRequest;
+                        transferEncodingHeaderSeen_ = true;
+                    }
                     request_->addHeader(buf->peek(), colon, crlf);
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
+                }
+                if (buf->peek() != crlf)
+                {
+                    // Only an empty line terminates the header section.
+                    return -k400BadRequest;
                 }
                 buf->retrieveUntil(crlf + CRLF_LEN);
                 // end of headers
@@ -221,9 +301,20 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // and maintainability.
 
                 // process header information
-                auto &len = request_->getHeaderBy("content-length");
-                auto &encode = request_->getHeaderBy("transfer-encoding");
-                if (!len.empty() && !encode.empty())
+                const auto &len = request_->getHeaderBy("content-length");
+                const auto &encode = request_->getHeaderBy("transfer-encoding");
+                const auto &host = request_->getHeaderBy("host");
+                if ((request_->getVersion() == Version::kHttp11 &&
+                     !hostHeaderSeen_) ||
+                    (hostHeaderSeen_ && host.empty()))
+                {
+                    return -k400BadRequest;
+                }
+                if (transferEncodingHeaderSeen_ && encode.empty())
+                {
+                    return -k400BadRequest;
+                }
+                if (contentLengthHeaderSeen_ && transferEncodingHeaderSeen_)
                 {
                     // RFC 9112 Section 6.3:
                     // Messages containing both Content-Length and
@@ -232,19 +323,15 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     // inconsistent message framing.
                     return -k400BadRequest;
                 }
-                if (!len.empty())
+                if (contentLengthHeaderSeen_)
                 {
-                    try
-                    {
-                        remainContentLength_ =
-                            static_cast<size_t>(std::stoull(len));
-                    }
-                    catch (...)
+                    if (!utils::parseInteger(len, remainContentLength_))
                     {
                         return -k400BadRequest;
                     }
                     request_->contentLengthHeaderValue_ = remainContentLength_;
-                    if (remainContentLength_ == 0)
+                    if (remainContentLength_ == 0 &&
+                        status_ != HttpRequestParseStatus::kExpectChunkLen)
                     {
                         // content-length = 0, request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
@@ -256,7 +343,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 else
                 {
-                    if (encode.empty())
+                    if (!transferEncodingHeaderSeen_)
                     {
                         // no content-length and no transfer-encoding,
                         // request is over.
@@ -371,13 +458,23 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return 0;
                 }
                 // chunk length line
-                std::string len(buf->peek(), crlf - buf->peek());
-                char *end;
-                currentChunkLength_ = strtol(len.c_str(), &end, 16);
+                std::string_view len(buf->peek(), crlf - buf->peek());
+                const auto extension = len.find(';');
+                if (extension != std::string_view::npos)
+                {
+                    len = len.substr(0, extension);
+                }
+                if (!utils::parseInteger(len, currentChunkLength_, 16))
+                {
+                    return -k400BadRequest;
+                }
                 if (currentChunkLength_ != 0)
                 {
-                    if (currentChunkLength_ + remainContentLength_ >
-                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                    const auto maxBodySize =
+                        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+                    if (currentChunkLength_ > maxBodySize ||
+                        remainContentLength_ >
+                            maxBodySize - currentChunkLength_)
                     {
                         return -k413RequestEntityTooLarge;
                     }
@@ -392,34 +489,62 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             }
             case HttpRequestParseStatus::kExpectChunkBody:
             {
-                if (buf->readableBytes() < (currentChunkLength_ + CRLF_LEN))
+                const auto bytesToConsume =
+                    (std::min)(currentChunkLength_, buf->readableBytes());
+                if (bytesToConsume != 0)
+                {
+                    request_->appendToBody(buf->peek(), bytesToConsume);
+                    buf->retrieve(bytesToConsume);
+                    currentChunkLength_ -= bytesToConsume;
+                    remainContentLength_ += bytesToConsume;
+                }
+                if (currentChunkLength_ != 0 || buf->readableBytes() < CRLF_LEN)
                 {
                     return 0;
                 }
-                if (*(buf->peek() + currentChunkLength_) != '\r' ||
-                    *(buf->peek() + currentChunkLength_ + 1) != '\n')
+                if (buf->peek()[0] != '\r' || buf->peek()[1] != '\n')
                 {
                     // error!
                     return -k400BadRequest;
                 }
-                request_->appendToBody(buf->peek(), currentChunkLength_);
-                buf->retrieve(currentChunkLength_ + CRLF_LEN);
-                remainContentLength_ += currentChunkLength_;
-                currentChunkLength_ = 0;
+                buf->retrieve(CRLF_LEN);
                 status_ = HttpRequestParseStatus::kExpectChunkLen;
                 continue;
             }
             case HttpRequestParseStatus::kExpectLastEmptyChunk:
             {
-                // last empty chunk
-                if (buf->readableBytes() < CRLF_LEN)
+                const char *crlf = buf->findCRLF();
+                if (!crlf)
                 {
+                    if (buf->readableBytes() >= HEADER_LINE_MAX_LEN ||
+                        buf->readableBytes() >=
+                            HEADER_SECTION_MAX_LEN - trailerBytes_)
+                    {
+                        return -k400BadRequest;
+                    }
                     return 0;
                 }
-                if (*(buf->peek()) != '\r' || *(buf->peek() + 1) != '\n')
+                const auto lineBytes =
+                    static_cast<size_t>(crlf - buf->peek()) + CRLF_LEN;
+                if (lineBytes > HEADER_LINE_MAX_LEN ||
+                    lineBytes > HEADER_SECTION_MAX_LEN - trailerBytes_)
                 {
-                    // error!
                     return -k400BadRequest;
+                }
+                trailerBytes_ += lineBytes;
+                if (crlf != buf->peek())
+                {
+                    const char *colon = std::find(buf->peek(), crlf, ':');
+                    if (colon == buf->peek() || colon == crlf ||
+                        !isValidHttpFieldName(buf->peek(), colon) ||
+                        !isValidHttpFieldValue(colon + 1, crlf))
+                    {
+                        return -k400BadRequest;
+                    }
+                    // Trailers are not represented separately by
+                    // HttpRequest, so validate and discard them.
+                    buf->retrieveUntil(crlf + CRLF_LEN);
+                    continue;
                 }
                 buf->retrieve(CRLF_LEN);
 

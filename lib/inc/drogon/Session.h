@@ -219,6 +219,7 @@ class Session
      */
     void changeSessionIdToClient()
     {
+        std::lock_guard<std::mutex> lck(mutex_);
         needToChange_ = true;
         needToSet_ = true;
     }
@@ -247,6 +248,7 @@ class Session
      */
     void hasSet()
     {
+        std::lock_guard<std::mutex> lck(mutex_);
         needToSet_ = false;
     }
 
@@ -256,6 +258,7 @@ class Session
      */
     bool needToChangeSessionId() const
     {
+        std::lock_guard<std::mutex> lck(mutex_);
         return needToChange_;
     }
 
@@ -265,7 +268,17 @@ class Session
      */
     bool needSetToClient() const
     {
+        std::lock_guard<std::mutex> lck(mutex_);
         return needToSet_;
+    }
+
+    bool consumeNeedSetToClient()
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        if (!needToSet_)
+            return false;
+        needToSet_ = false;
+        return true;
     }
 
     void setSessionId(const std::string &id)

@@ -378,6 +378,9 @@ class DROGON_EXPORT HttpRequest
     // Return the peer certificate (if any)
     virtual const trantor::CertificatePtr &peerCertificate() const = 0;
 
+    /// Set the certificate presented by the transport peer.
+    virtual void setPeerCertificate(const trantor::CertificatePtr &cert) = 0;
+
     const trantor::CertificatePtr &getPeerCertificate() const
     {
         return peerCertificate();

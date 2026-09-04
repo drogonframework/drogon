@@ -19,6 +19,7 @@
 #include "MiddlewaresFunction.h"
 #include <drogon/HttpSimpleController.h>
 #include <drogon/WebSocketController.h>
+#include <drogon/utils/Utilities.h>
 #include <algorithm>
 
 using namespace drogon;
@@ -364,7 +365,7 @@ void HttpControllersRouter::addHttpPath(
                     return std::isdigit(c);
                 }))
             {
-                auto place = (size_t)std::stoi(result);
+                auto place = utils::fromString<size_t>(result);
                 if (place > binder->paramCount() || place == 0)
                 {
                     LOG_ERROR << "Parameter placeholder(value=" << place
@@ -392,7 +393,7 @@ void HttpControllersRouter::addHttpPath(
                 {
                     assert(regexResult.size() == 2 && regexResult[1].matched);
                     auto num = regexResult[1].str();
-                    auto place = (size_t)std::stoi(num);
+                    auto place = utils::fromString<size_t>(num);
                     if (place > binder->paramCount() || place == 0)
                     {
                         LOG_ERROR << "Parameter placeholder(value=" << place
@@ -449,7 +450,7 @@ void HttpControllersRouter::addHttpPath(
                         return std::isdigit(c);
                     }))
                 {
-                    auto place = (size_t)std::stoi(result);
+                    auto place = utils::fromString<size_t>(result);
                     if (place > binder->paramCount() || place == 0)
                     {
                         LOG_ERROR << "Parameter placeholder(value=" << place
@@ -487,7 +488,7 @@ void HttpControllersRouter::addHttpPath(
                         assert(regexResult.size() == 2 &&
                                regexResult[1].matched);
                         auto num = regexResult[1].str();
-                        auto place = (size_t)std::stoi(num);
+                        auto place = utils::fromString<size_t>(num);
                         if (place > binder->paramCount() || place == 0)
                         {
                             LOG_ERROR << "Parameter placeholder(value=" << place

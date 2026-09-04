@@ -69,6 +69,7 @@ class HttpResponseParser : public trantor::NonCopyable
     HttpResponseParseStatus status_;
     HttpResponseImplPtr responsePtr_;
     bool parseResponseForHeadMethod_{false};
+    bool contentLengthSeen_{false};
     size_t leftBodyLength_{0};
     size_t currentChunkLength_{0};
     std::weak_ptr<trantor::TcpConnection> conn_;
