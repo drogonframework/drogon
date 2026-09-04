@@ -147,7 +147,7 @@ DROGON_TEST(RequestStreamTest)
                        trantor::InetAddress{ip, port},
                        // Good request
                        {"POST /stream_chunk HTTP/1.1\r\n"
-		        "Host: 127.0.0.1:8848\r\n"
+                        "Host: 127.0.0.1:8848\r\n"
                         "Transfer-Encoding: chunked\r\n\r\n",
                         "1\r\nz\r\n",
                         "2\r\nzz\r\n0\r\n\r\n"},
@@ -159,7 +159,7 @@ DROGON_TEST(RequestStreamTest)
                        trantor::InetAddress{ip, port},
                        // Bad request
                        {"POST /stream_chunk HTTP/1.1\r\n"
-		        "Host: 127.0.0.1:8848\r\n"
+                        "Host: 127.0.0.1:8848\r\n"
                         "Transfer-Encoding: chunked\r\n\r\n",
                         "1\r\nz\r\n",
                         "1\r\nzz\r\n",
@@ -167,4 +167,3 @@ DROGON_TEST(RequestStreamTest)
                        // Bad response
                        "HTTP/1.1 400 Bad Request\r\n");
 }
-
