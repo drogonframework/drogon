@@ -51,6 +51,11 @@ class TransactionImpl : public Transaction,
         timeout_ = timeout;
     }
 
+    void setReconnectInterval(double) override
+    {
+        // Transactions do not manage reconnection
+    }
+
   private:
     DbConnectionPtr connectionPtr_;
 
