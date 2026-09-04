@@ -69,6 +69,11 @@ class DbClientLockFree : public DbClient,
         timeout_ = timeout;
     }
 
+    void setReconnectInterval(double interval) override
+    {
+        reconnectInterval_ = interval;
+    }
+
     void closeAll() override;
 
   private:
@@ -88,6 +93,7 @@ class DbClientLockFree : public DbClient,
     std::list<TransCallbackEntry> transCallbacks_;
 
     double timeout_{-1.0};
+    double reconnectInterval_{1.0};
 
     void makeTrans(
         const DbConnectionPtr &conn,
