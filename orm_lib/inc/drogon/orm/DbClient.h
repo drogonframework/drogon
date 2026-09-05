@@ -133,7 +133,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      */
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
                                                  size_t connNum,
-                                                 bool autoBatch = false);
+                                                 bool autoBatch = false,
+                                                 double reconnectInterval = 1.0);
     static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo,
                                                     size_t connNum);
     static std::shared_ptr<DbClient> newSqlite3Client(

@@ -46,16 +46,19 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo,
                                    ClientType type,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                                    size_t connectionNumberPerLoop,
-                                   bool autoBatch)
+                                   bool autoBatch,
+                                   double reconnectInterval)
 #else
-                                   size_t connectionNumberPerLoop)
+                                   size_t connectionNumberPerLoop,
+                                   double reconnectInterval)
 #endif
     : connectionInfo_(connInfo),
       loop_(loop),
+      numberOfConnections_(connectionNumberPerLoop),
 #if LIBPQ_SUPPORTS_BATCH_MODE
       autoBatch_(autoBatch),
 #endif
-      numberOfConnections_(connectionNumberPerLoop)
+      reconnectInterval_(reconnectInterval)
 {
     type_ = type;
     LOG_TRACE << "type=" << (int)type;
@@ -464,8 +467,8 @@ DbConnectionPtr DbClientLockFree::newConnection()
             thisPtr->connectionHolders_.erase(iter);
 
         thisPtr->transSet_.erase(closeConnPtr);
-        // Reconnect after 1 second
-        thisPtr->loop_->runAfter(1, [weakPtr, closeConnPtr] {
+        thisPtr->loop_->runAfter(thisPtr->reconnectInterval_,
+                                 [weakPtr, closeConnPtr] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
