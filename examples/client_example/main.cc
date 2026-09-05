@@ -72,7 +72,7 @@ int main()
                     std::cout << "count=" << nth_resp << std::endl;
                 });
         }
-        std::cout << "requestsBufferSize:" << client->requestsBufferSize()
+        std::cout << "outstandingRequests:" << client->outstandingRequests()
                   << std::endl;
     }
 

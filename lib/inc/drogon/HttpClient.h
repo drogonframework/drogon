@@ -180,12 +180,6 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual void setSockOptCallback(std::function<void(int)> cb) = 0;
 
     /**
-     * @brief Return the number of unsent http requests in the current http
-     * client cache buffer
-     */
-    virtual std::size_t requestsBufferSize() = 0;
-
-    /**
      * @brief Get the total number of outstanding requests (buffered +
      * in-flight).
      */
