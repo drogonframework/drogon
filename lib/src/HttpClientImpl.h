@@ -131,8 +131,7 @@ class HttpClientImpl final : public HttpClient,
 
     std::size_t outstandingRequests() const override
     {
-        return requestsBufferSize_.load(std::memory_order_relaxed) +
-               pipeliningCallbacksSize_.load(std::memory_order_relaxed);
+        return outstandingRequests_.load(std::memory_order_relaxed);
     }
 
     std::size_t requestsBufferSize() override
@@ -189,8 +188,8 @@ class HttpClientImpl final : public HttpClient,
     void onError(ReqResult result);
     std::string domain_;
     bool isDomainName_{true};  // true if domain_ is name
+    std::atomic<std::size_t> outstandingRequests_{0};
     std::atomic<std::size_t> requestsBufferSize_{0};
-    std::atomic<std::size_t> pipeliningCallbacksSize_{0};
     size_t pipeliningDepth_{0};
     bool enableCookies_{false};
     std::vector<Cookie> validCookies_;
