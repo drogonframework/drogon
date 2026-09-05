@@ -51,20 +51,23 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
                            size_t connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                            ClientType type,
-                           bool autoBatch)
+                           bool autoBatch,
+                           double reconnectInterval)
 #else
-                           ClientType type)
+                           ClientType type,
+                           double reconnectInterval)
 #endif
     : numberOfConnections_(connNum),
-#if LIBPQ_SUPPORTS_BATCH_MODE
-      autoBatch_(autoBatch),
-#endif
       loops_(type == ClientType::Sqlite3
                  ? 1
                  : (connNum < std::thread::hardware_concurrency()
                         ? connNum
                         : std::thread::hardware_concurrency()),
-             "DbLoop")
+             "DbLoop"),
+#if LIBPQ_SUPPORTS_BATCH_MODE
+      autoBatch_(autoBatch),
+#endif
+      reconnectInterval_(reconnectInterval)
 {
     type_ = type;
     connectionInfo_ = connInfo;
@@ -440,17 +443,18 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
                    thisPtr->connections_.end());
             thisPtr->connections_.erase(closeConnPtr);
         }
-        // Reconnect after 1 second
+        // Reconnect after the configured interval.
         auto loop = closeConnPtr->loop();
         // closeConnPtr may be not valid. Close the connection file descriptor.
         closeConnPtr->disconnect();
-        loop->runAfter(1, [weakPtr, loop, closeConnPtr] {
-            auto thisPtr = weakPtr.lock();
-            if (!thisPtr)
-                return;
+        loop->runAfter(
+            thisPtr->reconnectInterval_, [weakPtr, loop, closeConnPtr] {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
 
-            thisPtr->newConnection(loop);
-        });
+                thisPtr->newConnection(loop);
+            });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
         LOG_TRACE << "connected!";

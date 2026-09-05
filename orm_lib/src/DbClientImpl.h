@@ -36,9 +36,11 @@ class DbClientImpl : public DbClient,
                  size_t connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                  ClientType type,
-                 bool autoBatch);
+                 bool autoBatch,
+                 double reconnectInterval);
 #else
-                 ClientType type);
+                 ClientType type,
+                 double reconnectInterval);
 #endif
     ~DbClientImpl() noexcept override;
     void execSql(const char *sql,
@@ -77,6 +79,7 @@ class DbClientImpl : public DbClient,
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool autoBatch_{false};
 #endif
+    double reconnectInterval_{1.0};
     DbConnectionPtr newConnection(trantor::EventLoop *loop);
 
     void makeTrans(
