@@ -46,7 +46,7 @@ class DbClient;
 /// Transaction locking mode.
 enum class TransactionType
 {
-    Deferred,  ///< BEGIN — lock acquired on first write (default)
+    Deferred,   ///< BEGIN — lock acquired on first write (default)
     Immediate,  ///< BEGIN IMMEDIATE — write lock acquired upfront (SQLite only)
     Exclusive,  ///< BEGIN EXCLUSIVE — exclusive lock acquired upfront (SQLite
                 ///< only)
@@ -131,10 +131,11 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      *
      * @param connNum: The number of connections to database server;
      */
-    static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
-                                                 size_t connNum,
-                                                 bool autoBatch = false,
-                                                 double reconnectInterval = 1.0);
+    static std::shared_ptr<DbClient> newPgClient(
+        const std::string &connInfo,
+        size_t connNum,
+        bool autoBatch = false,
+        double reconnectInterval = 1.0);
     static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo,
                                                     size_t connNum);
     static std::shared_ptr<DbClient> newSqlite3Client(
