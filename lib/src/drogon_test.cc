@@ -1,6 +1,8 @@
 #include <drogon/drogon_test.h>
 
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <future>
 #include <condition_variable>
 
@@ -61,10 +63,12 @@ static void printHelp(std::string_view argv0)
     print() << "A Drogon Test application:\n\n"
             << "Usage: " << argv0 << " [options]\n"
             << "options:\n"
-            << "    -r            Run a specific test\n"
+            << "    -r <tests...> Run one or more specific tests\n"
             << "    -s            Print successful tests\n"
             << "    -l            List available tests\n"
-            << "    -h | --help   Print this help message\n";
+            << "    -h | --help   Print this help message\n"
+            << "\n"
+            << "Example: " << argv0 << " -r $(cat selected-tests.txt)\n";
 }
 
 void printTestStats()
@@ -144,26 +148,33 @@ int run(int argc, char **argv)
     internal::numTestCases = 0;
     internal::printSuccessfulTests = false;
 
-    std::string targetTest;
+    std::vector<std::string> orderedTestNames;
+    std::unordered_set<std::string> uniqueTestNames;
     bool listTests = false;
     for (int i = 1; i < argc; i++)
     {
         const std::string param = argv[i];
         if (param == "-r")
         {
-            if (!targetTest.empty())
-            {
-                printErr() << "Only one test can be specified to run\n";
-                exit(1);
-            }
-            else if (i + 1 >= argc)
+            if (i + 1 >= argc || argv[i + 1][0] == '-')
             {
                 printErr() << "Missing test name after -r.\n";
                 exit(1);
             }
 
-            targetTest = argv[i + 1];
-            i++;
+            while (i + 1 < argc && argv[i + 1][0] != '-')
+            {
+                const std::string testName = argv[++i];
+                if (uniqueTestNames.emplace(testName).second)
+                {
+                    orderedTestNames.emplace_back(std::move(testName));
+                }
+                else
+                {
+                    printErr() << "Duplicate test name: " << testName << "\n";
+                    exit(1);
+                }
+            }
         }
         else if (param == "-h" || param == "--help")
         {
@@ -205,39 +216,56 @@ int run(int argc, char **argv)
         exit(0);
     }
 
+    std::unordered_map<std::string, std::shared_ptr<TestCase>>
+        availableTestCases;
+    std::vector<std::string> availableTestNames;
+    for (const auto &name : classNames)
+    {
+        if (name.find(DROGON_TESTCASE_PREIX_STR_) != 0)
+            continue;
+
+        auto obj = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(name));
+        auto test = std::dynamic_pointer_cast<TestCase>(obj);
+        if (test == nullptr)
+        {
+            LOG_WARN << "Class " << name
+                     << " seems to be a test case. But type information "
+                        "disagrees.";
+            continue;
+        }
+        const auto testName = test->name();
+        if (availableTestCases.emplace(testName, std::move(test)).second)
+            availableTestNames.emplace_back(testName);
+    }
+
+    std::vector<std::string> missingTestNames;
+    for (const auto &name : orderedTestNames)
+    {
+        if (availableTestCases.find(name) == availableTestCases.end())
+            missingTestNames.emplace_back(name);
+    }
+    if (!missingTestNames.empty())
+    {
+        printErr() << "Cannot find test(s) named:\n";
+        for (const auto &name : missingTestNames)
+            printErr() << "  " << name << "\n";
+        exit(1);
+    }
+
     std::vector<std::shared_ptr<TestCase>> testCases;
     // NOTE: Registering a dummy case prevents the test-end signal to be
     // emitted too early as there's always an case that hasn't finish
     std::shared_ptr<Case> dummyCase = std::make_shared<Case>("__dummy_dummy_");
-    for (const auto &name : classNames)
+    const auto &testNames =
+        orderedTestNames.empty() ? availableTestNames : orderedTestNames;
+    for (const auto &name : testNames)
     {
-        if (name.find(DROGON_TESTCASE_PREIX_STR_) == 0)
-        {
-            auto obj =
-                std::shared_ptr<DrObjectBase>(DrClassMap::newObject(name));
-            auto test = std::dynamic_pointer_cast<TestCase>(obj);
-            if (test == nullptr)
-            {
-                LOG_WARN << "Class " << name
-                         << " seems to be a test case. But type information "
-                            "disagrees.";
-                continue;
-            }
-            if (targetTest.empty() || test->name() == targetTest)
-            {
-                internal::numTestCases++;
-                test->doTest_(std::make_shared<Case>(test->name()));
-                testCases.emplace_back(std::move(test));
-            }
-        }
+        auto &test = availableTestCases.at(name);
+        internal::numTestCases++;
+        test->doTest_(std::make_shared<Case>(test->name()));
+        testCases.emplace_back(std::move(test));
     }
     dummyCase = {};
-
-    if (targetTest != "" && internal::numTestCases == 0)
-    {
-        printErr() << "Cannot find test named " << targetTest << "\n";
-        exit(1);
-    }
 
     std::unique_lock<std::mutex> l(internal::mtxRegister);
     if (internal::registeredTests.empty() == false)

@@ -149,3 +149,9 @@ set_property(TARGET ${tests} PROPERTY CXX_EXTENSIONS OFF)
 ParseAndAddDrogonTests(unittest)
 ParseAndAddDrogonTests(cookie_same_site)
 ParseAndAddDrogonTests(real_ip_resolver)
+
+add_test(
+  NAME drogon_test_runner_cli
+  COMMAND ${CMAKE_COMMAND}
+          -DTEST_RUNNER=$<TARGET_FILE:unittest>
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/DrogonTestRunnerCliTest.cmake)

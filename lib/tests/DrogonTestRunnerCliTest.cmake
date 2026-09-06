@@ -1,0 +1,92 @@
+function(run_test_runner result output)
+  execute_process(
+    COMMAND "${TEST_RUNNER}" ${ARGN}
+    RESULT_VARIABLE command_result
+    OUTPUT_VARIABLE command_output
+    ERROR_VARIABLE command_error)
+  set(${result} "${command_result}" PARENT_SCOPE)
+  set(${output} "${command_output}${command_error}" PARENT_SCOPE)
+endfunction()
+
+function(require_success description result output)
+  if(NOT result EQUAL 0)
+    message(FATAL_ERROR "${description} failed with exit code ${result}:\n${output}")
+  endif()
+endfunction()
+
+function(require_failure description result output)
+  if(result EQUAL 0)
+    message(FATAL_ERROR "${description} unexpectedly succeeded:\n${output}")
+  endif()
+endfunction()
+
+run_test_runner(result output -r TestFrameworkSelfTest)
+require_success("single test selection" "${result}" "${output}")
+if(NOT output MATCHES "1 tests cases")
+  message(FATAL_ERROR "single test selection changed unexpectedly:\n${output}")
+endif()
+
+run_test_runner(result output -s -r TestFrameworkSelfTest URLCodec)
+require_success("batch test selection" "${result}" "${output}")
+
+string(FIND "${output}" "In test case TestFrameworkSelfTest" first_test_position)
+string(FIND "${output}" "In test case URLCodec" second_test_position)
+if(first_test_position EQUAL -1 OR second_test_position EQUAL -1 OR
+   first_test_position GREATER second_test_position)
+  message(FATAL_ERROR "selected tests did not start in the requested order:\n${output}")
+endif()
+if(NOT output MATCHES "2 tests cases")
+  message(FATAL_ERROR "batch test selection changed unexpectedly:\n${output}")
+endif()
+
+run_test_runner(result output -r TestFrameworkSelfTest URLCodec TestFrameworkSelfTest)
+require_failure("duplicate test selection" "${result}" "${output}")
+if(NOT output MATCHES "Duplicate test name: TestFrameworkSelfTest")
+  message(FATAL_ERROR "duplicate test name was not reported:\n${output}")
+endif()
+if(output MATCHES "In test case")
+  message(FATAL_ERROR "a test started despite a duplicate requested name:\n${output}")
+endif()
+
+run_test_runner(result output -r missing-one TestFrameworkSelfTest missing-two)
+require_failure("unknown test selection" "${result}" "${output}")
+foreach(test_name missing-one missing-two)
+  if(NOT output MATCHES "${test_name}")
+    message(FATAL_ERROR "missing test name ${test_name} was not reported:\n${output}")
+  endif()
+endforeach()
+if(output MATCHES "In test case")
+  message(FATAL_ERROR "a test started despite an unknown requested name:\n${output}")
+endif()
+
+run_test_runner(result output -r)
+require_failure("missing name after -r" "${result}" "${output}")
+if(NOT output MATCHES "Missing test name after -r")
+  message(FATAL_ERROR "missing-name error was not reported:\n${output}")
+endif()
+
+run_test_runner(result output --unknown)
+require_failure("unknown option" "${result}" "${output}")
+if(NOT output MATCHES "Unknown parameter: --unknown")
+  message(FATAL_ERROR "unknown-option error was not reported:\n${output}")
+endif()
+
+run_test_runner(result output -l)
+require_success("test listing" "${result}" "${output}")
+if(NOT output MATCHES "Available Tests:" OR NOT output MATCHES "URLCodec")
+  message(FATAL_ERROR "test listing changed unexpectedly:\n${output}")
+endif()
+
+run_test_runner(result output --help)
+require_success("help output" "${result}" "${output}")
+string(FIND "${output}" "-r <tests...>" batch_syntax_position)
+string(FIND "${output}" "-r $(cat selected-tests.txt)" batch_example_position)
+if(batch_syntax_position EQUAL -1 OR batch_example_position EQUAL -1)
+  message(FATAL_ERROR "batch selection help was not reported:\n${output}")
+endif()
+
+run_test_runner(result output -h)
+require_success("short help output" "${result}" "${output}")
+if(NOT output MATCHES "A Drogon Test application")
+  message(FATAL_ERROR "short help output changed unexpectedly:\n${output}")
+endif()
