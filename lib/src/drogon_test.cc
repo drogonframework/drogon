@@ -159,7 +159,7 @@ int run(int argc, char **argv)
             if (i + 1 >= argc || argv[i + 1][0] == '-')
             {
                 printErr() << "Missing test name after -r.\n";
-                exit(1);
+                return 1;
             }
 
             while (i + 1 < argc && argv[i + 1][0] != '-')
@@ -172,14 +172,14 @@ int run(int argc, char **argv)
                 else
                 {
                     printErr() << "Duplicate test name: " << testName << "\n";
-                    exit(1);
+                    return 1;
                 }
             }
         }
         else if (param == "-h" || param == "--help")
         {
             printHelp(argv[0]);
-            exit(0);
+            return 0;
         }
         else if (param == "-s")
         {
@@ -193,7 +193,7 @@ int run(int argc, char **argv)
         {
             printErr() << "Unknown parameter: " << param << "\n";
             printHelp(argv[0]);
-            exit(1);
+            return 1;
         }
     }
     auto classNames = DrClassMap::getAllClassName();
@@ -213,7 +213,7 @@ int run(int argc, char **argv)
                 print() << "  " << ptr->name() << "\n";
             }
         }
-        exit(0);
+        return 0;
     }
 
     std::unordered_map<std::string, std::shared_ptr<TestCase>>
@@ -249,7 +249,7 @@ int run(int argc, char **argv)
         printErr() << "Cannot find test(s) named:\n";
         for (const auto &name : missingTestNames)
             printErr() << "  " << name << "\n";
-        exit(1);
+        return 1;
     }
 
     std::vector<std::shared_ptr<TestCase>> testCases;
