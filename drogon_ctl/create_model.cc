@@ -185,10 +185,12 @@ static void tryAddAutoRelationship(std::vector<Relationship> &allRelationships,
                                    const std::string &referencedColumn,
                                    bool normalizeNames)
 {
+    const auto targetTableName =
+        normalizeNames ? toLower(referencedTable) : referencedTable;
     for (const auto &r : allRelationships)
     {
         if (r.originalKey() == fkColumn &&
-            r.targetTableName() == referencedTable)
+            r.targetTableName() == targetTableName)
         {
             return;  // Already exists in user config
         }
@@ -198,12 +200,45 @@ static void tryAddAutoRelationship(std::vector<Relationship> &allRelationships,
     relJson["original_table_name"] =
         normalizeNames ? toLower(originalTable) : originalTable;
     relJson["original_key"] = fkColumn;
-    relJson["target_table_name"] =
-        normalizeNames ? toLower(referencedTable) : referencedTable;
+    relJson["target_table_name"] = targetTableName;
     relJson["target_key"] = referencedColumn;
     relJson["enable_reverse"] = true;
     try
     {
+        auto relationshipAlias = [](const std::string &column,
+                                    const std::string &targetColumn) {
+            auto alias = column;
+            const auto suffix = "_" + targetColumn;
+            if (alias.length() > suffix.length() &&
+                alias.compare(alias.length() - suffix.length(),
+                              suffix.length(),
+                              suffix) == 0)
+            {
+                alias.resize(alias.length() - suffix.length());
+            }
+            return nameTransform(alias, true);
+        };
+
+        bool needsAlias = false;
+        for (auto &relationship : allRelationships)
+        {
+            if (relationship.targetTableName() == targetTableName)
+            {
+                needsAlias = true;
+                if (relationship.targetTableAlias().empty())
+                {
+                    relationship.setTargetTableAlias(
+                        relationshipAlias(relationship.originalKey(),
+                                          relationship.targetKey()));
+                }
+            }
+        }
+        if (needsAlias)
+        {
+            relJson["target_table_alias"] =
+                relationshipAlias(fkColumn, referencedColumn);
+        }
+
         Relationship autoRel(relJson);
         allRelationships.push_back(autoRel);
         std::cout << "    Auto-detected FK: " << originalTable << "."
