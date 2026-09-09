@@ -23,6 +23,10 @@
 #include <vector>
 #include "impl_forwards.h"
 
+#ifdef DROGON_HAS_HTTP3
+#include "QuicServer.h"
+#endif
+
 namespace trantor
 {
 class InetAddress;
@@ -41,7 +45,8 @@ class ListenerManager : public trantor::NonCopyable
                      const std::string &keyFile = "",
                      bool useOldTLS = false,
                      const std::vector<std::pair<std::string, std::string>>
-                         &sslConfCmds = {});
+                         &sslConfCmds = {},
+                     bool enableHttp3 = false);
     std::vector<trantor::InetAddress> getListeners() const;
     void createListeners(
         const std::string &globalCertFile,
@@ -79,14 +84,16 @@ class ListenerManager : public trantor::NonCopyable
             std::string certFile,
             std::string keyFile,
             bool useOldTLS,
-            std::vector<std::pair<std::string, std::string>> sslConfCmds)
+            std::vector<std::pair<std::string, std::string>> sslConfCmds,
+            bool enableHttp3 = false)
             : ip_(std::move(ip)),
               port_(port),
               useSSL_(useSSL),
               certFile_(std::move(certFile)),
               keyFile_(std::move(keyFile)),
               useOldTLS_(useOldTLS),
-              sslConfCmds_(std::move(sslConfCmds))
+              sslConfCmds_(std::move(sslConfCmds)),
+              enableHttp3_(enableHttp3)
         {
         }
 
@@ -97,10 +104,14 @@ class ListenerManager : public trantor::NonCopyable
         std::string keyFile_;
         bool useOldTLS_;
         std::vector<std::pair<std::string, std::string>> sslConfCmds_;
+        bool enableHttp3_{false};
     };
 
     std::vector<ListenerInfo> listeners_;
     std::vector<std::shared_ptr<HttpServer>> servers_;
+#ifdef DROGON_HAS_HTTP3
+    std::vector<std::shared_ptr<QuicServer>> quicServers_;
+#endif
 
     // should have value when and only when on OS that one port can only be
     // listened by one thread
