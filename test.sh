@@ -271,6 +271,17 @@ EOF
         run_ns_test "config_ns" "override_ns" "override_ns" "CLI namespace overrides config"
         run_ns_test "should_be_ignored" "" "" "Empty namespace from CLI" "true"
 
+        echo "Testing auto-detected relationship names..."
+        sqlite3 test.db "CREATE TABLE types (id INTEGER PRIMARY KEY, name TEXT); CREATE TABLE cars (id INTEGER PRIMARY KEY, plate_type_id INTEGER REFERENCES types(id), color_id INTEGER REFERENCES types(id));"
+        ${drogon_ctl_exec} create model . --table=cars -f > /dev/null 2>&1
+        if ! grep -q "Types getPlateType(" Cars.h ||
+            ! grep -q "Types getColor(" Cars.h ||
+            grep -q "Types getTypes(" Cars.h; then
+            echo "✗ Auto-detected relationship name test failed"
+            exit -1
+        fi
+        echo "✓ Auto-detected relationship names are unique"
+
         cd ..
         rm -rf test_models
         echo "Namespace customization tests passed"
