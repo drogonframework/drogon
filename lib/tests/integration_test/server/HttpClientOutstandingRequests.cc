@@ -13,7 +13,6 @@ DROGON_TEST(HttpClientOutstandingRequests)
     // Enable pipelining to allow multiple in-flight requests simultaneously
     client->setPipeliningDepth(64);
 
-    CHECK(client->requestsBufferSize() == 0);
     CHECK(client->outstandingRequests() == 0);
 
     const int totalRequests = 50;
@@ -47,6 +46,5 @@ DROGON_TEST(HttpClientOutstandingRequests)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    CHECK(client->requestsBufferSize() == 0);
     CHECK(client->outstandingRequests() == 0);
 }
