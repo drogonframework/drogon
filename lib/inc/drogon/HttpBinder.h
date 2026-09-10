@@ -109,32 +109,32 @@ inline std::string getHandlerArgumentValue<std::string>(std::string &&p)
 template <>
 inline int getHandlerArgumentValue<int>(std::string &&p)
 {
-    return std::stoi(p);
+    return utils::fromString<int>(p);
 }
 
 template <>
 inline long getHandlerArgumentValue<long>(std::string &&p)
 {
-    return std::stol(p);
+    return utils::fromString<long>(p);
 }
 
 template <>
 inline long long getHandlerArgumentValue<long long>(std::string &&p)
 {
-    return std::stoll(p);
+    return utils::fromString<long long>(p);
 }
 
 template <>
 inline unsigned long getHandlerArgumentValue<unsigned long>(std::string &&p)
 {
-    return std::stoul(p);
+    return utils::fromString<unsigned long>(p);
 }
 
 template <>
 inline unsigned long long getHandlerArgumentValue<unsigned long long>(
     std::string &&p)
 {
-    return std::stoull(p);
+    return utils::fromString<unsigned long long>(p);
 }
 
 template <>

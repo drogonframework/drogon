@@ -330,7 +330,7 @@ class HttpRequestImpl : public HttpRequest
         local_ = local;
     }
 
-    void setPeerCertificate(const trantor::CertificatePtr &cert)
+    void setPeerCertificate(const trantor::CertificatePtr &cert) override
     {
         peerCertificate_ = cert;
     }

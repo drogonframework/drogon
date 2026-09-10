@@ -28,6 +28,7 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(
       localAddr_(conn->localAddr()),
       peerAddr_(conn->peerAddr()),
       isServer_(isServer),
+      parser_(isServer),
       usingMask_(false)
 {
 }
@@ -312,12 +313,11 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         auto secondByte = (*buffer)[1];
         size_t length = secondByte & 127;
         int isMasked = (secondByte & 0x80);
-        if (isMasked != 0)
+        if ((isMasked != 0) != expectMasked_)
         {
-            LOG_TRACE << "data encoded!";
+            LOG_ERROR << "Bad frame: invalid WebSocket masking";
+            return false;
         }
-        else
-            LOG_TRACE << "plain data";
         size_t indexFirstMask = 2;
 
         if (length == 126)
@@ -350,6 +350,11 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             }
             else if (indexFirstMask == 10)
             {
+                if ((static_cast<unsigned char>((*buffer)[2]) & 0x80) != 0)
+                {
+                    LOG_ERROR << "Payload length exceeds the RFC 6455 limit";
+                    return false;
+                }
                 length = 0;
                 for (int i = 2; i <= 9; ++i)
                 {
@@ -368,56 +373,50 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
                 return false;
             }
         }
+        const auto maxMessageSize =
+            HttpAppFrameworkImpl::instance().getClientMaxWebSocketMessageSize();
+        const auto currentMessageSize = message_.size();
+        if (currentMessageSize > maxMessageSize ||
+            length > maxMessageSize - currentMessageSize ||
+            length > message_.max_size() - currentMessageSize)
+        {
+            LOG_ERROR << "The size of the WebSocket message is too large!";
+            buffer->retrieveAll();
+            return false;
+        }
+
+        const size_t frameHeaderSize = indexFirstMask + (isMasked != 0 ? 4 : 0);
+        if (buffer->readableBytes() < frameHeaderSize ||
+            length > buffer->readableBytes() - frameHeaderSize)
+        {
+            return true;
+        }
+
         if (isMasked != 0)
         {
-            // The message is sent by the client, check the length
-            if (length > HttpAppFrameworkImpl::instance()
-                             .getClientMaxWebSocketMessageSize())
+            auto masks = buffer->peek() + indexFirstMask;
+            auto rawData = buffer->peek() + frameHeaderSize;
+            auto oldLen = message_.length();
+            message_.resize(oldLen + length);
+            for (size_t i = 0; i < length; ++i)
             {
-                LOG_ERROR << "The size of the WebSocket message is too large!";
-                buffer->retrieveAll();
-                return false;
+                message_[oldLen + i] = (rawData[i] ^ masks[i % 4]);
             }
-            if (buffer->readableBytes() >= (indexFirstMask + 4 + length))
+            buffer->retrieve(frameHeaderSize + length);
+            if (isFin)
             {
-                auto masks = buffer->peek() + indexFirstMask;
-                auto indexFirstDataByte = indexFirstMask + 4;
-                auto rawData = buffer->peek() + indexFirstDataByte;
-                auto oldLen = message_.length();
-                message_.resize(oldLen + length);
-                for (size_t i = 0; i < length; ++i)
-                {
-                    message_[oldLen + i] = (rawData[i] ^ masks[i % 4]);
-                }
-                buffer->retrieve(indexFirstMask + 4 + length);
-                if (isFin)
-                {
-                    gotAll_ = true;
-                    return true;
-                }
-            }
-            else
-            {
-                // Not enough data yet, wait for more.
+                gotAll_ = true;
                 return true;
             }
         }
         else
         {
-            if (buffer->readableBytes() >= (indexFirstMask + length))
+            auto rawData = buffer->peek() + frameHeaderSize;
+            message_.append(rawData, length);
+            buffer->retrieve(frameHeaderSize + length);
+            if (isFin)
             {
-                auto rawData = buffer->peek() + indexFirstMask;
-                message_.append(rawData, length);
-                buffer->retrieve(indexFirstMask + length);
-                if (isFin)
-                {
-                    gotAll_ = true;
-                    return true;
-                }
-            }
-            else
-            {
-                // Not enough data yet, wait for more.
+                gotAll_ = true;
                 return true;
             }
         }

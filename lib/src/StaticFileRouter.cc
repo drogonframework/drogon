@@ -35,6 +35,41 @@
 
 using namespace drogon;
 
+static bool pathIsWithinBase(const std::string &base, std::string relativePath)
+{
+    std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+    const auto firstComponent = relativePath.find_first_not_of('/');
+    if (firstComponent == std::string::npos)
+        relativePath.clear();
+    else
+        relativePath.erase(0, firstComponent);
+
+    std::error_code error;
+    auto basePath = std::filesystem::absolute(std::filesystem::path(
+                                                  utils::toNativePath(base)),
+                                              error)
+                        .lexically_normal();
+    if (error)
+        return false;
+    // A trailing separator is represented as an empty final component. Remove
+    // it before comparing path components, otherwise every child of a root
+    // such as "./" is rejected as being outside that root.
+    if (basePath.filename().empty())
+        basePath = basePath.parent_path();
+    auto candidate =
+        (basePath / std::filesystem::path(utils::toNativePath(relativePath)))
+            .lexically_normal();
+
+    auto candidateIter = candidate.begin();
+    for (auto baseIter = basePath.begin(); baseIter != basePath.end();
+         ++baseIter, ++candidateIter)
+    {
+        if (candidateIter == candidate.end() || *candidateIter != *baseIter)
+            return false;
+    }
+    return true;
+}
+
 void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
 {
     // Max timeout up to about 70 days;
@@ -75,30 +110,6 @@ void StaticFileRouter::route(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     const std::string &path = req->path();
-    if (path.find("..") != std::string::npos)
-    {
-        auto directories = utils::splitString(path, "/");
-        int traversalDepth = 0;
-        for (const auto &dir : directories)
-        {
-            if (dir == "..")
-            {
-                traversalDepth--;
-            }
-            else if (dir != ".")
-            {
-                traversalDepth++;
-            }
-
-            if (traversalDepth < 0)
-            {
-                // Downloading files from the parent folder is forbidden.
-                callback(app().getCustomErrorHandler()(k403Forbidden, req));
-                return;
-            }
-        }
-    }
-
     auto lPath = path;
     std::transform(lPath.begin(),
                    lPath.end(),
@@ -150,6 +161,12 @@ void StaticFileRouter::route(
         {
             std::string_view restOfThePath{path.data() + URI.length(),
                                            path.length() - URI.length()};
+            if (!pathIsWithinBase(location.realLocation_,
+                                  std::string{restOfThePath}))
+            {
+                callback(app().getCustomErrorHandler()(k403Forbidden, req));
+                return;
+            }
             auto pos = restOfThePath.rfind('/');
             if (pos != 0 && pos != std::string_view::npos &&
                 !location.isRecursive_)
@@ -236,8 +253,14 @@ void StaticFileRouter::route(
             return;
         }
     }
-    std::string directoryPath =
-        HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
+    const auto &documentRoot =
+        HttpAppFrameworkImpl::instance().getDocumentRoot();
+    if (!pathIsWithinBase(documentRoot, path))
+    {
+        callback(app().getCustomErrorHandler()(k403Forbidden, req));
+        return;
+    }
+    std::string directoryPath = documentRoot + path;
     std::filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));
     std::error_code err;
     if (std::filesystem::exists(fsDirectoryPath, err))

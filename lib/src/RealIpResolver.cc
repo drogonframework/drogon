@@ -70,7 +70,10 @@ static trantor::InetAddress parseAddress(const std::string &addr)
     }
     try
     {
-        port = std::stoi(addr.substr(pos + 1));
+        if (!utils::parseInteger(addr.substr(pos + 1), port))
+        {
+            throw std::invalid_argument("Invalid port");
+        }
     }
     catch (const std::exception &ex)
     {
@@ -199,8 +202,8 @@ RealIpResolver::CIDR::CIDR(const std::string &ipOrCidr)
         // parameter is a CIDR block
         std::string prefixLen = ipOrCidr.substr(pos + 1);
         ipv4 = ipOrCidr.substr(0, pos);
-        uint16_t prefix = std::stoi(prefixLen);
-        if (prefix > 32)
+        uint16_t prefix{};
+        if (!utils::parseInteger(prefixLen, prefix) || prefix > 32)
         {
             throw std::runtime_error("Bad CIDR block: " + ipOrCidr);
         }

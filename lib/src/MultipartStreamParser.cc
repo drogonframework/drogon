@@ -39,11 +39,21 @@ MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
     }
 
     pos += boundaryEq.size();
+    if (pos >= contentType.size())
+    {
+        isValid_ = false;
+        return;
+    }
     size_t pos2;
     if (contentType[pos] == '"')
     {
         ++pos;
         pos2 = contentType.find('"', pos);
+        if (pos2 == std::string::npos)
+        {
+            isValid_ = false;
+            return;
+        }
     }
     else
     {
@@ -51,6 +61,11 @@ MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
     }
     if (pos2 == std::string::npos)
         pos2 = contentType.size();
+    if (pos2 == pos)
+    {
+        isValid_ = false;
+        return;
+    }
 
     boundary_ = contentType.substr(pos, pos2 - pos);
     dashBoundaryCrlf_ = dash_ + boundary_ + crlf_;
@@ -146,6 +161,11 @@ void drogon::MultipartStreamParser::parse(
                         return;
                     }
                     namePos += nameKey.size();
+                    if (namePos >= valueView.size())
+                    {
+                        isValid_ = false;
+                        return;
+                    }
                     size_t nameEnd;
                     if (valueView[namePos] == '"')
                     {
@@ -170,11 +190,21 @@ void drogon::MultipartStreamParser::parse(
                     if (fileNamePos != std::string::npos)
                     {
                         fileNamePos += fileNameKey.size();
+                        if (fileNamePos >= valueView.size())
+                        {
+                            isValid_ = false;
+                            return;
+                        }
                         size_t fileNameEnd;
                         if (valueView[fileNamePos] == '"')
                         {
                             ++fileNamePos;
                             fileNameEnd = valueView.find('"', fileNamePos);
+                            if (fileNameEnd == std::string::npos)
+                            {
+                                isValid_ = false;
+                                return;
+                            }
                         }
                         else
                         {

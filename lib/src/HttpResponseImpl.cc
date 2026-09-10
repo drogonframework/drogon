@@ -995,6 +995,17 @@ void HttpResponseImpl::addHeader(const char *start,
         value.resize(value.size() - 1);
     }
 
+    if (field == "connection")
+    {
+        const auto options = utils::splitStringView(value, ",");
+        if (std::find_if(options.begin(), options.end(), [](const auto option) {
+                return utils::ci_equals(option, "close");
+            }) != options.end())
+        {
+            setCloseConnection(true);
+        }
+    }
+
     if (field == "set-cookie")
     {
         // LOG_INFO<<"cookies!!!:"<<value;
@@ -1067,7 +1078,11 @@ void HttpResponseImpl::addHeader(const char *start,
                 }
                 else if (cookie_name == "max-age")
                 {
-                    cookie.setMaxAge(std::stoi(cookie_value));
+                    int maxAge{};
+                    if (utils::parseInteger(cookie_value, maxAge))
+                    {
+                        cookie.setMaxAge(maxAge);
+                    }
                 }
             }
         }

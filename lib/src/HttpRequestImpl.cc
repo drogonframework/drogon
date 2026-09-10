@@ -78,9 +78,9 @@ void HttpRequestImpl::parseParameters() const
     if (!input.empty())
     {
         std::string_view::size_type pos = 0;
-        while ((input[pos] == '?' ||
-                isspace(static_cast<unsigned char>(input[pos]))) &&
-               pos < input.length())
+        while (pos < input.length() &&
+               (input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))))
         {
             ++pos;
         }
@@ -139,9 +139,9 @@ void HttpRequestImpl::parseParameters() const
         type.find("application/x-www-form-urlencoded") != std::string::npos)
     {
         std::string_view::size_type pos = 0;
-        while ((input[pos] == '?' ||
-                isspace(static_cast<unsigned char>(input[pos]))) &&
-               pos < input.length())
+        while (pos < input.length() &&
+               (input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))))
         {
             ++pos;
         }
@@ -412,6 +412,13 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
+        // In normal mode appendToBuffer() owns message framing.  Forwarded
+        // raw framing headers are preserved only by passThrough mode.
+        if (!passThrough_ &&
+            (it->first == "content-length" || it->first == "transfer-encoding"))
+        {
+            continue;
+        }
         output->append(it->first);
         output->append(": ");
         output->append(it->second);

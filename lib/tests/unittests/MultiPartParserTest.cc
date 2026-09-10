@@ -130,3 +130,76 @@ DROGON_TEST(MultiPartStreamParser)
     check(7);
     check(20);
 }
+
+DROGON_TEST(MalformedMultiPart)
+{
+    auto req = drogon::HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+
+    req->addHeader("content-type", "multipart/form-data; boundary=");
+    req->setBody("");
+    drogon::MultiPartParser parser1;
+    CHECK(parser1.parse(req) == -1);
+
+    req->addHeader("content-type", "multipart/form-data; boundary=x");
+    req->setBody("--x");
+    drogon::MultiPartParser parser2;
+    CHECK(parser2.parse(req) == -1);
+
+    req->addHeader("content-type", "multipart/form-data; boundary=\"x");
+    req->setBody("--x\r\n--x--");
+    drogon::MultiPartParser parser3;
+    CHECK(parser3.parse(req) == -1);
+
+    req->addHeader("content-type", "multipart/form-data; boundary=x");
+    req->setBody(
+        "--x\r\nContent-Disposition: form-data; name=\r\n\r\n"
+        "value\r\n--x--");
+    drogon::MultiPartParser parser4;
+    CHECK(parser4.parse(req) == -1);
+
+    req->setBody(
+        "--x\r\nContent-Disposition: form-data; name=\"field\"; "
+        "filename=\r\n\r\nvalue\r\n--x--");
+    drogon::MultiPartParser parser5;
+    CHECK(parser5.parse(req) == -1);
+
+    CHECK(!drogon::MultipartStreamParser("multipart/form-data; boundary=")
+               .isValid());
+    CHECK(!drogon::MultipartStreamParser("multipart/form-data; boundary=\"x")
+               .isValid());
+
+    const auto headerCallback = [](auto) {};
+    const auto dataCallback = [](const char *, size_t) {};
+
+    drogon::MultipartStreamParser streamParser1(
+        "multipart/form-data; boundary=x");
+    std::string streamBody = "--x\r\nContent-Disposition: form-data; name=\r\n";
+    streamParser1.parse(streamBody.data(),
+                        streamBody.size(),
+                        headerCallback,
+                        dataCallback);
+    CHECK(!streamParser1.isValid());
+
+    drogon::MultipartStreamParser streamParser2(
+        "multipart/form-data; boundary=x");
+    streamBody =
+        "--x\r\nContent-Disposition: form-data; name=\"field\"; "
+        "filename=\r\n";
+    streamParser2.parse(streamBody.data(),
+                        streamBody.size(),
+                        headerCallback,
+                        dataCallback);
+    CHECK(!streamParser2.isValid());
+
+    drogon::MultipartStreamParser streamParser3(
+        "multipart/form-data; boundary=x");
+    streamBody =
+        "--x\r\nContent-Disposition: form-data; name=\"field\"; "
+        "filename=\"bad\r\n";
+    streamParser3.parse(streamBody.data(),
+                        streamBody.size(),
+                        headerCallback,
+                        dataCallback);
+    CHECK(!streamParser3.isValid());
+}

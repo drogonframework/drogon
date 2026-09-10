@@ -99,3 +99,23 @@ DROGON_TEST(CanConvertFromString)
     static_assert(!CanConvertFromString<int>::value);
     static_assert(!CanConvertFromString<double>::value);
 }
+
+DROGON_TEST(ParseInteger)
+{
+    int signedValue{};
+    CHECK(drogon::utils::parseInteger("-42", signedValue));
+    CHECK(signedValue == -42);
+    CHECK(!drogon::utils::parseInteger("42junk", signedValue));
+    CHECK(!drogon::utils::parseInteger(" 42", signedValue));
+
+    uint8_t byteValue{};
+    CHECK(drogon::utils::parseInteger("255", byteValue));
+    CHECK(byteValue == 255);
+    CHECK(!drogon::utils::parseInteger("256", byteValue));
+    CHECK(!drogon::utils::parseInteger("-1", byteValue));
+
+    size_t chunkLength{};
+    CHECK(drogon::utils::parseInteger("1a", chunkLength, 16));
+    CHECK(chunkLength == 26);
+    CHECK(!drogon::utils::parseInteger("1a;extension", chunkLength, 16));
+}

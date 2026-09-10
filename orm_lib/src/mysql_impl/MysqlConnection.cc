@@ -108,6 +108,19 @@ void MysqlConnection::init()
     loop_->queueInLoop([this]() {
         MYSQL *ret;
         status_ = ConnectStatus::Connecting;
+        unsigned int port = 3306;
+        if (!port_.empty() && (!drogon::utils::parseInteger(port_, port) ||
+                               port == 0 || port > 65535))
+        {
+            LOG_ERROR << "Invalid MySQL port: " << port_;
+            status_ = ConnectStatus::Bad;
+            if (closeCallback_)
+            {
+                auto thisPtr = shared_from_this();
+                closeCallback_(thisPtr);
+            }
+            return;
+        }
         waitStatus_ =
             mysql_real_connect_start(&ret,
                                      mysqlPtr_.get(),
@@ -117,7 +130,7 @@ void MysqlConnection::init()
                                                      : passwd_.c_str(),
                                      dbname_.empty() ? nullptr
                                                      : dbname_.c_str(),
-                                     port_.empty() ? 3306 : atol(port_.c_str()),
+                                     port,
                                      nullptr,
                                      0);
         // LOG_DEBUG << ret;
