@@ -82,7 +82,7 @@ $$<<";\n";
 
 <%c++for(auto col:cols){
 %>
-const std::string [[className]]::Cols::_{%col.colName_%} = "{%escapeIdentifier(col.colName_, rdbms)%}";
+const std::string [[className]]::Cols::{%col.colName_%}_ = "{%escapeIdentifier(col.colName_, rdbms)%}";
 <%c++
 }%>
 <%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
