@@ -958,7 +958,8 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
                 characterSet,
                 timeout,
                 autoBatch,
-                {});
+                {},
+                1.0);
     return *this;
 }
 
@@ -976,7 +977,8 @@ void HttpAppFrameworkImpl::addDbClient(
     const std::string &characterSet,
     double timeout,
     bool autoBatch,
-    std::unordered_map<std::string, std::string> options)
+    std::unordered_map<std::string, std::string> options,
+    double reconnectInterval)
 {
     if (dbType == "postgresql" || dbType == "postgres")
     {
@@ -991,7 +993,8 @@ void HttpAppFrameworkImpl::addDbClient(
                                         characterSet,
                                         timeout,
                                         autoBatch,
-                                        std::move(options)});
+                                        std::move(options),
+                                        reconnectInterval});
     }
     else if (dbType == "mysql")
     {

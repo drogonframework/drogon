@@ -34,6 +34,7 @@ struct PostgresConfig
     double timeout;
     bool autoBatch;
     std::unordered_map<std::string, std::string> connectOptions;
+    double reconnectInterval{1.0};
 };
 
 struct MysqlConfig
