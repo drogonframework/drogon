@@ -14,6 +14,8 @@
 
 #include "PgListener.h"
 #include "PgConnection.h"
+#include <memory>
+#include <thread>
 
 using namespace drogon;
 using namespace drogon::orm;
@@ -38,6 +40,14 @@ PgListener::~PgListener()
     {
         conn_->disconnect();
         conn_ = nullptr;
+    }
+    // Same self-join hazard as DbClientImpl / Sqlite3Connection (#2552).
+    if (threadPtr_ && loop_ && loop_->isInLoopThread())
+    {
+        auto thr =
+            std::make_shared<std::unique_ptr<trantor::EventLoopThread>>(
+                std::move(threadPtr_));
+        std::thread([thr]() mutable { thr->reset(); }).detach();
     }
 }
 
