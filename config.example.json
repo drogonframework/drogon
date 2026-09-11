@@ -69,8 +69,10 @@
             //auto_batch: this feature is only available for the PostgreSQL driver(version >= 14.0), see
             //the wiki for more details.
             "auto_batch": false
-            //connect_options: extra options for the connection. Only works for PostgreSQL now.
-            //For more information, see https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-OPTIONS
+            //connect_options: extra options for the connection.
+            //For PostgreSQL, see https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-OPTIONS
+            //For MySQL, the valid options are:ssl_key, ssl_cert, ssl_ca, ssl_capath, ssl_cipher, see
+            //https://dev.mysql.com/doc/c-api/8.4/en/mysql-ssl-set.html
             //"connect_options": { "statement_timeout": "1s" }
         }
     ],
