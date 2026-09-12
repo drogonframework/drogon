@@ -157,7 +157,7 @@ class MysqlResultImpl : public ResultImpl
                 std::unordered_map<std::string, RowSizeType>>();
             fieldsMapPtr_->reserve(fieldsNumber_);
 
-            for (unsigned int i = 0; i < fieldsNumber_; ++i)
+            for (RowSizeType i = 0; i < fieldsNumber_; ++i)
             {
                 const MYSQL_FIELD &f = fieldArray_[i];
                 auto &meta = columnMeta_[i];
