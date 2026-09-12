@@ -34,10 +34,38 @@ class Row;
 class ResultImpl;
 using ResultImplPtr = std::shared_ptr<ResultImpl>;
 
+enum class SqlFieldType : uint8_t
+{
+    Unknown = 0,
+    Bool,
+    Int,
+    BigInt,
+    Float,
+    Double,
+    Decimal,
+    Varchar,
+    Text,
+    Date,
+    Time,
+    DateTime,
+    Blob,
+    Json,
+    Binary
+};
+
 enum class SqlStatus
 {
     Ok,
     End
+};
+
+struct ColumnMeta
+{
+    SqlFieldType sqlType{SqlFieldType::Unknown};
+    std::string typeName;
+    int length{0};
+    int precision{0};
+    int scale{0};
 };
 
 /// Result set containing data returned by a query or command.
@@ -138,6 +166,82 @@ class DROGON_EXPORT Result
      *   insert into table_name volumn1, volumn2 values(....) returning id;
      */
     unsigned long long insertId() const noexcept;
+
+    /**
+     * @brief Get the logical SQL type of the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return The abstracted SQL field type for the given column, or
+     *         SqlFieldType::Unknown if the type cannot be determined.
+     *
+     * @note Type metadata may only be fully populated for some database
+     *       backends (for example, MySQL). For other backends, the result
+     *       may be limited or fall back to SqlFieldType::Unknown.
+     */
+    SqlFieldType getSqlType(SizeType column) const;
+
+    /**
+     * @brief Get the database-specific type name of the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return A reference to a string containing the type name as reported
+     *         by the underlying database driver (for example, "INT",
+     *         "VARCHAR", "DECIMAL(10,2)", etc.).
+     *
+     * @note Type-name metadata may only be fully populated for some database
+     *       backends (for example, MySQL). On other backends, the returned
+     *       string may be empty or use a backend-specific representation.
+     */
+    const std::string &getTypeName(SizeType column) const;
+
+    /**
+     * @brief Get the defined maximum length of the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return The maximum length for the column in characters or bytes, as
+     *         reported by the underlying database driver, or 0 if this
+     *         information is not available.
+     *
+     * @note Length metadata may only be populated for some database backends
+     *       (for example, MySQL) and for certain column types (such as
+     *       character and binary types).
+     */
+    int getColumnLength(SizeType column) const;
+
+    /**
+     * @brief Get the numeric precision for the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return The precision (total number of significant digits) for the
+     *         column, as reported by the underlying database driver, or 0 if
+     *         not applicable or not available.
+     *
+     * @note Precision is generally only meaningful for numeric types such as
+     *       DECIMAL or NUMERIC. On other types, the value may be 0 or
+     *       unspecified, and metadata may only be provided by some backends
+     *       (for example, MySQL).
+     */
+    int getPrecision(SizeType column) const;
+
+    /**
+     * @brief Get the numeric scale for the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return The scale (number of fractional digits) for the column, as
+     *         reported by the underlying database driver, or 0 if not
+     *         applicable or not available.
+     *
+     * @note Scale is generally only meaningful for numeric types such as
+     *       DECIMAL or NUMERIC. On other types, the value may be 0 or
+     *       unspecified, and metadata may only be provided by some backends
+     *       (for example, MySQL).
+     */
+    int getScale(SizeType column) const;
 
 #ifdef _MSC_VER
     Result() noexcept = default;
