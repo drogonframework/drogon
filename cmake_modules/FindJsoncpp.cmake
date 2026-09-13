@@ -70,12 +70,12 @@ if(Jsoncpp_FOUND)
     if(NOT Jsoncpp_FIND_QUIETLY)
       message(STATUS "jsoncpp version:" ${jsoncpp_ver})
     endif()
-    if(jsoncpp_ver LESS 1.7)
+    if(jsoncpp_ver VERSION_LESS 1.7)
       message(
         FATAL_ERROR
           "jsoncpp lib is too old, please get new version from https://github.com/open-source-parsers/jsoncpp"
         )
-    endif(jsoncpp_ver LESS 1.7)
+    endif(jsoncpp_ver VERSION_LESS 1.7)
   endif()
   if (NOT TARGET Jsoncpp_lib)
           add_library(Jsoncpp_lib INTERFACE IMPORTED)
