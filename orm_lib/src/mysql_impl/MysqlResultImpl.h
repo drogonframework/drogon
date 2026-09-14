@@ -32,27 +32,12 @@ inline SqlFieldType mysqlTypeToSql(enum enum_field_types t, unsigned int flags)
     switch (t)
     {
         case MYSQL_TYPE_TINY:
-            return SqlFieldType::TinyInt;
-
-#ifdef MYSQL_TYPE_BOOL
-        case MYSQL_TYPE_BOOL:
-            return SqlFieldType::Bool;
-#endif
-
         case MYSQL_TYPE_SHORT:
-            return SqlFieldType::SmallInt;
-
-        case MYSQL_TYPE_INT24:
-            return SqlFieldType::MediumInt;
-
         case MYSQL_TYPE_LONG:
             return SqlFieldType::Int;
 
         case MYSQL_TYPE_LONGLONG:
             return SqlFieldType::BigInt;
-
-        case MYSQL_TYPE_BIT:
-            return SqlFieldType::Bit;
 
         case MYSQL_TYPE_FLOAT:
             return SqlFieldType::Float;
@@ -60,76 +45,45 @@ inline SqlFieldType mysqlTypeToSql(enum enum_field_types t, unsigned int flags)
         case MYSQL_TYPE_DOUBLE:
             return SqlFieldType::Double;
 
-        case MYSQL_TYPE_DECIMAL:
         case MYSQL_TYPE_NEWDECIMAL:
             return SqlFieldType::Decimal;
 
-        case MYSQL_TYPE_VARCHAR:
         case MYSQL_TYPE_VAR_STRING:
-            return (flags & BINARY_FLAG) ? SqlFieldType::VarBinary
-                                         : SqlFieldType::VarChar;
+        case MYSQL_TYPE_VARCHAR:
+            if (flags & BINARY_FLAG)
+                return SqlFieldType::Binary;
+            return SqlFieldType::Varchar;
 
         case MYSQL_TYPE_STRING:
-            return (flags & BINARY_FLAG) ? SqlFieldType::Binary
-                                         : SqlFieldType::Char;
+            if (flags & BINARY_FLAG)
+                return SqlFieldType::Binary;
+            return SqlFieldType::Varchar;
 
         case MYSQL_TYPE_TINY_BLOB:
-            return (flags & BINARY_FLAG) ? SqlFieldType::TinyBlob
-                                         : SqlFieldType::TinyText;
-
-        case MYSQL_TYPE_BLOB:
-            return (flags & BINARY_FLAG) ? SqlFieldType::Blob
-                                         : SqlFieldType::Text;
-
         case MYSQL_TYPE_MEDIUM_BLOB:
-            return (flags & BINARY_FLAG) ? SqlFieldType::MediumBlob
-                                         : SqlFieldType::MediumText;
-
         case MYSQL_TYPE_LONG_BLOB:
-            return (flags & BINARY_FLAG) ? SqlFieldType::LongBlob
-                                         : SqlFieldType::LongText;
+        case MYSQL_TYPE_BLOB:
+            return SqlFieldType::Blob;
+
+        case MYSQL_TYPE_ENUM:
+        case MYSQL_TYPE_SET:
+            return SqlFieldType::Varchar;
+
+        case MYSQL_TYPE_BIT:
+            return SqlFieldType::Bool;
 
         case MYSQL_TYPE_DATE:
             return SqlFieldType::Date;
 
         case MYSQL_TYPE_TIME:
-#ifdef MYSQL_TYPE_TIME2
-        case MYSQL_TYPE_TIME2:
-#endif
             return SqlFieldType::Time;
 
-        case MYSQL_TYPE_YEAR:
-            return SqlFieldType::Year;
-
         case MYSQL_TYPE_DATETIME:
-#ifdef MYSQL_TYPE_DATETIME2
-        case MYSQL_TYPE_DATETIME2:
-#endif
-            return SqlFieldType::DateTime;
-
         case MYSQL_TYPE_TIMESTAMP:
-#ifdef MYSQL_TYPE_TIMESTAMP2
-        case MYSQL_TYPE_TIMESTAMP2:
-#endif
-            return SqlFieldType::Timestamp;
+            return SqlFieldType::DateTime;
 
         case MYSQL_TYPE_JSON:
             return SqlFieldType::Json;
-
-        case MYSQL_TYPE_ENUM:
-            return SqlFieldType::Enum;
-
-        case MYSQL_TYPE_SET:
-            return SqlFieldType::Set;
-
-        /** ---------------------------------------------------------
-         *   Spatial
-         *
-         *   POINT, LINESTRING, POLYGON, MULTI* and GEOMETRYCOLLECTION
-         *   are all exposed through MYSQL_TYPE_GEOMETRY.
-         */
-        case MYSQL_TYPE_GEOMETRY:
-            return SqlFieldType::Geometry;
 
         default:
             return SqlFieldType::Unknown;
@@ -143,34 +97,16 @@ inline const char *mysqlFieldTypeToName(enum enum_field_types t,
     {
         case MYSQL_TYPE_TINY:
             return "TINYINT";
-
-#ifdef MYSQL_TYPE_BOOL
-        case MYSQL_TYPE_BOOL:
-            return "BOOLEAN";
-#endif
-
         case MYSQL_TYPE_SHORT:
             return "SMALLINT";
-
-        case MYSQL_TYPE_INT24:
-            return "MEDIUMINT";
-
         case MYSQL_TYPE_LONG:
             return "INT";
-
         case MYSQL_TYPE_LONGLONG:
             return "BIGINT";
-
-        case MYSQL_TYPE_BIT:
-            return "BIT";
-
         case MYSQL_TYPE_FLOAT:
             return "FLOAT";
-
         case MYSQL_TYPE_DOUBLE:
             return "DOUBLE";
-
-        case MYSQL_TYPE_DECIMAL:
         case MYSQL_TYPE_NEWDECIMAL:
             return "DECIMAL";
 
@@ -181,56 +117,19 @@ inline const char *mysqlFieldTypeToName(enum enum_field_types t,
         case MYSQL_TYPE_STRING:
             return (flags & BINARY_FLAG) ? "BINARY" : "CHAR";
 
-        case MYSQL_TYPE_TINY_BLOB:
-            return (flags & BINARY_FLAG) ? "TINYBLOB" : "TINYTEXT";
-
         case MYSQL_TYPE_BLOB:
             return (flags & BINARY_FLAG) ? "BLOB" : "TEXT";
 
-        case MYSQL_TYPE_MEDIUM_BLOB:
-            return (flags & BINARY_FLAG) ? "MEDIUMBLOB" : "MEDIUMTEXT";
-
-        case MYSQL_TYPE_LONG_BLOB:
-            return (flags & BINARY_FLAG) ? "LONGBLOB" : "LONGTEXT";
-
         case MYSQL_TYPE_DATE:
             return "DATE";
-
         case MYSQL_TYPE_TIME:
-#ifdef MYSQL_TYPE_TIME2
-        case MYSQL_TYPE_TIME2:
-#endif
             return "TIME";
-
-        case MYSQL_TYPE_YEAR:
-            return "YEAR";
-
         case MYSQL_TYPE_DATETIME:
-#ifdef MYSQL_TYPE_DATETIME2
-        case MYSQL_TYPE_DATETIME2:
-#endif
             return "DATETIME";
-
         case MYSQL_TYPE_TIMESTAMP:
-#ifdef MYSQL_TYPE_TIMESTAMP2
-        case MYSQL_TYPE_TIMESTAMP2:
-#endif
             return "TIMESTAMP";
-
         case MYSQL_TYPE_JSON:
             return "JSON";
-
-        case MYSQL_TYPE_ENUM:
-            return "ENUM";
-
-        case MYSQL_TYPE_SET:
-            return "SET";
-
-        case MYSQL_TYPE_GEOMETRY:
-            return "GEOMETRY";
-
-        case MYSQL_TYPE_NULL:
-            return "NULL";
 
         default:
             return "UNKNOWN";

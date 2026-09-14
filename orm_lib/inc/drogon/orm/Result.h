@@ -37,51 +37,20 @@ using ResultImplPtr = std::shared_ptr<ResultImpl>;
 enum class SqlFieldType : uint8_t
 {
     Unknown = 0,
-
-    // Numeric
     Bool,
-    TinyInt,
-    SmallInt,
-    MediumInt,
     Int,
     BigInt,
-    Bit,
     Float,
     Double,
     Decimal,
-
-    // Character
-    VarChar,
-    Char,
-    TinyText,
+    Varchar,
     Text,
-    MediumText,
-    LongText,
-
-    // Binary
-    Binary,
-    VarBinary,
-    TinyBlob,
-    Blob,
-    MediumBlob,
-    LongBlob,
-
-    // Other
-    Json,
-
-    // Date / Time
     Date,
     Time,
-    Year,
     DateTime,
-    Timestamp,
-
-    // Spatial
-    Geometry,
-
-    // MySQL-specific
-    Enum,
-    Set
+    Blob,
+    Json,
+    Binary
 };
 
 enum class SqlStatus
