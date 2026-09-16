@@ -37,13 +37,13 @@ inline SqlType mysqlTypeToSql(enum enum_field_types type,
             // MySQL represents BOOL/BOOLEAN and TINYINT(1) as MYSQL_TYPE_TINY.
             // The client protocol does not preserve the original declaration,
             // so length == 1 is treated as Bool by convention.
-            return length == 1 ? SqlType::Bool : SqlType::Integer;
+            return length == 1 ? SqlType::Bool : SqlType::Int;
 
         case MYSQL_TYPE_SHORT:
         case MYSQL_TYPE_INT24:
         case MYSQL_TYPE_LONG:
         case MYSQL_TYPE_LONGLONG:
-            return SqlType::Integer;
+            return SqlType::Int;
 
         case MYSQL_TYPE_BIT:
             // BIT(1) is commonly used as a boolean value.

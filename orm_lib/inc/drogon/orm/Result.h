@@ -40,7 +40,7 @@ enum class SqlType : uint8_t
     Unknown = 0,
 
     Bool,
-    Integer,
+    Int,
     Bit,
     Float,
     Double,
@@ -59,9 +59,6 @@ enum class SqlType : uint8_t
 
     Geometry
 };
-
-// Kept for source compatibility with the original metadata API.
-using SqlFieldType = SqlType;
 
 enum class SqlStatus
 {
