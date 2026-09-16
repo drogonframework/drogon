@@ -170,29 +170,39 @@ unsigned long long Result::insertId() const noexcept
     return resultPtr_->insertId();
 }
 
-SqlFieldType Result::getSqlType(SizeType column) const
+SqlType Result::getSqlType(SizeType column) const
 {
-    return resultPtr_->columnMeta(column).sqlType;
+    return resultPtr_->columnMeta(column).type;
 }
 
-const std::string &Result::getTypeName(SizeType column) const
+const std::string &Result::getNativeTypeName(SizeType column) const
 {
-    return resultPtr_->columnMeta(column).typeName;
+    return resultPtr_->columnMeta(column).nativeType;
 }
 
 int Result::getColumnLength(SizeType column) const
 {
-    return resultPtr_->columnMeta(column).length;
+    return resultPtr_->columnMeta(column).length.value_or(0);
 }
 
 int Result::getPrecision(SizeType column) const
 {
-    return resultPtr_->columnMeta(column).precision;
+    return resultPtr_->columnMeta(column).precision.value_or(0);
 }
 
 int Result::getScale(SizeType column) const
 {
-    return resultPtr_->columnMeta(column).scale;
+    return resultPtr_->columnMeta(column).scale.value_or(0);
+}
+
+bool Result::isNullable(SizeType column) const
+{
+    return resultPtr_->columnMeta(column).nullable;
+}
+
+bool Result::isUnsigned(SizeType column) const
+{
+    return resultPtr_->columnMeta(column).unsigned_;
 }
 
 int Result::oid(RowSizeType column) const noexcept

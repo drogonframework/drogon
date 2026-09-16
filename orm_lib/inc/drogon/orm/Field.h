@@ -66,15 +66,15 @@ class DROGON_EXPORT Field
         return result_.getLength(row_, column_);
     }
 
-    SqlFieldType sqlType() const noexcept
+    SqlType sqlType() const noexcept
     {
         return result_.getSqlType(column_);
     }
 
-    /// SQL type name (VARCHAR, INT, DECIMAL, etc.)
-    const std::string &typeName() const noexcept
+    /// Native database type name (VARCHAR, INT, DECIMAL, TINYINT, BIT, etc.)
+    const std::string &nativeTypeName() const noexcept
     {
-        return result_.getTypeName(column_);
+        return result_.getNativeTypeName(column_);
     }
 
     /// Character length (VARCHAR)
@@ -93,6 +93,18 @@ class DROGON_EXPORT Field
     int scale() const noexcept
     {
         return result_.getScale(column_);
+    }
+
+    /// Is this column nullable?
+    bool isNullable() const noexcept
+    {
+        return result_.isNullable(column_);
+    }
+
+    /// Is this column unsigned?
+    bool isUnsigned() const noexcept
+    {
+        return result_.isUnsigned(column_);
     }
 
     /// Convert to a type T value

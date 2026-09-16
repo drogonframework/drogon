@@ -23,6 +23,7 @@
 #include <future>
 #include <algorithm>
 #include <assert.h>
+#include <optional>
 
 namespace drogon
 {
@@ -34,55 +35,33 @@ class Row;
 class ResultImpl;
 using ResultImplPtr = std::shared_ptr<ResultImpl>;
 
-enum class SqlFieldType : uint8_t
+enum class SqlType : uint8_t
 {
     Unknown = 0,
 
-    // Numeric
     Bool,
-    TinyInt,
-    SmallInt,
-    MediumInt,
-    Int,
-    BigInt,
+    Integer,
     Bit,
     Float,
     Double,
     Decimal,
 
-    // Character
-    VarChar,
-    Char,
-    TinyText,
-    Text,
-    MediumText,
-    LongText,
-
-    // Binary
+    String,
     Binary,
-    VarBinary,
-    TinyBlob,
-    Blob,
-    MediumBlob,
-    LongBlob,
 
-    // Other
     Json,
 
-    // Date / Time
     Date,
     Time,
     Year,
     DateTime,
     Timestamp,
 
-    // Spatial
-    Geometry,
-
-    // MySQL-specific
-    Enum,
-    Set
+    Geometry
 };
+
+// Kept for source compatibility with the original metadata API.
+using SqlFieldType = SqlType;
 
 enum class SqlStatus
 {
@@ -90,13 +69,50 @@ enum class SqlStatus
     End
 };
 
+/**
+ * @brief Column metadata from the database.
+ *
+ * Separates:
+ * - Logical type (type): Application-level abstraction for type handling
+ * - Native type (nativeType): Actual database type name (VARCHAR, DECIMAL,
+ * etc.)
+ * - Type attributes: length, precision, scale, unsigned, nullable
+ *
+ * Examples:
+ *   DECIMAL(10,2)
+ *     type = Decimal, nativeType = "DECIMAL", precision = 10, scale = 2
+ *
+ *   VARCHAR(100)
+ *     type = VarChar, nativeType = "VARCHAR", length = 100
+ *
+ *   BIT(1)
+ *     type = Bool, nativeType = "BIT", length = 1
+ *
+ *   TINYINT(1)
+ *     type = Bool, nativeType = "TINYINT", length = 1
+ *
+ *   BIT(8)
+ *     type = Bit, nativeType = "BIT", length = 8
+ */
 struct ColumnMeta
 {
-    SqlFieldType sqlType{SqlFieldType::Unknown};
-    std::string typeName;
-    int length{0};
-    int precision{0};
-    int scale{0};
+    // Logical type.
+    SqlType type{SqlType::Unknown};
+
+    // Database-specific native type name.
+    std::string nativeType;
+
+    // Type-specific attributes.
+    // length is type-dependent: character and binary types use
+    // driver-reported byte width, while BIT uses number of bits.
+    // It is not decimal precision; DECIMAL uses precision and scale.
+    std::optional<int64_t> length;
+
+    std::optional<int> precision;
+    std::optional<int> scale;
+
+    bool nullable{false};
+    bool unsigned_{false};
 };
 
 /// Result set containing data returned by a query or command.
@@ -204,37 +220,37 @@ class DROGON_EXPORT Result
      * @param column Zero-based index of the column (must be less than
      * columns()).
      * @return The abstracted SQL field type for the given column, or
-     *         SqlFieldType::Unknown if the type cannot be determined.
+     *         SqlType::Unknown if the type cannot be determined.
      *
      * @note Type metadata may only be fully populated for some database
      *       backends (for example, MySQL). For other backends, the result
-     *       may be limited or fall back to SqlFieldType::Unknown.
+     *       may be limited or fall back to SqlType::Unknown.
      */
-    SqlFieldType getSqlType(SizeType column) const;
+    SqlType getSqlType(SizeType column) const;
 
     /**
-     * @brief Get the database-specific type name of the specified column.
+     * @brief Get the native database type name of the specified column.
      *
      * @param column Zero-based index of the column (must be less than
      * columns()).
-     * @return A reference to a string containing the type name as reported
-     *         by the underlying database driver (for example, "INT",
-     *         "VARCHAR", "DECIMAL(10,2)", etc.).
+     * @return A reference to the native type name reported by the underlying
+     *         database driver, for example, "INT", "VARCHAR", or "DECIMAL".
      *
      * @note Type-name metadata may only be fully populated for some database
-     *       backends (for example, MySQL). On other backends, the returned
-     *       string may be empty or use a backend-specific representation.
+     *       backends. On other backends, the returned string may be empty or
+     *       use a backend-specific representation.
      */
-    const std::string &getTypeName(SizeType column) const;
+    const std::string &getNativeTypeName(SizeType column) const;
 
     /**
      * @brief Get the defined maximum length of the specified column.
      *
      * @param column Zero-based index of the column (must be less than
      * columns()).
-     * @return The maximum length for the column in characters or bytes, as
-     *         reported by the underlying database driver, or 0 if this
-     *         information is not available.
+     * @return The type-specific length, or 0 if unavailable. For MySQL,
+     *         VARCHAR, CHAR, and BLOB-family values are reported in bytes
+     *         (not characters), while BIT is reported in bits. It is not
+     *         populated for DECIMAL; use getPrecision() and getScale().
      *
      * @note Length metadata may only be populated for some database backends
      *       (for example, MySQL) and for certain column types (such as
@@ -273,6 +289,24 @@ class DROGON_EXPORT Result
      *       (for example, MySQL).
      */
     int getScale(SizeType column) const;
+
+    /**
+     * @brief Check if the specified column is nullable.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return True if the column is nullable, false otherwise.
+     */
+    bool isNullable(SizeType column) const;
+
+    /**
+     * @brief Check if the specified column is unsigned.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return True if the column is unsigned, false otherwise.
+     */
+    bool isUnsigned(SizeType column) const;
 
 #ifdef _MSC_VER
     Result() noexcept = default;

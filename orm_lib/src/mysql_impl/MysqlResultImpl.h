@@ -27,127 +27,98 @@ namespace drogon
 namespace orm
 {
 
-inline SqlFieldType mysqlTypeToSql(enum enum_field_types t, unsigned int flags)
+inline SqlType mysqlTypeToSql(enum enum_field_types type,
+                              unsigned int flags,
+                              unsigned int length)
 {
-    switch (t)
+    switch (type)
     {
         case MYSQL_TYPE_TINY:
-            return SqlFieldType::TinyInt;
-
-#ifdef MYSQL_TYPE_BOOL
-        case MYSQL_TYPE_BOOL:
-            return SqlFieldType::Bool;
-#endif
+            // MySQL represents BOOL/BOOLEAN and TINYINT(1) as MYSQL_TYPE_TINY.
+            // The client protocol does not preserve the original declaration,
+            // so length == 1 is treated as Bool by convention.
+            return length == 1 ? SqlType::Bool : SqlType::Integer;
 
         case MYSQL_TYPE_SHORT:
-            return SqlFieldType::SmallInt;
-
         case MYSQL_TYPE_INT24:
-            return SqlFieldType::MediumInt;
-
         case MYSQL_TYPE_LONG:
-            return SqlFieldType::Int;
-
         case MYSQL_TYPE_LONGLONG:
-            return SqlFieldType::BigInt;
+            return SqlType::Integer;
 
         case MYSQL_TYPE_BIT:
-            return SqlFieldType::Bit;
+            // BIT(1) is commonly used as a boolean value.
+            // BIT(n > 1) remains a Bit type.
+            return length == 1 ? SqlType::Bool : SqlType::Bit;
 
         case MYSQL_TYPE_FLOAT:
-            return SqlFieldType::Float;
+            return SqlType::Float;
 
         case MYSQL_TYPE_DOUBLE:
-            return SqlFieldType::Double;
+            return SqlType::Double;
 
         case MYSQL_TYPE_DECIMAL:
         case MYSQL_TYPE_NEWDECIMAL:
-            return SqlFieldType::Decimal;
+            return SqlType::Decimal;
 
         case MYSQL_TYPE_VARCHAR:
         case MYSQL_TYPE_VAR_STRING:
-            return (flags & BINARY_FLAG) ? SqlFieldType::VarBinary
-                                         : SqlFieldType::VarChar;
-
         case MYSQL_TYPE_STRING:
-            return (flags & BINARY_FLAG) ? SqlFieldType::Binary
-                                         : SqlFieldType::Char;
+            return (flags & BINARY_FLAG) ? SqlType::Binary : SqlType::String;
 
         case MYSQL_TYPE_TINY_BLOB:
-            return (flags & BINARY_FLAG) ? SqlFieldType::TinyBlob
-                                         : SqlFieldType::TinyText;
-
         case MYSQL_TYPE_BLOB:
-            return (flags & BINARY_FLAG) ? SqlFieldType::Blob
-                                         : SqlFieldType::Text;
-
         case MYSQL_TYPE_MEDIUM_BLOB:
-            return (flags & BINARY_FLAG) ? SqlFieldType::MediumBlob
-                                         : SqlFieldType::MediumText;
-
         case MYSQL_TYPE_LONG_BLOB:
-            return (flags & BINARY_FLAG) ? SqlFieldType::LongBlob
-                                         : SqlFieldType::LongText;
+            return (flags & BINARY_FLAG) ? SqlType::Binary : SqlType::String;
 
         case MYSQL_TYPE_DATE:
-            return SqlFieldType::Date;
+            return SqlType::Date;
 
         case MYSQL_TYPE_TIME:
 #ifdef MYSQL_TYPE_TIME2
         case MYSQL_TYPE_TIME2:
 #endif
-            return SqlFieldType::Time;
+            return SqlType::Time;
 
         case MYSQL_TYPE_YEAR:
-            return SqlFieldType::Year;
+            return SqlType::Year;
 
         case MYSQL_TYPE_DATETIME:
 #ifdef MYSQL_TYPE_DATETIME2
         case MYSQL_TYPE_DATETIME2:
 #endif
-            return SqlFieldType::DateTime;
+            return SqlType::DateTime;
 
         case MYSQL_TYPE_TIMESTAMP:
 #ifdef MYSQL_TYPE_TIMESTAMP2
         case MYSQL_TYPE_TIMESTAMP2:
 #endif
-            return SqlFieldType::Timestamp;
+            return SqlType::Timestamp;
 
         case MYSQL_TYPE_JSON:
-            return SqlFieldType::Json;
+            return SqlType::Json;
 
         case MYSQL_TYPE_ENUM:
-            return SqlFieldType::Enum;
-
         case MYSQL_TYPE_SET:
-            return SqlFieldType::Set;
+            // ENUM/SET are represented as strings at the logical layer.
+            // The exact MySQL type is preserved by mysqlFieldTypeToName().
+            return SqlType::String;
 
-        /** ---------------------------------------------------------
-         *   Spatial
-         *
-         *   POINT, LINESTRING, POLYGON, MULTI* and GEOMETRYCOLLECTION
-         *   are all exposed through MYSQL_TYPE_GEOMETRY.
-         */
         case MYSQL_TYPE_GEOMETRY:
-            return SqlFieldType::Geometry;
+            return SqlType::Geometry;
 
         default:
-            return SqlFieldType::Unknown;
+            return SqlType::Unknown;
     }
 }
 
-inline const char *mysqlFieldTypeToName(enum enum_field_types t,
+inline const char *mysqlFieldTypeToName(enum enum_field_types type,
                                         unsigned int flags)
 {
-    switch (t)
+    switch (type)
     {
         case MYSQL_TYPE_TINY:
             return "TINYINT";
-
-#ifdef MYSQL_TYPE_BOOL
-        case MYSQL_TYPE_BOOL:
-            return "BOOLEAN";
-#endif
 
         case MYSQL_TYPE_SHORT:
             return "SMALLINT";
@@ -262,27 +233,64 @@ class MysqlResultImpl : public ResultImpl
             {
                 const MYSQL_FIELD &f = fieldArray_[i];
                 auto &meta = columnMeta_[i];
+                meta.type = mysqlTypeToSql(f.type, f.flags, f.length);
 
-                meta.sqlType = mysqlTypeToSql(f.type, f.flags);
-
+                // Store native type name
                 const char *typeName = mysqlFieldTypeToName(f.type, f.flags);
-                meta.typeName = typeName ? typeName : "UNKNOWN";
+                meta.nativeType = typeName ? typeName : "UNKNOWN";
 
-                meta.length = static_cast<int>(f.length);
+                // Extract type attributes based on native type
+                meta.nullable = !(f.flags & NOT_NULL_FLAG);
+                meta.unsigned_ = (f.flags & UNSIGNED_FLAG) != 0;
 
-                meta.precision = (meta.sqlType == SqlFieldType::Decimal)
-                                     ? static_cast<int>(f.length)
-                                     : 0;
+                // MYSQL_FIELD::length is not a universal unit. For strings
+                // and blobs it is the driver's maximum byte width; for BIT
+                // it is the declared number of bits.
+                if (f.type == MYSQL_TYPE_VARCHAR ||
+                    f.type == MYSQL_TYPE_VAR_STRING ||
+                    f.type == MYSQL_TYPE_STRING || f.type == MYSQL_TYPE_BLOB ||
+                    f.type == MYSQL_TYPE_TINY_BLOB ||
+                    f.type == MYSQL_TYPE_MEDIUM_BLOB ||
+                    f.type == MYSQL_TYPE_LONG_BLOB || f.type == MYSQL_TYPE_BIT)
+                {
+                    meta.length = static_cast<int64_t>(f.length);
+                }
 
-                meta.scale = (meta.sqlType == SqlFieldType::Decimal)
-                                 ? static_cast<int>(f.decimals)
-                                 : 0;
+                // DECIMAL metadata is represented in the MySQL result metadata
+                // as display width and scale. MYSQL_FIELD::length includes
+                // formatting overhead such as the sign position for signed
+                // values and the decimal point when scale is non-zero.
+                //
+                // Therefore, precision is inferred by removing these formatting
+                // characters from the display width. The scale is taken
+                // directly from MYSQL_FIELD::decimals.
+                //
+                // Note: For result expressions or derived columns, this
+                // represents the precision inferred from result metadata and
+                // may not correspond to an explicitly declared DECIMAL(M,D)
+                // schema definition.
+                if (f.type == MYSQL_TYPE_DECIMAL ||
+                    f.type == MYSQL_TYPE_NEWDECIMAL)
+                {
+                    meta.scale = static_cast<int>(f.decimals);
+                    const unsigned int displayWidth = f.length;
+                    const unsigned int signWidth =
+                        (f.flags & UNSIGNED_FLAG) ? 0U : 1U;
+                    const unsigned int decimalPointWidth =
+                        f.decimals > 0 ? 1U : 0U;
+                    const unsigned int overhead = signWidth + decimalPointWidth;
+                    if (displayWidth >= overhead + f.decimals)
+                    {
+                        meta.precision =
+                            static_cast<int>(displayWidth - overhead);
+                    }
+                }
 
                 std::string fieldName = f.name;
                 std::transform(fieldName.begin(),
                                fieldName.end(),
                                fieldName.begin(),
-                               [](unsigned char c) { return std::tolower(c); });
+                               [](unsigned char c) { return tolower(c); });
 
                 (*fieldsMapPtr_)[fieldName] = i;
             }
