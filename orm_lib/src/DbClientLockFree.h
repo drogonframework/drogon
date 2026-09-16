@@ -38,9 +38,11 @@ class DbClientLockFree : public DbClient,
                      ClientType type,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                      size_t connectionNumberPerLoop,
-                     bool autoBatch);
+                     bool autoBatch,
+                     double reconnectInterval);
 #else
-                     size_t connectionNumberPerLoop);
+                     size_t connectionNumberPerLoop,
+                     double reconnectInterval);
 #endif
 
     ~DbClientLockFree() noexcept override;
@@ -88,6 +90,11 @@ class DbClientLockFree : public DbClient,
     std::list<TransCallbackEntry> transCallbacks_;
 
     double timeout_{-1.0};
+#if LIBPQ_SUPPORTS_BATCH_MODE
+    size_t connectionPos_{0};  // Used for pg batch mode.
+    bool autoBatch_{false};
+#endif
+    double reconnectInterval_{1.0};
 
     void makeTrans(
         const DbConnectionPtr &conn,
@@ -103,10 +110,6 @@ class DbClientLockFree : public DbClient,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&ecb);
     void handleNewTask(const DbConnectionPtr &conn);
-#if LIBPQ_SUPPORTS_BATCH_MODE
-    size_t connectionPos_{0};  // Used for pg batch mode.
-    bool autoBatch_{false};
-#endif
 };
 
 }  // namespace orm

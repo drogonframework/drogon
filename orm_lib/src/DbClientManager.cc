@@ -48,7 +48,8 @@ static void initFastDbClients(IOThreadStorage<orm::DbClientPtr> &storage,
                               ClientType dbType,
                               size_t connNum,
                               bool autoBatch,
-                              double timeout)
+                              double timeout,
+                              double reconnectInterval)
 {
     storage.init([&](orm::DbClientPtr &c, size_t idx) {
         assert(idx == ioLoops[idx]->index());
@@ -59,9 +60,11 @@ static void initFastDbClients(IOThreadStorage<orm::DbClientPtr> &storage,
                                               dbType,
 #if LIBPQ_SUPPORTS_BATCH_MODE  // Bad code
                                               connNum,
-                                              autoBatch));
+                                              autoBatch,
+                                              reconnectInterval));
 #else
-                                              connNum));
+                                              connNum,
+                                              reconnectInterval));
 #endif
         if (timeout > 0.0)
         {
@@ -90,14 +93,16 @@ void DbClientManager::createDbClients(
                                   ClientType::PostgreSQL,
                                   cfg.connectionNumber,
                                   cfg.autoBatch,
-                                  cfg.timeout);
+                                  cfg.timeout,
+                                  cfg.reconnectInterval);
             }
             else
             {
                 dbClientsMap_[cfg.name] =
                     drogon::orm::DbClient::newPgClient(dbInfo.connectionInfo_,
                                                        cfg.connectionNumber,
-                                                       cfg.autoBatch);
+                                                       cfg.autoBatch,
+                                                       cfg.reconnectInterval);
                 if (cfg.timeout > 0.0)
                 {
                     dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
@@ -118,7 +123,8 @@ void DbClientManager::createDbClients(
                                   ClientType::Mysql,
                                   cfg.connectionNumber,
                                   false,
-                                  cfg.timeout);
+                                  cfg.timeout,
+                                  1.0);
             }
             else
             {
