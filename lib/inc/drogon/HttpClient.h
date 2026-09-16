@@ -228,6 +228,15 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual void addCookie(const Cookie &cookie) = 0;
 
     /**
+     * @brief Add a default header to all client requests.
+     *
+     * @param field The header field name.
+     * @param value The header value.
+     * @note Request-specific headers take precedence over client defaults.
+     */
+    virtual void addHeader(std::string field, const std::string &value) = 0;
+
+    /**
      * @brief Set the user_agent header, the default value is 'DrogonClient' if
      * this method is not used.
      *

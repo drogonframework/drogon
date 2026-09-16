@@ -603,15 +603,23 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->statusCode() == k403Forbidden);
                         });
     /// Test controllers created and initialized by users
+    client->addHeader("custom_header", "yes");
     req = HttpRequest::newHttpRequest();
     req->setPath("/customctrl/antao");
-    req->addHeader("custom_header", "yes");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "<P>Hi, antao</P>");
                         });
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/customctrl/antao");
+    req->addHeader("custom_header", "no");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->statusCode() == k500InternalServerError);
+        });
     /// Test controllers created and initialized by users
     req = HttpRequest::newHttpRequest();
     req->setPath("/absolute/123");

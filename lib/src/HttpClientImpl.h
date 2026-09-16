@@ -19,6 +19,7 @@
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/TcpClient.h>
+#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <functional>
@@ -76,6 +77,15 @@ class HttpClientImpl final : public HttpClient,
     void addCookie(const Cookie &cookie) override
     {
         validCookies_.emplace_back(cookie);
+    }
+
+    void addHeader(std::string field, const std::string &value) override
+    {
+        std::transform(field.begin(),
+                       field.end(),
+                       field.begin(),
+                       [](unsigned char c) { return tolower(c); });
+        headers_[std::move(field)] = value;
     }
 
     size_t bytesSent() const override
@@ -184,6 +194,7 @@ class HttpClientImpl final : public HttpClient,
     size_t pipeliningDepth_{0};
     bool enableCookies_{false};
     std::vector<Cookie> validCookies_;
+    SafeStringMap<std::string> headers_;
     size_t bytesSent_{0};
     size_t bytesReceived_{0};
     bool dns_{false};
