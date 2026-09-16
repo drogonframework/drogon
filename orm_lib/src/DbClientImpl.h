@@ -66,11 +66,17 @@ class DbClientImpl : public DbClient,
         timeout_ = timeout;
     }
 
+    void setReconnectInterval(double interval) override
+    {
+        reconnectInterval_ = interval;
+    }
+
     void init();
     void closeAll() override;
 
   private:
     size_t numberOfConnections_;
+    double reconnectInterval_{1.0};
     trantor::EventLoopThreadPool loops_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
     double timeout_{-1.0};
