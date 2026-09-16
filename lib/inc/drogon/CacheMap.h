@@ -20,6 +20,7 @@
 #include <deque>
 #include <map>
 #include <mutex>
+#include <shared_mutex>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -222,14 +223,14 @@ class CacheMap
         if (timeout > 0)
         {
             MapValue v{std::move(value), timeout, std::move(timeoutCallback)};
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::unique_lock<std::shared_mutex> lock(mtx_);
             map_.insert(std::make_pair(key, std::move(v)));
             eraseAfter(timeout, key);
         }
         else
         {
             MapValue v{std::move(value)};
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::unique_lock<std::shared_mutex> lock(mtx_);
             map_.insert(std::make_pair(key, std::move(v)));
         }
         if (fnOnInsert_)
@@ -254,14 +255,14 @@ class CacheMap
         if (timeout > 0)
         {
             MapValue v{value, timeout, std::move(timeoutCallback)};
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::unique_lock<std::shared_mutex> lock(mtx_);
             map_.insert(std::make_pair(key, std::move(v)));
             eraseAfter(timeout, key);
         }
         else
         {
             MapValue v{value};
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::unique_lock<std::shared_mutex> lock(mtx_);
             map_.insert(std::make_pair(key, std::move(v)));
         }
         if (fnOnInsert_)
@@ -280,7 +281,7 @@ class CacheMap
     T2 operator[](const T1 &key)
     {
         size_t timeout = 0;
-        std::lock_guard<std::mutex> lock(mtx_);
+        std::unique_lock<std::shared_mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
@@ -312,7 +313,7 @@ class CacheMap
     void modify(const T1 &key, Callable &&handler, size_t timeout = 0)
     {
         {
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::unique_lock<std::shared_mutex> lock(mtx_);
             auto iter = map_.find(key);
             if (iter != map_.end())
             {
@@ -341,7 +342,9 @@ class CacheMap
         size_t timeout = 0;
         bool flag = false;
 
-        std::lock_guard<std::mutex> lock(mtx_);
+        // We use unique_lock here because eraseAfter modifies the internal map
+        // state
+        std::unique_lock<std::shared_mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
@@ -364,7 +367,7 @@ class CacheMap
     {
         size_t timeout = 0;
         bool flag = false;
-        std::lock_guard<std::mutex> lock(mtx_);
+        std::unique_lock<std::shared_mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
@@ -388,7 +391,7 @@ class CacheMap
     {
         // in this case,we don't evoke the timeout callback;
         {
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::unique_lock<std::shared_mutex> lock(mtx_);
             map_.erase(key);
         }
         if (fnOnErase_)
@@ -453,7 +456,7 @@ class CacheMap
 
     std::atomic<size_t> ticksCounter_{0};
 
-    std::mutex mtx_;
+    std::shared_mutex mtx_;
     std::mutex bucketMutex_;
     trantor::TimerId timerId_;
     trantor::EventLoop *loop_;
@@ -529,7 +532,7 @@ class CacheMap
                 bool erased{false};
                 std::function<void()> timeoutCallback;
                 {
-                    std::lock_guard<std::mutex> lock(mtx_);
+                    std::unique_lock<std::shared_mutex> lock(mtx_);
                     auto iter = map_.find(key);
                     if (iter != map_.end())
                     {
