@@ -20,6 +20,38 @@
 using namespace drogon::orm;
 using namespace drogon;
 
+namespace
+{
+void rollbackFailedSqliteCommit(const DbConnectionPtr &conn,
+                                const std::function<void()> &usedUpCallback,
+                                const std::function<void(bool)> &commitCallback)
+{
+    // SQLite can leave the transaction open after COMMIT fails. Do not return
+    // this connection to the pool when the failed command becomes idle.
+    conn->setIdleCallback([]() {});
+    conn->loop()->queueInLoop([conn, usedUpCallback, commitCallback]() {
+        conn->setIdleCallback([usedUpCallback, commitCallback]() {
+            if (commitCallback)
+                commitCallback(false);
+            if (usedUpCallback)
+                usedUpCallback();
+        });
+        conn->execSql(
+            "rollback",
+            0,
+            {},
+            {},
+            {},
+            [](const Result &) {
+                LOG_TRACE << "Transaction rolled back after failed commit";
+            },
+            [](const std::exception_ptr &) {
+                LOG_ERROR << "Transaction rollback after failed commit failed";
+            });
+    });
+}
+}  // namespace
+
 TransactionImpl::TransactionImpl(ClientType type,
                                  const DbConnectionPtr &connPtr,
                                  std::function<void(bool)> commitCallback,
@@ -42,9 +74,10 @@ TransactionImpl::~TransactionImpl()
     {
         auto loop = connectionPtr_->loop();
         loop->queueInLoop([conn = connectionPtr_,
+                           type = type_,
                            ucb = std::move(usedUpCallback_),
                            commitCb = std::move(commitCallback_)]() {
-            conn->setIdleCallback([ucb = std::move(ucb)]() {
+            conn->setIdleCallback([ucb]() {
                 if (ucb)
                     ucb();
             });
@@ -61,7 +94,7 @@ TransactionImpl::~TransactionImpl()
                         commitCb(true);
                     }
                 },
-                [commitCb](const std::exception_ptr &ePtr) {
+                [conn, type, ucb, commitCb](const std::exception_ptr &ePtr) {
                     try
                     {
                         std::rethrow_exception(ePtr);
@@ -70,6 +103,11 @@ TransactionImpl::~TransactionImpl()
                     {
                         LOG_ERROR << "Transaction submission failed:"
                                   << e.base().what();
+                        if (type == ClientType::Sqlite3)
+                        {
+                            rollbackFailedSqliteCommit(conn, ucb, commitCb);
+                            return;
+                        }
                         if (commitCb)
                         {
                             commitCb(false);
