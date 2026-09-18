@@ -328,3 +328,27 @@ DROGON_TEST(WhenAll)
         CHECK(counter == 1);
     }(TEST_CTX);
 }
+
+DROGON_TEST(PromiseNotAggregateInitializedFromArgs)
+{
+    // Clang >= 21 used to aggregate-initialize Task<T>::promise_type::value
+    // from the first coroutine argument. If the argument was implicitly
+    // convertible to T and the conversion threw (e.g. nlohmann::json), the
+    // exception escaped the partially constructed coroutine frame and crashed
+    // the process. promise_type is a non-aggregate now, so the promise is
+    // default-constructed and the conversion never runs.
+    struct ThrowOnConvert
+    {
+        operator std::string() const
+        {
+            throw std::runtime_error("must not be converted");
+        }
+    };
+
+    auto returnOk = [](const ThrowOnConvert &) -> Task<std::string> {
+        co_return "ok";
+    };
+
+    ThrowOnConvert arg;
+    CHECK(sync_wait(returnOk(arg)) == "ok");
+}
