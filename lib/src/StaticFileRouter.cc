@@ -75,6 +75,11 @@ void StaticFileRouter::route(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     const std::string &path = req->path();
+    if (path.find('\0') != std::string::npos)
+    {
+        callback(app().getCustomErrorHandler()(k403Forbidden, req));
+        return;
+    }
     if (path.find("..") != std::string::npos)
     {
         auto directories = utils::splitString(path, "/");
