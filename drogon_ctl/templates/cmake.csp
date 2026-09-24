@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 project([[ProjectName]] CXX)
 
+# Custom file extension configuration
+if(NOT DEFINED DEFAULT_SOURCE_EXTENSION)
+    set(DEFAULT_SOURCE_EXTENSION "[[SourceExtension]]" CACHE STRING "Default source file extension (e.g., cc, cpp, cxx)")
+endif()
+if(NOT DEFINED DEFAULT_HEADER_EXTENSION)
+    set(DEFAULT_HEADER_EXTENSION "[[HeaderExtension]]" CACHE STRING "Default header file extension (e.g., h, hpp, hxx)")
+endif()
+
 include(CheckIncludeFileCXX)
 
 check_include_file_cxx(any HAS_ANY)
@@ -19,12 +27,12 @@ endif ()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(${PROJECT_NAME} main.cc)
+add_executable(${PROJECT_NAME} main.${DEFAULT_SOURCE_EXTENSION})
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
-# to add drogon 
-# add_subdirectory(drogon) 
+# to add drogon
+# add_subdirectory(drogon)
 # target_link_libraries(${PROJECT_NAME} PRIVATE drogon)
 #
 # and comment out the following lines
@@ -67,7 +75,7 @@ target_sources(${PROJECT_NAME}
                ${PLUGIN_SRC}
                ${MODEL_SRC})
 # ##############################################################################
-# uncomment the following line for dynamically loading views 
+# uncomment the following line for dynamically loading views
 # set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
 
 # ##############################################################################

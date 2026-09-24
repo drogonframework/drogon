@@ -13,6 +13,7 @@
  */
 
 #include "help.h"
+#include "extension.h"
 #include <drogon/DrClassMap.h>
 #include <iostream>
 #include <memory>
@@ -25,6 +26,9 @@ void help::handleCommand(std::vector<std::string> &parameters)
         std::cout << "usage: drogon_ctl [-v | --version] [-h | --help] "
                      "<command> [<args>]"
                   << std::endl;
+        std::cout << "Global Options:" << std::endl;
+        std::cout << "  -se, --source-ext, --source-extension <ext>  Specify output source file extension (default: " << sourceExtension << ")" << std::endl;
+        std::cout << "  -he, --header-ext, --header-extension <ext>  Specify output header file extension (default: " << headerExtension << ")" << std::endl;
         std::cout << "commands list:" << std::endl;
         for (auto &className : drogon::DrClassMap::getAllClassName())
         {

@@ -13,6 +13,7 @@
  */
 
 #include "create_project.h"
+#include "extension.h"
 #include <drogon/DrTemplateBase.h>
 #include <drogon/utils/Utilities.h>
 #include <iostream>
@@ -44,6 +45,8 @@ static void newCmakeFile(std::ofstream &cmakeFile,
 {
     HttpViewData data;
     data.insert("ProjectName", projectName);
+    data.insert("SourceExtension", sourceExtension);
+    data.insert("HeaderExtension", headerExtension);
     auto templ = DrTemplateBase::newTemplate("cmake.csp");
     cmakeFile << templ->genText(data);
 }
@@ -89,6 +92,8 @@ static void newTestCmakeFile(std::ofstream &testCmakeFile,
 {
     HttpViewData data;
     data.insert("ProjectName", projectName);
+    data.insert("SourceExtension", sourceExtension);
+    data.insert("HeaderExtension", headerExtension);
     auto templ = DrTemplateBase::newTemplate("test_cmake");
     testCmakeFile << templ->genText(data);
 }
@@ -118,7 +123,7 @@ void create_project::createProject(const std::string &projectName)
     (void)(r);
     std::ofstream cmakeFile("CMakeLists.txt", std::ofstream::out);
     newCmakeFile(cmakeFile, projectName);
-    std::ofstream mainFile("main.cc", std::ofstream::out);
+    std::ofstream mainFile("main." + sourceExtension, std::ofstream::out);
     newMainFile(mainFile);
     drogon::utils::createPath("views");
     drogon::utils::createPath("controllers");
@@ -136,7 +141,7 @@ void create_project::createProject(const std::string &projectName)
     newConfigYamlFile(configYamlFile);
     std::ofstream modelConfigFile("models/model.json", std::ofstream::out);
     newModelConfigFile(modelConfigFile);
-    std::ofstream testMainFile("test/test_main.cc", std::ofstream::out);
+    std::ofstream testMainFile("test/test_main." + sourceExtension, std::ofstream::out);
     newTestMainFile(testMainFile);
     std::ofstream testCmakeFile("test/CMakeLists.txt", std::ofstream::out);
     newTestCmakeFile(testCmakeFile, projectName);
