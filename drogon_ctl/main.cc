@@ -47,7 +47,8 @@ int main(int argc, char *argv[])
             for (auto iter = args.begin(); iter != args.end();)
             {
                 auto &flag = *iter;
-                if (flag == "-se" || flag == "--source-ext" || flag == "--source-extension")
+                if (flag == "-se" || flag == "--source-ext" ||
+                    flag == "--source-extension")
                 {
                     iter = args.erase(iter);
                     if (iter != args.end())
@@ -57,7 +58,8 @@ int main(int argc, char *argv[])
                     }
                     continue;
                 }
-                else if (flag == "-he" || flag == "--header-ext" || flag == "--header-extension")
+                else if (flag == "-he" || flag == "--header-ext" ||
+                         flag == "--header-extension")
                 {
                     iter = args.erase(iter);
                     if (iter != args.end())

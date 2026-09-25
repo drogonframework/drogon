@@ -527,7 +527,8 @@ void create_model::createModelClassFromPG(
 
     data["relationships"] = allRelationships;
     data["columns"] = cols;
-    std::ofstream headerFile(path + "/" + className + "." + headerExtension, std::ofstream::out);
+    std::ofstream headerFile(path + "/" + className + "." + headerExtension,
+                             std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + "." + sourceExtension,
                              std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
@@ -756,7 +757,8 @@ void create_model::createModelClassFromMysql(
 
     data["relationships"] = allRelationships;
     data["columns"] = cols;
-    std::ofstream headerFile(path + "/" + className + "." + headerExtension, std::ofstream::out);
+    std::ofstream headerFile(path + "/" + className + "." + headerExtension,
+                             std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + "." + sourceExtension,
                              std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
@@ -963,7 +965,8 @@ void create_model::createModelClassFromSqlite3(
 
     data["relationships"] = allRelationships;
     data["columns"] = cols;
-    std::ofstream headerFile(path + "/" + className + "." + headerExtension, std::ofstream::out);
+    std::ofstream headerFile(path + "/" + className + "." + headerExtension,
+                             std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + "." + sourceExtension,
                              std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
@@ -1019,7 +1022,8 @@ void create_model::createModel(const std::string &path,
 
     if (cleanupDirectory_)
     {
-        std::cout << "Source files (*." << headerExtension << ", *." << sourceExtension << ") in '" << path
+        std::cout << "Source files (*." << headerExtension << ", *."
+                  << sourceExtension << ") in '" << path
                   << "' folder will be deleted, continue(y/n)?\n";
         auto in = getchar();
         (void)getchar();  // get the return key

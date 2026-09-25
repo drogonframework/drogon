@@ -141,7 +141,8 @@ void create_project::createProject(const std::string &projectName)
     newConfigYamlFile(configYamlFile);
     std::ofstream modelConfigFile("models/model.json", std::ofstream::out);
     newModelConfigFile(modelConfigFile);
-    std::ofstream testMainFile("test/test_main." + sourceExtension, std::ofstream::out);
+    std::ofstream testMainFile("test/test_main." + sourceExtension,
+                               std::ofstream::out);
     newTestMainFile(testMainFile);
     std::ofstream testCmakeFile("test/CMakeLists.txt", std::ofstream::out);
     newTestCmakeFile(testCmakeFile, projectName);

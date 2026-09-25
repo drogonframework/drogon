@@ -469,8 +469,8 @@ void create_controller::createARestfulController(const std::string &className,
     }
     std::cout << "Create a http restful API controller: " << className
               << std::endl;
-    std::cout << "File name: " << ctlName << "." << headerExtension << " and " << ctlName << "." << sourceExtension
-              << std::endl;
+    std::cout << "File name: " << ctlName << "." << headerExtension << " and "
+              << ctlName << "." << sourceExtension << std::endl;
 }
 
 // See create.cc for rationale.
