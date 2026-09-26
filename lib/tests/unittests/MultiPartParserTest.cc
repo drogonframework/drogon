@@ -130,3 +130,43 @@ DROGON_TEST(MultiPartStreamParser)
     check(7);
     check(20);
 }
+
+DROGON_TEST(MultiPartParserFirefoxBoundary)
+{
+    // Test for issue #2497: Firefox-style boundaries
+    // RFC 7578 specifies the delimiter as "--" + boundary
+    // The boundary string should NOT include leading dashes
+
+    std::string boundary = "geckoformboundary7805dba873e5a74dd0aa7640be4f989";
+
+    // Construct valid RFC 7578 body with the full delimiter (-- + boundary)
+    std::string body = "--" + boundary +
+                       "\r\n"
+                       "Content-Disposition: form-data; name=\"file\"; "
+                       "filename=\"test.txt\"\r\n"
+                       "Content-Type: text/plain\r\n"
+                       "\r\n"
+                       "Hello World\r\n"
+                       "--" +
+                       boundary + "--\r\n";
+
+    auto req = drogon::HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->addHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
+    req->setBody(body);
+
+    drogon::MultiPartParser parser;
+
+    // Should parse successfully
+    CHECK(0 == parser.parse(req));
+
+    // Should find exactly one file
+    CHECK(parser.getFiles().size() == 1);
+
+    // Verify file details
+    auto filesMap = parser.getFilesMap();
+    CHECK(filesMap.size() == 1);
+    CHECK(filesMap.at("file").getFileName() == "test.txt");
+    CHECK(filesMap.at("file").fileContent() == "Hello World");
+    CHECK(filesMap.at("file").getContentType() == drogon::CT_TEXT_PLAIN);
+}
