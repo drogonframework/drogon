@@ -59,12 +59,13 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
 #if LIBPQ_SUPPORTS_BATCH_MODE
       autoBatch_(autoBatch),
 #endif
-      loops_(type == ClientType::Sqlite3
-                 ? 1
-                 : (connNum < std::thread::hardware_concurrency()
-                        ? connNum
-                        : std::thread::hardware_concurrency()),
-             "DbLoop")
+      loops_(std::make_unique<trantor::EventLoopThreadPool>(
+          type == ClientType::Sqlite3
+              ? 1
+              : (connNum < std::thread::hardware_concurrency()
+                     ? connNum
+                     : std::thread::hardware_concurrency()),
+          "DbLoop"))
 {
     type_ = type;
     connectionInfo_ = connInfo;
@@ -74,13 +75,13 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
 
 void DbClientImpl::init()
 {
-    // LOG_DEBUG << loops_.getLoopNum();
-    loops_.start();
+    // LOG_DEBUG << loops_->getLoopNum();
+    loops_->start();
     if (type_ == ClientType::PostgreSQL || type_ == ClientType::Mysql)
     {
         for (size_t i = 0; i < numberOfConnections_; ++i)
         {
-            auto loop = loops_.getNextLoop();
+            auto loop = loops_->getNextLoop();
             loop->runInLoop([this, loop]() { newConnection(loop); });
         }
     }
@@ -99,6 +100,28 @@ void DbClientImpl::init()
 DbClientImpl::~DbClientImpl() noexcept
 {
     closeAll();
+    // If the last shared_ptr was released from inside a DbLoop callback,
+    // destroying EventLoopThreadPool here would self-join and throw
+    // std::system_error (resource_deadlock_would_occur). Hand the pool to a
+    // helper thread so join() runs off the loop thread. See #2552.
+    if (!loops_)
+        return;
+    bool onPoolThread = false;
+    for (auto *loop : loops_->getLoops())
+    {
+        if (loop && loop->isInLoopThread())
+        {
+            onPoolThread = true;
+            break;
+        }
+    }
+    if (onPoolThread)
+    {
+        auto pool =
+            std::make_shared<std::unique_ptr<trantor::EventLoopThreadPool>>(
+                std::move(loops_));
+        std::thread([pool]() mutable { pool->reset(); }).detach();
+    }
 }
 
 void DbClientImpl::closeAll()
@@ -221,7 +244,7 @@ void DbClientImpl::newTransactionAsync(
                     std::make_shared<std::weak_ptr<std::function<void(
                         const std::shared_ptr<Transaction> &)>>>();
                 auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
-                    loops_.getNextLoop(),
+                    loops_->getNextLoop(),
                     std::chrono::duration<double>(timeout_),
                     [newCallbackPtr, callbackPtr, this]() {
                         auto cbPtr = (*newCallbackPtr).lock();
@@ -513,7 +536,7 @@ void DbClientImpl::execSqlWithTimeout(
         std::make_shared<std::function<void(const std::exception_ptr &)>>(
             std::move(ecb));
     auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
-        loops_.getNextLoop(),
+        loops_->getNextLoop(),
         std::chrono::duration<double>(timeout_),
         [cmd, ecpPtr, thisPtr = shared_from_this()]() {
             auto cbPtr = (*cmd).lock();

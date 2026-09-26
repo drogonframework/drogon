@@ -23,6 +23,7 @@
 #include <exception>
 #include <mutex>
 #include <regex>
+#include <thread>
 
 using namespace drogon;
 using namespace drogon::orm;
@@ -82,14 +83,33 @@ Sqlite3Connection::Sqlite3Connection(
     trantor::EventLoop *loop,
     const std::string &connInfo,
     const std::shared_ptr<SharedMutex> &sharedMutex)
-    : DbConnection(loop), sharedMutexPtr_(sharedMutex), connInfo_(connInfo)
+    : DbConnection(loop),
+      loopThread_(std::make_unique<trantor::EventLoopThread>()),
+      sharedMutexPtr_(sharedMutex),
+      connInfo_(connInfo)
 {
+}
+
+Sqlite3Connection::~Sqlite3Connection()
+{
+    // Releasing the last connection ref from a callback on this connection's
+    // own loop thread would self-join in ~EventLoopThread. See #2552.
+    if (!loopThread_)
+        return;
+    auto *loop = loopThread_->getLoop();
+    if (loop && loop->isInLoopThread())
+    {
+        auto thr =
+            std::make_shared<std::unique_ptr<trantor::EventLoopThread>>(
+                std::move(loopThread_));
+        std::thread([thr]() mutable { thr->reset(); }).detach();
+    }
 }
 
 void Sqlite3Connection::init()
 {
-    loopThread_.run();
-    loop_ = loopThread_.getLoop();
+    loopThread_->run();
+    loop_ = loopThread_->getLoop();
     std::call_once(once_, []() {
         auto ret = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
         if (ret != SQLITE_OK)
@@ -146,7 +166,7 @@ void Sqlite3Connection::execSql(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     auto thisPtr = shared_from_this();
-    loopThread_.getLoop()->queueInLoop(
+    loopThread_->getLoop()->queueInLoop(
         [thisPtr,
          sql = std::move(sql),
          paraNum,
@@ -381,7 +401,7 @@ void Sqlite3Connection::disconnect()
     auto f = pro.get_future();
     auto thisPtr = shared_from_this();
     std::weak_ptr<Sqlite3Connection> weakPtr = thisPtr;
-    loopThread_.getLoop()->runInLoop([weakPtr, &pro]() {
+    loopThread_->getLoop()->runInLoop([weakPtr, &pro]() {
         {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)

@@ -63,6 +63,8 @@ class Sqlite3Connection : public DbConnection,
 
     void disconnect() override;
 
+    ~Sqlite3Connection() override;
+
   private:
     static std::once_flag once_;
     void execSqlInQueue(
@@ -80,7 +82,8 @@ class Sqlite3Connection : public DbConnection,
     int stmtStep(sqlite3_stmt *stmt,
                  const std::shared_ptr<Sqlite3ResultImpl> &resultPtr,
                  int columnNum);
-    trantor::EventLoopThread loopThread_;
+    // Heap-allocated so destruction can be deferred off the loop thread (#2552).
+    std::unique_ptr<trantor::EventLoopThread> loopThread_;
     std::shared_ptr<sqlite3> connectionPtr_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
     std::unordered_map<std::string_view, std::shared_ptr<sqlite3_stmt>>
