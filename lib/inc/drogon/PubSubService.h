@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/utils/Utilities.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <mutex>
@@ -272,8 +273,7 @@ class PubSubService : public trantor::NonCopyable
     }
 
   private:
-    std::unordered_map<std::string, std::shared_ptr<Topic<MessageType>>>
-        topicMap_;
+    SafeStringMap<std::shared_ptr<Topic<MessageType>>> topicMap_;
     mutable SharedMutex mutex_;
     SubscriberID subID_ = 0;
 
