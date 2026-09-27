@@ -63,6 +63,10 @@ class Sqlite3Connection : public DbConnection,
 
     void disconnect() override;
 
+    // Internal failed-COMMIT recovery. Call only on this connection's loop.
+    bool hasActiveTransaction() const;
+    void invalidate();
+
   private:
     static std::once_flag once_;
     void execSqlInQueue(
