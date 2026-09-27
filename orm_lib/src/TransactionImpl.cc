@@ -14,6 +14,9 @@
 
 #include "TransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
+#if USE_SQLITE3
+#include "sqlite3_impl/Sqlite3Connection.h"
+#endif
 #include <string_view>
 #include <trantor/utils/Logger.h>
 
@@ -22,6 +25,7 @@ using namespace drogon;
 
 namespace
 {
+#if USE_SQLITE3
 void rollbackFailedSqliteCommit(const DbConnectionPtr &conn,
                                 const std::function<void()> &usedUpCallback,
                                 const std::function<void(bool)> &commitCallback)
@@ -30,26 +34,43 @@ void rollbackFailedSqliteCommit(const DbConnectionPtr &conn,
     // this connection to the pool when the failed command becomes idle.
     conn->setIdleCallback([]() {});
     conn->loop()->queueInLoop([conn, usedUpCallback, commitCallback]() {
-        conn->setIdleCallback([usedUpCallback, commitCallback]() {
-            if (commitCallback)
-                commitCallback(false);
-            if (usedUpCallback)
-                usedUpCallback();
-        });
+        auto sqlite = std::static_pointer_cast<Sqlite3Connection>(conn);
+        auto finish = [sqlite, usedUpCallback, commitCallback](bool reusable) {
+            // Let the failed statement and its callbacks finish before closing
+            // the connection or allowing the pool to dispatch another query.
+            sqlite->loop()->queueInLoop(
+                [sqlite, usedUpCallback, commitCallback, reusable]() {
+                    if (!reusable)
+                        sqlite->invalidate();
+                    if (commitCallback)
+                        commitCallback(false);
+                    if (reusable && usedUpCallback)
+                        usedUpCallback();
+                });
+        };
+        // Some COMMIT errors already roll back the entire transaction.
+        if (!sqlite->hasActiveTransaction())
+        {
+            finish(true);
+            return;
+        }
         conn->execSql(
             "rollback",
             0,
             {},
             {},
             {},
-            [](const Result &) {
+            [sqlite, finish](const Result &) {
                 LOG_TRACE << "Transaction rolled back after failed commit";
+                finish(!sqlite->hasActiveTransaction());
             },
-            [](const std::exception_ptr &) {
+            [sqlite, finish](const std::exception_ptr &) {
                 LOG_ERROR << "Transaction rollback after failed commit failed";
+                finish(!sqlite->hasActiveTransaction());
             });
     });
 }
+#endif
 }  // namespace
 
 TransactionImpl::TransactionImpl(ClientType type,
@@ -103,11 +124,13 @@ TransactionImpl::~TransactionImpl()
                     {
                         LOG_ERROR << "Transaction submission failed:"
                                   << e.base().what();
+#if USE_SQLITE3
                         if (type == ClientType::Sqlite3)
                         {
                             rollbackFailedSqliteCommit(conn, ucb, commitCb);
                             return;
                         }
+#endif
                         if (commitCb)
                         {
                             commitCb(false);
