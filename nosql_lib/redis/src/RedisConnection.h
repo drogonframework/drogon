@@ -204,6 +204,7 @@ class RedisConnection : public trantor::NonCopyable,
     std::queue<RedisResultCallback> resultCallbacks_;
     std::queue<RedisExceptionCallback> exceptionCallbacks_;
     ConnectStatus status_{ConnectStatus::kNone};
+    bool unhandledErrorLogged_{false};
 
     // used to keep the lifetime of context object
     std::unordered_map<unsigned long long, std::shared_ptr<SubscribeContext>>
@@ -218,6 +219,7 @@ class RedisConnection : public trantor::NonCopyable,
     static void cleanup(void *userData);
     void handleRedisRead();
     void handleRedisWrite();
+    void handleRedisError();
     void handleResult(redisReply *result);
     void sendCommandInLoop(const std::string &command,
                            RedisResultCallback &&resultCallback,
