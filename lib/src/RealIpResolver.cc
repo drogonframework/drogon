@@ -236,7 +236,7 @@ static bool comparePrefix(const std::string &addr,
     }
     const auto fullBytes = static_cast<size_t>(prefixLen / 8);
     const auto remainingBits = static_cast<uint8_t>(prefixLen % 8);
-    if (fullBytes > 0 && 
+    if (fullBytes > 0 &&
         std::memcmp(addr.data(), network.data(), fullBytes) != 0)
     {
         return false;
