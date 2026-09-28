@@ -16,6 +16,14 @@ option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
 option(USE_STATIC_LIBS_ONLY "Use only static libraries as dependencies" OFF)
 
+# Custom file extension configuration for drogon_ctl
+if(NOT DEFINED DEFAULT_SOURCE_EXTENSION)
+    set(DEFAULT_SOURCE_EXTENSION "cc" CACHE STRING "Default source file extension for drogon_ctl (e.g., cc, cpp, cxx)")
+endif()
+if(NOT DEFINED DEFAULT_HEADER_EXTENSION)
+    set(DEFAULT_HEADER_EXTENSION "h" CACHE STRING "Default header file extension for drogon_ctl (e.g., h, hpp, hxx)")
+endif()
+
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON "BUILD_POSTGRESQL" OFF)

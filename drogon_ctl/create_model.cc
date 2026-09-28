@@ -13,6 +13,7 @@
  */
 
 #include "create_model.h"
+#include "extension.h"
 #include "cmd.h"
 #include <drogon/config.h>
 #include <drogon/utils/Utilities.h>
@@ -272,6 +273,8 @@ void create_model::createModelClassFromPG(
     data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("postgresql");
     data["convertMethods"] = convertMethods;
+    data["SourceExtension"] = sourceExtension;
+    data["HeaderExtension"] = headerExtension;
     // Start with user-configured relationships (mutable copy)
     std::vector<Relationship> allRelationships(relationships);
     if (schema != "public")
@@ -524,8 +527,9 @@ void create_model::createModelClassFromPG(
 
     data["relationships"] = allRelationships;
     data["columns"] = cols;
-    std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
-    std::ofstream sourceFile(path + "/" + className + ".cc",
+    std::ofstream headerFile(path + "/" + className + "." + headerExtension,
+                             std::ofstream::out);
+    std::ofstream sourceFile(path + "/" + className + "." + sourceExtension,
                              std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
     headerFile << templ->genText(data);
@@ -595,6 +599,8 @@ void create_model::createModelClassFromMysql(
     data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("mysql");
     data["convertMethods"] = convertMethods;
+    data["SourceExtension"] = sourceExtension;
+    data["HeaderExtension"] = headerExtension;
     // Start with user-configured relationships (mutable copy)
     std::vector<Relationship> allRelationships(relationships);
     std::vector<ColumnInfo> cols;
@@ -751,8 +757,9 @@ void create_model::createModelClassFromMysql(
 
     data["relationships"] = allRelationships;
     data["columns"] = cols;
-    std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
-    std::ofstream sourceFile(path + "/" + className + ".cc",
+    std::ofstream headerFile(path + "/" + className + "." + headerExtension,
+                             std::ofstream::out);
+    std::ofstream sourceFile(path + "/" + className + "." + sourceExtension,
                              std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
     headerFile << templ->genText(data);
@@ -805,6 +812,8 @@ void create_model::createModelClassFromSqlite3(
     data["namespaceName"] = namespaceName_;
     data["rdbms"] = std::string("sqlite3");
     data["convertMethods"] = convertMethods;
+    data["SourceExtension"] = sourceExtension;
+    data["HeaderExtension"] = headerExtension;
     // Start with user-configured relationships (mutable copy)
     std::vector<Relationship> allRelationships(relationships);
     std::vector<ColumnInfo> cols;
@@ -956,8 +965,9 @@ void create_model::createModelClassFromSqlite3(
 
     data["relationships"] = allRelationships;
     data["columns"] = cols;
-    std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
-    std::ofstream sourceFile(path + "/" + className + ".cc",
+    std::ofstream headerFile(path + "/" + className + "." + headerExtension,
+                             std::ofstream::out);
+    std::ofstream sourceFile(path + "/" + className + "." + sourceExtension,
                              std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
     headerFile << templ->genText(data);
@@ -1012,7 +1022,8 @@ void create_model::createModel(const std::string &path,
 
     if (cleanupDirectory_)
     {
-        std::cout << "Source files (*.h, *.cc) in '" << path
+        std::cout << "Source files (*." << headerExtension << ", *."
+                  << sourceExtension << ") in '" << path
                   << "' folder will be deleted, continue(y/n)?\n";
         auto in = getchar();
         (void)getchar();  // get the return key
@@ -1030,7 +1041,7 @@ void create_model::createModel(const std::string &path,
             const std::filesystem::path &file = entry.path();
             std::string ext = file.extension().string();
 
-            if (ext == ".h" || ext == ".cc")
+            if (ext == "." + headerExtension || ext == "." + sourceExtension)
             {
                 std::cout << "Removing: " << file << "\n";
                 std::error_code ret;
@@ -1565,8 +1576,8 @@ void create_model::createRestfulAPIController(
         dir += '/';
     }
     {
-        std::string headFileName = dir + ctlName + "Base.h";
-        std::string sourceFilename = dir + ctlName + "Base.cc";
+        std::string headFileName = dir + ctlName + "Base." + headerExtension;
+        std::string sourceFilename = dir + ctlName + "Base." + sourceExtension;
         // {
         //     std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
         //     std::ifstream iSourceFile(sourceFilename.c_str(),
@@ -1617,8 +1628,8 @@ void create_model::createRestfulAPIController(
     }
     if (!genBaseOnly)
     {
-        std::string headFileName = dir + ctlName + ".h";
-        std::string sourceFilename = dir + ctlName + ".cc";
+        std::string headFileName = dir + ctlName + "." + headerExtension;
+        std::string sourceFilename = dir + ctlName + "." + sourceExtension;
         if (!forceOverwrite_)
         {
             std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
