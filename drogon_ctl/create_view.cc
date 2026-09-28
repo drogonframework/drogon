@@ -13,6 +13,7 @@
  */
 
 #include "create_view.h"
+#include "extension.h"
 #include "cmd.h"
 #include <drogon/utils/Utilities.h>
 #include <iostream>
@@ -501,8 +502,10 @@ int create_view::createViewFile(const std::string &script_filename)
     std::string className = inputPath.stem().string();
     std::cout << "className=" << className << std::endl;
 
-    auto headerPath = fs::path(outputPath_) / (npPrefix + className + ".h");
-    auto sourcePath = fs::path(outputPath_) / (npPrefix + className + ".cc");
+    auto headerPath =
+        fs::path(outputPath_) / (npPrefix + className + "." + headerExtension);
+    auto sourcePath =
+        fs::path(outputPath_) / (npPrefix + className + "." + sourceExtension);
 
     std::ofstream oHeadFile(headerPath);
     std::ofstream oSourceFile(sourcePath);
@@ -551,7 +554,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
     const std::string viewDataName = className + "_view_data";
     const std::string streamName = className + "_tmp_stream";
 
-    file << headers(namespacePrefix + className);
+    file << headers(namespacePrefix + className + "." + headerExtension);
 
     std::stringstream ss;
     ss << infile.rdbuf();

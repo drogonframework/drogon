@@ -2,6 +2,15 @@
 # function drogon_create_views(target source_path output_path
 # [TRUE to use_path_as_namespace] [prefixed namespace])
 # ##############################################################################
+
+# Custom file extension configuration
+if(NOT DEFINED DEFAULT_SOURCE_EXTENSION)
+    set(DEFAULT_SOURCE_EXTENSION "cc" CACHE STRING "Default source file extension (e.g., cc, cpp, cxx)")
+endif()
+if(NOT DEFINED DEFAULT_HEADER_EXTENSION)
+    set(DEFAULT_HEADER_EXTENSION "h" CACHE STRING "Default header file extension (e.g., h, hpp, hxx)")
+endif()
+
 function(drogon_create_views arg)
   if(ARGC LESS 3)
     message(STATUS "arguments error when calling drogon_create_views")
@@ -38,7 +47,7 @@ function(drogon_create_views arg)
       else()
         set(ns "")
       endif()
-      add_custom_command(OUTPUT ${ARGV2}/${outputFile}.h ${ARGV2}/${outputFile}.cc
+      add_custom_command(OUTPUT ${ARGV2}/${outputFile}.${DEFAULT_HEADER_EXTENSION} ${ARGV2}/${outputFile}.${DEFAULT_SOURCE_EXTENSION}
                          COMMAND drogon_ctl
                                  ARGS
                                  create
@@ -51,10 +60,10 @@ function(drogon_create_views arg)
                          DEPENDS ${cspFile}
                          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                          VERBATIM)
-      set(VIEWSRC ${VIEWSRC} ${ARGV2}/${outputFile}.cc)
+      set(VIEWSRC ${VIEWSRC} ${ARGV2}/${outputFile}.${DEFAULT_SOURCE_EXTENSION})
     else()
       get_filename_component(classname ${cspFile} NAME_WE)
-      add_custom_command(OUTPUT ${ARGV2}/${classname}.h ${ARGV2}/${classname}.cc
+      add_custom_command(OUTPUT ${ARGV2}/${classname}.${DEFAULT_HEADER_EXTENSION} ${ARGV2}/${classname}.${DEFAULT_SOURCE_EXTENSION}
                          COMMAND drogon_ctl
                                  ARGS
                                  create
@@ -65,7 +74,7 @@ function(drogon_create_views arg)
                          DEPENDS ${cspFile}
                          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                          VERBATIM)
-      set(VIEWSRC ${VIEWSRC} ${ARGV2}/${classname}.cc)
+      set(VIEWSRC ${VIEWSRC} ${ARGV2}/${classname}.${DEFAULT_SOURCE_EXTENSION})
     endif()
   endforeach()
   target_sources(${ARGV0} PRIVATE ${VIEWSRC})

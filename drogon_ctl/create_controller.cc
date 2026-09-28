@@ -13,6 +13,7 @@
  */
 
 #include "create_controller.h"
+#include "extension.h"
 #include "cmd.h"
 #include <drogon/DrTemplateBase.h>
 #include <drogon/utils/Utilities.h>
@@ -141,7 +142,7 @@ void create_controller::newSimpleControllerSourceFile(
     const std::string &className,
     const std::string &filename)
 {
-    file << "#include \"" << filename << ".h\"\n";
+    file << "#include \"" << filename << "." << headerExtension << "\"\n";
     file << "\n";
     auto pos = className.rfind("::");
     auto class_name = className;
@@ -214,7 +215,7 @@ void create_controller::newWebsockControllerSourceFile(
     const std::string &className,
     const std::string &filename)
 {
-    file << "#include \"" << filename << ".h\"\n";
+    file << "#include \"" << filename << "." << headerExtension << "\"\n";
     file << "\n";
     auto pos = className.rfind("::");
     auto class_name = className;
@@ -311,7 +312,7 @@ void create_controller::newHttpControllerSourceFile(
     const std::string &className,
     const std::string &filename)
 {
-    file << "#include \"" << filename << ".h\"\n";
+    file << "#include \"" << filename << "." << headerExtension << "\"\n";
     file << "\n";
     auto pos = className.rfind("::");
     auto class_name = className;
@@ -350,8 +351,8 @@ void create_controller::createController(const std::string &className,
     std::string ctlName =
         std::regex_replace(className, regex, std::string("_"));
 
-    std::string headFileName = ctlName + ".h";
-    std::string sourceFilename = ctlName + ".cc";
+    std::string headFileName = ctlName + "." + headerExtension;
+    std::string sourceFilename = ctlName + "." + sourceExtension;
     {
         std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
         std::ifstream iSourceFile(sourceFilename.c_str(), std::ifstream::in);
@@ -406,8 +407,8 @@ void create_controller::createARestfulController(const std::string &className,
     std::string ctlName =
         std::regex_replace(className, regex, std::string("_"));
 
-    std::string headFileName = ctlName + ".h";
-    std::string sourceFilename = ctlName + ".cc";
+    std::string headFileName = ctlName + "." + headerExtension;
+    std::string sourceFilename = ctlName + "." + sourceExtension;
     {
         std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
         std::ifstream iSourceFile(sourceFilename.c_str(), std::ifstream::in);
@@ -440,6 +441,8 @@ void create_controller::createARestfulController(const std::string &className,
     data.insert("namespaceVector", v);
     data.insert("resource", resource);
     data.insert("fileName", ctlName);
+    data.insert("SourceExtension", sourceExtension);
+    data.insert("HeaderExtension", headerExtension);
     if (resource.empty())
     {
         data.insert("ctlCommand",
@@ -466,8 +469,8 @@ void create_controller::createARestfulController(const std::string &className,
     }
     std::cout << "Create a http restful API controller: " << className
               << std::endl;
-    std::cout << "File name: " << ctlName << ".h and " << ctlName << ".cc"
-              << std::endl;
+    std::cout << "File name: " << ctlName << "." << headerExtension << " and "
+              << ctlName << "." << sourceExtension << std::endl;
 }
 
 // See create.cc for rationale.

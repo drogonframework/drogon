@@ -1,10 +1,10 @@
 /**
  *
- *  [[filename]].cc
+ *  [[filename]].[[SourceExtension]]
  *
  */
 
-#include "[[filename]].h"
+#include "[[filename]].[[HeaderExtension]]"
 
 using namespace drogon;
 <%c++auto namespaceStr=@@.get<std::string>("namespaceString");
@@ -17,7 +17,7 @@ void [[className]]::initAndStart(const Json::Value &config)
     /// Initialize and start the plugin
 }
 
-void [[className]]::shutdown() 
+void [[className]]::shutdown()
 {
     /// Shutdown the plugin
 }
