@@ -9,6 +9,8 @@
 #include <drogon/plugins/Plugin.h>
 #include <trantor/net/InetAddress.h>
 #include <drogon/HttpRequest.h>
+#include <cstdint>
+#include <string>
 #include <vector>
 
 namespace drogon
@@ -17,7 +19,7 @@ namespace plugin
 {
 /**
 * @brief This plugin is used to resolve client real ip from HTTP request.
-* @note This plugin currently supports only ipv4 address or cidr.
+* @note This plugin supports both ipv4 and ipv6 address or cidr.
 *
 * The json configuration is as follows:
 *
@@ -26,8 +28,8 @@ namespace plugin
      "name": "drogon::plugin::RealIpResolver",
      "dependencies": [],
      "config": {
-        // Trusted proxy ip or cidr
-        "trust_ips": ["127.0.0.1", "172.16.0.0/12"],
+        // Trusted proxy ip or cidr. Both ipv4 and ipv6 are accepted.
+        "trust_ips": ["127.0.0.1", "172.16.0.0/12", "::1", "2001:db8::/32"],
         // Which header to parse ip form. Default is x-forwarded-for
         "from_header": "x-forwarded-for",
         // The result will be inserted to HttpRequest attribute map with this
@@ -61,8 +63,20 @@ class DROGON_EXPORT RealIpResolver : public drogon::Plugin<RealIpResolver>
     struct CIDR
     {
         explicit CIDR(const std::string &ipOrCidr);
-        in_addr_t addr_{0};
-        in_addr_t mask_{32};
+        /**
+         * @brief The network address in network byte order.
+         *
+         * 4 bytes for an ipv4 CIDR, 16 bytes for an ipv6 one. The length also
+         * identifies the address family, so an ipv4 address can never match an
+         * ipv6 CIDR (and vice versa) - comparing byte strings of different
+         * lengths fails early.
+         */
+        std::string network_;
+        /**
+         * @brief Number of significant leading bits of network_: 0-32 for ipv4
+         * and 0-128 for ipv6.
+         */
+        uint16_t prefixLen_{32};
     };
 
     using CIDRs = std::vector<CIDR>;
