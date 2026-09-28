@@ -72,7 +72,7 @@ struct XForwardedForParser : public trantor::NonCopyable
  *   [2001:db8::1]        bracketed ipv6, no port
  *   2001:db8::1          bare ipv6, no port
  *
- * An unparseable token yields an unspecified address, which callers already
+ * An unparsable token yields an unspecified address, which callers already
  * treat as "skip this entry".
  */
 static trantor::InetAddress parseAddress(const std::string &addr)
@@ -225,7 +225,8 @@ const trantor::InetAddress &RealIpResolver::getRealAddr(
  * @brief Check whether the first prefixLen_ bits of a network-order address
  *        match the first prefixLen_ bits of the network address.
  */
-static bool comparePrefix(const std::string &addr, const std::string &network,
+static bool comparePrefix(const std::string &addr,
+                          const std::string &network,
                           uint16_t prefixLen)
 {
     if (addr.size() != network.size())
@@ -235,7 +236,8 @@ static bool comparePrefix(const std::string &addr, const std::string &network,
     }
     const auto fullBytes = static_cast<size_t>(prefixLen / 8);
     const auto remainingBits = static_cast<uint8_t>(prefixLen % 8);
-    if (fullBytes > 0 && std::memcmp(addr.data(), network.data(), fullBytes) != 0)
+    if (fullBytes > 0 && 
+        std::memcmp(addr.data(), network.data(), fullBytes) != 0)
     {
         return false;
     }
