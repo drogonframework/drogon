@@ -46,7 +46,7 @@ class DbClient;
 /// Transaction locking mode.
 enum class TransactionType
 {
-    Deferred,   ///< BEGIN — lock acquired on first write (default)
+    Deferred,  ///< BEGIN — lock acquired on first write (default)
     Immediate,  ///< BEGIN IMMEDIATE — write lock acquired upfront (SQLite only)
     Exclusive,  ///< BEGIN EXCLUSIVE — exclusive lock acquired upfront (SQLite
                 ///< only)
