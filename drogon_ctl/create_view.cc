@@ -99,7 +99,8 @@ struct TokenRule
 
 static void outputEscapedText(std::ofstream &file,
                               std::string_view content,
-                              const std::string &streamName)
+                              const std::string &streamName,
+                              bool isLastLine)
 {
     static const std::pair<std::string_view, std::string_view> escapeRules[] = {
         {"\\<%c++", "<%c++"},
@@ -153,7 +154,14 @@ static void outputEscapedText(std::ofstream &file,
         }
         i++;
     }
-    file << "\\n\";\n";
+    if (isLastLine)
+    {
+        file << "\";\n";
+    }
+    else
+    {
+        file << "\\n\";\n";
+    }
 }
 
 static void outputNormalText(std::ofstream &file,
@@ -166,7 +174,7 @@ static void outputNormalText(std::ofstream &file,
         auto next = content.find('\n', pos);
         if (next == std::string_view::npos)
         {
-            outputEscapedText(file, content.substr(pos), streamName);
+            outputEscapedText(file, content.substr(pos), streamName, true);
             break;
         }
         size_t end = next;
@@ -174,7 +182,10 @@ static void outputNormalText(std::ofstream &file,
         {
             end -= 1;
         }
-        outputEscapedText(file, content.substr(pos, end - pos), streamName);
+        outputEscapedText(file,
+                          content.substr(pos, end - pos),
+                          streamName,
+                          false);
         pos = next + 1;
     }
 }
