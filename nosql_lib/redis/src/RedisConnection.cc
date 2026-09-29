@@ -21,6 +21,10 @@
 #define strcasecmp _stricmp
 #endif
 
+#ifdef __linux__
+#include <sys/socket.h>
+#endif
+
 using namespace drogon::nosql;
 
 RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
@@ -102,6 +106,7 @@ void RedisConnection::connectWithResolvedIp(const std::string &ip)
     channel_ = std::make_unique<trantor::Channel>(loop_, redisContext_->c.fd);
     channel_->setReadCallback([this]() { handleRedisRead(); });
     channel_->setWriteCallback([this]() { handleRedisWrite(); });
+    channel_->setErrorCallback([this]() { handleRedisError(); });
     redisAsyncSetConnectCallback(
         redisContext_, [](const redisAsyncContext *context, int status) {
             auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
@@ -342,6 +347,37 @@ void RedisConnection::handleRedisWrite()
     if (status_ != ConnectStatus::kEnd)
     {
         redisAsyncHandleWrite(redisContext_);
+    }
+}
+
+void RedisConnection::handleRedisError()
+{
+    // A real socket error is reported by hiredis through its own connect or
+    // read path, which runs the disconnect callback and so the reconnect.
+    handleRedisRead();
+    if (status_ == ConnectStatus::kEnd)
+        return;
+
+    // Entries in the socket error queue keep POLLERR raised until they are
+    // read, and a plain read() never touches them.
+    size_t drained = 0;
+#ifdef __linux__
+    struct msghdr msg = {};
+    while (::recvmsg(channel_->fd(), &msg, MSG_ERRQUEUE | MSG_DONTWAIT) >= 0)
+        ++drained;
+#endif
+    if (drained > 0)
+    {
+        LOG_WARN << "Drained " << drained
+                 << " queued error(s) from the Redis socket of " << hostname_
+                 << ":" << serverAddr_.toPort();
+    }
+    else if (!unhandledErrorLogged_)
+    {
+        unhandledErrorLogged_ = true;
+        LOG_WARN << "POLLERR on the Redis socket of " << hostname_ << ":"
+                 << serverAddr_.toPort()
+                 << " with no error to consume; the event loop may spin";
     }
 }
 
