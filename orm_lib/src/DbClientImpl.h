@@ -88,6 +88,9 @@ class DbClientImpl : public DbClient,
     std::unordered_set<DbConnectionPtr> connections_;
     std::unordered_set<DbConnectionPtr> readyConnections_;
     std::unordered_set<DbConnectionPtr> busyConnections_;
+    // Retired SQLite connections stay owned until closeAll(), so their threads
+    // are not destroyed from inside a connection callback.
+    size_t failedSqliteConnections_{0};
 
     using TransCallbackEntry =
         std::pair<std::shared_ptr<std::function<void(
