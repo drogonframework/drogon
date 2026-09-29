@@ -79,10 +79,7 @@ void HttpClientImpl::createTcpClient()
                                      thisPtr->requestsBuffer_.front().first);
                     thisPtr->pipeliningCallbacks_.push(
                         std::move(thisPtr->requestsBuffer_.front()));
-                    thisPtr->pipeliningCallbacksSize_.fetch_add(
-                        1, std::memory_order_relaxed);
-
-                    thisPtr->popFrontRequest();
+                    (thisPtr->requestsBuffer_).pop_front();
                 }
             }
             else
@@ -343,7 +340,9 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                 {
                     if (iter->first == callbackParamsPtr->requestPtr)
                     {
-                        thisPtr->eraseRequest(iter);
+                        thisPtr->requestsBuffer_.erase(iter);
+                        thisPtr->outstandingRequests_.fetch_sub(
+                            1, std::memory_order_relaxed);
                         break;
                     }
                 }
@@ -388,6 +387,8 @@ static bool isValidIpAddr(const trantor::InetAddress &addr)
 void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                        drogon::HttpReqCallback &&callback)
 {
+    outstandingRequests_.fetch_add(1, std::memory_order_relaxed);
+
     loop_->assertInLoopThread();
     for (const auto &header : headers_)
     {
@@ -430,12 +431,12 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     {
         auto callbackPtr =
             std::make_shared<drogon::HttpReqCallback>(std::move(callback));
-        enqueueRequest(req,
-                       [thisPtr = shared_from_this(),
-                        callbackPtr](ReqResult result,
-                                     const HttpResponsePtr &response) {
-                           (*callbackPtr)(result, response);
-                       });
+        requestsBuffer_.push_back(
+            {req,
+             [thisPtr = shared_from_this(),
+              callbackPtr](ReqResult result, const HttpResponsePtr &response) {
+                 (*callbackPtr)(result, response);
+             }});
 
         if (domain_.empty() || !isDomainName_)
         {
@@ -447,7 +448,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             // No ip address and no domain, respond with BadServerAddress
             else
             {
-                popFrontRequest();
+                requestsBuffer_.pop_front();
+                outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
                 (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
                 assert(requestsBuffer_.empty());
             }
@@ -492,7 +494,9 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                         auto &reqAndCb = (thisPtr->requestsBuffer_).front();
                         reqAndCb.second(ReqResult::BadServerAddress, nullptr);
 
-                        thisPtr->popFrontRequest();
+                        (thisPtr->requestsBuffer_).pop_front();
+                        (thisPtr->outstandingRequests_)
+                            .fetch_sub(1, std::memory_order_relaxed);
                     }
                 });
             });
@@ -507,11 +511,13 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     // Not connected, push request to buffer and wait for connection
     if (!connPtr || connPtr->disconnected())
     {
-        enqueueRequest(req,
-                       [thisPtr, callback = std::move(callback)](
-                           ReqResult result, const HttpResponsePtr &response) {
-                           callback(result, response);
-                       });
+        requestsBuffer_.push_back(
+            {req,
+             [thisPtr,
+              callback = std::move(callback)](ReqResult result,
+                                              const HttpResponsePtr &response) {
+                 callback(result, response);
+             }});
         return;
     }
 
@@ -527,15 +533,16 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                               const HttpResponsePtr &response) {
                  callback(result, response);
              }});
-        pipeliningCallbacksSize_.fetch_add(1, std::memory_order_relaxed);
     }
     else
     {
-        enqueueRequest(req,
-                       [thisPtr, callback = std::move(callback)](
-                           ReqResult result, const HttpResponsePtr &response) {
-                           callback(result, response);
-                       });
+        requestsBuffer_.push_back(
+            {req,
+             [thisPtr,
+              callback = std::move(callback)](ReqResult result,
+                                              const HttpResponsePtr &response) {
+                 callback(result, response);
+             }});
     }
 }
 
@@ -571,7 +578,7 @@ void HttpClientImpl::handleResponse(
 #endif
     auto cb = std::move(reqAndCb);
     pipeliningCallbacks_.pop();
-    pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+    outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
     handleCookies(resp);
     cb.second(ReqResult::Ok, resp);
 
@@ -586,8 +593,7 @@ void HttpClientImpl::handleResponse(
             auto &reqAndCallback = requestsBuffer_.front();
             sendReq(connPtr, reqAndCallback.first);
             pipeliningCallbacks_.push(std::move(reqAndCallback));
-            pipeliningCallbacksSize_.fetch_add(1, std::memory_order_relaxed);
-            popFrontRequest();
+            requestsBuffer_.pop_front();
         }
         else
         {
@@ -603,7 +609,7 @@ void HttpClientImpl::handleResponse(
         {
             auto cb = std::move(pipeliningCallbacks_.front());
             pipeliningCallbacks_.pop();
-            pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+            outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
             cb.second(ReqResult::NetworkFailure, nullptr);
         }
     }
@@ -686,13 +692,14 @@ void HttpClientImpl::onError(ReqResult result)
     {
         auto cb = std::move(pipeliningCallbacks_.front());
         pipeliningCallbacks_.pop();
-        pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+        outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
         cb.second(result, nullptr);
     }
     while (!requestsBuffer_.empty())
     {
         auto cb = std::move(requestsBuffer_.front().second);
-        popFrontRequest();
+        requestsBuffer_.pop_front();
+        outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
         cb(result, nullptr);
     }
     tcpClientPtr_.reset();
