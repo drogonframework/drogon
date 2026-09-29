@@ -141,12 +141,6 @@ static void outputEscapedText(std::ofstream &file,
             case '\\':
                 file << "\\\\";
                 break;
-            case '\r':
-                file << "\\r";
-                break;
-            case '\n':
-                file << "\\n";
-                break;
             case '"':
                 file << "\\\"";
                 break;
@@ -158,7 +152,30 @@ static void outputEscapedText(std::ofstream &file,
         }
         i++;
     }
-    file << "\";\n";
+    file << "\\n\";\n";
+}
+
+static void outputNormalText(std::ofstream &file,
+                             std::string_view content,
+                             const std::string &streamName)
+{
+    size_t pos = 0;
+    while (pos < content.size())
+    {
+        auto next = content.find('\n', pos);
+        if (next == std::string_view::npos)
+        {
+            outputEscapedText(file, content.substr(pos), streamName);
+            break;
+        }
+        size_t end = next;
+        if (end > pos && content[end - 1] == '\r')
+        {
+            end -= 1;
+        }
+        outputEscapedText(file, content.substr(pos, end - pos), streamName);
+        pos = next + 1;
+    }
 }
 
 void outputNode(std::ofstream &file,
@@ -169,7 +186,7 @@ void outputNode(std::ofstream &file,
     switch (node.type)
     {
         case NodeType::NormalText:
-            outputEscapedText(file, node.content, streamName);
+            outputNormalText(file, node.content, streamName);
             break;
 
         case NodeType::Include:
