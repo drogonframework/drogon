@@ -32,16 +32,19 @@ orm::internal::SqlBinder DbClient::operator<<(std::string &&sql)
 
 std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
                                                 size_t connNum,
-                                                bool autoBatch)
+                                                bool autoBatch,
+                                                double reconnectInterval)
 {
 #if USE_POSTGRESQL
     auto client = std::make_shared<DbClientImpl>(connInfo,
                                                  connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                                                  ClientType::PostgreSQL,
-                                                 autoBatch);
+                                                 autoBatch,
+                                                 reconnectInterval);
 #else
-                                                 ClientType::PostgreSQL);
+                                                 ClientType::PostgreSQL,
+                                                 reconnectInterval);
 #endif
     client->init();
     return client;
@@ -61,9 +64,11 @@ std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
                                                  connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                                                  ClientType::Mysql,
-                                                 false);
+                                                 false,
+                                                 1.0);
 #else
-                                                 ClientType::Mysql);
+                                                 ClientType::Mysql,
+                                                 1.0);
 #endif
     client->init();
     return client;
@@ -84,9 +89,11 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
                                                  connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                                                  ClientType::Sqlite3,
-                                                 false);
+                                                 false,
+                                                 1.0);
 #else
-                                                 ClientType::Sqlite3);
+                                                 ClientType::Sqlite3,
+                                                 1.0);
 #endif
     client->init();
     return client;
