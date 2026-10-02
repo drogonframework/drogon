@@ -17,6 +17,7 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 namespace drogon::orm
 {
@@ -56,6 +57,7 @@ struct Sqlite3Config
     std::string filename;
     std::string name;
     double timeout;
+    std::vector<std::string> initializationQueries;
 };
 
 using DbConfig = std::variant<PostgresConfig, MysqlConfig, Sqlite3Config>;

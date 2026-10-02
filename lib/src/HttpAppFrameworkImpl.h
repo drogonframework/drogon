@@ -567,7 +567,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                      const std::string &characterSet,
                      double timeout,
                      bool autoBatch,
-                     std::unordered_map<std::string, std::string> options);
+                     std::unordered_map<std::string, std::string> options,
+                     std::vector<std::string> initializationQueries);
     HttpAppFramework &addDbClient(const orm::DbConfig &config) override;
 
     HttpAppFramework &createRedisClient(const std::string &ip,

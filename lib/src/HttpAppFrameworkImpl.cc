@@ -958,6 +958,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
                 characterSet,
                 timeout,
                 autoBatch,
+                {},
                 {});
     return *this;
 }
@@ -976,7 +977,8 @@ void HttpAppFrameworkImpl::addDbClient(
     const std::string &characterSet,
     double timeout,
     bool autoBatch,
-    std::unordered_map<std::string, std::string> options)
+    std::unordered_map<std::string, std::string> options,
+    std::vector<std::string> initializationQueries)
 {
     if (dbType == "postgresql" || dbType == "postgres")
     {
@@ -1008,7 +1010,11 @@ void HttpAppFrameworkImpl::addDbClient(
     }
     else if (dbType == "sqlite3")
     {
-        addDbClient(orm::Sqlite3Config{connectionNum, filename, name, timeout});
+        addDbClient(orm::Sqlite3Config{connectionNum,
+                                       filename,
+                                       name,
+                                       timeout,
+                                       std::move(initializationQueries)});
     }
     else
     {

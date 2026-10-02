@@ -26,6 +26,7 @@
 #include <functional>
 #include <future>
 #include <string>
+#include <vector>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 
@@ -139,6 +140,12 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     static std::shared_ptr<DbClient> newSqlite3Client(
         const std::string &connInfo,
         size_t connNum);
+    /// Create a SQLite client and run the given queries on every connection
+    /// before it becomes available.
+    static std::shared_ptr<DbClient> newSqlite3Client(
+        const std::string &connInfo,
+        size_t connNum,
+        const std::vector<std::string> &initializationQueries);
 
     /// Async and nonblocking method
     /**

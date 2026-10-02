@@ -47,15 +47,19 @@
 using namespace drogon;
 using namespace drogon::orm;
 
-DbClientImpl::DbClientImpl(const std::string &connInfo,
-                           size_t connNum,
+DbClientImpl::DbClientImpl(
+    const std::string &connInfo,
+    size_t connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
-                           ClientType type,
-                           bool autoBatch)
+    ClientType type,
+    bool autoBatch,
+    const std::vector<std::string> &initializationQueries)
 #else
-                           ClientType type)
+    ClientType type,
+    const std::vector<std::string> &initializationQueries)
 #endif
     : numberOfConnections_(connNum),
+      initializationQueries_(initializationQueries),
 #if LIBPQ_SUPPORTS_BATCH_MODE
       autoBatch_(autoBatch),
 #endif
@@ -440,7 +444,8 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
 #if USE_SQLITE3
         connPtr = std::make_shared<Sqlite3Connection>(loop,
                                                       connectionInfo_,
-                                                      sharedMutexPtr_);
+                                                      sharedMutexPtr_,
+                                                      initializationQueries_);
 #else
         return nullptr;
 #endif

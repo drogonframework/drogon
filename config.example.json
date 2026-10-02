@@ -44,6 +44,9 @@
             "rdbms": "postgresql",
             //filename: Sqlite3 db file name
             //"filename":"",
+            //initialization_queries: SQL queries executed in order whenever a
+            //SQLite3 connection is opened.
+            //"initialization_queries": ["PRAGMA foreign_keys = ON"],
             //host: Server address,localhost by default
             "host": "127.0.0.1",
             //port: Server port, 5432 by default
