@@ -133,9 +133,10 @@ void DbClientManager::createDbClients(
         else if (std::holds_alternative<Sqlite3Config>(dbInfo.config_))
         {
             auto &cfg = std::get<Sqlite3Config>(dbInfo.config_);
-            dbClientsMap_[cfg.name] =
-                drogon::orm::DbClient::newSqlite3Client(dbInfo.connectionInfo_,
-                                                        cfg.connectionNumber);
+            dbClientsMap_[cfg.name] = drogon::orm::DbClient::newSqlite3Client(
+                dbInfo.connectionInfo_,
+                cfg.connectionNumber,
+                cfg.initializationQueries);
             if (cfg.timeout > 0.0)
             {
                 dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);

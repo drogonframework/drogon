@@ -2810,6 +2810,35 @@ DROGON_TEST(MySQLTest)
 #endif
 
 #if USE_SQLITE3
+DROGON_TEST(SQLite3InitializationQueriesTest)
+{
+    auto client = DbClient::newSqlite3Client(
+        "filename=:memory:",
+        2,
+        {"PRAGMA foreign_keys = ON",
+         "CREATE TEMP TABLE initialized(value INTEGER)",
+         "INSERT INTO initialized VALUES (42)"});
+    REQUIRE(client != nullptr);
+
+    auto transaction1 = client->newTransaction();
+    auto transaction2 = client->newTransaction();
+    REQUIRE(transaction1 != nullptr);
+    REQUIRE(transaction2 != nullptr);
+
+    for (const auto &transaction : {transaction1, transaction2})
+    {
+        const auto foreignKeys =
+            transaction->execSqlSync("PRAGMA foreign_keys");
+        REQUIRE(foreignKeys.size() == 1);
+        CHECK(foreignKeys[0][0].as<int>() == 1);
+
+        const auto initialized =
+            transaction->execSqlSync("SELECT value FROM initialized");
+        REQUIRE(initialized.size() == 1);
+        CHECK(initialized[0][0].as<int>() == 42);
+    }
+}
+
 DROGON_TEST(SQLite3Test)
 {
     auto clientPtr = DbClient::newSqlite3Client("filename=:memory:", 1);

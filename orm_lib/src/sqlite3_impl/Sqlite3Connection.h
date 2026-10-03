@@ -28,6 +28,7 @@
 #include <string>
 #include <thread>
 #include <set>
+#include <vector>
 
 namespace drogon
 {
@@ -42,7 +43,8 @@ class Sqlite3Connection : public DbConnection,
   public:
     Sqlite3Connection(trantor::EventLoop *loop,
                       const std::string &connInfo,
-                      const std::shared_ptr<SharedMutex> &sharedMutex);
+                      const std::shared_ptr<SharedMutex> &sharedMutex,
+                      const std::vector<std::string> &initializationQueries);
 
     void init() override;
 
@@ -91,6 +93,7 @@ class Sqlite3Connection : public DbConnection,
         stmtsMap_;
     std::set<std::string> stmts_;
     std::string connInfo_;
+    std::vector<std::string> initializationQueries_;
 };
 
 }  // namespace orm
