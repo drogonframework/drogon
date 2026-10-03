@@ -79,6 +79,7 @@ int main(int argc, char **argv)
         false,        // isFast
         "",           // charset
         10,           // timeout
+        1.0,          // reconnectInterval
         false,        // autobatch
         {
             {"statement_timeout", "3s"},

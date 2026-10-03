@@ -33,6 +33,7 @@ struct PostgresConfig
     bool isFast;
     std::string characterSet;
     double timeout;
+    double reconnectInterval;
     bool autoBatch;
     std::unordered_map<std::string, std::string> connectOptions;
 };
@@ -49,6 +50,7 @@ struct MysqlConfig
     bool isFast;
     std::string characterSet;
     double timeout;
+    double reconnectInterval;
 };
 
 struct Sqlite3Config

@@ -246,6 +246,7 @@ int main(int argc, char **argv)
                                           true,         // isFast
                                           "",           // charset
                                           10,           // timeout
+                                          1.0,          // reconnectInterval
                                           true,         // autobatch
                                           {}});
 #endif

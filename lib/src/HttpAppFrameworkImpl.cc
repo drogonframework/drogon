@@ -957,6 +957,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
                 isFast,
                 characterSet,
                 timeout,
+                1.0,
                 autoBatch,
                 {},
                 {});
@@ -976,6 +977,7 @@ void HttpAppFrameworkImpl::addDbClient(
     bool isFast,
     const std::string &characterSet,
     double timeout,
+    double reconnectInterval,
     bool autoBatch,
     std::unordered_map<std::string, std::string> options,
     std::vector<std::string> initializationQueries)
@@ -992,6 +994,7 @@ void HttpAppFrameworkImpl::addDbClient(
                                         isFast,
                                         characterSet,
                                         timeout,
+                                        reconnectInterval,
                                         autoBatch,
                                         std::move(options)});
     }
@@ -1006,7 +1009,8 @@ void HttpAppFrameworkImpl::addDbClient(
                                      name,
                                      isFast,
                                      characterSet,
-                                     timeout});
+                                     timeout,
+                                     reconnectInterval});
     }
     else if (dbType == "sqlite3")
     {
