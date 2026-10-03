@@ -978,7 +978,8 @@ void HttpAppFrameworkImpl::addDbClient(
     double timeout,
     bool autoBatch,
     std::unordered_map<std::string, std::string> options,
-    std::vector<std::string> initializationQueries)
+    std::vector<std::string> initializationQueries,
+    double reconnectInterval)
 {
     if (dbType == "postgresql" || dbType == "postgres")
     {
@@ -993,7 +994,8 @@ void HttpAppFrameworkImpl::addDbClient(
                                         characterSet,
                                         timeout,
                                         autoBatch,
-                                        std::move(options)});
+                                        std::move(options),
+                                        reconnectInterval});
     }
     else if (dbType == "mysql")
     {
@@ -1006,7 +1008,8 @@ void HttpAppFrameworkImpl::addDbClient(
                                      name,
                                      isFast,
                                      characterSet,
-                                     timeout});
+                                     timeout,
+                                     reconnectInterval});
     }
     else if (dbType == "sqlite3")
     {

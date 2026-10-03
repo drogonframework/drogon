@@ -68,6 +68,11 @@ class DbClientImpl : public DbClient,
         timeout_ = timeout;
     }
 
+    void setReconnectInterval(double interval) override
+    {
+        reconnectInterval_ = interval;
+    }
+
     void init();
     void closeAll() override;
 
@@ -77,6 +82,7 @@ class DbClientImpl : public DbClient,
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
     std::vector<std::string> initializationQueries_;
     double timeout_{-1.0};
+    double reconnectInterval_{1.0};
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool autoBatch_{false};
 #endif

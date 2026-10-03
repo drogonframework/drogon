@@ -358,6 +358,14 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      */
     virtual void setTimeout(double timeout) = 0;
     /**
+     * @brief Set the delay before a lost database connection is recreated.
+     *
+     * @param interval in seconds. The default value is 1.0 second. When the
+     * database server stays unreachable, a larger interval reduces the
+     * reconnection attempts, the CPU usage and the log noise.
+     */
+    virtual void setReconnectInterval(double interval) = 0;
+    /**
      * @brief Close all connections in the client. usually used by Drogon in the
      * quit() method.
      * */

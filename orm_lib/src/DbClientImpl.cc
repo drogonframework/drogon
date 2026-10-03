@@ -501,17 +501,18 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
                    thisPtr->connections_.end());
             thisPtr->connections_.erase(closeConnPtr);
         }
-        // Reconnect after 1 second
+        // Reconnect after the configured interval
         auto loop = closeConnPtr->loop();
         // closeConnPtr may be not valid. Close the connection file descriptor.
         closeConnPtr->disconnect();
-        loop->runAfter(1, [weakPtr, loop, closeConnPtr] {
-            auto thisPtr = weakPtr.lock();
-            if (!thisPtr)
-                return;
+        loop->runAfter(thisPtr->reconnectInterval_,
+                       [weakPtr, loop, closeConnPtr] {
+                           auto thisPtr = weakPtr.lock();
+                           if (!thisPtr)
+                               return;
 
-            thisPtr->newConnection(loop);
-        });
+                           thisPtr->newConnection(loop);
+                       });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
         LOG_TRACE << "connected!";
