@@ -62,6 +62,28 @@ DROGON_TEST(MultiPartParser)
     CHECK(parser4.getParameters().at("some;key") == "Hello; World");
 }
 
+DROGON_TEST(MultiPartParserDashBoundary)
+{
+    // Firefox/Gecko style boundary beginning with dashes (RFC 7578):
+    // the body delimiter is "--" + boundary, so it starts with many dashes.
+    drogon::MultiPartParser parser;
+    auto req = drogon::HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->addHeader(
+        "content-type",
+        "multipart/form-data; "
+        "boundary=\"----geckoformboundary7805dba873e5a74dd0aa7640be4f989\"");
+    req->setBody(
+        "------geckoformboundary7805dba873e5a74dd0aa7640be4f989\r\n"
+        "Content-Disposition: form-data; name=\"key1\"\r\n"
+        "\r\n"
+        "value1\r\n"
+        "------geckoformboundary7805dba873e5a74dd0aa7640be4f989--\r\n");
+    CHECK(0 == parser.parse(req));
+    CHECK(parser.getParameters().size() == 1);
+    CHECK(parser.getParameters().at("key1") == "value1");
+}
+
 DROGON_TEST(MultiPartStreamParser)
 {
     static const std::string ct = "multipart/form-data; boundary=\"12345\"";
