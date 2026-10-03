@@ -603,23 +603,23 @@ static void loadDbClients(const Json::Value &dbClients)
             }
         }
 
-        HttpAppFrameworkImpl::instance().addDbClient(
-            type,
-            host,
-            port,
-            dbname,
-            user,
-            password,
-            connNum,
-            filename,
-            name,
-            isFast,
-            characterSet,
-            timeout,
-            reconnectInterval,
-            autoBatch,
-            std::move(options),
-            std::move(initializationQueries));
+        HttpAppFrameworkImpl::instance().addDbClient(type,
+                                                     host,
+                                                     port,
+                                                     dbname,
+                                                     user,
+                                                     password,
+                                                     connNum,
+                                                     filename,
+                                                     name,
+                                                     isFast,
+                                                     characterSet,
+                                                     timeout,
+                                                     autoBatch,
+                                                     std::move(options),
+                                                     std::move(
+                                                         initializationQueries),
+                                                     reconnectInterval);
     }
 }
 
