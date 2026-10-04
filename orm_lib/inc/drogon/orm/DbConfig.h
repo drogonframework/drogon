@@ -17,6 +17,7 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 namespace drogon::orm
 {
@@ -34,6 +35,7 @@ struct PostgresConfig
     double timeout;
     bool autoBatch;
     std::unordered_map<std::string, std::string> connectOptions;
+    double reconnectInterval{1.0};
 };
 
 struct MysqlConfig
@@ -48,6 +50,7 @@ struct MysqlConfig
     bool isFast;
     std::string characterSet;
     double timeout;
+    double reconnectInterval{1.0};
 };
 
 struct Sqlite3Config
@@ -56,6 +59,7 @@ struct Sqlite3Config
     std::string filename;
     std::string name;
     double timeout;
+    std::vector<std::string> initializationQueries;
 };
 
 using DbConfig = std::variant<PostgresConfig, MysqlConfig, Sqlite3Config>;

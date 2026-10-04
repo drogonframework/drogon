@@ -26,6 +26,7 @@
 #include <functional>
 #include <future>
 #include <string>
+#include <vector>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 
@@ -139,6 +140,12 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     static std::shared_ptr<DbClient> newSqlite3Client(
         const std::string &connInfo,
         size_t connNum);
+    /// Create a SQLite client and run the given queries on every connection
+    /// before it becomes available.
+    static std::shared_ptr<DbClient> newSqlite3Client(
+        const std::string &connInfo,
+        size_t connNum,
+        const std::vector<std::string> &initializationQueries);
 
     /// Async and nonblocking method
     /**
@@ -350,6 +357,14 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * is not called.
      */
     virtual void setTimeout(double timeout) = 0;
+    /**
+     * @brief Set the delay before a lost database connection is recreated.
+     *
+     * @param interval in seconds. The default value is 1.0 second. When the
+     * database server stays unreachable, a larger interval reduces the
+     * reconnection attempts, the CPU usage and the log noise.
+     */
+    virtual void setReconnectInterval(double interval) = 0;
     /**
      * @brief Close all connections in the client. usually used by Drogon in the
      * quit() method.

@@ -81,8 +81,12 @@ void Sqlite3Connection::onError(
 Sqlite3Connection::Sqlite3Connection(
     trantor::EventLoop *loop,
     const std::string &connInfo,
-    const std::shared_ptr<SharedMutex> &sharedMutex)
-    : DbConnection(loop), sharedMutexPtr_(sharedMutex), connInfo_(connInfo)
+    const std::shared_ptr<SharedMutex> &sharedMutex,
+    const std::vector<std::string> &initializationQueries)
+    : DbConnection(loop),
+      sharedMutexPtr_(sharedMutex),
+      connInfo_(connInfo),
+      initializationQueries_(initializationQueries)
 {
 }
 
@@ -130,6 +134,22 @@ void Sqlite3Connection::init()
         else
         {
             sqlite3_extended_result_codes(tmp, true);
+            for (const auto &query : initializationQueries_)
+            {
+                char *errorMessage = nullptr;
+                ret = sqlite3_exec(
+                    tmp, query.c_str(), nullptr, nullptr, &errorMessage);
+                if (ret != SQLITE_OK)
+                {
+                    LOG_ERROR
+                        << "Failed to initialize SQLite connection: "
+                        << (errorMessage ? errorMessage : sqlite3_errmsg(tmp))
+                        << "; query: " << query;
+                    sqlite3_free(errorMessage);
+                    closeCallback_(thisPtr);
+                    return;
+                }
+            }
             status_ = ConnectStatus::Ok;
             okCallback_(thisPtr);
         }
@@ -373,6 +393,25 @@ int Sqlite3Connection::stmtStep(
         resultPtr->result_.push_back(std::move(row));
     }
     return r;
+}
+
+bool Sqlite3Connection::hasActiveTransaction() const
+{
+    loop_->assertInLoopThread();
+    return connectionPtr_ && sqlite3_get_autocommit(connectionPtr_.get()) == 0;
+}
+
+void Sqlite3Connection::invalidate()
+{
+    loop_->assertInLoopThread();
+    if (status_ != ConnectStatus::Ok)
+        return;
+    status_ = ConnectStatus::Bad;
+    // No statement is executing now. Finalize the cache before disconnecting
+    // so closing also releases the failed transaction and its locks.
+    stmtsMap_.clear();
+    stmts_.clear();
+    closeCallback_(shared_from_this());
 }
 
 void Sqlite3Connection::disconnect()

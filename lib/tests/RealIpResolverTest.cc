@@ -83,6 +83,131 @@ DROGON_TEST(RealIpResolver)
                 CHECK(resp->body() == "1.1.1.1");
             });
     }
+    // Note on the ipv6 cases below: the header is scanned from the right, so
+    // the rightmost entry is the one closest to this server. The first entry
+    // from the right that is not a trusted proxy wins. trust_ips contains
+    // "::1" and "2001:db8::/32", so anything under 2001:db8::/32 is treated as
+    // a trusted proxy and skipped - the untrusted addresses below therefore
+    // deliberately use the distinct 2001:dba:: prefix.
+    //
+    // 5. Bare ipv6 in the header
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "2001:dba::1");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "2001:dba::1");
+            });
+    }
+    // 6. Bracketed ipv6 with port
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "[2001:dba::2]:7777");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "2001:dba::2");
+            });
+    }
+    // 7. Bracketed ipv6 without port
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "[2001:dba::3]");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "2001:dba::3");
+            });
+    }
+    // 8. An ipv6 entry inside a trusted cidr is skipped: 2001:db8::99 matches
+    //    the trusted 2001:db8::/32, so the untrusted 2001:dba::7 before it is
+    //    the real client.
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "2001:dba::7,2001:db8::99");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "2001:dba::7");
+            });
+    }
+    // 9. Every entry is a trusted proxy (::1 exact, 2001:db8::99 by cidr), so
+    //    the resolver falls back to the peer address.
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "2001:db8::99,::1");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "127.0.0.1");
+            });
+    }
+    // 10. Mixed v4/v6 header where the trusted proxy is ipv6 and the real
+    //     client is ipv4
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "3.3.3.3:9000,2001:db8::1");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "3.3.3.3");
+            });
+    }
+    // 11. ipv4-mapped ipv6 address is still a valid v6 address
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "::ffff:4.4.4.4");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "::ffff:4.4.4.4");
+            });
+    }
+    // 12. A prefix length that is not a multiple of 8 must compare the partial
+    //     byte too. 2001:dbd::/33 keeps bit 33, which is the top bit of the
+    //     fifth byte. 2001:dbd::9 has that bit clear, so it is inside the
+    //     trusted block and the resolver falls back to the peer address.
+    //     (If the partial byte were ignored, this returned 2001:dbd::9.)
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "2001:dbd::9");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "127.0.0.1");
+            });
+    }
+    // 13. 2001:dbd:8000::5 has bit 33 set, so it is outside 2001:dbd::/33 and
+    //     must be reported as the real client. (If the partial byte were
+    //     ignored, this matched and returned the peer address instead.)
+    {
+        auto req = newRequest();
+        req->addHeader("x-forwarded-for", "2001:dbd:8000::5");
+        client->sendRequest(
+            req, [TEST_CTX](ReqResult res, const HttpResponsePtr &resp) {
+                REQUIRE(res == ReqResult::Ok);
+                CHECK(resp->getStatusCode() == HttpStatusCode::k200OK);
+                CHECK(resp->contentType() == drogon::CT_TEXT_PLAIN);
+                CHECK(resp->body() == "2001:dbd:8000::5");
+            });
+    }
 };
 
 class RealIpController : public drogon::HttpController<RealIpController>
@@ -122,7 +247,8 @@ int main(int argc, char **argv)
         {
             "name": "drogon::plugin::RealIpResolver",
             "config": {
-                "trust_ips": ["127.0.0.1", "172.16.0.0/12", "9.9.9.9/32"],
+                "trust_ips": ["127.0.0.1", "172.16.0.0/12", "9.9.9.9/32",
+                              "::1", "2001:db8::/32", "2001:dbd::/33"],
                 "from_header": "x-forwarded-for",
                 "attribute_key": "real-ip"
             }

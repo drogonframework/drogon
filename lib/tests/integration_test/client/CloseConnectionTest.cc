@@ -184,6 +184,18 @@ std::shared_ptr<ExchangeResult> exchange(
 }
 }  // namespace
 
+DROGON_TEST(StaticFileRejectsNulPath)
+{
+    auto result = exchange({
+        "GET /main.cc%00.html HTTP/1.1\r\n"
+        "Host: 127.0.0.1:8848\r\n"
+        "Connection: close\r\n\r\n",
+    });
+    REQUIRE(result != nullptr);
+    CHECK(result->data.find("HTTP/1.1 403") == 0);
+    CHECK(result->data.find("int main") == std::string::npos);
+}
+
 // An HTTP/1.0 client asking for keep-alive must be honoured. setVersion() sets
 // the response's closeConnection flag as a side effect for HTTP/1.0, which must
 // not be mistaken for an explicit application decision.

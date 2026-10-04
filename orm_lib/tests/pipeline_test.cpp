@@ -247,7 +247,8 @@ int main(int argc, char **argv)
                                           "",           // charset
                                           10,           // timeout
                                           true,         // autobatch
-                                          {}});
+                                          {},
+                                          1.0});  // reconnectInterval
 #endif
     std::thread thr([&]() {
         app().getLoop()->queueInLoop([&]() { p1.set_value(); });
