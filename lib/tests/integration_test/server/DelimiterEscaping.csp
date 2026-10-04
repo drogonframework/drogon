@@ -1,0 +1,15 @@
+\<%inc a %>\<%c++ b %>\{% c %}\[[ d ]]\<%layout e %>\<%view f %>
+
+<%inc
+// include list \%> this tag should not end on this line
+static int a = 42; // this variable can be used in this file
+%>
+
+<%c++
+$$ << a; // 42
+$$ << @@.get<std::string>("\%>"); // "hello"
+%>
+
+
+{% "\%}" %} <!-- "world" -->
+[[test\]]more]] <!-- "!!!" -->

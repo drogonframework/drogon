@@ -1220,6 +1220,65 @@ void loadFileLengths()
     indexImplicitLen = filestat.st_size;
 }
 
+DROGON_TEST(CspTest)
+{
+    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848");
+    client->setPipeliningDepth(10);
+    REQUIRE(client->secure() == false);
+    REQUIRE(client->port() == 8848);
+    REQUIRE(client->host() == "127.0.0.1");
+    REQUIRE(client->onDefaultPort() == false);
+
+    auto req = HttpRequest::newHttpRequest();
+    req->setPath("/cspbasictest/delimiter-escaping");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto body = resp->getBody();
+                            auto pos1 = body.find(
+                                "<\%inc a \%><\%c++ b \%>{\% c \%}[[ d "
+                                "]]<\%layout e \%><\%view f \%>");
+                            CHECK(pos1 != std::string_view::npos);
+                            auto pos2 = body.find("42", pos1);
+                            CHECK(pos2 != std::string::npos);
+                            auto pos3 = body.find("hello", pos2);
+                            CHECK(pos3 != std::string::npos);
+                            auto pos4 = body.find("world", pos3);
+                            CHECK(pos4 != std::string::npos);
+                            auto pos5 = body.find("!!!", pos4);
+                            CHECK(pos5 != std::string::npos);
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/cspbasictest/string-literal-escaping");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto body = resp->getBody();
+                            auto pos1 = body.find("hello");
+                            CHECK(pos1 != std::string_view::npos);
+                            auto pos2 = body.find("world", pos1);
+                            CHECK(pos2 != std::string::npos);
+                            auto pos3 = body.find("!!!", pos2);
+                            CHECK(pos3 != std::string::npos);
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/cspbasictest/layout-and-view");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto body = resp->getBody();
+                            auto pos1 = body.find("Layout");
+                            CHECK(pos1 != std::string_view::npos);
+                            auto pos2 = body.find("<div id=\"app\">", pos1);
+                            CHECK(pos2 != std::string::npos);
+                            auto pos3 = body.find("hello", pos2);
+                            CHECK(pos3 != std::string::npos);
+                        });
+}
+
 DROGON_TEST(HttpTest)
 {
     auto client = HttpClient::newHttpClient("http://127.0.0.1:8848");
