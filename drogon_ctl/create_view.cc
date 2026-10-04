@@ -77,6 +77,7 @@ enum class NodeType : uint8_t
     OutPut2,  // {% cpp code %}
     Layout,
     View,
+    FileType
 };
 
 struct Node
@@ -314,6 +315,16 @@ void outputNode(std::ofstream &file,
             break;
         }
 
+        case NodeType::FileType:
+        {
+            // just check format
+            if (node.content.find("\n") != std::string::npos)
+            {
+                std::cerr << "ERROR: <%filetype %> must be on the same line"
+                          << std::endl;
+                exit(1);
+            }
+        }
         default:
             break;
     }
@@ -328,6 +339,7 @@ static std::vector<Node> parseFile(std::string_view in)
         {"{%", "%}", NodeType::OutPut2},
         {"<%layout", "%>", NodeType::Layout},
         {"<%view", "%>", NodeType::View},
+        {"<%filetype", "%>", NodeType::FileType},
     };
 
     std::vector<Node> result;
