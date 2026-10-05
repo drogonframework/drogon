@@ -105,36 +105,42 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
 
 void MysqlConnection::init()
 {
-    loop_->queueInLoop([this]() {
+    std::weak_ptr<MysqlConnection> weakThis = weak_from_this();
+    loop_->queueInLoop([weakThis]() {
+        // The connection may have been destroyed before this callback ran
+        // (e.g. the owning client was released while still connecting).
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
         MYSQL *ret;
-        status_ = ConnectStatus::Connecting;
-        waitStatus_ =
-            mysql_real_connect_start(&ret,
-                                     mysqlPtr_.get(),
-                                     host_.empty() ? nullptr : host_.c_str(),
-                                     user_.empty() ? nullptr : user_.c_str(),
-                                     passwd_.empty() ? nullptr
-                                                     : passwd_.c_str(),
-                                     dbname_.empty() ? nullptr
-                                                     : dbname_.c_str(),
-                                     port_.empty() ? 3306 : atol(port_.c_str()),
-                                     nullptr,
-                                     0);
+        thisPtr->status_ = ConnectStatus::Connecting;
+        thisPtr->waitStatus_ = mysql_real_connect_start(
+            &ret,
+            thisPtr->mysqlPtr_.get(),
+            thisPtr->host_.empty() ? nullptr : thisPtr->host_.c_str(),
+            thisPtr->user_.empty() ? nullptr : thisPtr->user_.c_str(),
+            thisPtr->passwd_.empty() ? nullptr : thisPtr->passwd_.c_str(),
+            thisPtr->dbname_.empty() ? nullptr : thisPtr->dbname_.c_str(),
+            thisPtr->port_.empty() ? 3306 : atol(thisPtr->port_.c_str()),
+            nullptr,
+            0);
         // LOG_DEBUG << ret;
-        auto fd = mysql_get_socket(mysqlPtr_.get());
+        auto fd = mysql_get_socket(thisPtr->mysqlPtr_.get());
         if (fd < 0)
         {
             LOG_ERROR << "Connection with MySQL could not be established";
-            if (closeCallback_)
+            if (thisPtr->closeCallback_)
             {
-                auto thisPtr = shared_from_this();
-                closeCallback_(thisPtr);
+                thisPtr->closeCallback_(thisPtr);
             }
             return;
         }
-        channelPtr_ = std::make_unique<trantor::Channel>(loop_, fd);
-        channelPtr_->setEventCallback([this]() { handleEvent(); });
-        setChannel();
+        thisPtr->channelPtr_ =
+            std::make_unique<trantor::Channel>(thisPtr->loop_, fd);
+        auto *self = thisPtr.get();
+        thisPtr->channelPtr_->setEventCallback(
+            [self]() { self->handleEvent(); });
+        thisPtr->setChannel();
     });
 }
 
@@ -183,8 +189,13 @@ void MysqlConnection::disconnect()
     auto f = pro.get_future();
     loop_->runInLoop([thisPtr, &pro]() {
         thisPtr->status_ = ConnectStatus::Bad;
-        thisPtr->channelPtr_->disableAll();
-        thisPtr->channelPtr_->remove();
+        // The channel only exists once the socket has connected; the
+        // connection may still be connecting when the client is torn down.
+        if (thisPtr->channelPtr_)
+        {
+            thisPtr->channelPtr_->disableAll();
+            thisPtr->channelPtr_->remove();
+        }
         thisPtr->mysqlPtr_.reset();
         pro.set_value(1);
     });
