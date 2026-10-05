@@ -350,7 +350,7 @@ void PgConnection::handleRead()
             LOG_WARN << PQerrorMessage(connectionPtr_.get());
             if (isWorking_)
             {
-                handleFatalError();
+                handleFatalError(res.get());
                 callback_ = nullptr;
             }
         }
@@ -421,12 +421,14 @@ void PgConnection::doAfterPreparing()
     flush();
 }
 
-void PgConnection::handleFatalError()
+void PgConnection::handleFatalError(PGresult *result)
 {
     if (exceptionCallback_)
     {
-        auto exceptPtr = std::make_exception_ptr(
-            Failure(PQerrorMessage(connectionPtr_.get())));
+        auto exceptPtr = result
+                     ? detail::makePgError(result, sql_)
+                             : std::make_exception_ptr(
+                                   Failure(PQerrorMessage(connectionPtr_.get())));
         exceptionCallback_(exceptPtr);
     }
 
