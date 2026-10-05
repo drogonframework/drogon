@@ -116,6 +116,7 @@ void DbClientImpl::closeAll()
     decltype(connections_) connections;
     {
         std::lock_guard<std::mutex> lock(connectionsMutex_);
+        closed_ = true;
         connections.swap(connections_);
         readyConnections_.clear();
         busyConnections_.clear();
@@ -546,6 +547,11 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
 
     {
         std::lock_guard<std::mutex> guard(connectionsMutex_);
+        if (closed_)
+        {
+            // The pool is shutting down; do not start another connection.
+            return nullptr;
+        }
         connections_.insert(connPtr);
     }
 
