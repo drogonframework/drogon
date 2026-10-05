@@ -85,7 +85,13 @@ void DbClientImpl::init()
         for (size_t i = 0; i < numberOfConnections_; ++i)
         {
             auto loop = loops_.getNextLoop();
-            loop->runInLoop([this, loop]() { newConnection(loop); });
+            std::weak_ptr<DbClientImpl> weakThis = shared_from_this();
+            loop->runInLoop([weakThis, loop]() {
+                if (auto thisPtr = weakThis.lock())
+                {
+                    thisPtr->newConnection(loop);
+                }
+            });
         }
     }
     else if (type_ == ClientType::Sqlite3)
