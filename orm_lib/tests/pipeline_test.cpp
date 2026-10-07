@@ -159,19 +159,34 @@ DROGON_TEST(PgPipelineTest)
 
         // Cause an error
         clientPtr->execSqlAsync(
-            "select 'abc'::int",
+            "select $1::int",
             [TEST_CTX](const drogon::orm::Result &r) {
                 FAULT("PgPipelineTest_testAbort(3) should not pass");
             },
-            [TEST_CTX](const drogon::orm::DrogonDbException &e) { SUCCESS(); },
-            1);
+            [TEST_CTX](const drogon::orm::DrogonDbException &e) {
+                MANDATE(dynamic_cast<const drogon::orm::DataException *>(
+                            &e.base()) != nullptr);
+                const auto *sqlError =
+                    dynamic_cast<const drogon::orm::SqlError *>(&e.base());
+                MANDATE(sqlError != nullptr);
+                if (sqlError)
+                {
+                    MANDATE(sqlError->query() == "select $1::int");
+                    MANDATE(sqlError->sqlState() == "22P02");
+                }
+            },
+            "abc");
 
         clientPtr->execSqlAsync(
             "select 1",
             [TEST_CTX](const drogon::orm::Result &r) {
                 FAULT("PgPipelineTest_testAbort(3) should not pass");
             },
-            [TEST_CTX](const drogon::orm::DrogonDbException &e) { SUCCESS(); },
+            [TEST_CTX](const drogon::orm::DrogonDbException &e) {
+                MANDATE(dynamic_cast<const drogon::orm::DataException *>(
+                            &e.base()) == nullptr);
+                SUCCESS();
+            },
             1);
 
         runNextStep();
