@@ -425,10 +425,9 @@ void PgConnection::handleFatalError(PGresult *result)
 {
     if (exceptionCallback_)
     {
-        auto exceptPtr = result
-                     ? detail::makePgError(result, sql_)
-                             : std::make_exception_ptr(
-                                   Failure(PQerrorMessage(connectionPtr_.get())));
+        auto exceptPtr = result ? detail::makePgError(result, sql_)
+                                : std::make_exception_ptr(Failure(
+                                      PQerrorMessage(connectionPtr_.get())));
         exceptionCallback_(exceptPtr);
     }
 

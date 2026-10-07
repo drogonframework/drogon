@@ -55,12 +55,10 @@ inline bool hasPgSqlStateClass(std::string_view state,
     return state.compare(0, stateClass.size(), stateClass) == 0;
 }
 
-inline std::exception_ptr makePgError(PGresult *result,
-                                      std::string_view query)
+inline std::exception_ptr makePgError(PGresult *result, std::string_view query)
 {
     const char *sqlState = PQresultErrorField(result, PG_DIAG_SQLSTATE);
-    const char *message =
-        PQresultErrorField(result, PG_DIAG_MESSAGE_PRIMARY);
+    const char *message = PQresultErrorField(result, PG_DIAG_MESSAGE_PRIMARY);
     if (!message || !*message)
         message = PQresultErrorMessage(result);
     if (!message || !*message)

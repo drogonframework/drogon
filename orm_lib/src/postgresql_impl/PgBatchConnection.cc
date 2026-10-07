@@ -566,10 +566,10 @@ void PgConnection::handleFatalError(bool clearAll,
             if (batchSqlCommands_.front()->exceptionCallback_)
             {
                 auto command = batchSqlCommands_.front();
-                auto commandError = result && !isAbortPipeline
-                                        ? detail::makePgError(result,
-                                                              command->sql_)
-                                        : exceptPtr;
+                auto commandError =
+                    result && !isAbortPipeline
+                        ? detail::makePgError(result, command->sql_)
+                        : exceptPtr;
                 command->exceptionCallback_(commandError);
             }
             batchSqlCommands_.pop_front();
