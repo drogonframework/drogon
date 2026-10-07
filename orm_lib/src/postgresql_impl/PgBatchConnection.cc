@@ -537,10 +537,10 @@ void PgConnection::handleRead()
             auto &cmd = batchCommandsForWaitingResults_.front();
             if (!cmd->preparingStatement_.empty())
             {
-                auto toDeallocate = cachePreparedStatement(
-                    cmd->sql_,
-                    std::move(cmd->preparingStatement_),
-                    cmd->isChanging_);
+                auto toDeallocate =
+                    cachePreparedStatement(cmd->sql_,
+                                           std::move(cmd->preparingStatement_),
+                                           cmd->isChanging_);
                 cmd->preparingStatement_.clear();
                 if (!toDeallocate.empty())
                 {
@@ -558,10 +558,10 @@ void PgConnection::handleRead()
         auto &cmd = batchSqlCommands_.front();
         if (!cmd->preparingStatement_.empty())
         {
-            auto toDeallocate = cachePreparedStatement(
-                cmd->sql_,
-                std::move(cmd->preparingStatement_),
-                cmd->isChanging_);
+            auto toDeallocate =
+                cachePreparedStatement(cmd->sql_,
+                                       std::move(cmd->preparingStatement_),
+                                       cmd->isChanging_);
             cmd->preparingStatement_.clear();
             if (!toDeallocate.empty())
             {

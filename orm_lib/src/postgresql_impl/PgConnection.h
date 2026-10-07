@@ -203,9 +203,10 @@ class PgConnection : public DbConnection,
             toDeallocate = evictLruPreparedStatement();
         }
         auto r = preparedStatements_.insert(std::string{sql});
-        auto lruIt = preparedStatementsLru_.insert(
-            preparedStatementsLru_.begin(),
-            std::string_view{r.first->data(), r.first->length()});
+        auto lruIt =
+            preparedStatementsLru_.insert(preparedStatementsLru_.begin(),
+                                          std::string_view{r.first->data(),
+                                                           r.first->length()});
         preparedStatementsMap_[std::string_view{r.first->data(),
                                                 r.first->length()}] =
             PreparedStatementInfo{std::move(name), isChanging, lruIt, r.first};
