@@ -1,4 +1,5 @@
 set(ctl_sources
+    build.cc
     cmd.cc
     create.cc
     create_controller.cc
@@ -10,6 +11,7 @@ set(ctl_sources
     help.cc
     main.cc
     press.cc
+    run.cc
     version.cc)
 add_executable(_drogon_ctl
                main.cc
