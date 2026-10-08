@@ -86,6 +86,7 @@ if (BUILD_CTL)
       integration_test/server/BeginAdviceTest.cc
       integration_test/server/MiddlewareTest.cc
       integration_test/server/RequestStreamTestCtrl.cc
+      integration_test/server/CspBasicTest.cc
       integration_test/server/main.cc)
 
   if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
