@@ -80,10 +80,7 @@ void HttpClientImpl::createTcpClient()
                                      thisPtr->requestsBuffer_.front().first);
                     thisPtr->pipeliningCallbacks_.push(
                         std::move(thisPtr->requestsBuffer_.front()));
-                    thisPtr->pipeliningCallbacksSize_.fetch_add(
-                        1, std::memory_order_relaxed);
-
-                    thisPtr->popFrontRequest();
+                    (thisPtr->popFrontRequest());
                 }
             }
             else
@@ -354,6 +351,8 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                     if (iter->first == callbackParamsPtr->requestPtr)
                     {
                         thisPtr->eraseRequest(iter);
+                        thisPtr->outstandingRequests_.fetch_sub(
+                            1, std::memory_order_relaxed);
                         break;
                     }
                 }
@@ -401,6 +400,8 @@ static bool isValidIpAddr(const trantor::InetAddress &addr)
 void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                        drogon::HttpReqCallback &&callback)
 {
+    outstandingRequests_.fetch_add(1, std::memory_order_relaxed);
+
     loop_->assertInLoopThread();
     // The completion wrapper owns the client until completion or timeout.
     // Queue entries must not add another client reference that outlives it.
@@ -462,6 +463,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             else
             {
                 popFrontRequest();
+                outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
                 (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
                 assert(requestsBuffer_.empty());
             }
@@ -506,7 +508,9 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                         auto &reqAndCb = (thisPtr->requestsBuffer_).front();
                         reqAndCb.second(ReqResult::BadServerAddress, nullptr);
 
-                        thisPtr->popFrontRequest();
+                        (thisPtr->popFrontRequest());
+                        (thisPtr->outstandingRequests_)
+                            .fetch_sub(1, std::memory_order_relaxed);
                     }
                 });
             });
@@ -529,7 +533,6 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     {
         sendReq(connPtr, req);
         pipeliningCallbacks_.push({req, std::move(callback)});
-        pipeliningCallbacksSize_.fetch_add(1, std::memory_order_relaxed);
     }
     else
     {
@@ -569,7 +572,7 @@ void HttpClientImpl::handleResponse(
 #endif
     auto cb = std::move(reqAndCb);
     pipeliningCallbacks_.pop();
-    pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+    outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
     handleCookies(resp);
     cb.second(ReqResult::Ok, resp);
 
@@ -584,7 +587,6 @@ void HttpClientImpl::handleResponse(
             auto &reqAndCallback = requestsBuffer_.front();
             sendReq(connPtr, reqAndCallback.first);
             pipeliningCallbacks_.push(std::move(reqAndCallback));
-            pipeliningCallbacksSize_.fetch_add(1, std::memory_order_relaxed);
             popFrontRequest();
         }
         else
@@ -601,7 +603,7 @@ void HttpClientImpl::handleResponse(
         {
             auto cb = std::move(pipeliningCallbacks_.front());
             pipeliningCallbacks_.pop();
-            pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+            outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
             cb.second(ReqResult::NetworkFailure, nullptr);
         }
     }
@@ -684,13 +686,14 @@ void HttpClientImpl::onError(ReqResult result)
     {
         auto cb = std::move(pipeliningCallbacks_.front());
         pipeliningCallbacks_.pop();
-        pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+        outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
         cb.second(result, nullptr);
     }
     while (!requestsBuffer_.empty())
     {
         auto cb = std::move(requestsBuffer_.front().second);
         popFrontRequest();
+        outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
         cb(result, nullptr);
     }
     tcpClientPtr_.reset();
