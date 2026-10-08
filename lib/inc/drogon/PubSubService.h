@@ -22,6 +22,7 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 namespace drogon
 {
@@ -50,10 +51,18 @@ class Topic : public trantor::NonCopyable
      */
     void publish(const MessageType &message) const
     {
-        std::shared_lock<SharedMutex> lock(mutex_);
-        for (auto &pair : handlersMap_)
+        std::vector<MessageHandler> handlers;
         {
-            pair.second(message);
+            std::shared_lock<SharedMutex> lock(mutex_);
+            handlers.reserve(handlersMap_.size());
+            for (const auto &pair : handlersMap_)
+            {
+                handlers.push_back(pair.second);
+            }
+        }
+        for (auto &handler : handlers)
+        {
+            handler(message);
         }
     }
 
