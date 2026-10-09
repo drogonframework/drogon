@@ -47,7 +47,7 @@ DROGON_TEST(PubSubCallbackAllowsSubscriptionChanges)
     subscriber.join();
 }
 
-DROGON_TEST(PubSubPublishDoesNotCopyHandlers)
+DROGON_TEST(PubSubDoesNotCopyExistingHandlers)
 {
     struct CopyCountingHandler
     {
@@ -74,7 +74,15 @@ DROGON_TEST(PubSubPublishDoesNotCopyHandlers)
         CopyCountingHandler(copyCount);
     service.subscribe("topic", std::move(handler));
 
-    const auto copyCountBeforePublish = copyCount;
+    const auto copyCountAfterSubscribe = copyCount;
+    auto otherId =
+        service.subscribe("topic",
+                          [](const std::string &, const std::string &) {});
+    CHECK(copyCount == copyCountAfterSubscribe);
+
+    service.unsubscribe("topic", otherId);
+    CHECK(copyCount == copyCountAfterSubscribe);
+
     service.publish("topic", "message");
-    CHECK(copyCount == copyCountBeforePublish);
+    CHECK(copyCount == copyCountAfterSubscribe);
 }

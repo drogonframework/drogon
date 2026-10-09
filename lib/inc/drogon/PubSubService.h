@@ -57,7 +57,7 @@ class Topic : public trantor::NonCopyable
         }
         for (const auto &pair : *handlers)
         {
-            pair.second(message);
+            (*pair.second)(message);
         }
     }
 
@@ -71,7 +71,7 @@ class Topic : public trantor::NonCopyable
     {
         std::unique_lock<SharedMutex> lock(mutex_);
         auto handlers = std::make_shared<HandlerMap>(*handlersMap_);
-        (*handlers)[++id_] = handler;
+        (*handlers)[++id_] = std::make_shared<const MessageHandler>(handler);
         handlersMap_ = std::move(handlers);
         return id_;
     }
@@ -86,7 +86,8 @@ class Topic : public trantor::NonCopyable
     {
         std::unique_lock<SharedMutex> lock(mutex_);
         auto handlers = std::make_shared<HandlerMap>(*handlersMap_);
-        (*handlers)[++id_] = std::move(handler);
+        (*handlers)[++id_] =
+            std::make_shared<const MessageHandler>(std::move(handler));
         handlersMap_ = std::move(handlers);
         return id_;
     }
@@ -127,7 +128,8 @@ class Topic : public trantor::NonCopyable
     }
 
   private:
-    using HandlerMap = std::unordered_map<SubscriberID, MessageHandler>;
+    using HandlerMap =
+        std::unordered_map<SubscriberID, std::shared_ptr<const MessageHandler>>;
     std::shared_ptr<const HandlerMap> handlersMap_ =
         std::make_shared<HandlerMap>();
     mutable SharedMutex mutex_;
