@@ -202,9 +202,11 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
                            const char *boundaryData,
                            size_t boundaryLen)
 {
-    std::string_view boundary{boundaryData, boundaryLen};
-    if (boundary.size() > 2 && boundary[0] == '\"')
-        boundary = boundary.substr(1, boundary.size() - 2);
+    std::string boundary_str(boundaryData, boundaryLen);
+    if (boundary_str.size() > 2 && boundary_str[0] == '\"')
+        boundary_str = boundary_str.substr(1, boundary_str.size() - 2);
+    boundary_str = "--" + boundary_str;
+    std::string_view boundary{boundary_str};
     std::string_view::size_type pos1, pos2;
     pos1 = 0;
     auto content = static_cast<HttpRequestImpl *>(req.get())->bodyView();
