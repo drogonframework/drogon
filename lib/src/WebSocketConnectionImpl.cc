@@ -265,7 +265,7 @@ void WebSocketConnectionImpl::disablePing()
     }
 }
 
-bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
+bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer, bool isServer)
 {
     // According to the rfc6455
     gotAll_ = false;
@@ -317,7 +317,17 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             LOG_TRACE << "data encoded!";
         }
         else
+        {
             LOG_TRACE << "plain data";
+            if (isServer)
+            {
+                // rfc6455-5.1: the server MUST close the connection upon
+                // receiving an unmasked frame from a client
+                LOG_ERROR << "Bad frame: client frames MUST be masked";
+                buffer->retrieveAll();
+                return false;
+            }
+        }
         size_t indexFirstMask = 2;
 
         if (length == 126)
@@ -368,17 +378,25 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
                 return false;
             }
         }
-        if (isMasked != 0)
+        if (isServer)
         {
-            // The message is sent by the client, check the length
-            if (length > HttpAppFrameworkImpl::instance()
-                             .getClientMaxWebSocketMessageSize())
+            // The message is sent by the client, check the length (including
+            // the data already accumulated from previous frames)
+            auto maxSize = HttpAppFrameworkImpl::instance()
+                               .getClientMaxWebSocketMessageSize();
+            if (length > maxSize || message_.length() > maxSize - length)
             {
                 LOG_ERROR << "The size of the WebSocket message is too large!";
                 buffer->retrieveAll();
                 return false;
             }
-            if (buffer->readableBytes() >= (indexFirstMask + 4 + length))
+        }
+        if (isMasked != 0)
+        {
+            // length is bounded on the server; compare without overflow
+            size_t headerLen = indexFirstMask + 4;
+            if (buffer->readableBytes() >= headerLen &&
+                length <= buffer->readableBytes() - headerLen)
             {
                 auto masks = buffer->peek() + indexFirstMask;
                 auto indexFirstDataByte = indexFirstMask + 4;
@@ -404,7 +422,7 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         }
         else
         {
-            if (buffer->readableBytes() >= (indexFirstMask + length))
+            if (length <= buffer->readableBytes() - indexFirstMask)
             {
                 auto rawData = buffer->peek() + indexFirstMask;
                 message_.append(rawData, length);
@@ -432,7 +450,7 @@ void WebSocketConnectionImpl::onNewMessage(
     auto self = shared_from_this();
     while (buffer->readableBytes() > 0)
     {
-        auto success = parser_.parse(buffer);
+        auto success = parser_.parse(buffer, isServer_);
         if (success)
         {
             std::string message;

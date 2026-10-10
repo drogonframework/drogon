@@ -29,7 +29,7 @@ using WebSocketConnectionImplPtr = std::shared_ptr<WebSocketConnectionImpl>;
 class WebSocketMessageParser
 {
   public:
-    bool parse(trantor::MsgBuffer *buffer);
+    bool parse(trantor::MsgBuffer *buffer, bool isServer = true);
 
     bool gotAll(std::string &message, WebSocketMessageType &type)
     {
