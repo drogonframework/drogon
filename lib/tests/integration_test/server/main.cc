@@ -274,6 +274,8 @@ int main()
     app().loadConfigFile("config.example.json");
     app().setImplicitPageEnable(true);
     app().setImplicitPage("page.html");
+    app().addALocation("/a-directory-alias/", "", "a-directory/");
+    app().addALocation("/flat/", "", "./", false, true, false);
     auto &json = app().getCustomConfig();
     if (json.empty())
     {

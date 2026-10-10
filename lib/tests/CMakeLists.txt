@@ -62,7 +62,8 @@ if (BUILD_CTL)
       integration_test/client/MultipleWsTest.cc
       integration_test/client/HttpPipeliningTest.cc
       integration_test/client/ExpectContinueTest.cc
-      integration_test/client/RequestStreamTest.cc)
+      integration_test/client/RequestStreamTest.cc
+      integration_test/client/StaticFileTraversalTest.cc)
 
   set(INTEGRATION_TEST_SERVER_SOURCES
       integration_test/server/CustomCtrl.cc
