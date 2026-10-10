@@ -16,6 +16,8 @@
 #include <drogon/HttpTypes.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <cerrno>
+#include <cstdlib>
 #include <iostream>
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
@@ -372,12 +374,30 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 // chunk length line
                 std::string len(buf->peek(), crlf - buf->peek());
-                char *end;
-                currentChunkLength_ = strtol(len.c_str(), &end, 16);
+                // strtoull accepts leading whitespace and signs; reject them.
+                if (len.empty() ||
+                    !isxdigit(static_cast<unsigned char>(len[0])))
+                {
+                    return -k400BadRequest;
+                }
+                char *end = nullptr;
+                errno = 0;
+                currentChunkLength_ =
+                    static_cast<size_t>(strtoull(len.c_str(), &end, 16));
+                if (errno == ERANGE)
+                {
+                    return -k413RequestEntityTooLarge;
+                }
+                if (*end != '\0' && *end != ';' && *end != ' ' && *end != '\t')
+                {
+                    return -k400BadRequest;
+                }
                 if (currentChunkLength_ != 0)
                 {
-                    if (currentChunkLength_ + remainContentLength_ >
-                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                    const size_t maxBody =
+                        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+                    if (remainContentLength_ > maxBody ||
+                        currentChunkLength_ > maxBody - remainContentLength_)
                     {
                         return -k413RequestEntityTooLarge;
                     }

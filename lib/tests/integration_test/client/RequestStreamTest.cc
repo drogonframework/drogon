@@ -164,4 +164,14 @@ DROGON_TEST(RequestStreamTest)
                         "0\r\n\r\n"},
                        // Bad response
                        "HTTP/1.1 400 Bad Request\r\n");
+
+    checkStreamRequest(TEST_CTX,
+                       client->getLoop(),
+                       trantor::InetAddress{ip, port},
+                       // Negative chunk size after a non-empty chunk
+                       {"POST /stream_chunk HTTP/1.1\r\n"
+                        "Transfer-Encoding: chunked\r\n\r\n",
+                        "2\r\nab\r\n",
+                        "-2\r\nX"},
+                       "HTTP/1.1 400 Bad Request\r\n");
 }
