@@ -291,8 +291,9 @@ void PgConnection::sendBatchedSql()
         }
         if (batchSqlCommands_.empty())
         {
-            if (channel_.isWriting())
-                channel_.disableWriting();
+            // Output may still be pending in libpq's buffer; let flush()
+            // decide whether write events are still needed.
+            flush();
             return;
         }
     }
@@ -512,6 +513,12 @@ void PgConnection::handleRead()
         {
             // Result of an internal DEALLOCATE; discard it (including errors,
             // which must not abort the user's pipeline).
+            if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR ||
+                type == PGRES_PIPELINE_ABORTED)
+            {
+                LOG_WARN << "Failed to deallocate prepared statement: "
+                         << PQresultErrorMessage(res.get());
+            }
             batchCommandsForWaitingResults_.pop_front();
             continue;
         }
@@ -590,8 +597,13 @@ void PgConnection::sendMaintenanceDeallocate(const std::string &name)
     cmd->sql_ = cmd->maintenanceSql_;
     cmd->isMaintenance_ = true;
     batchSqlCommands_.push_back(std::move(cmd));
-    loop_->queueInLoop(
-        [thisPtr = shared_from_this()]() { thisPtr->sendBatchedSql(); });
+    // Same rule as execSql: otherwise a send is already scheduled, or the
+    // write callback will resume sending once libpq's buffer drains.
+    if (batchSqlCommands_.size() == 1 && !channel_.isWriting())
+    {
+        loop_->queueInLoop(
+            [thisPtr = shared_from_this()]() { thisPtr->sendBatchedSql(); });
+    }
 }
 
 void PgConnection::handleFatalError(bool clearAll, bool isAbortPipeline)

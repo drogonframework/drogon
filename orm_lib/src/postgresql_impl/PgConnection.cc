@@ -292,15 +292,6 @@ void PgConnection::execSqlInLoop(
         else
         {
             isPreparingStatement_ = true;
-            if (maxPreparedStatements_ != 0 &&
-                preparedStatementsMap_.size() >= maxPreparedStatements_)
-            {
-                auto victim = evictLruPreparedStatement();
-                if (!victim.empty())
-                {
-                    pendingDealloc_.push_back(std::move(victim));
-                }
-            }
             statementName_ = newStmtName();
             if (PQsendPrepare(connectionPtr_.get(),
                               statementName_.c_str(),
