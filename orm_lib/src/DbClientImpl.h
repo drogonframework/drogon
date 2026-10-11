@@ -95,6 +95,9 @@ class DbClientImpl : public DbClient,
 
     mutable std::mutex connectionsMutex_;
     std::unordered_set<DbConnectionPtr> connections_;
+    // Set by closeAll() (under connectionsMutex_) so that newConnection()
+    // cannot start a connection after the pool has been closed.
+    bool closed_{false};
     std::unordered_set<DbConnectionPtr> readyConnections_;
     std::unordered_set<DbConnectionPtr> busyConnections_;
     // Retired SQLite connections stay owned until closeAll(), so their threads

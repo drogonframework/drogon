@@ -651,6 +651,43 @@ DROGON_TEST(PostgreTest)
               e.base().what());
     }
 
+    const std::string uniqueQuery =
+        "insert into users (user_id, org_name) values ('pg', 'default')";
+    try
+    {
+        clientPtr->execSqlSync(uniqueQuery);
+        FAULT("postgresql - unique violation should throw");
+    }
+    catch (const DrogonDbException &e)
+    {
+        MANDATE(dynamic_cast<const UniqueViolation *>(&e.base()) != nullptr);
+        const auto *sqlError = dynamic_cast<const SqlError *>(&e.base());
+        MANDATE(sqlError != nullptr);
+        if (sqlError)
+        {
+            MANDATE(sqlError->query() == uniqueQuery);
+            MANDATE(sqlError->sqlState() == "23505");
+        }
+    }
+
+    const std::string dataQuery = "select 'abc'::int";
+    try
+    {
+        clientPtr->execSqlSync(dataQuery);
+        FAULT("postgresql - data exception should throw");
+    }
+    catch (const DrogonDbException &e)
+    {
+        MANDATE(dynamic_cast<const DataException *>(&e.base()) != nullptr);
+        const auto *sqlError = dynamic_cast<const SqlError *>(&e.base());
+        MANDATE(sqlError != nullptr);
+        if (sqlError)
+        {
+            MANDATE(sqlError->query() == dataQuery);
+            MANDATE(sqlError->sqlState() == "22P02");
+        }
+    }
+
     // 5.3 try to access nonexistent column by name
     try
     {

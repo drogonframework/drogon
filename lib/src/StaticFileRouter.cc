@@ -32,11 +32,68 @@
 #endif
 #include <sys/stat.h>
 #include <filesystem>
+#include <iterator>
 
 using namespace drogon;
 
+// A trailing separator would leave an empty last element that never matches.
+static std::filesystem::path normalizedRoot(const std::string &dir)
+{
+    std::error_code err;
+    auto root = std::filesystem::absolute(utils::toNativePath(dir), err)
+                    .lexically_normal();
+    if (err)
+    {
+        return {};
+    }
+    if (!root.has_filename())
+    {
+        root = root.parent_path();
+    }
+    return root;
+}
+
+// Element-wise, so "/var/www2" is never taken as being under "/var/www".
+static bool isUnderRoot(const std::filesystem::path &root,
+                        const std::string &target)
+{
+    if (root.empty())
+    {
+        return false;
+    }
+    std::error_code err;
+    auto normalized =
+        std::filesystem::absolute(utils::toNativePath(target), err)
+            .lexically_normal();
+    if (err)
+    {
+        return false;
+    }
+    auto element = normalized.begin();
+    for (const auto &rootElement : root)
+    {
+        if (element == normalized.end() || *element != rootElement)
+        {
+            return false;
+        }
+        ++element;
+    }
+    return true;
+}
+
+// Files in sub directories are only reachable through recursive locations.
+static bool isInSubdirectory(const std::string &relativePath)
+{
+    auto normalized = std::filesystem::path(utils::toNativePath(relativePath))
+                          .lexically_normal()
+                          .relative_path();
+    return std::distance(normalized.begin(), normalized.end()) > 1;
+}
+
 void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
 {
+    documentRootPath_ =
+        normalizedRoot(HttpAppFrameworkImpl::instance().getDocumentRoot());
     // Max timeout up to about 70 days;
     staticFilesCacheMap_ = std::make_unique<
         IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>>();
@@ -68,6 +125,7 @@ void StaticFileRouter::reset()
     staticFilesCache_.reset();
     ioLocationsPtr_.reset();
     locations_.clear();
+    documentRootPath_.clear();
 }
 
 void StaticFileRouter::route(
@@ -79,29 +137,6 @@ void StaticFileRouter::route(
     {
         callback(app().getCustomErrorHandler()(k403Forbidden, req));
         return;
-    }
-    if (path.find("..") != std::string::npos)
-    {
-        auto directories = utils::splitString(path, "/");
-        int traversalDepth = 0;
-        for (const auto &dir : directories)
-        {
-            if (dir == "..")
-            {
-                traversalDepth--;
-            }
-            else if (dir != ".")
-            {
-                traversalDepth++;
-            }
-
-            if (traversalDepth < 0)
-            {
-                // Downloading files from the parent folder is forbidden.
-                callback(app().getCustomErrorHandler()(k403Forbidden, req));
-                return;
-            }
-        }
     }
 
     auto lPath = path;
@@ -139,6 +174,7 @@ void StaticFileRouter::route(
             {
                 location.realLocation_.append(1, '/');
             }
+            location.rootPath_ = normalizedRoot(location.realLocation_);
             if (!location.isCaseSensitive_)
             {
                 std::transform(URI.begin(),
@@ -155,16 +191,19 @@ void StaticFileRouter::route(
         {
             std::string_view restOfThePath{path.data() + URI.length(),
                                            path.length() - URI.length()};
-            auto pos = restOfThePath.rfind('/');
-            if (pos != 0 && pos != std::string_view::npos &&
-                !location.isRecursive_)
+            std::string relativePath{restOfThePath.data(),
+                                     restOfThePath.length()};
+            std::string filePath = location.realLocation_ + relativePath;
+            if (!isUnderRoot(location.rootPath_, filePath))
             {
                 callback(app().getCustomErrorHandler()(k403Forbidden, req));
                 return;
             }
-            std::string filePath =
-                location.realLocation_ +
-                std::string{restOfThePath.data(), restOfThePath.length()};
+            if (!location.isRecursive_ && isInSubdirectory(relativePath))
+            {
+                callback(app().getCustomErrorHandler()(k403Forbidden, req));
+                return;
+            }
             std::filesystem::path fsFilePath(utils::toNativePath(filePath));
             std::error_code err;
             if (!std::filesystem::exists(fsFilePath, err))
@@ -189,7 +228,7 @@ void StaticFileRouter::route(
             {
                 if (!location.allowAll_)
                 {
-                    pos = restOfThePath.rfind('.');
+                    auto pos = restOfThePath.rfind('.');
                     if (pos == std::string_view::npos)
                     {
                         callback(
@@ -243,6 +282,11 @@ void StaticFileRouter::route(
     }
     std::string directoryPath =
         HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
+    if (!isUnderRoot(documentRootPath_, directoryPath))
+    {
+        callback(app().getCustomErrorHandler()(k403Forbidden, req));
+        return;
+    }
     std::filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));
     std::error_code err;
     if (std::filesystem::exists(fsDirectoryPath, err))

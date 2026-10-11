@@ -1,0 +1,4 @@
+<%layout Layout %>
+<div id="app">
+  <%view SubView %>
+</div>

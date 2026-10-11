@@ -525,7 +525,10 @@ void PgConnection::handleRead()
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR ||
             type == PGRES_PIPELINE_ABORTED)
         {
-            handleFatalError(false, type == PGRES_PIPELINE_ABORTED);
+            handleFatalError(false,
+                             type == PGRES_PIPELINE_ABORTED,
+                             type == PGRES_PIPELINE_ABORTED ? nullptr
+                                                            : res.get());
             continue;
         }
         if (type == PGRES_PIPELINE_SYNC)
@@ -606,7 +609,9 @@ void PgConnection::sendMaintenanceDeallocate(const std::string &name)
     }
 }
 
-void PgConnection::handleFatalError(bool clearAll, bool isAbortPipeline)
+void PgConnection::handleFatalError(bool clearAll,
+                                    bool isAbortPipeline,
+                                    PGresult *result)
 {
     std::string errmsg =
         isAbortPipeline
@@ -640,7 +645,12 @@ void PgConnection::handleFatalError(bool clearAll, bool isAbortPipeline)
         {
             if (batchSqlCommands_.front()->exceptionCallback_)
             {
-                batchSqlCommands_.front()->exceptionCallback_(exceptPtr);
+                auto command = batchSqlCommands_.front();
+                auto commandError =
+                    result && !isAbortPipeline
+                        ? detail::makePgError(result, command->sql_)
+                        : exceptPtr;
+                command->exceptionCallback_(commandError);
             }
             batchSqlCommands_.pop_front();
         }
@@ -649,7 +659,10 @@ void PgConnection::handleFatalError(bool clearAll, bool isAbortPipeline)
             auto &cmd = batchCommandsForWaitingResults_.front();
             if (cmd->exceptionCallback_)
             {
-                cmd->exceptionCallback_(exceptPtr);
+                auto commandError = result && !isAbortPipeline
+                                        ? detail::makePgError(result, cmd->sql_)
+                                        : exceptPtr;
+                cmd->exceptionCallback_(commandError);
             }
             batchCommandsForWaitingResults_.pop_front();
         }

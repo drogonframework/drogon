@@ -62,7 +62,8 @@ if (BUILD_CTL)
       integration_test/client/MultipleWsTest.cc
       integration_test/client/HttpPipeliningTest.cc
       integration_test/client/ExpectContinueTest.cc
-      integration_test/client/RequestStreamTest.cc)
+      integration_test/client/RequestStreamTest.cc
+      integration_test/client/StaticFileTraversalTest.cc)
 
   set(INTEGRATION_TEST_SERVER_SOURCES
       integration_test/server/CustomCtrl.cc
@@ -86,6 +87,7 @@ if (BUILD_CTL)
       integration_test/server/BeginAdviceTest.cc
       integration_test/server/MiddlewareTest.cc
       integration_test/server/RequestStreamTestCtrl.cc
+      integration_test/server/CspBasicTest.cc
       integration_test/server/main.cc)
 
   if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
