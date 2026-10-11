@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/drogonframework/drogon/actions/workflows/cmake.yml/badge.svg?branch=master)](https://github.com/drogonframework/drogon/actions)
 [![Conan Center](https://img.shields.io/conan/v/drogon)](https://conan.io/center/recipes/drogon)
 [![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
-[![Join our Discord](https://dcbadge.vercel.app/api/server/3DvHY6Ewuj?style=flat)](https://discord.gg/3DvHY6Ewuj)
+[![Discord](https://img.shields.io/badge/Discord-Join%20our%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/3DvHY6Ewuj)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
 [English](./README.md) | 简体中文 | [繁體中文](./README.zh-TW.md)
