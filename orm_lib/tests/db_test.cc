@@ -1558,6 +1558,43 @@ DROGON_TEST(PostgreTest)
                 e.base().what());
         }
     }
+
+    /// 9 Prepared statement cache stays bounded (#2533)
+    /// More distinct SQL texts than the cache holds forces LRU eviction and
+    /// re-preparation; every result must stay correct and the server-side
+    /// statement count must stay bounded on the single test connection.
+    {
+        constexpr int distinctSqlCount = 300;
+        auto makeSql = [](int i) {
+            return "select $1::int + " + std::to_string(i);
+        };
+        bool allCorrect = true;
+        try
+        {
+            for (int i = 0; i < distinctSqlCount; ++i)
+            {
+                auto r = clientPtr->execSqlSync(makeSql(i), 1000);
+                allCorrect = allCorrect && r[0][0].as<int>() == 1000 + i;
+            }
+            // The first statements have been evicted; they must re-prepare.
+            for (int i = 0; i < 10; ++i)
+            {
+                auto r = clientPtr->execSqlSync(makeSql(i), 2000);
+                allCorrect = allCorrect && r[0][0].as<int>() == 2000 + i;
+            }
+            MANDATE(allCorrect);
+            auto r = clientPtr->execSqlSync(
+                "select count(*) from pg_prepared_statements");
+            // The cache limit plus one statement whose DEALLOCATE may still
+            // be queued behind this query.
+            MANDATE(r[0][0].as<int64_t>() <= 257);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("postgresql - bounded prepared statement cache what():",
+                  e.base().what());
+        }
+    }
 }
 #endif
 

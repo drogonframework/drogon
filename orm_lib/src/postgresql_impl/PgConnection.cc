@@ -267,8 +267,9 @@ void PgConnection::execSqlInLoop(
         if (iter != preparedStatementsMap_.end())
         {
             isPreparingStatement_ = false;
+            touchPreparedStatement(iter->second);
             if (PQsendQueryPrepared(connectionPtr_.get(),
-                                    iter->second.c_str(),
+                                    iter->second.name.c_str(),
                                     static_cast<int>(paraNum),
                                     parameters.data(),
                                     length.data(),
@@ -345,6 +346,17 @@ void PgConnection::handleRead()
                                             [](PGresult *p) { PQclear(p); })))
     {
         auto type = PQresultStatus(res.get());
+        if (isDeallocating_)
+        {
+            // Result of an internal DEALLOCATE; discard it, including errors,
+            // which must not fail the connection.
+            if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR)
+            {
+                LOG_WARN << "Failed to deallocate prepared statement: "
+                         << PQerrorMessage(connectionPtr_.get());
+            }
+            continue;
+        }
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR)
         {
             LOG_WARN << PQerrorMessage(connectionPtr_.get());
@@ -374,6 +386,26 @@ void PgConnection::handleRead()
         {
             doAfterPreparing();
         }
+        else if (isDeallocating_)
+        {
+            isDeallocating_ = false;
+            if (pendingDealloc_.empty() || !startNextDeallocate())
+            {
+                isWorking_ = false;
+                isPreparingStatement_ = false;
+                idleCb_();
+            }
+        }
+        else if (!pendingDealloc_.empty())
+        {
+            if (!startNextDeallocate())
+            {
+                pendingDealloc_.clear();
+                isWorking_ = false;
+                isPreparingStatement_ = false;
+                idleCb_();
+            }
+        }
         else
         {
             isWorking_ = false;
@@ -392,13 +424,39 @@ void PgConnection::handleRead()
     }
 }
 
+bool PgConnection::startNextDeallocate()
+{
+    auto name = std::move(pendingDealloc_.front());
+    pendingDealloc_.pop_front();
+    // Statement names are bare numbers, so the identifier must be quoted.
+    auto sql = "DEALLOCATE \"" + name + "\"";
+    if (PQsendQueryParams(connectionPtr_.get(),
+                          sql.c_str(),
+                          0,
+                          nullptr,
+                          nullptr,
+                          nullptr,
+                          nullptr,
+                          0) == 0)
+    {
+        LOG_ERROR << "Failed to deallocate prepared statement: "
+                  << PQerrorMessage(connectionPtr_.get());
+        pendingDealloc_.clear();
+        return false;
+    }
+    isDeallocating_ = true;
+    flush();
+    return true;
+}
+
 void PgConnection::doAfterPreparing()
 {
     isPreparingStatement_ = false;
-    auto r = preparedStatements_.insert(std::string{sql_});
-    preparedStatementsMap_[std::string_view{r.first->data(),
-                                            r.first->length()}] =
-        statementName_;
+    auto toDeallocate = cachePreparedStatement(sql_, statementName_, false);
+    if (!toDeallocate.empty())
+    {
+        pendingDealloc_.push_back(std::move(toDeallocate));
+    }
     if (PQsendQueryPrepared(connectionPtr_.get(),
                             statementName_.c_str(),
                             parametersNumber_,
