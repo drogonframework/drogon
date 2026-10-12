@@ -4,9 +4,101 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.14] - 2026-10-11
+
 ### API changes list
 
-- Add `HttpAppFramework::hasDbClient()` and `hasFastDbClient()` methods.
+- Add `HttpAppFramework::hasDbClient()` and `hasFastDbClient()` methods. (#2547)
+
+- Add coroutine WebSocket controller API and integration tests. (#2523)
+
+- Add `DROGON_USE_BOOST_UUID` option to use Boost.UUID instead of OS libuuid. (#2563)
+
+- Add support for custom source and header file extensions in `drogon_ctl`. (#2604)
+
+- Introduce `SqlFieldType` abstraction and improve MySQL result handling. (#2589)
+
+### Changed
+
+- Improve static file cache expiry to use `staticFilesCacheTime_` instead of the epoch. (#2515)
+
+- Add support for static `jsoncpp` library. (#2528)
+
+- Support custom namespaces for `dg_ctl create model`. (#2539)
+
+- Add release tag support for Docker image publishing.
+
+- Respect application-set `closeConnection` in response processing. (#2566)
+
+- Optimize `drogon_test` build speed. (#2565)
+
+- Add batch test selection to the test runner.
+
+- Add default headers to `HttpClient`. (#2594)
+
+- Add database reconnect interval configuration for ORM. (#2611)
+
+- Initialize SQLite pool connections. (#2610)
+
+- Refactor `drogon_ctl` view generation and fix related issues. (#2603)
+
+### Fixed
+
+- Fix `ConfigLoader::bytesSize` parsing values ending with `6`. (#2521)
+
+- Fix SQLite CI/test issues. (#2522)
+
+- Fix forwarding requests when the body is cached on disk. (#2525)
+
+- Fix `drogon::utils::utf8Length`-related ORM generation compatibility issues. (#2524)
+
+- Fix HTTP/1.1 streaming on close connection. (#2527)
+
+- Fix connection buffer sizing for atomic requests. (#2532)
+
+- Fix DST handling in ORM model date/datetime conversion. (#2536)
+
+- Fix SQLite cleanup with cached statements. (#2549)
+
+- Fix `HttpClient` not re-resolving hostnames on reconnect. (#2548)
+
+- Fix ambiguous requests containing both `Content-Length` and `Transfer-Encoding` headers. (#2550)
+
+- Fix invalid integer path parameters to return `400`. (#2551) (#2558)
+
+- Fix `HttpResponseImpl` member updates not covering all fields. (#2573)
+
+- Fix `const std::string_view` SQL binding. (#2571)
+
+- Fix zero-length body handling when `Expect: 100-continue` is present. (#2560)
+
+- Fix HTTP/1.0 keep-alive and sticky `closeConnection` handling for reused responses. (#2567)
+
+- Fix `QueryBuilder` JOIN state when using single-table joins. (#2578)
+
+- Fix SQLite connection reuse after failed transaction commit. (#2597)
+
+- Fix `PubSub` topic name hashing randomness. (#2607)
+
+- Fix `NUL` path rejection in static file routing. (#2600)
+
+- Fix `RealIpResolver` IPv6 support. (#2598)
+
+- Fix Redis event loop spinning on unhandled `POLLERR`. (#2608)
+
+- Fix `Task` promise_type issue that caused Clang 21 SIGSEGV. (#2580)
+
+- Fix `HttpClient` callback ownership after request timeout. (#2609)
+
+- Fix `bad_weak_ptr` when initializing `DbClient` connections. (#2614)
+
+- Fix MySQL teardown while a connection is still connecting. (#2615)
+
+- Fix typed PostgreSQL query errors. (#2616)
+
+- Fix PubSub callbacks to modify subscriptions safely. (#2620)
+
+- Bound the PostgreSQL prepared statement cache to prevent unbounded growth. (#2618)
 
 ## [1.9.13] - 2026-05-06
 
@@ -1954,7 +2046,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.13...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.9.14...HEAD
+
+[1.9.14]: https://github.com/an-tao/drogon/compare/v1.9.13...v1.9.14
 
 [1.9.13]: https://github.com/an-tao/drogon/compare/v1.9.12...v1.9.13
 
