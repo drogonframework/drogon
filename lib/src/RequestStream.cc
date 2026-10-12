@@ -161,9 +161,17 @@ class MultipartStreamReader : public RequestStreamReader
         parser_.parse(data, length, headerCb_, dataCb_);
         if (!parser_.isValid())
         {
+            std::exception_ptr exception = nullptr;
             // TODO: should we mix stream error and user error?
-            finishCb_(std::make_exception_ptr(
-                std::runtime_error("invalid multipart data")));
+            switch (parser_.exceptionType()) {
+                case MultipartStreamParser::ExceptionType::kServerCancel:
+                    exception = std::make_exception_ptr(std::runtime_error("server cancelled"));
+                    break;
+                default:
+                    exception = std::make_exception_ptr(std::runtime_error("invalid multipart data"));
+                    break;
+            }
+            finishCb_(exception);
         }
         else if (parser_.isFinished())
         {
