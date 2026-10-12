@@ -98,6 +98,8 @@ All notable changes to this project will be documented in this file.
 
 - Fix PubSub callbacks to modify subscriptions safely. (#2620)
 
+- Bound the PostgreSQL prepared statement cache to prevent unbounded growth. (#2618)
+
 ## [1.9.13] - 2026-05-06
 
 ### API changes list
