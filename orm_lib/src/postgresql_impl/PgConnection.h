@@ -296,9 +296,14 @@ class PgConnection : public DbConnection,
             return {};
         }
         std::string name = std::move(it->second.name);
-        preparedStatements_.erase(it->second.setIt);
-        preparedStatementsMap_.erase(it);
+        auto setIt = it->second.setIt;
+        // Drop the map and LRU entries while the SQL storage is still alive:
+        // their keys are string_views into the node owned by
+        // preparedStatements_, and erasing them may re-hash the key. Only then
+        // release the owning set node.
         preparedStatementsLru_.pop_back();
+        preparedStatementsMap_.erase(it);
+        preparedStatements_.erase(setIt);
         return name;
     }
 

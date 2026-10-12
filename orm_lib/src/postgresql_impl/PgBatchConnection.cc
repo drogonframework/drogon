@@ -324,11 +324,16 @@ void PgConnection::sendBatchedSql()
             }
             batchCommandsForWaitingResults_.push_back(std::move(cmd));
             batchSqlCommands_.pop_front();
+            // Results are only delivered at a pipeline sync boundary, so the
+            // Sync must be sent even if flushing stops short here; leaving
+            // sendBatchEnd_ set lets the resumed sendBatchedSql() emit it,
+            // exactly like the auto-batch SQL path.
+            sendBatchEnd_ = true;
             if (flush())
             {
                 return;
             }
-            // Results are only delivered at a pipeline sync boundary.
+            sendBatchEnd_ = false;
             if (!sendBatchEnd())
             {
                 return;
