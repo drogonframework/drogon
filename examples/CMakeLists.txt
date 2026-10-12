@@ -70,3 +70,23 @@ set_property(TARGET ${example_targets}
              PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${example_targets} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${example_targets} PROPERTY CXX_EXTENSIONS OFF)
+
+if (BUILD_ORM_REFLECTION AND DROGON_FOUND_SQLite3)
+    add_executable(orm_reflection_example orm_reflection/main.cc)
+    set_target_properties(orm_reflection_example PROPERTIES
+        CXX_STANDARD 26
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+        CXX_SCAN_FOR_MODULES OFF
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+    target_compile_options(orm_reflection_example PRIVATE -freflection)
+
+    if (NOT ${CMAKE_PLATFORM_NAME} STREQUAL "Windows" AND
+        CMAKE_CXX_COMPILER_ID MATCHES GNU)
+        target_compile_options(orm_reflection_example
+            PRIVATE -Wall -Wextra -Werror)
+    endif ()
+
+    install(TARGETS orm_reflection_example
+        RUNTIME DESTINATION ${INSTALL_BIN_DIR})
+endif ()
