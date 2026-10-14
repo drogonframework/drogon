@@ -17,6 +17,7 @@
 #include "utils/ParsingUtils.h"
 
 using namespace drogon;
+using drogon::utils::parseHeaderParameter;
 using drogon::utils::parseLine;
 using drogon::utils::startsWith;
 using drogon::utils::startsWithIgnoreCase;
@@ -134,55 +135,20 @@ void drogon::MultipartStreamParser::parse(
                 }
                 else if (startsWithIgnoreCase(keyView, "content-disposition"))
                 {
-                    static const std::string_view nameKey = "name=";
-                    static const std::string_view fileNameKey = "filename=";
-
-                    // Extract name
-                    auto namePos = valueView.find(nameKey);
-                    if (namePos == std::string::npos)
+                    std::string_view name;
+                    if (!parseHeaderParameter(valueView, "name", name))
                     {
                         // name absent
                         isValid_ = false;
                         return;
                     }
-                    namePos += nameKey.size();
-                    size_t nameEnd;
-                    if (valueView[namePos] == '"')
-                    {
-                        ++namePos;
-                        nameEnd = valueView.find('"', namePos);
-                    }
-                    else
-                    {
-                        nameEnd = valueView.find(';', namePos);
-                    }
-                    if (nameEnd == std::string::npos)
-                    {
-                        // name end not found
-                        isValid_ = false;
-                        return;
-                    }
-                    currentHeader_.name =
-                        valueView.substr(namePos, nameEnd - namePos);
+                    currentHeader_.name = name;
 
                     // Extract filename
-                    auto fileNamePos = valueView.find(fileNameKey, nameEnd);
-                    if (fileNamePos != std::string::npos)
+                    std::string_view fileName;
+                    if (parseHeaderParameter(valueView, "filename", fileName))
                     {
-                        fileNamePos += fileNameKey.size();
-                        size_t fileNameEnd;
-                        if (valueView[fileNamePos] == '"')
-                        {
-                            ++fileNamePos;
-                            fileNameEnd = valueView.find('"', fileNamePos);
-                        }
-                        else
-                        {
-                            fileNameEnd = valueView.find(';', fileNamePos);
-                        }
-                        currentHeader_.filename =
-                            valueView.substr(fileNamePos,
-                                             fileNameEnd - fileNamePos);
+                        currentHeader_.filename = fileName;
                     }
                 }
                 // ignore other headers

@@ -30,6 +30,7 @@
 #endif
 
 using namespace drogon;
+using drogon::utils::parseHeaderParameter;
 using drogon::utils::parseLine;
 
 const std::vector<HttpFile> &MultiPartParser::getFiles() const
@@ -93,8 +94,6 @@ int MultiPartParser::parseEntity(const HttpRequestPtr &req,
                                  const char *begin,
                                  const char *end)
 {
-    static const char entityName[] = "name=";
-    static const char fileName[] = "filename=";
     static const char CRLF[] = "\r\n\r\n";
     auto headEnd = std::search(begin, end, CRLF, CRLF + 4);
     if (headEnd == end)
@@ -121,46 +120,22 @@ int MultiPartParser::parseEntity(const HttpRequestPtr &req,
         if (key == "content-disposition")
         {
             auto value = keyAndValue.second;
-            auto valueEnd = value.data() + value.length();
-            auto namePos =
-                std::search(value.data(), valueEnd, entityName, entityName + 5);
-            if (namePos == valueEnd)
+            std::string_view nameValue;
+            if (!parseHeaderParameter(value, "name", nameValue))
             {
                 return -1;
             }
-            namePos += 5;
-            const char *nameEnd;
-            if (*namePos == '"')
-            {
-                ++namePos;
-                nameEnd = std::find(namePos, valueEnd, '"');
-            }
-            else
-            {
-                nameEnd = std::find(namePos, valueEnd, ';');
-            }
-            std::string name(namePos, nameEnd);
-            auto fileNamePos =
-                std::search(nameEnd, valueEnd, fileName, fileName + 9);
-            if (fileNamePos == valueEnd)
+            std::string name{nameValue};
+
+            std::string_view fileNameValue;
+            if (!parseHeaderParameter(value, "filename", fileNameValue))
             {
                 parameters_.emplace(name, std::string(headEnd + 2, end));
                 return 0;
             }
             else
             {
-                fileNamePos += 9;
-                const char *fileNameEnd;
-                if (*fileNamePos == '"')
-                {
-                    ++fileNamePos;
-                    fileNameEnd = std::find(fileNamePos, valueEnd, '"');
-                }
-                else
-                {
-                    fileNameEnd = std::find(fileNamePos, valueEnd, ';');
-                }
-                std::string fName{fileNamePos, fileNameEnd};
+                std::string fName{fileNameValue};
                 filePtr->setRequest(req);
                 filePtr->setItemName(std::move(name));
                 filePtr->setFileName(std::move(fName));
