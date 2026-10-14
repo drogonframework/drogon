@@ -6,7 +6,7 @@
 [![Join our Discord](https://dcbadge.vercel.app/api/server/3DvHY6Ewuj?style=flat)](https://discord.gg/3DvHY6Ewuj)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
-English | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md)
+English | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md) | [한국어](./README.ko-KR.md)
 
 ### Overview
 

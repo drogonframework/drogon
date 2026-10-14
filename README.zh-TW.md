@@ -6,7 +6,7 @@
 [![Join our Discord](https://dcbadge.vercel.app/api/server/3DvHY6Ewuj?style=flat)](https://discord.gg/3DvHY6Ewuj)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
-[English](./README.md) | [简体中文](./README.zh-CN.md) | 繁體中文
+[English](./README.md) | [简体中文](./README.zh-CN.md) | 繁體中文 | [한국어](./README.ko-KR.md)
 
 **Drogon** 是一個基於 C++17/20 的 HTTP 應用程式框架，使用 Drogon 可以方便地用 C++ 建立各種類型的 Web App 伺服器端程式。
 
