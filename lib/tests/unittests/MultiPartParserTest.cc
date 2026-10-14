@@ -84,6 +84,44 @@ DROGON_TEST(MultiPartParserDashBoundary)
     CHECK(parser.getParameters().at("key1") == "value1");
 }
 
+DROGON_TEST(MultiPartDispositionParametersAreOrderIndependent)
+{
+    static const std::string contentType =
+        "multipart/form-data; boundary=12345";
+    static const std::string body =
+        "--12345\r\n"
+        "Content-Disposition: form-data; filename=\"file.txt\"; "
+        "name=\"upload\"\r\n"
+        "\r\n"
+        "file content\r\n"
+        "--12345--";
+
+    auto req = drogon::HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->addHeader("content-type", contentType);
+    req->setBody(body);
+
+    drogon::MultiPartParser parser;
+    CHECK(parser.parse(req) == 0);
+    auto files = parser.getFilesMap();
+    MANDATE(files.size() == 1);
+    CHECK(files.at("upload").getFileName() == "file.txt");
+
+    drogon::MultipartStreamParser streamParser(contentType);
+    drogon::MultipartHeader header;
+    streamParser.parse(
+        body.data(),
+        body.size(),
+        [&header](drogon::MultipartHeader parsedHeader) {
+            header = std::move(parsedHeader);
+        },
+        [](const char *, size_t) {});
+    CHECK(streamParser.isValid());
+    CHECK(streamParser.isFinished());
+    CHECK(header.name == "upload");
+    CHECK(header.filename == "file.txt");
+}
+
 DROGON_TEST(MultiPartStreamParser)
 {
     static const std::string ct = "multipart/form-data; boundary=\"12345\"";
