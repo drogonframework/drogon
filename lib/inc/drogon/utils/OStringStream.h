@@ -124,6 +124,16 @@ class OStringStream
         return *this;
     }
 
+    OStringStream &operator<<(double &d)
+    {
+        return *this << static_cast<const double &>(d);
+    }
+
+    OStringStream &operator<<(float &f)
+    {
+        return *this << static_cast<const float &>(f);
+    }
+
     std::string &str()
     {
         return buffer_;
