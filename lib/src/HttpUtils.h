@@ -21,6 +21,8 @@
 
 namespace drogon
 {
+class Cookie;
+
 const std::string_view &contentTypeToMime(ContentType contentType);
 const std::string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
@@ -47,6 +49,14 @@ const std::vector<std::string_view> &getFileExtensions(ContentType contentType);
 /// or LF character, which are not allowed in HTTP field names and values
 /// (RFC 9110, section 5.5).
 bool isValidHeader(std::string_view field, std::string_view value);
+
+/// Return false (and log an error) if the cookie key or value contains a CR or
+/// LF character.
+bool isValidCookie(std::string_view key, std::string_view value);
+
+/// Return false (and log an error) if the cookie key, value, domain or path
+/// contains a CR or LF character.
+bool isValidCookie(const Cookie &cookie);
 
 inline const std::vector<std::string_view> &getFileExtensions(
     const std::string_view &contentType)
