@@ -43,6 +43,11 @@ inline std::string_view getFileExtension(const std::string &fileName)
 
 const std::vector<std::string_view> &getFileExtensions(ContentType contentType);
 
+/// Return false (and log an error) if the header field or value contains a CR
+/// or LF character, which are not allowed in HTTP field names and values
+/// (RFC 9110, section 5.5).
+bool isValidHeader(std::string_view field, std::string_view value);
+
 inline const std::vector<std::string_view> &getFileExtensions(
     const std::string_view &contentType)
 {
