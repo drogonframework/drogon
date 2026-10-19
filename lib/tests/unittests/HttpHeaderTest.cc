@@ -16,6 +16,21 @@ DROGON_TEST(HttpHeaderRequest)
     CHECK(req->getHeader("abc") == "");
 }
 
+DROGON_TEST(HttpHeaderRequestCRLFInjection)
+{
+    auto req = HttpRequest::newHttpRequest();
+    req->addHeader("X-Test", "abc\r\nX-Injected: 1");
+    req->addHeader("X-Test\r\nX-Injected", "abc");
+    req->addHeader("X-Lf", std::string("abc\nX-Injected: 1"));
+    CHECK(req->getHeader("X-Test") == "");
+    CHECK(req->getHeader("X-Lf") == "");
+    CHECK(req->headers().empty());
+
+    req->addCookie("key", "value\r\nX-Injected: 1");
+    req->addCookie("key\nX-Injected: 1", "value");
+    CHECK(req->cookies().empty());
+}
+
 DROGON_TEST(HttpHeaderResponse)
 {
     auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(
