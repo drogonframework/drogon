@@ -464,7 +464,15 @@ void WebSocketConnectionImpl::onNewMessage(
                 }
                 else if (type == WebSocketMessageType::Close)
                 {
-                    // close
+                    // rfc6455-5.5.1: reply with the received close frame so
+                    // the peer sees the status code it sent instead of an
+                    // abnormal closure (1006). Skip the reply when this side
+                    // already started the closing handshake, otherwise the
+                    // two ends would keep echoing close frames at each other.
+                    if (connPtr->connected())
+                    {
+                        send(message, WebSocketMessageType::Close);
+                    }
                     connPtr->shutdown();
                 }
                 else if (type == WebSocketMessageType::Unknown)
