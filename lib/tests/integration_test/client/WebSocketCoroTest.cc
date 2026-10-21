@@ -25,7 +25,9 @@ DROGON_TEST(WebSocketCoroControllerTest)
             auto TEST_CTX = testContext.lock();
             if (!TEST_CTX)
                 return;
-            CHECK(type == WebSocketMessageType::Text);
+            // A close handshake delivers a Close frame to the initiator.
+            if (type != WebSocketMessageType::Text)
+                return;
             if (message == "opened")
             {
                 client->getConnection()->send("hello-coro");
@@ -48,7 +50,10 @@ DROGON_TEST(WebSocketCoroControllerTest)
                     auto TEST_CTX = testContext.lock();
                     if (!TEST_CTX)
                         return;
-                    CHECK(type == WebSocketMessageType::Text);
+                    // A close handshake delivers a Close frame to the
+                    // initiator.
+                    if (type != WebSocketMessageType::Text)
+                        return;
                     if (message == "opened")
                     {
                         client->getConnection()->send("stats");
