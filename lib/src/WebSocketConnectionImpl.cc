@@ -464,7 +464,11 @@ void WebSocketConnectionImpl::onNewMessage(
                 }
                 else if (type == WebSocketMessageType::Close)
                 {
-                    // close
+                    // rfc6455-5.5.1: echo the close frame back before
+                    // closing the underlying connection, otherwise the peer
+                    // sees an abnormal closure (1006) instead of the status
+                    // code it sent.
+                    send(message, WebSocketMessageType::Close);
                     connPtr->shutdown();
                 }
                 else if (type == WebSocketMessageType::Unknown)
