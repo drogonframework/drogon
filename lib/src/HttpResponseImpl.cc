@@ -729,7 +729,16 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
     buffer.hasWritten(len);
 
     if (!statusMessage_.empty())
-        buffer.append(statusMessage_.data(), statusMessage_.length());
+    {
+        if (utils::internal::containsLineBreakOrNul(statusMessage_))
+        {
+            LOG_ERROR << "Invalid characters in HTTP status message, dropped";
+        }
+        else
+        {
+            buffer.append(statusMessage_.data(), statusMessage_.length());
+        }
+    }
     buffer.append("\r\n");
     generateBodyFromJson();
     if (!passThrough_)
@@ -789,9 +798,17 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 
         if (!contentTypeString_.empty())
         {
-            buffer.append("content-type: ");
-            buffer.append(contentTypeString_);
-            buffer.append("\r\n");
+            if (utils::internal::containsLineBreakOrNul(contentTypeString_))
+            {
+                LOG_ERROR
+                    << "Invalid characters in content-type, header dropped";
+            }
+            else
+            {
+                buffer.append("content-type: ");
+                buffer.append(contentTypeString_);
+                buffer.append("\r\n");
+            }
         }
         if (HttpAppFrameworkImpl::instance().sendServerHeader())
         {
@@ -802,6 +819,13 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
+        if (utils::internal::containsLineBreakOrNul(it->first) ||
+            utils::internal::containsLineBreakOrNul(it->second))
+        {
+            LOG_ERROR
+                << "Invalid characters in response header, header dropped";
+            continue;
+        }
         buffer.append(it->first);
         buffer.append(": ");
         buffer.append(it->second);

@@ -61,3 +61,20 @@ DROGON_TEST(CookieTest)
         cookie9.cookieString() ==
         "Set-Cookie: test=9; SameSite=Lax; Secure; HttpOnly; Partitioned\r\n");
 }
+
+DROGON_TEST(CookieInjectionPrevented)
+{
+    drogon::Cookie valueCookie("test", "1\r\nInjected: yes");
+    CHECK(valueCookie.cookieString().empty());
+
+    drogon::Cookie domainCookie("test", "1");
+    domainCookie.setDomain("drogon.org\r\nInjected: yes");
+    CHECK(domainCookie.cookieString().empty());
+
+    drogon::Cookie pathCookie("test", "1");
+    pathCookie.setPath("/\r\nInjected: yes");
+    CHECK(pathCookie.cookieString().empty());
+
+    drogon::Cookie keyCookie("te\r\nInjected: yes", "1");
+    CHECK(keyCookie.cookieString().empty());
+}

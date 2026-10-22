@@ -786,6 +786,13 @@ struct SafeStringHash
         return h;
     }
 };
+
+// CR, LF and NUL would let a field value escape its line and inject
+// additional lines.
+inline bool containsLineBreakOrNul(std::string_view value)
+{
+    return value.find_first_of("\r\n\0", 0, 3) != std::string_view::npos;
+}
 }  // namespace internal
 }  // namespace utils
 

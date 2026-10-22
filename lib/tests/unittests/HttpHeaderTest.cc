@@ -37,6 +37,34 @@ DROGON_TEST(HttpHeaderResponse)
     CHECK(resp->getHeader("abc") == "");
 }
 
+DROGON_TEST(ResponseHeaderInjectionPrevented)
+{
+    auto base = HttpResponse::newHttpResponse();
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(base);
+    REQUIRE(resp != nullptr);
+    resp->addHeader("X-Good", "ok");
+    resp->addHeader("X-Echo", "safe\r\nInjected: yes");
+    resp->addHeader("X-Bad\r\nInjected-Name", "value");
+    base->setContentTypeString("text/html\r\nInjected-Type: yes");
+
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("Injected") == std::string::npos);
+    CHECK(str.find("x-good: ok") != std::string::npos);
+}
+
+DROGON_TEST(ResponseStatusMessageInjectionPrevented)
+{
+    auto base = HttpResponse::newHttpResponse();
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(base);
+    REQUIRE(resp != nullptr);
+    base->setCustomStatusCode(200, "OK\r\nInjected: yes");
+
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("Injected") == std::string::npos);
+}
+
 DROGON_TEST(ResponseSetCustomContentTypeString)
 {
     auto resp = HttpResponse::newHttpResponse();

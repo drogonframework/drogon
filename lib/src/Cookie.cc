@@ -19,6 +19,14 @@ using namespace drogon;
 
 std::string Cookie::cookieString() const
 {
+    if (utils::internal::containsLineBreakOrNul(key_) ||
+        utils::internal::containsLineBreakOrNul(value_) ||
+        utils::internal::containsLineBreakOrNul(domain_) ||
+        utils::internal::containsLineBreakOrNul(path_))
+    {
+        LOG_ERROR << "Invalid characters in cookie, cookie dropped";
+        return {};
+    }
     constexpr std::string_view prefix = "Set-Cookie: ";
     std::string ret;
     // reserve space to reduce frequency allocation
