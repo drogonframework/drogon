@@ -75,6 +75,6 @@ DROGON_TEST(CookieInjectionPrevented)
     pathCookie.setPath("/\r\nInjected: yes");
     CHECK(pathCookie.cookieString().empty());
 
-    drogon::Cookie keyCookie("te\r\nInjected: yes", "1");
+    drogon::Cookie keyCookie("test\r\nInjected: yes", "1");
     CHECK(keyCookie.cookieString().empty());
 }
