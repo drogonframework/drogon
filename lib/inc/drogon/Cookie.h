@@ -359,7 +359,8 @@ class DROGON_EXPORT Cookie
             return false;
         for (size_t idx{0}; idx < str1Len; ++idx)
         {
-            auto lowerChar{tolower(str1[idx])};
+            auto lowerChar{static_cast<char>(
+                std::tolower(static_cast<unsigned char>(str1[idx])))};
 
             if (lowerChar != str2[idx])
             {
