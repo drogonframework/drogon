@@ -437,7 +437,7 @@ struct CallbackAwaiter : public trantor::NonCopyable
         return exception_ != nullptr;
     }
 
-    const T &await_resume() const noexcept(false)
+    T await_resume() noexcept(false)
     {
         // await_resume() should always be called after co_await
         // (await_suspend()) is called. Therefore the value should always be set
@@ -446,7 +446,7 @@ struct CallbackAwaiter : public trantor::NonCopyable
 
         if (exception_)
             std::rethrow_exception(exception_);
-        return result_.value();
+        return std::move(result_.value());
     }
 
   private:
