@@ -1541,6 +1541,8 @@ void create_model::createRestfulAPIController(
     data.insert("fileName", ctlName);
     data.insert("tableName", tableInfo.get<std::string>("tableName"));
     data.insert("tableInfo", tableInfo);
+    data.insert("SourceExtension", sourceExtension);
+    data.insert("HeaderExtension", headerExtension);
     auto filters = restfulApiConfig["filters"];
     if (filters.isNull() || filters.empty() || !filters.isArray())
     {
