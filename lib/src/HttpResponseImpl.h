@@ -193,6 +193,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void addHeader(std::string field, const std::string &value) override
     {
+        if (!isValidHeader(field, value))
+            return;
         fullHeaderString_.reset();
         transform(field.begin(),
                   field.end(),
@@ -203,6 +205,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void addHeader(std::string field, std::string &&value) override
     {
+        if (!isValidHeader(field, value))
+            return;
         fullHeaderString_.reset();
         transform(field.begin(),
                   field.end(),
@@ -215,16 +219,22 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void addCookie(const std::string &key, const std::string &value) override
     {
+        if (!isValidCookie(key, value))
+            return;
         cookies_[key] = Cookie(key, value);
     }
 
     void addCookie(const Cookie &cookie) override
     {
+        if (!isValidCookie(cookie))
+            return;
         cookies_[cookie.key()] = cookie;
     }
 
     void addCookie(Cookie &&cookie) override
     {
+        if (!isValidCookie(cookie))
+            return;
         cookies_[cookie.key()] = std::move(cookie);
     }
 

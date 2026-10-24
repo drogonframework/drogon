@@ -14,6 +14,7 @@
 
 #include "HttpUtils.h"
 #include <drogon/utils/Utilities.h>
+#include <drogon/Cookie.h>
 #include <trantor/utils/Logger.h>
 #include <map>
 #include <unordered_map>
@@ -738,6 +739,46 @@ const std::vector<std::string_view> &getFileExtensions(ContentType contentType)
     if (it == extensionMap_.end())
         return notFound_;
     return it->second;
+}
+
+static bool containsCRLF(std::string_view str)
+{
+    return str.find_first_of("\r\n") != std::string_view::npos;
+}
+
+bool isValidHeader(std::string_view field, std::string_view value)
+{
+    if (containsCRLF(field) || containsCRLF(value))
+    {
+        LOG_ERROR << "Header '" << field
+                  << "' contains CR or LF characters, ignored";
+        return false;
+    }
+    return true;
+}
+
+bool isValidCookie(std::string_view key, std::string_view value)
+{
+    if (containsCRLF(key) || containsCRLF(value))
+    {
+        LOG_ERROR << "Cookie '" << key
+                  << "' contains CR or LF characters, ignored";
+        return false;
+    }
+    return true;
+}
+
+bool isValidCookie(const Cookie &cookie)
+{
+    if (!isValidCookie(cookie.key(), cookie.value()))
+        return false;
+    if (containsCRLF(cookie.domain()) || containsCRLF(cookie.path()))
+    {
+        LOG_ERROR << "Cookie '" << cookie.key()
+                  << "' contains CR or LF characters, ignored";
+        return false;
+    }
+    return true;
 }
 
 }  // namespace drogon
