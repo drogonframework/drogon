@@ -10,12 +10,16 @@
 #include <iostream>
 #include <string>
 
+#include "ConnectionStringHelper.h"
+
 using namespace std::chrono_literals;
 using drogon::orm::BrokenConnection;
 using drogon::orm::DbClient;
 
 namespace
 {
+using drogon::test::sqlite3::quoteConnectionValue;
+
 std::atomic<int> connectionsOpened{0};
 std::atomic<int> rollbackAttempts{0};
 
@@ -104,9 +108,10 @@ struct Fixture
         if (!inMemory)
             path = std::filesystem::temp_directory_path() /
                    ("drogon-commit-" + drogon::utils::getUuid() + ".db");
-        const auto filename = inMemory ? ":memory:" : path.string();
-        client = DbClient::newSqlite3Client("filename='" + filename + "'",
-                                            connectionCount);
+        const auto filename =
+            inMemory ? ":memory:" : quoteConnectionValue(path);
+        client =
+            DbClient::newSqlite3Client("filename=" + filename, connectionCount);
         client->execSqlSync("PRAGMA foreign_keys = ON");
         client->execSqlSync("CREATE TABLE parents(id INTEGER PRIMARY KEY)");
         client->execSqlSync(
@@ -222,7 +227,7 @@ DROGON_TEST(SQLiteFailedCommitRecovery)
                 // Closing the retired handle must release the transaction and
                 // its locks, even while the failed client is still alive.
                 auto reopened = DbClient::newSqlite3Client(
-                    "filename='" + fixture.path.string() + "'", 1);
+                    "filename=" + quoteConnectionValue(fixture.path), 1);
                 const auto saved = reopened->execSqlSync(
                     "SELECT (SELECT count(*) FROM parents),"
                     " (SELECT count(*) FROM children)");
