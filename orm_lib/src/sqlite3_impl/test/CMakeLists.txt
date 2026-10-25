@@ -31,3 +31,18 @@ else ()
                           PRIVATE unofficial::sqlite3::sqlite3)
 endif ()
 add_test(NAME sqlite3_disconnect COMMAND sqlite3_disconnect_test)
+
+add_executable(sqlite3_conn_string_test ConnectionStringTest.cc)
+set_property(TARGET sqlite3_conn_string_test
+             PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET sqlite3_conn_string_test
+             PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET sqlite3_conn_string_test PROPERTY CXX_EXTENSIONS OFF)
+if (TARGET SQLite3_lib)
+    target_link_libraries(sqlite3_conn_string_test PRIVATE SQLite3_lib)
+else ()
+    target_link_libraries(sqlite3_conn_string_test
+                          PRIVATE unofficial::sqlite3::sqlite3)
+endif ()
+add_test(NAME sqlite3_conn_string COMMAND sqlite3_conn_string_test)
+set_tests_properties(sqlite3_conn_string PROPERTIES TIMEOUT 30)
