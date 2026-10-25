@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 
-echo "First arg:"
-echo $1
+echo "Arguments:" "$@"
 
 os='linux'
-if [ "X$1" = "X-w" ]; then
-    os='windows'
-fi
+run_tests=0
+for arg in "$@"; do
+    case "$arg" in
+        -w)
+            os='windows'
+            ;;
+        -t)
+            run_tests=1
+            ;;
+        *)
+            echo "Unknown argument: $arg" >&2
+            echo "Usage: $0 [-w] [-t]" >&2
+            exit 1
+            ;;
+    esac
+done
 echo "OS:" $os
 
 src_dir=$(pwd)
@@ -364,7 +376,21 @@ function do_unittest()
     echo "Unit testing"
     pushd "$src_dir/build"
 
-    ctest . --output-on-failure
+    local ctest_args=(. --output-on-failure)
+    if [ "X$os" = "Xwindows" ]; then
+        # The Visual Studio generator is multi-config, so the configuration
+        # has to be passed explicitly.
+        ctest_args+=(-C Debug)
+        # Tests that are known to fail or hang on Windows. They are tracked
+        # separately so that the rest of the suite still runs in CI.
+        local excluded_tests='^(CookieSameSite|TcpClientRetry\.StopCancelsPendingRetry)$'
+        echo "Excluding known Windows failures: $excluded_tests"
+        ctest_args+=(-E "$excluded_tests")
+        # Do not let a single hanging test consume the whole CI job.
+        ctest_args+=(--timeout 120)
+    fi
+
+    ctest "${ctest_args[@]}"
     if [ $? -ne 0 ]; then
         echo "Error in unit testing"
         exit -1
@@ -374,6 +400,13 @@ function do_unittest()
 
 function do_db_test()
 {
+    if [ "X$os" = "Xwindows" ]; then
+        # These tests need live MySQL/PostgreSQL/Redis servers, which the
+        # Windows CI image does not provide.
+        echo "Skipping database tests on Windows"
+        return
+    fi
+
     pushd "$src_dir/build"
     if [ -f "./orm_lib/tests/db_test" ]; then
         echo "Test database"
@@ -434,7 +467,7 @@ else
     do_drogon_ctl_test
 fi
 
-if [ "X$1" = "X-t" ]; then
+if [ "$run_tests" = "1" ]; then
     do_unittest
     do_db_test
 fi

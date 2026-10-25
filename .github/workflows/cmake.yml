@@ -63,7 +63,7 @@ jobs:
 
       - name: Test
         shell: bash
-        run: ./test.sh -w
+        run: ./test.sh -w -t
 
   macos:
     runs-on: macos-${{ matrix.osver }}
