@@ -383,6 +383,19 @@ void StaticFileRouter::sendStaticFileResponse(
     }
 
     const auto addVary = [this](const HttpResponsePtr &response) {
+        for (const auto &header : headers_)
+        {
+            if (header.first.size() == 4 &&
+                std::equal(header.first.begin(),
+                           header.first.end(),
+                           "vary",
+                           [](unsigned char c, char expected) {
+                               return std::tolower(c) == expected;
+                           }))
+            {
+                response->addHeader(header.first, header.second);
+            }
+        }
         if (brStaticFlag_ || gzipStaticFlag_)
         {
             const auto &vary = response->getHeader("vary");
