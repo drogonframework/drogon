@@ -501,15 +501,31 @@ void StaticFileRouter::sendStaticFileResponse(
         }
     }
 
-    // Select the representation before looking up its cached response.
     auto selectedFilePath = filePath;
     std::string contentEncoding;
+    HttpResponsePtr cachedResp;
+    auto &cacheMap = staticFilesCache_->getThreadData();
+    const auto findCachedResponse = [&](const std::string &encoding) {
+        auto iter = cacheMap.find(encoding + '|' + filePath);
+        if (iter == cacheMap.end())
+        {
+            return false;
+        }
+        cachedResp = iter->second;
+        return true;
+    };
     const auto &acceptEncoding = req->getHeaderBy("accept-encoding");
     const auto selectCompressedFile = [&](const char *encoding,
                                           const char *extension) {
         if (acceptEncoding.find(encoding) == std::string::npos)
         {
             return false;
+        }
+        // Only probe the filesystem when this representation is not cached.
+        if (findCachedResponse(encoding))
+        {
+            contentEncoding = encoding;
+            return true;
         }
         auto compressedFilePath = filePath + extension;
         std::error_code err;
@@ -523,21 +539,12 @@ void StaticFileRouter::sendStaticFileResponse(
         return true;
     };
     if (!(brStaticFlag_ && selectCompressedFile("br", ".br")) &&
-        gzipStaticFlag_)
+        !(gzipStaticFlag_ && selectCompressedFile("gzip", ".gz")))
     {
-        selectCompressedFile("gzip", ".gz");
+        findCachedResponse("");
     }
     // Prefixing is safe here
     const auto cacheKey = contentEncoding + '|' + filePath;
-
-    // find cached response
-    HttpResponsePtr cachedResp;
-    auto &cacheMap = staticFilesCache_->getThreadData();
-    auto iter = cacheMap.find(cacheKey);
-    if (iter != cacheMap.end())
-    {
-        cachedResp = iter->second;
-    }
 
     if (enableLastModify_)
     {
