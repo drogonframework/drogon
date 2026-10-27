@@ -6,6 +6,13 @@ set_property(TARGET sqlite3_test1 PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET sqlite3_test1 PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET sqlite3_test1 PROPERTY CXX_EXTENSIONS OFF)
 
+# This test injects faults by registering a SQL function with
+# sqlite3_auto_extension(). Where SQLite is linked statically into both drogon
+# and the test executable - the MSVC shared build, where SQLite comes from conan
+# as a static library - the two modules each get their own copy of the library,
+# so the function is invisible to the connections drogon opens. The test detects
+# that at startup and reports a skip instead of failing with a confusing
+# "no such function" error from the first faulted statement.
 add_executable(sqlite3_failed_commit_test failed_commit_test.cc)
 if (TARGET SQLite3_lib)
     target_link_libraries(sqlite3_failed_commit_test PRIVATE SQLite3_lib)
@@ -16,7 +23,9 @@ set_property(TARGET sqlite3_failed_commit_test PROPERTY CXX_STANDARD ${DROGON_CX
 set_property(TARGET sqlite3_failed_commit_test PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET sqlite3_failed_commit_test PROPERTY CXX_EXTENSIONS OFF)
 add_test(NAME sqlite3_failed_commit COMMAND sqlite3_failed_commit_test)
-set_tests_properties(sqlite3_failed_commit PROPERTIES TIMEOUT 30)
+set_tests_properties(sqlite3_failed_commit PROPERTIES
+                     TIMEOUT 30
+                     SKIP_RETURN_CODE 77)
 
 add_executable(sqlite3_disconnect_test Sqlite3DisconnectTest.cc)
 set_property(TARGET sqlite3_disconnect_test
