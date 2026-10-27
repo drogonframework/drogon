@@ -1,6 +1,7 @@
 #include <drogon/drogon_test.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include "../../lib/src/HttpRequestImpl.h"
 #include "../../lib/src/HttpResponseImpl.h"
 
 using namespace drogon;
@@ -77,6 +78,52 @@ DROGON_TEST(HttpHeaderResponseCRLFInjection)
     auto buffer = resp->renderToBuffer();
     auto str = std::string{buffer->peek(), buffer->readableBytes()};
     CHECK(str.find("injected") == std::string::npos);
+    CHECK(str.find("X-Injected") == std::string::npos);
+}
+
+DROGON_TEST(HttpRequestContentTypeCRLFInjection)
+{
+    auto req = std::dynamic_pointer_cast<HttpRequestImpl>(
+        HttpRequest::newHttpRequest());
+    REQUIRE(req != nullptr);
+    req->setContentTypeString("application/json\r\nX-Injected: 1",
+                              sizeof("application/json\r\nX-Injected: 1") - 1);
+    trantor::MsgBuffer buffer;
+    req->appendToBuffer(&buffer);
+    auto str = std::string{buffer.peek(), buffer.readableBytes()};
+    CHECK(str.find("X-Injected") == std::string::npos);
+}
+
+DROGON_TEST(HttpResponseContentTypeCRLFInjection)
+{
+    auto base = HttpResponse::newHttpResponse();
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(base);
+    REQUIRE(resp != nullptr);
+    base->setContentTypeString("text/html\r\nX-Injected: 1");
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("X-Injected") == std::string::npos);
+}
+
+DROGON_TEST(HttpResponseStatusMessageCRLFInjection)
+{
+    auto base = HttpResponse::newHttpResponse();
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(base);
+    REQUIRE(resp != nullptr);
+    base->setCustomStatusCode(200, "OK\r\nX-Injected: 1");
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("X-Injected") == std::string::npos);
+}
+
+DROGON_TEST(HttpResponseRedirectCRLFInjection)
+{
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(
+        HttpResponse::newHttpResponse());
+    REQUIRE(resp != nullptr);
+    resp->redirect("http://example.com/\r\nX-Injected: 1");
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
     CHECK(str.find("X-Injected") == std::string::npos);
 }
 

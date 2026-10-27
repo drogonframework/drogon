@@ -58,6 +58,10 @@ bool isValidCookie(std::string_view key, std::string_view value);
 /// contains a CR or LF character.
 bool isValidCookie(const Cookie &cookie);
 
+/// Return true if the string contains a CR or LF character, which is not
+/// allowed in HTTP field names or values (RFC 9110, section 5.5).
+bool containsCRLF(std::string_view str);
+
 inline const std::vector<std::string_view> &getFileExtensions(
     const std::string_view &contentType)
 {
