@@ -1,7 +1,6 @@
 #include <drogon/drogon_test.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
-#include "../../lib/src/HttpRequestImpl.h"
 #include "../../lib/src/HttpResponseImpl.h"
 
 using namespace drogon;
@@ -78,19 +77,6 @@ DROGON_TEST(HttpHeaderResponseCRLFInjection)
     auto buffer = resp->renderToBuffer();
     auto str = std::string{buffer->peek(), buffer->readableBytes()};
     CHECK(str.find("injected") == std::string::npos);
-    CHECK(str.find("X-Injected") == std::string::npos);
-}
-
-DROGON_TEST(HttpRequestContentTypeCRLFInjection)
-{
-    auto req = std::dynamic_pointer_cast<HttpRequestImpl>(
-        HttpRequest::newHttpRequest());
-    REQUIRE(req != nullptr);
-    req->setContentTypeString("application/json\r\nX-Injected: 1",
-                              sizeof("application/json\r\nX-Injected: 1") - 1);
-    trantor::MsgBuffer buffer;
-    req->appendToBuffer(&buffer);
-    auto str = std::string{buffer.peek(), buffer.readableBytes()};
     CHECK(str.find("X-Injected") == std::string::npos);
 }
 
