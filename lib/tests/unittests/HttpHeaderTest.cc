@@ -16,6 +16,21 @@ DROGON_TEST(HttpHeaderRequest)
     CHECK(req->getHeader("abc") == "");
 }
 
+DROGON_TEST(HttpHeaderRequestCRLFInjection)
+{
+    auto req = HttpRequest::newHttpRequest();
+    req->addHeader("X-Test", "abc\r\nX-Injected: 1");
+    req->addHeader("X-Test\r\nX-Injected", "abc");
+    req->addHeader("X-Lf", std::string("abc\nX-Injected: 1"));
+    CHECK(req->getHeader("X-Test") == "");
+    CHECK(req->getHeader("X-Lf") == "");
+    CHECK(req->headers().empty());
+
+    req->addCookie("key", "value\r\nX-Injected: 1");
+    req->addCookie("key\nX-Injected: 1", "value");
+    CHECK(req->cookies().empty());
+}
+
 DROGON_TEST(HttpHeaderResponse)
 {
     auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(
@@ -35,6 +50,34 @@ DROGON_TEST(HttpHeaderResponse)
     str = std::string{buffer->peek(), buffer->readableBytes()};
     CHECK(str.find("abc") == std::string::npos);
     CHECK(resp->getHeader("abc") == "");
+}
+
+DROGON_TEST(HttpHeaderResponseCRLFInjection)
+{
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(
+        HttpResponse::newHttpResponse());
+    REQUIRE(resp != nullptr);
+    resp->addHeader("X-Test", "abc\r\nSet-Cookie: injected=1");
+    resp->addHeader("X-Test\r\nX-Injected", "abc");
+    resp->addHeader("X-Lf", std::string("abc\nX-Injected: 1"));
+    CHECK(resp->getHeader("X-Test") == "");
+    CHECK(resp->getHeader("X-Lf") == "");
+    CHECK(resp->headers().empty());
+
+    resp->addCookie("key", "value\r\nX-Injected: 1");
+    Cookie cookie("key", "value");
+    cookie.setPath("/\r\nX-Injected: 1");
+    resp->addCookie(cookie);
+    cookie.setPath("/");
+    cookie.setDomain("example.com\nX-Injected: 1");
+    resp->addCookie(std::move(cookie));
+    CHECK(resp->cookies().empty());
+
+    resp->makeHeaderString();
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("injected") == std::string::npos);
+    CHECK(str.find("X-Injected") == std::string::npos);
 }
 
 DROGON_TEST(ResponseSetCustomContentTypeString)

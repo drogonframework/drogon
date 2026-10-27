@@ -462,6 +462,8 @@ class HttpRequestImpl : public HttpRequest
 
     void addHeader(std::string field, const std::string &value) override
     {
+        if (!isValidHeader(field, value))
+            return;
         transform(field.begin(),
                   field.end(),
                   field.begin(),
@@ -471,6 +473,8 @@ class HttpRequestImpl : public HttpRequest
 
     void addHeader(std::string field, std::string &&value) override
     {
+        if (!isValidHeader(field, value))
+            return;
         transform(field.begin(),
                   field.end(),
                   field.begin(),
@@ -480,6 +484,8 @@ class HttpRequestImpl : public HttpRequest
 
     void addCookie(std::string key, std::string value) override
     {
+        if (!isValidCookie(key, value))
+            return;
         cookies_[std::move(key)] = std::move(value);
     }
 
