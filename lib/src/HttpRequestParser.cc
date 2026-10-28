@@ -246,7 +246,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                         }
                         const size_t digit = ch - '0';
                         if (contentLength >
-                            (std::numeric_limits<size_t>::max() - digit) / 10)
+                            ((std::numeric_limits<size_t>::max)() - digit) / 10)
                         {
                             return -k400BadRequest;
                         }
