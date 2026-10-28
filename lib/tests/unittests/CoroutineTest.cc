@@ -38,6 +38,25 @@ struct StructAwaiter : public CallbackAwaiter<std::shared_ptr<SomeStruct>>
     }
 };
 
+struct StringAwaiter : public CallbackAwaiter<std::string>
+{
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        // Longer than the small string buffer, so the data is on the heap
+        setValue(std::string(64, 'x'));
+        handle.resume();
+    }
+};
+
+struct MoveOnlyAwaiter : public CallbackAwaiter<std::unique_ptr<int>>
+{
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        setValue(std::make_unique<int>(42));
+        handle.resume();
+    }
+};
+
 }  // namespace drogon::internal
 
 // Workaround limitation of macros
@@ -351,4 +370,32 @@ DROGON_TEST(PromiseNotAggregateInitializedFromArgs)
 
     ThrowOnConvert arg;
     CHECK(sync_wait(returnOk(arg)) == "ok");
+}
+
+DROGON_TEST(CallbackAwaiterResultOutlivesAwaiter)
+{
+    // CallbackAwaiter::await_resume() used to return a reference into the
+    // awaiter. The awaiter is a temporary, so the reference dangled after the
+    // co_await expression.
+    auto test = [TEST_CTX]() -> Task<> {
+        const auto &value = co_await internal::StringAwaiter{};
+        CHECK(value == std::string(64, 'x'));
+
+        auto text = []() -> Task<std::string> {
+            co_return std::string(64, 'y');
+        };
+        std::vector<Task<std::string>> tasks;
+        for (int i = 0; i < 3; ++i)
+            tasks.emplace_back(text());
+        size_t total = 0;
+        for (const auto &str : co_await when_all(std::move(tasks)))
+            total += str.size();
+        CHECK(total == 3 * 64);
+
+        // The result is moved out, so move-only types work
+        auto ptr = co_await internal::MoveOnlyAwaiter{};
+        CO_REQUIRE(ptr != nullptr);
+        CHECK(*ptr == 42);
+    };
+    sync_wait(test());
 }
