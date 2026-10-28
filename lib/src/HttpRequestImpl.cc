@@ -875,6 +875,11 @@ void HttpRequestImpl::setContentTypeString(const char *typeString,
                                            size_t typeStringLength)
 {
     std::string sv(typeString, typeStringLength);
+    if (containsCRLF(sv))
+    {
+        LOG_ERROR << "Invalid characters in content-type, ignored";
+        return;
+    }
     auto contentType = parseContentType(sv);
     if (contentType == CT_NONE)
         contentType = CT_CUSTOM;

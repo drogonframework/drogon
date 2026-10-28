@@ -534,8 +534,6 @@ class HttpRequestImpl : public HttpRequest
 
     void setCustomContentTypeString(const std::string &type) override
     {
-        contentType_ = CT_NONE;
-        flagForParsingContentType_ = true;
         bool haveHeader = type.find("content-type: ") == 0;
         bool haveCRLF = type.rfind("\r\n") == type.size() - 2;
 
@@ -544,8 +542,16 @@ class HttpRequestImpl : public HttpRequest
             endOffset += 14;
         if (haveCRLF)
             endOffset += 2;
-        contentTypeString_ = std::string(type.begin() + (haveHeader ? 14 : 0),
-                                         type.end() - endOffset);
+        std::string contentTypeString{type.begin() + (haveHeader ? 14 : 0),
+                                      type.end() - endOffset};
+        if (containsCRLF(contentTypeString))
+        {
+            LOG_ERROR << "Invalid characters in content-type, ignored";
+            return;
+        }
+        contentType_ = CT_NONE;
+        flagForParsingContentType_ = true;
+        contentTypeString_ = std::move(contentTypeString);
     }
 
     void setContentTypeCode(const ContentType type) override
@@ -666,11 +672,15 @@ class HttpRequestImpl : public HttpRequest
 
     void setContentType(const std::string &contentType)
     {
+        if (!isValidHeader("content-type", contentType))
+            return;
         contentTypeString_ = contentType;
     }
 
     void setContentType(std::string &&contentType)
     {
+        if (!isValidHeader("content-type", contentType))
+            return;
         contentTypeString_ = std::move(contentType);
     }
 

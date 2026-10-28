@@ -1071,13 +1071,15 @@ void HttpResponseImpl::addHeader(const char *start,
                 }
             }
         }
-        if (!cookie.key().empty())
+        if (!cookie.key().empty() && isValidCookie(cookie))
         {
             cookies_[cookie.key()] = std::move(cookie);
         }
     }
     else
     {
+        if (!isValidHeader(field, value))
+            return;
         headers_[std::move(field)] = std::move(value);
     }
 }
@@ -1217,6 +1219,11 @@ void HttpResponseImpl::setContentTypeString(const char *typeString,
                                             size_t typeStringLength)
 {
     std::string sv(typeString, typeStringLength);
+    if (containsCRLF(sv))
+    {
+        LOG_ERROR << "Invalid characters in content-type, ignored";
+        return;
+    }
     auto contentType = parseContentType(sv);
     if (contentType == CT_NONE)
         contentType = CT_CUSTOM;

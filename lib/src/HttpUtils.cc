@@ -741,7 +741,7 @@ const std::vector<std::string_view> &getFileExtensions(ContentType contentType)
     return it->second;
 }
 
-static bool containsCRLF(std::string_view str)
+bool containsCRLF(std::string_view str)
 {
     return str.find_first_of("\r\n") != std::string_view::npos;
 }
@@ -750,8 +750,8 @@ bool isValidHeader(std::string_view field, std::string_view value)
 {
     if (containsCRLF(field) || containsCRLF(value))
     {
-        LOG_ERROR << "Header '" << field
-                  << "' contains CR or LF characters, ignored";
+        LOG_ERROR << "Header field or value contains CR or LF characters, "
+                     "ignored";
         return false;
     }
     return true;
@@ -761,8 +761,8 @@ bool isValidCookie(std::string_view key, std::string_view value)
 {
     if (containsCRLF(key) || containsCRLF(value))
     {
-        LOG_ERROR << "Cookie '" << key
-                  << "' contains CR or LF characters, ignored";
+        LOG_ERROR << "Cookie key or value contains CR or LF characters, "
+                     "ignored";
         return false;
     }
     return true;
@@ -774,8 +774,8 @@ bool isValidCookie(const Cookie &cookie)
         return false;
     if (containsCRLF(cookie.domain()) || containsCRLF(cookie.path()))
     {
-        LOG_ERROR << "Cookie '" << cookie.key()
-                  << "' contains CR or LF characters, ignored";
+        LOG_ERROR << "Cookie domain or path contains CR or LF characters, "
+                     "ignored";
         return false;
     }
     return true;
