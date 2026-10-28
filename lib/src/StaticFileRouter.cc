@@ -382,6 +382,32 @@ void StaticFileRouter::sendStaticFileResponse(
         return;
     }
 
+    const auto addVary = [this](const HttpResponsePtr &response) {
+        for (const auto &header : headers_)
+        {
+            if (header.first.size() == 4 &&
+                std::equal(header.first.begin(),
+                           header.first.end(),
+                           "vary",
+                           [](unsigned char c, char expected) {
+                               return std::tolower(c) == expected;
+                           }))
+            {
+                response->addHeader(header.first, header.second);
+            }
+        }
+        if (brStaticFlag_ || gzipStaticFlag_)
+        {
+            const auto &vary = response->getHeader("vary");
+            if (vary != "*")
+            {
+                response->addHeader("Vary",
+                                    vary.empty() ? "Accept-Encoding"
+                                                 : vary + ", Accept-Encoding");
+            }
+        }
+    };
+
     FileStat fileStat;
     bool fileExists = false;
     const std::string &rangeStr = req->getHeaderBy("range");
@@ -404,6 +430,7 @@ void StaticFileRouter::sendStaticFileResponse(
                 std::make_shared<HttpResponseImpl>();
             resp->setStatusCode(k304NotModified);
             resp->setContentTypeCode(CT_NONE);
+            addVary(resp);
             callback(resp);
             return;
         }
@@ -487,14 +514,50 @@ void StaticFileRouter::sendStaticFileResponse(
         }
     }
 
-    // find cached response
+    auto selectedFilePath = filePath;
+    std::string contentEncoding;
     HttpResponsePtr cachedResp;
     auto &cacheMap = staticFilesCache_->getThreadData();
-    auto iter = cacheMap.find(filePath);
-    if (iter != cacheMap.end())
-    {
+    const auto findCachedResponse = [&](const std::string &encoding) {
+        auto iter = cacheMap.find(encoding + '|' + filePath);
+        if (iter == cacheMap.end())
+        {
+            return false;
+        }
         cachedResp = iter->second;
+        return true;
+    };
+    const auto &acceptEncoding = req->getHeaderBy("accept-encoding");
+    const auto selectCompressedFile = [&](const char *encoding,
+                                          const char *extension) {
+        if (acceptEncoding.find(encoding) == std::string::npos)
+        {
+            return false;
+        }
+        // Only probe the filesystem when this representation is not cached.
+        if (findCachedResponse(encoding))
+        {
+            contentEncoding = encoding;
+            return true;
+        }
+        auto compressedFilePath = filePath + extension;
+        std::error_code err;
+        if (!std::filesystem::is_regular_file(
+                utils::toNativePath(compressedFilePath), err))
+        {
+            return false;
+        }
+        selectedFilePath = std::move(compressedFilePath);
+        contentEncoding = encoding;
+        return true;
+    };
+    if (!(brStaticFlag_ && selectCompressedFile("br", ".br")) &&
+        !(gzipStaticFlag_ && selectCompressedFile("gzip", ".gz")))
+    {
+        findCachedResponse("");
     }
+    // Prefixing is safe here
+    const auto cacheKey = contentEncoding + '|' + filePath;
 
     if (enableLastModify_)
     {
@@ -508,6 +571,7 @@ void StaticFileRouter::sendStaticFileResponse(
                     std::make_shared<HttpResponseImpl>();
                 resp->setStatusCode(k304NotModified);
                 resp->setContentTypeCode(CT_NONE);
+                addVary(resp);
                 callback(resp);
                 return;
             }
@@ -529,6 +593,7 @@ void StaticFileRouter::sendStaticFileResponse(
                     std::make_shared<HttpResponseImpl>();
                 resp->setStatusCode(k304NotModified);
                 resp->setContentTypeCode(CT_NONE);
+                addVary(resp);
                 callback(resp);
                 return;
             }
@@ -553,45 +618,12 @@ void StaticFileRouter::sendStaticFileResponse(
         }
     }
 
-    HttpResponsePtr resp;
-    auto &acceptEncoding = req->getHeaderBy("accept-encoding");
-
-    if (brStaticFlag_ && acceptEncoding.find("br") != std::string::npos)
+    auto ct = fileNameToContentTypeAndMime(filePath);
+    auto resp = HttpResponse::newFileResponse(
+        selectedFilePath, "", ct.first, std::string(ct.second), req);
+    if (!contentEncoding.empty())
     {
-        // Find compressed file first.
-        auto brFileName = filePath + ".br";
-        std::filesystem::path fsBrFile(utils::toNativePath(brFileName));
-        std::error_code err;
-        if (std::filesystem::exists(fsBrFile, err) &&
-            std::filesystem::is_regular_file(fsBrFile, err))
-        {
-            auto ct = fileNameToContentTypeAndMime(filePath);
-            resp = HttpResponse::newFileResponse(
-                brFileName, "", ct.first, std::string(ct.second), req);
-            resp->addHeader("Content-Encoding", "br");
-        }
-    }
-    if (!resp && gzipStaticFlag_ &&
-        acceptEncoding.find("gzip") != std::string::npos)
-    {
-        // Find compressed file first.
-        auto gzipFileName = filePath + ".gz";
-        std::filesystem::path fsGzipFile(utils::toNativePath(gzipFileName));
-        std::error_code err;
-        if (std::filesystem::exists(fsGzipFile, err) &&
-            std::filesystem::is_regular_file(fsGzipFile, err))
-        {
-            auto ct = fileNameToContentTypeAndMime(filePath);
-            resp = HttpResponse::newFileResponse(
-                gzipFileName, "", ct.first, std::string(ct.second), req);
-            resp->addHeader("Content-Encoding", "gzip");
-        }
-    }
-    if (!resp)
-    {
-        auto ct = fileNameToContentTypeAndMime(filePath);
-        resp = HttpResponse::newFileResponse(
-            filePath, "", ct.first, std::string(ct.second), req);
+        resp->addHeader("Content-Encoding", contentEncoding);
     }
     if (resp->statusCode() != k404NotFound)
     {
@@ -633,19 +665,20 @@ void StaticFileRouter::sendStaticFileResponse(
                 resp->addHeader(header.first, header.second);
             }
         }
+        addVary(resp);
         // cache the response for 5 seconds by default
         if (staticFilesCacheTime_ >= 0)
         {
             LOG_TRACE << "Save in cache for " << staticFilesCacheTime_
                       << " seconds";
             resp->setExpiredTime(staticFilesCacheTime_);
-            staticFilesCache_->getThreadData()[filePath] = resp;
+            staticFilesCache_->getThreadData()[cacheKey] = resp;
             staticFilesCacheMap_->getThreadData()->insert(
-                filePath, 0, staticFilesCacheTime_, [this, filePath]() {
+                cacheKey, 0, staticFilesCacheTime_, [this, cacheKey]() {
                     LOG_TRACE << "Erase cache";
-                    assert(staticFilesCache_->getThreadData().find(filePath) !=
+                    assert(staticFilesCache_->getThreadData().find(cacheKey) !=
                            staticFilesCache_->getThreadData().end());
-                    staticFilesCache_->getThreadData().erase(filePath);
+                    staticFilesCache_->getThreadData().erase(cacheKey);
                 });
         }
         callback(resp);
