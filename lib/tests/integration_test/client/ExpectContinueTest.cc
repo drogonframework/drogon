@@ -69,3 +69,15 @@ DROGON_TEST(NonEmptyBodyWithExpectContinue)
     CHECK(response.rfind("HTTP/1.1 100 Continue\r\n", 0) == 0);
     CHECK(response.find("HTTP/1.1 200 OK\r\n") != std::string::npos);
 }
+
+DROGON_TEST(RejectInvalidContentLength)
+{
+    auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
+    const auto response = sendRawRequest(client->getLoop(),
+                                         "GET / HTTP/1.1\r\n"
+                                         "Host: localhost\r\n"
+                                         "Content-Length: 10x\r\n"
+                                         "Connection: close\r\n\r\n");
+
+    CHECK(response.rfind("HTTP/1.1 400 Bad Request\r\n", 0) == 0);
+}
