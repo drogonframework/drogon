@@ -15,7 +15,6 @@
 #include "HttpRequestImpl.h"
 #include "HttpFileUploadRequest.h"
 #include "HttpAppFrameworkImpl.h"
-#include "HttpUtils.h"
 
 #include <drogon/utils/Utilities.h>
 #include <fstream>
@@ -406,25 +405,13 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         }
         if (!contentTypeString_.empty())
         {
-            if (containsCRLF(contentTypeString_))
-            {
-                LOG_ERROR << "Invalid characters in content-type, dropped";
-            }
-            else
-            {
-                output->append("content-type: ");
-                output->append(contentTypeString_);
-                output->append("\r\n");
-            }
+            output->append("content-type: ");
+            output->append(contentTypeString_);
+            output->append("\r\n");
         }
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
-        if (containsCRLF(it->first) || containsCRLF(it->second))
-        {
-            LOG_ERROR << "Invalid characters in request header, dropped";
-            continue;
-        }
         output->append(it->first);
         output->append(": ");
         output->append(it->second);
@@ -888,6 +875,11 @@ void HttpRequestImpl::setContentTypeString(const char *typeString,
                                            size_t typeStringLength)
 {
     std::string sv(typeString, typeStringLength);
+    if (containsCRLF(sv))
+    {
+        LOG_ERROR << "Invalid characters in content-type, ignored";
+        return;
+    }
     auto contentType = parseContentType(sv);
     if (contentType == CT_NONE)
         contentType = CT_CUSTOM;

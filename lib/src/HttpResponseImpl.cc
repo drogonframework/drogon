@@ -729,16 +729,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
     buffer.hasWritten(len);
 
     if (!statusMessage_.empty())
-    {
-        if (containsCRLF(statusMessage_))
-        {
-            LOG_ERROR << "Invalid characters in status message, dropped";
-        }
-        else
-        {
-            buffer.append(statusMessage_.data(), statusMessage_.length());
-        }
-    }
+        buffer.append(statusMessage_.data(), statusMessage_.length());
     buffer.append("\r\n");
     generateBodyFromJson();
     if (!passThrough_)
@@ -798,16 +789,9 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 
         if (!contentTypeString_.empty())
         {
-            if (containsCRLF(contentTypeString_))
-            {
-                LOG_ERROR << "Invalid characters in content-type, dropped";
-            }
-            else
-            {
-                buffer.append("content-type: ");
-                buffer.append(contentTypeString_);
-                buffer.append("\r\n");
-            }
+            buffer.append("content-type: ");
+            buffer.append(contentTypeString_);
+            buffer.append("\r\n");
         }
         if (HttpAppFrameworkImpl::instance().sendServerHeader())
         {
@@ -818,11 +802,6 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
-        if (containsCRLF(it->first) || containsCRLF(it->second))
-        {
-            LOG_ERROR << "Invalid characters in response header, dropped";
-            continue;
-        }
         buffer.append(it->first);
         buffer.append(": ");
         buffer.append(it->second);
@@ -1092,13 +1071,15 @@ void HttpResponseImpl::addHeader(const char *start,
                 }
             }
         }
-        if (!cookie.key().empty())
+        if (!cookie.key().empty() && isValidCookie(cookie))
         {
             cookies_[cookie.key()] = std::move(cookie);
         }
     }
     else
     {
+        if (!isValidHeader(field, value))
+            return;
         headers_[std::move(field)] = std::move(value);
     }
 }
@@ -1238,6 +1219,11 @@ void HttpResponseImpl::setContentTypeString(const char *typeString,
                                             size_t typeStringLength)
 {
     std::string sv(typeString, typeStringLength);
+    if (containsCRLF(sv))
+    {
+        LOG_ERROR << "Invalid characters in content-type, ignored";
+        return;
+    }
     auto contentType = parseContentType(sv);
     if (contentType == CT_NONE)
         contentType = CT_CUSTOM;

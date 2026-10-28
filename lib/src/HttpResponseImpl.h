@@ -21,6 +21,7 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <memory>
 #include <mutex>
@@ -279,6 +280,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void redirect(const std::string &url)
     {
+        if (!isValidHeader("location", url))
+            return;
         headers_["location"] = url;
     }
 
@@ -553,6 +556,12 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         assert(code >= 0);
         customStatusCode_ = code;
+        if (messageLength != 0 &&
+            containsCRLF(std::string_view{message, messageLength}))
+        {
+            LOG_ERROR << "Invalid characters in status message, ignored";
+            return;
+        }
         statusMessage_ = std::string_view{message, messageLength};
     }
 
@@ -613,12 +622,22 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void setContentType(const std::string_view &contentType)
     {
+        if (containsCRLF(contentType))
+        {
+            LOG_ERROR << "Invalid characters in content-type, ignored";
+            return;
+        }
         contentTypeString_ =
             std::string(contentType.data(), contentType.size());
     }
 
     void setStatusMessage(const std::string_view &message)
     {
+        if (containsCRLF(message))
+        {
+            LOG_ERROR << "Invalid characters in status message, ignored";
+            return;
+        }
         statusMessage_ = message;
     }
 };
