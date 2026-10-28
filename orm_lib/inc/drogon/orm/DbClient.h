@@ -130,6 +130,15 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * Only a pair of key values is valid for Sqlite3, and its keyword is
      * 'filename'.
      *
+     * Note that the value of 'filename' has to be a generic UTF-8 path with
+     * slashes as directory separators; a native path cannot be used directly
+     * on Windows because backslashes are treated as escape characters. A value
+     * built from a native path therefore loses its directory separators and is
+     * parsed as a drive-relative path instead. Convert the path with
+     * drogon::utils::fromNativePath() and escape the remaining single quotes
+     * and backslashes, e.g. `filename='C:/data/app.db'` or, for a directory
+     * that needs quoting, `filename='C:/data/My App/app.db'`.
+     *
      * @param connNum: The number of connections to database server;
      */
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,

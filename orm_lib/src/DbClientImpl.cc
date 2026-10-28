@@ -113,13 +113,19 @@ DbClientImpl::~DbClientImpl() noexcept
 
 void DbClientImpl::closeAll()
 {
+    // Everything is swapped out while the pool state is stable and destroyed
+    // afterwards: destroying a connection runs user callbacks, and those can
+    // hold the last reference to this client. Closing it with the mutex still
+    // held re-enters closeAll() and deadlocks.
     decltype(connections_) connections;
+    decltype(readyConnections_) readyConnections;
+    decltype(busyConnections_) busyConnections;
     {
         std::lock_guard<std::mutex> lock(connectionsMutex_);
         closed_ = true;
         connections.swap(connections_);
-        readyConnections_.clear();
-        busyConnections_.clear();
+        readyConnections.swap(readyConnections_);
+        busyConnections.swap(busyConnections_);
     }
     for (auto const &conn : connections)
     {
@@ -247,21 +253,26 @@ void DbClientImpl::newTransactionAsync(
                 auto newCallbackPtr =
                     std::make_shared<std::weak_ptr<std::function<void(
                         const std::shared_ptr<Transaction> &)>>>();
+                std::weak_ptr<DbClientImpl> weakThis = shared_from_this();
                 auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
                     loops_.getNextLoop(),
                     std::chrono::duration<double>(timeout_),
-                    [newCallbackPtr, callbackPtr, this]() {
+                    [newCallbackPtr, callbackPtr, weakThis]() {
                         auto cbPtr = (*newCallbackPtr).lock();
-                        if (cbPtr)
+                        // The client may already be gone when the timer fires;
+                        // only touch the callback list while it is alive.
+                        auto thisPtr = weakThis.lock();
+                        if (cbPtr && thisPtr)
                         {
-                            std::lock_guard<std::mutex> lock(connectionsMutex_);
-                            for (auto iter = transCallbacks_.begin();
-                                 iter != transCallbacks_.end();
+                            std::lock_guard<std::mutex> lock(
+                                thisPtr->connectionsMutex_);
+                            for (auto iter = thisPtr->transCallbacks_.begin();
+                                 iter != thisPtr->transCallbacks_.end();
                                  ++iter)
                             {
                                 if (cbPtr == iter->first)
                                 {
-                                    transCallbacks_.erase(iter);
+                                    thisPtr->transCallbacks_.erase(iter);
                                     break;
                                 }
                             }
@@ -369,8 +380,20 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction(
     auto trans = f.get();
     if (!trans)
     {
-        std::lock_guard<std::mutex> lock(connectionsMutex_);
-        if (failedSqliteConnections_ == numberOfConnections_)
+        // Sample the pool state in a short critical section and leave it before
+        // throwing. With the throw inside the lock, sqlite3_failed_commit
+        // aborted 10/10 on Windows with BUILD_SHARED_LIBS=ON: the exception
+        // unwound through a teardown that re-entered closeAll() and locked this
+        // mutex again, which MSVC reports as resource_deadlock_would_occur from
+        // a noexcept destructor. Throwing after the unlock makes the same test
+        // pass 20/20.
+        bool noUsableConnection = false;
+        {
+            std::lock_guard<std::mutex> lock(connectionsMutex_);
+            noUsableConnection =
+                (failedSqliteConnections_ == numberOfConnections_);
+        }
+        if (noUsableConnection)
             throw BrokenConnection("No usable SQLite connections remain");
         throw TimeoutError("Timeout, no connection available for transaction");
     }
@@ -587,12 +610,19 @@ void DbClientImpl::execSqlWithTimeout(
     auto ecpPtr =
         std::make_shared<std::function<void(const std::exception_ptr &)>>(
             std::move(ecb));
+    std::weak_ptr<DbClientImpl> weakThis = shared_from_this();
     auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
         loops_.getNextLoop(),
         std::chrono::duration<double>(timeout_),
-        [cmd, ecpPtr, thisPtr = shared_from_this()]() {
+        [cmd, ecpPtr, weakThis]() {
             auto cbPtr = (*cmd).lock();
-            if (cbPtr)
+            // Do not hold the client strongly here: the command owns the timer
+            // through its callbacks, so removing the command below would
+            // destroy the timer, drop the last reference to the client and
+            // destroy it while the pool mutex is held. The lock may only be
+            // taken when the client is still alive.
+            auto thisPtr = weakThis.lock();
+            if (cbPtr && thisPtr)
             {
                 std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
                 for (auto iter = thisPtr->sqlCmdBuffer_.begin();

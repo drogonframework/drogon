@@ -10,12 +10,16 @@
 #include <iostream>
 #include <string>
 
+#include "ConnectionStringHelper.h"
+
 using namespace std::chrono_literals;
 using drogon::orm::BrokenConnection;
 using drogon::orm::DbClient;
 
 namespace
 {
+using drogon::test::sqlite3::quoteConnectionValue;
+
 std::atomic<int> connectionsOpened{0};
 std::atomic<int> rollbackAttempts{0};
 
@@ -104,9 +108,10 @@ struct Fixture
         if (!inMemory)
             path = std::filesystem::temp_directory_path() /
                    ("drogon-commit-" + drogon::utils::getUuid() + ".db");
-        const auto filename = inMemory ? ":memory:" : path.string();
-        client = DbClient::newSqlite3Client("filename='" + filename + "'",
-                                            connectionCount);
+        const auto filename =
+            inMemory ? ":memory:" : quoteConnectionValue(path);
+        client =
+            DbClient::newSqlite3Client("filename=" + filename, connectionCount);
         client->execSqlSync("PRAGMA foreign_keys = ON");
         client->execSqlSync("CREATE TABLE parents(id INTEGER PRIMARY KEY)");
         client->execSqlSync(
@@ -222,7 +227,7 @@ DROGON_TEST(SQLiteFailedCommitRecovery)
                 // Closing the retired handle must release the transaction and
                 // its locks, even while the failed client is still alive.
                 auto reopened = DbClient::newSqlite3Client(
-                    "filename='" + fixture.path.string() + "'", 1);
+                    "filename=" + quoteConnectionValue(fixture.path), 1);
                 const auto saved = reopened->execSqlSync(
                     "SELECT (SELECT count(*) FROM parents),"
                     " (SELECT count(*) FROM children)");
@@ -321,6 +326,27 @@ int main(int argc, char **argv)
     {
         std::cerr << "Could not install SQLite fault injection\n";
         return 1;
+    }
+    // The extension above is registered in the SQLite copy this executable
+    // linked. When SQLite is linked statically into both drogon and this
+    // executable, the connections drogon opens use the other copy and the
+    // function is missing, which would otherwise fail inside the first faulted
+    // statement with a confusing "no such function: test_fault". Report a skip
+    // so the configuration shows up as skipped instead of broken.
+    {
+        try
+        {
+            auto probe = DbClient::newSqlite3Client("filename=:memory:", 1);
+            probe->execSqlSync("SELECT test_fault('probe')");
+        }
+        catch (const std::exception &error)
+        {
+            std::cout << "skipping: test_fault() is not visible to the SQLite "
+                         "instance drogon uses ("
+                      << error.what() << ")" << std::endl;
+            sqlite3_cancel_auto_extension(entry);
+            return 77;
+        }
     }
     const int result = drogon::test::run(argc, argv);
     sqlite3_cancel_auto_extension(entry);

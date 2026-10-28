@@ -521,12 +521,18 @@ void DbClientLockFree::execSqlWithTimeout(
     auto ecpPtr =
         std::make_shared<std::function<void(const std::exception_ptr &)>>(
             std::move(ecb));
+    std::weak_ptr<DbClientLockFree> weakThis = shared_from_this();
     auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
         loop_,
         std::chrono::duration<double>(timeout_),
-        [commandPtr, ecpPtr, thisPtr = shared_from_this()]() {
+        [commandPtr, ecpPtr, weakThis]() {
             auto cbPtr = (*commandPtr).lock();
-            if (cbPtr)
+            // Do not keep the client alive here: the command owns this timer
+            // through its callbacks, so removing the command below can drop the
+            // last reference to the client and destroy it from its own timer
+            // callback. Only touch the buffer while the client still exists.
+            auto thisPtr = weakThis.lock();
+            if (cbPtr && thisPtr)
             {
                 for (auto iter = thisPtr->sqlCmdBuffer_.begin();
                      iter != thisPtr->sqlCmdBuffer_.end();
