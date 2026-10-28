@@ -79,6 +79,12 @@ using DefaultHandler =
                        std::function<void(const HttpResponsePtr &)> &&)>;
 using HttpHandlerInfo = std::tuple<std::string, HttpMethod, std::string>;
 
+enum class SessionMode
+{
+    kAuto = 0,
+    kManual = 1
+};
+
 #ifdef __cpp_impl_coroutine
 class HttpAppFramework;
 
@@ -912,6 +918,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                              maxAge,
                              idGeneratorCallback);
     }
+
+    /// Set session mode.
+    /**
+     * @param mode The number of seconds which is the timeout of a session
+     *
+     * @note
+     *
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setSessionMode(SessionMode mode) = 0;
 
     /// Register an advice called when starting a new session.
     /**
