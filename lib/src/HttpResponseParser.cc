@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstdlib>
+#include <limits>
 
 using namespace trantor;
 using namespace drogon;
@@ -258,7 +259,9 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 char *end = nullptr;
                 unsigned long long parsed =
                     std::strtoull(len.c_str(), &end, 16);
-                if (errno == ERANGE || end == len.c_str() ||
+                if (errno == ERANGE ||
+                    parsed > (std::numeric_limits<size_t>::max)() - 2 ||
+                    end == len.c_str() ||
                     (*end != '\0' && *end != ';'))
                 {
                     return false;
