@@ -11,14 +11,10 @@ DROGON_TEST(SessionManagerTest)
     std::vector<AdviceStartSessionCallback> startAdvices;
     std::vector<AdviceDestroySessionCallback> destroyAdvices;
     int generated = 0;
-    SessionManager manager(loopThread.getLoop(),
-                           0,
-                           startAdvices,
-                           destroyAdvices,
-                           [&generated]() {
-                               return "server-id-" +
-                                      std::to_string(++generated);
-                           });
+    SessionManager manager(
+        loopThread.getLoop(), 0, startAdvices, destroyAdvices, [&generated]() {
+            return "server-id-" + std::to_string(++generated);
+        });
 
     // A new session under a server-generated ID is stored.
     auto session = manager.getSession("server-id-0", true);
