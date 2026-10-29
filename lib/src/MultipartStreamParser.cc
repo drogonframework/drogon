@@ -40,6 +40,11 @@ MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
     }
 
     pos += boundaryEq.size();
+    if (pos >= contentType.size())
+    {
+        isValid_ = false;
+        return;
+    }
     size_t pos2;
     if (contentType[pos] == '"')
     {
