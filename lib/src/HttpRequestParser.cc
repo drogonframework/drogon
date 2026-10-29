@@ -19,6 +19,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -236,15 +237,22 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 if (!len.empty())
                 {
-                    try
+                    size_t contentLength = 0;
+                    for (const unsigned char ch : len)
                     {
-                        remainContentLength_ =
-                            static_cast<size_t>(std::stoull(len));
+                        if (ch < '0' || ch > '9')
+                        {
+                            return -k400BadRequest;
+                        }
+                        const size_t digit = ch - '0';
+                        if (contentLength >
+                            ((std::numeric_limits<size_t>::max)() - digit) / 10)
+                        {
+                            return -k400BadRequest;
+                        }
+                        contentLength = contentLength * 10 + digit;
                     }
-                    catch (...)
-                    {
-                        return -k400BadRequest;
-                    }
+                    remainContentLength_ = contentLength;
                     request_->contentLengthHeaderValue_ = remainContentLength_;
                     if (remainContentLength_ == 0)
                     {
