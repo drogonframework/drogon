@@ -261,8 +261,7 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     std::strtoull(len.c_str(), &end, 16);
                 if (errno == ERANGE ||
                     parsed > (std::numeric_limits<size_t>::max)() - 2 ||
-                    end == len.c_str() ||
-                    (*end != '\0' && *end != ';'))
+                    end == len.c_str() || (*end != '\0' && *end != ';'))
                 {
                     return false;
                 }
