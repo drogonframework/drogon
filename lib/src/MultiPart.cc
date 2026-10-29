@@ -180,6 +180,8 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
     std::string_view boundary{boundaryData, boundaryLen};
     if (boundary.size() > 2 && boundary[0] == '\"')
         boundary = boundary.substr(1, boundary.size() - 2);
+    if (boundary.empty())
+        return -1;
     std::string_view::size_type pos1, pos2;
     pos1 = 0;
     auto content = static_cast<HttpRequestImpl *>(req.get())->bodyView();
@@ -190,11 +192,15 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
         if (pos1 == std::string_view::npos)
             break;
         pos1 += boundary.length();
+        if (content.size() - pos1 < 2)
+            return -1;
         if (content[pos1] == '\r' && content[pos1 + 1] == '\n')
             pos1 += 2;
         pos2 = content.find(boundary, pos1);
         if (pos2 == std::string_view::npos)
             break;
+        if (pos2 - pos1 < 4)
+            return -1;
         bool flag = false;
         if (content[pos2 - 4] == '\r' && content[pos2 - 3] == '\n' &&
             content[pos2 - 2] == '-' && content[pos2 - 1] == '-')
