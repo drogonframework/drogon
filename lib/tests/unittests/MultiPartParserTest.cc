@@ -84,6 +84,23 @@ DROGON_TEST(MultiPartParserDashBoundary)
     CHECK(parser.getParameters().at("key1") == "value1");
 }
 
+DROGON_TEST(MultiPartParserRejectsNearbyBoundary)
+{
+    auto req = drogon::HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->addHeader("content-type", "multipart/form-data; boundary=A");
+    // The second boundary starts only three bytes into the body.
+    req->setBody(std::string("A\r\nA") + std::string(100, 'x'));
+
+    drogon::MultiPartParser parser;
+    CHECK(parser.parse(req) == -1);
+
+    // A boundary at the end leaves no bytes for the CRLF check.
+    req->setBody("A");
+    drogon::MultiPartParser parser2;
+    CHECK(parser2.parse(req) == -1);
+}
+
 DROGON_TEST(MultiPartDispositionParametersAreOrderIndependent)
 {
     static const std::string contentType =
