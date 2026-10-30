@@ -19,7 +19,6 @@
 #include <drogon/utils/Utilities.h>
 #include <fstream>
 #include <iostream>
-#include <limits>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -470,30 +469,14 @@ bool HttpRequestImpl::addHeader(const char *start,
         // which means a differing repeat must be rejected rather than
         // resolved silently, or messaging peers can disagree on where the
         // body ends.
-        const auto parseValue = [](const std::string &str, size_t &out) {
-            if (str.empty())
-                return false;
-            out = 0;
-            for (const unsigned char ch : str)
-            {
-                if (ch < '0' || ch > '9')
-                    return false;
-                const size_t digit = ch - '0';
-                if (out > ((std::numeric_limits<size_t>::max)() - digit) / 10)
-                    return false;
-                out = out * 10 + digit;
-            }
-            return true;
-        };
-
         size_t parsedLength = 0;
-        if (!parseValue(value, parsedLength))
+        if (!parseContentLength(value, parsedLength))
             return false;
         const auto it = headers_.find(field);
         if (it != headers_.end())
         {
             size_t existingLength = 0;
-            return parseValue(it->second, existingLength) &&
+            return parseContentLength(it->second, existingLength) &&
                    existingLength == parsedLength;
         }
         contentLengthHeaderValue_ = parsedLength;
