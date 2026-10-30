@@ -19,6 +19,7 @@
 #include <drogon/utils/Utilities.h>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -440,7 +441,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         output->append(cachedBody.data(), cachedBody.length());
 }
 
-void HttpRequestImpl::addHeader(const char *start,
+bool HttpRequestImpl::addHeader(const char *start,
                                 const char *colon,
                                 const char *end)
 {
@@ -460,6 +461,44 @@ void HttpRequestImpl::addHeader(const char *start,
            isspace(static_cast<unsigned char>(value[value.size() - 1])))
     {
         value.resize(value.size() - 1);
+    }
+    if (field == "content-length")
+    {
+        // RFC 9110 section 8.6: Content-Length = 1*DIGIT. RFC 9112 section
+        // 6.3: an invalid value is an unrecoverable framing error, and a
+        // repeated field is only acceptable when every value is the same,
+        // which means a differing repeat must be rejected rather than
+        // resolved silently, or messaging peers can disagree on where the
+        // body ends.
+        const auto parseValue = [](const std::string &str, size_t &out) {
+            if (str.empty())
+                return false;
+            out = 0;
+            for (const unsigned char ch : str)
+            {
+                if (ch < '0' || ch > '9')
+                    return false;
+                const size_t digit = ch - '0';
+                if (out > ((std::numeric_limits<size_t>::max)() - digit) / 10)
+                    return false;
+                out = out * 10 + digit;
+            }
+            return true;
+        };
+
+        size_t parsedLength = 0;
+        if (!parseValue(value, parsedLength))
+            return false;
+        const auto it = headers_.find(field);
+        if (it != headers_.end())
+        {
+            size_t existingLength = 0;
+            return parseValue(it->second, existingLength) &&
+                   existingLength == parsedLength;
+        }
+        contentLengthHeaderValue_ = parsedLength;
+        headers_.emplace(std::move(field), std::move(value));
+        return true;
     }
     if (field.length() == 6 && field == "cookie")
     {
@@ -542,6 +581,7 @@ void HttpRequestImpl::addHeader(const char *start,
         }
         headers_.emplace(std::move(field), std::move(value));
     }
+    return true;
 }
 
 HttpRequestPtr HttpRequest::newHttpRequest()

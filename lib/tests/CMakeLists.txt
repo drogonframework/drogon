@@ -63,6 +63,7 @@ if (BUILD_CTL)
       integration_test/client/MultipleWsTest.cc
       integration_test/client/HttpPipeliningTest.cc
       integration_test/client/ExpectContinueTest.cc
+      integration_test/client/ContentLengthFramingTest.cc
       integration_test/client/RequestStreamTest.cc
       integration_test/client/StaticFileTraversalTest.cc)
 
