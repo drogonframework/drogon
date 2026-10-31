@@ -83,6 +83,54 @@ DROGON_TEST(HttpFile)
         filesystem::remove_all("test_uploads_dir");
         filesystem::remove(fileName.string());
     }
+
+    SUBSECTION(FileNameWithStrictPrefixTraversal)
+    {
+        // Upload path with multiple subdirectories so that destination is a
+        // strict ancestor, making fsSaveToPath have fewer components while
+        // matching all initial components of fsUploadDir.
+        auto uploadPath = filesystem::current_path() / "test_uploads_dir" /
+                          "a" / "b" / "c" / "upload";
+
+        HttpFileImpl file;
+        file.setFileName("../../c");
+        file.setFile("test", 4);
+        auto out = file.save(uploadPath.string());
+
+        CHECK(out == -1);
+
+        filesystem::remove_all(filesystem::current_path() / "test_uploads_dir");
+    }
+
+    SUBSECTION(FileNameWithDotDotTraversal)
+    {
+        auto uploadPath = filesystem::current_path() / "test_uploads_dir";
+
+        HttpFileImpl file;
+        file.setFileName("..");
+        file.setFile("test", 4);
+        auto out = file.save(uploadPath.string());
+
+        CHECK(out == -1);
+
+        filesystem::remove_all(uploadPath);
+    }
+
+    SUBSECTION(FileNameWithNestedSubdirectory)
+    {
+        auto uploadPath = filesystem::current_path() / "test_uploads_dir";
+        filesystem::create_directories(uploadPath / "nested");
+
+        HttpFileImpl file;
+        file.setFileName("nested/test_nested_file");
+        file.setFile("test", 4);
+        auto out = file.save(uploadPath.string());
+
+        CHECK(out == 0);
+        CHECK(filesystem::exists(uploadPath / "nested" / "test_nested_file"));
+
+        filesystem::remove_all(uploadPath);
+    }
 }
 
 DROGON_TEST(HttpFileSaveRejectsParentDirectoryName)
