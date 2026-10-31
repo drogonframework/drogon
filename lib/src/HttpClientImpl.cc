@@ -642,6 +642,13 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
             responseParser->reset();
             bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
+            const auto code = static_cast<int>(resp->statusCode());
+            if (code >= 100 && code < 200 && code != k101SwitchingProtocols)
+            {
+                // Informational response, not the final one. Keep waiting for
+                // the response that actually belongs to the request.
+                continue;
+            }
             handleResponse(resp, std::move(firstReq), connPtr);
         }
         else

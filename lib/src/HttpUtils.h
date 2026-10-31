@@ -58,6 +58,11 @@ bool isValidCookie(std::string_view key, std::string_view value);
 /// contains a CR or LF character.
 bool isValidCookie(const Cookie &cookie);
 
+/// Parse a Content-Length field value. RFC 9110 section 8.6 defines it as
+/// 1*DIGIT, so an empty value, a sign, embedded whitespace, trailing junk or
+/// an overflow makes the message framing unrecoverable.
+bool parseContentLength(std::string_view value, size_t &length);
+
 /// Return true if the string contains a CR or LF character, which is not
 /// allowed in HTTP field names or values (RFC 9110, section 5.5).
 bool containsCRLF(std::string_view str);

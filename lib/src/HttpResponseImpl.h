@@ -216,7 +216,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         headers_[std::move(field)] = std::move(value);
     }
 
-    void addHeader(const char *start, const char *colon, const char *end);
+    /// @return false if the header section is invalid, e.g. a repeated
+    /// Content-Length field (RFC 9110 section 8.6).
+    bool addHeader(const char *start, const char *colon, const char *end);
 
     void addCookie(const std::string &key, const std::string &value) override
     {

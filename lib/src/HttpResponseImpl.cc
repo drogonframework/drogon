@@ -974,7 +974,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
     return httpString;
 }
 
-void HttpResponseImpl::addHeader(const char *start,
+bool HttpResponseImpl::addHeader(const char *start,
                                  const char *colon,
                                  const char *end)
 {
@@ -1079,9 +1079,18 @@ void HttpResponseImpl::addHeader(const char *start,
     else
     {
         if (!isValidHeader(field, value))
-            return;
+            return true;
+        if (field == "content-length" && headers_.find(field) != headers_.end())
+        {
+            // RFC 9110 section 8.6 permits rejecting a repeated
+            // Content-Length outright. This map keeps only one value, so
+            // reject the repeat instead of letting the last one silently
+            // win, which is a response smuggling vector.
+            return false;
+        }
         headers_[std::move(field)] = std::move(value);
     }
+    return true;
 }
 
 // Every data member must be listed here, in declaration order. Leaving one out

@@ -15,6 +15,7 @@ set(UNITTEST_SOURCES
     unittests/HttpHeaderTest.cc
     unittests/HttpUtilsTest.cc
     unittests/HttpResponseSwapTest.cc
+    unittests/HttpResponseParserTest.cc
     unittests/HttpClientTimeoutTest.cc
     unittests/MD5Test.cc
     unittests/MsgBufferTest.cc
@@ -63,6 +64,7 @@ if (BUILD_CTL)
       integration_test/client/MultipleWsTest.cc
       integration_test/client/HttpPipeliningTest.cc
       integration_test/client/ExpectContinueTest.cc
+      integration_test/client/ContentLengthFramingTest.cc
       integration_test/client/RequestStreamTest.cc
       integration_test/client/StaticFileTraversalTest.cc)
 

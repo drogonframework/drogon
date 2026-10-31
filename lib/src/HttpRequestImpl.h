@@ -340,7 +340,10 @@ class HttpRequestImpl : public HttpRequest
         connPtr_ = ptr;
     }
 
-    void addHeader(const char *start, const char *colon, const char *end);
+    /// Add a field line received from the wire. Returns false if the message
+    /// framing is invalid (a Content-Length that conflicts with one already
+    /// seen), in which case the caller must reject the message.
+    bool addHeader(const char *start, const char *colon, const char *end);
 
     void removeHeader(std::string key) override
     {
