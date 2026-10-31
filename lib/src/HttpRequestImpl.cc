@@ -475,9 +475,10 @@ bool HttpRequestImpl::addHeader(const char *start,
         const auto it = headers_.find(field);
         if (it != headers_.end())
         {
-            size_t existingLength = 0;
-            return parseContentLength(it->second, existingLength) &&
-                   existingLength == parsedLength;
+            // The first field cached its parsed value; compare that instead
+            // of scanning the stored string again on every duplicate.
+            return contentLengthHeaderValue_.has_value() &&
+                   *contentLengthHeaderValue_ == parsedLength;
         }
         contentLengthHeaderValue_ = parsedLength;
         headers_.emplace(std::move(field), std::move(value));
