@@ -19,7 +19,6 @@
 #include <cerrno>
 #include <cstdlib>
 #include <iostream>
-#include <limits>
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -213,7 +212,23 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // found colon
                 if (colon != crlf)
                 {
-                    request_->addHeader(buf->peek(), colon, crlf);
+                    // RFC 9112 section 5.1: no whitespace is allowed between
+                    // the field name and the colon, and a server MUST reject
+                    // such a message with 400. A field name is never empty
+                    // either. Both are request smuggling vectors because
+                    // intermediaries disagree on how to parse such a line.
+                    if (colon == buf->peek() || colon[-1] == ' ' ||
+                        colon[-1] == '\t')
+                    {
+                        return -k400BadRequest;
+                    }
+                    if (!request_->addHeader(buf->peek(), colon, crlf))
+                    {
+                        // Invalid framing: the Content-Length value is not
+                        // 1*DIGIT or disagrees with one already received
+                        // (RFC 9110 section 8.6, RFC 9112 section 6.3).
+                        return -k400BadRequest;
+                    }
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
                 }
@@ -237,23 +252,10 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 if (!len.empty())
                 {
-                    size_t contentLength = 0;
-                    for (const unsigned char ch : len)
-                    {
-                        if (ch < '0' || ch > '9')
-                        {
-                            return -k400BadRequest;
-                        }
-                        const size_t digit = ch - '0';
-                        if (contentLength >
-                            ((std::numeric_limits<size_t>::max)() - digit) / 10)
-                        {
-                            return -k400BadRequest;
-                        }
-                        contentLength = contentLength * 10 + digit;
-                    }
-                    remainContentLength_ = contentLength;
-                    request_->contentLengthHeaderValue_ = remainContentLength_;
+                    // addHeader() validated the value as 1*DIGIT and stored
+                    // the parsed result; a malformed value never gets here.
+                    remainContentLength_ =
+                        request_->contentLengthHeaderValue_.value_or(0);
                     if (remainContentLength_ == 0)
                     {
                         // content-length = 0, request is over.
