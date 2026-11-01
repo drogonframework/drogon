@@ -110,11 +110,23 @@ DROGON_TEST(StaticFileLocationStaysInsideAlias)
                  client->getLoop(),
                  "/a-directory-alias/page.html",
                  "HTTP/1.1 200");
+    // Non-canonical spellings must still reach the location (and its
+    // middlewares) instead of falling through to the document root.
+    for (const auto &target : {"/./a-directory-alias/page.html",
+                               "//a-directory-alias/page.html",
+                               "/%2e/a-directory-alias/page.html",
+                               "/x/../a-directory-alias/page.html"})
+    {
+        expectStatus(TEST_CTX, client->getLoop(), target, "HTTP/1.1 200");
+    }
+    // The server resolves ".." before routing, so these leave the location
+    // and are the document root's /main.cc and /index.html; they never reach
+    // the alias directory's parent.
     for (const auto &target : {"/a-directory-alias/../main.cc",
                                "/a-directory-alias/..%2fmain.cc",
                                "/a-directory-alias/%2e%2e/index.html"})
     {
-        expectStatus(TEST_CTX, client->getLoop(), target, "HTTP/1.1 403");
+        expectStatus(TEST_CTX, client->getLoop(), target, "HTTP/1.1 200");
     }
 }
 

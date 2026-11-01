@@ -337,3 +337,23 @@ DROGON_TEST(MultiPartBoundaryGrammar)
     drogon::MultiPartParser incomplete;
     CHECK(incomplete.parse(req) == -1);
 }
+
+DROGON_TEST(MultiPartDispositionEscapedQuote)
+{
+    // An escaped quote stays inside the name, so the "filename" after it is
+    // part of the name value and must not turn the field into a file.
+    auto req = drogon::HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->addHeader("content-type", "multipart/form-data; boundary=12345");
+    req->setBody(
+        "--12345\r\n"
+        "Content-Disposition: form-data; name=\"a\\\"; filename=x\"\r\n"
+        "\r\n"
+        "value\r\n"
+        "--12345--");
+    drogon::MultiPartParser parser;
+    CHECK(0 == parser.parse(req));
+    CHECK(parser.getFiles().empty());
+    CHECK(parser.getParameters().size() == 1);
+    CHECK(parser.getParameters().count("a\\\"; filename=x") == 1);
+}

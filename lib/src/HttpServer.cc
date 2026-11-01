@@ -1211,6 +1211,16 @@ static inline HttpResponsePtr tryDecompressRequest(
     return resp;
 }
 
+static inline HttpResponsePtr canonicalizeRequestPath(
+    const HttpRequestImplPtr &req)
+{
+    auto canonical = canonicalizePath(req->path());
+    if (!canonical)
+        return app().getCustomErrorHandler()(k403Forbidden, req);
+    req->setPath(std::move(*canonical));
+    return nullptr;
+}
+
 /**
  * @brief Check request against each sync advice, generate response if request
  * is rejected by any one of them.
@@ -1224,9 +1234,12 @@ static inline bool passSyncAdvices(
     bool shouldBePipelined,
     bool isHeadMethod)
 {
-    if (auto resp = AopAdvice::instance().passSyncAdvices(req))
+    auto resp = canonicalizeRequestPath(req);
+    if (!resp)
+        resp = AopAdvice::instance().passSyncAdvices(req);
+    if (resp)
     {
-        // Rejected by sync advice
+        // Rejected by path canonicalization or sync advice
         applyConnectionDecision(req, resp);
         if (!shouldBePipelined)
         {

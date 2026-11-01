@@ -241,6 +241,19 @@ void Sqlite3Connection::execSqlInQueue(
     }
     assert(stmtPtr);
     auto stmt = stmtPtr.get();
+    // Text and blob values are bound SQLITE_STATIC and statements are cached
+    // by SQL text, so a placeholder left unbound here would still point at a
+    // previous query's freed parameter buffer.
+    if (sqlite3_bind_parameter_count(stmt) != (int)parameters.size())
+    {
+        auto exceptPtr = std::make_exception_ptr(
+            SqlError("The number of parameters does not match the number of "
+                     "placeholders",
+                     std::string{sql}));
+        exceptCallback(exceptPtr);
+        idleCb_();
+        return;
+    }
     for (int i = 0; i < (int)parameters.size(); ++i)
     {
         int bindRet{SQLITE_OK};
@@ -266,8 +279,9 @@ void Sqlite3Connection::execSqlInQueue(
                     sqlite3_bind_double(stmt, i + 1, *(double *)parameters[i]);
                 break;
             case Sqlite3TypeText:
+                // Pass the length so an embedded NUL does not truncate it.
                 bindRet = sqlite3_bind_text(
-                    stmt, i + 1, parameters[i], -1, SQLITE_STATIC);
+                    stmt, i + 1, parameters[i], length[i], SQLITE_STATIC);
                 break;
             case Sqlite3TypeBlob:
                 bindRet = sqlite3_bind_blob(

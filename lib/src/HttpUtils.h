@@ -196,12 +196,21 @@ inline bool parseHeaderParameter(std::string_view headerValue,
         size_t valueEnd;
         if (pos < headerValue.size() && headerValue[pos] == '"')
         {
+            // Honor quoted-pair escapes so `\"` does not end the value, as the
+            // other header splitters do. Disagreeing on where a value ends
+            // lets a crafted header mean different things to drogon and to a
+            // proxy in front of it. The value is returned raw, escapes kept.
             valueBegin = ++pos;
-            valueEnd = headerValue.find('"', pos);
-            if (valueEnd == std::string_view::npos)
+            while (pos < headerValue.size() && headerValue[pos] != '"')
+                pos +=
+                    (headerValue[pos] == '\\' && pos + 1 < headerValue.size())
+                        ? 2
+                        : 1;
+            if (pos >= headerValue.size())
             {
                 return false;
             }
+            valueEnd = pos;
             pos = valueEnd + 1;
         }
         else
@@ -385,6 +394,13 @@ bool isValidCookie(const Cookie &cookie);
 /// Return true if the string contains a CR or LF character, which is not
 /// allowed in HTTP field names or values (RFC 9110, section 5.5).
 bool containsCRLF(std::string_view str);
+
+/// Canonicalize a decoded request path: collapse empty and "." segments and
+/// resolve "..", keeping a trailing slash. A path that is already canonical
+/// is detected in a single scan and returned as a plain copy. Returns nullopt
+/// if the path contains NUL, climbs above the root or names a root (a Windows
+/// drive or UNC share).
+std::optional<std::string> canonicalizePath(std::string_view path);
 
 namespace internal
 {

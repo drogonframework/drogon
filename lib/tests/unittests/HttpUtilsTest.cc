@@ -77,3 +77,56 @@ DROGON_TEST(IterateHeaderParameters)
     CHECK(second->second == "\"a;b\"");
     CHECK(!parameters.next());
 }
+
+DROGON_TEST(CanonicalRequestPath)
+{
+    using namespace std::string_literals;
+    for (const auto *path : {"/",
+                             "/a",
+                             "/a/",
+                             "/a/b.html",
+                             "/.well-known/x",
+                             "/a/..b",
+                             "/a/b.",
+                             "/*"})
+    {
+        CHECK(canonicalizePath(path) == path);
+    }
+
+    const std::pair<std::string, std::string> rewritten[] = {
+        {"//a", "/a"},
+        {"/./a", "/a"},
+        {"/a//b/", "/a/b/"},
+        {"/a/./b", "/a/b"},
+        {"/x/../a", "/a"},
+        {"/a/.", "/a/"},
+        {"/a/b/..", "/a/"},
+        {"/a/..", "/"},
+        {"///", "/"},
+    };
+    for (const auto &[in, expected] : rewritten)
+    {
+        CHECK(canonicalizePath(in) == expected);
+        // Canonicalizing is idempotent.
+        CHECK(canonicalizePath(expected) == expected);
+    }
+
+    for (const auto &bad : {"/.."s,
+                            "/../a"s,
+                            "/a/../.."s,
+                            "//../a"s,
+                            "/a\0.html"s,
+                            "/a/\0/../b"s,
+                            "/./\0"s})
+    {
+        CHECK(!canonicalizePath(bad));
+    }
+#ifdef _WIN32
+    CHECK(!canonicalizePath("/C:/Windows/win.ini"));
+    CHECK(!canonicalizePath("/..\\a"));
+    CHECK(canonicalizePath("/a\\b") == "/a/b");
+#else
+    // A backslash is an ordinary character outside Windows.
+    CHECK(canonicalizePath("/..\\a") == "/..\\a");
+#endif
+}

@@ -463,12 +463,18 @@ bool HttpRequestImpl::addHeader(std::string_view line)
     {
         LOG_TRACE << "cookies!!!:" << value;
         std::string_view remaining = value;
-        internal::HeaderParameter parameter;
-        while (internal::nextHeaderParameter(remaining, parameter))
+        while (!remaining.empty())
         {
-            if (parameter.hasValue)
-                cookies_[std::string(parameter.name)] =
-                    std::string(parameter.value);
+            const auto semi = remaining.find(';');
+            const auto pair = remaining.substr(0, semi);
+            remaining = semi == std::string_view::npos
+                            ? std::string_view{}
+                            : remaining.substr(semi + 1);
+            const auto equal = pair.find('=');
+            if (equal == std::string_view::npos)
+                continue;
+            cookies_[std::string(utils::trim(pair.substr(0, equal)))] =
+                std::string(utils::trim(pair.substr(equal + 1)));
         }
     }
     else
@@ -943,7 +949,7 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli() noexcept
         }
     }
     BrotliDecoderDestroyInstance(s);
-    return StreamDecompressStatus::Ok;
+    return status;
 }
 #endif
 

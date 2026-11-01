@@ -32,6 +32,7 @@ void HttpResponseParser::reset()
     parseResponseForHeadMethod_ = false;
     leftBodyLength_ = 0;
     currentChunkLength_ = 0;
+    headerSize_ = 0;
 }
 
 HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
@@ -57,7 +58,10 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
         return false;
 
     remain.remove_prefix(versionEnd + 1);
-    if (remain.size() < 4 || remain[3] != ' ')
+    // RFC 9112 requires a SP after the status code even when the reason
+    // phrase is empty, but servers commonly send "HTTP/1.1 200" with no
+    // trailing space. We deliberately accept that form for interoperability.
+    if (remain.size() < 3 || (remain.size() > 3 && remain[3] != ' '))
         return false;
 
     const auto statusCode = remain.substr(0, 3);
@@ -92,6 +96,15 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         if (status_ == HttpResponseParseStatus::kExpectResponseLine)
         {
             const char *crlf = buf->findCRLF();
+            if (maxHeaderSize_ != 0)
+            {
+                const size_t lineSize =
+                    crlf ? crlf - buf->peek() + 2 : buf->readableBytes();
+                if (lineSize > maxHeaderSize_ - headerSize_)
+                    return false;
+                if (crlf)
+                    headerSize_ += lineSize;
+            }
             if (crlf)
             {
                 ok = processResponseLine(buf->peek(), crlf);
@@ -114,6 +127,15 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         else if (status_ == HttpResponseParseStatus::kExpectHeaders)
         {
             const char *crlf = buf->findCRLF();
+            if (maxHeaderSize_ != 0)
+            {
+                const size_t lineSize =
+                    crlf ? crlf - buf->peek() + 2 : buf->readableBytes();
+                if (lineSize > maxHeaderSize_ - headerSize_)
+                    return false;
+                if (crlf)
+                    headerSize_ += lineSize;
+            }
             if (crlf)
             {
                 const std::string_view line(buf->peek(), crlf - buf->peek());
@@ -124,6 +146,11 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     // LOG_INFO << "content len=" << len;
                     if (!len.empty())
                     {
+                        // std::stoull accepts a sign and wraps "-1" to the
+                        // maximum value; Content-Length must start with a
+                        // digit.
+                        if (len[0] < '0' || len[0] > '9')
+                            return false;
                         try
                         {
                             leftBodyLength_ =

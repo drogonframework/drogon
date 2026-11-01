@@ -149,15 +149,12 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(const HttpRequestPtr &req)
     auto &resp = HttpAppFrameworkImpl::instance().getCustom404Page();
     if (resp)
     {
-        if (loop && loop->index() < app().getThreadNum())
-        {
-            return resp;
-        }
-        else
-        {
-            return HttpResponsePtr{new HttpResponseImpl(
-                *static_cast<HttpResponseImpl *>(resp.get()))};
-        }
+        // Always hand out a copy. The custom page keeps expiredTime -1, so
+        // later stages (session cookie, connection headers, compression)
+        // modify the response in place; sharing it would leak one client's
+        // Set-Cookie into other clients' 404 responses.
+        return HttpResponsePtr{
+            new HttpResponseImpl(*static_cast<HttpResponseImpl *>(resp.get()))};
     }
     else
     {

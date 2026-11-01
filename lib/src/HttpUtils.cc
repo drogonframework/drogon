@@ -16,6 +16,7 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/Cookie.h>
 #include <trantor/utils/Logger.h>
+#include <filesystem>
 #include <map>
 #include <unordered_map>
 #include <mutex>
@@ -812,6 +813,57 @@ const std::vector<std::string_view> &getFileExtensions(ContentType contentType)
 bool containsCRLF(std::string_view str)
 {
     return str.find_first_of("\r\n") != std::string_view::npos;
+}
+
+std::optional<std::string> canonicalizePath(std::string_view path)
+{
+    // Single scan; stop at the first byte that needs normalizing.
+    bool isCanonical = !path.empty() && path[0] == '/';
+    size_t segmentStart = 1;
+    for (size_t i = 1; isCanonical && i <= path.size(); ++i)
+    {
+        const char c = i < path.size() ? path[i] : '/';
+        if (c == '\0')
+            return std::nullopt;
+#ifdef _WIN32
+        // '\' is a separator and ':' can start a drive there; let
+        // std::filesystem decide.
+        if (c == '\\' || c == ':')
+        {
+            isCanonical = false;
+            break;
+        }
+#endif
+        if (c != '/')
+            continue;
+        const auto segment = path.substr(segmentStart, i - segmentStart);
+        if ((segment.empty() && i != path.size()) || segment == "." ||
+            segment == "..")
+            isCanonical = false;
+        segmentStart = i + 1;
+    }
+    if (isCanonical)
+        return std::string(path);
+
+    if (path.find('\0') != std::string_view::npos)
+        return std::nullopt;
+    // Strip the leading slashes so "//x" is not taken as a root name (UNC on
+    // Windows), then normalize as a relative path.
+    const auto first = path.find_first_not_of('/');
+    if (first == std::string_view::npos)
+        return std::string("/");
+    const auto normalized =
+        std::filesystem::path(
+            utils::toNativePath(std::string(path.substr(first))))
+            .lexically_normal();
+    if (normalized.has_root_path() ||
+        (!normalized.empty() && *normalized.begin() == ".."))
+        return std::nullopt;
+    std::string canonical = "/";
+    if (normalized != ".")
+        canonical += utils::fromNativePath(
+            normalized.generic_string<std::filesystem::path::value_type>());
+    return canonical;
 }
 
 bool isValidHeader(std::string_view field, std::string_view value)

@@ -31,9 +31,12 @@ DROGON_TEST(HttpHeaderLineView)
     CHECK(request.addHeader("Cookie: session=abc; theme=dark"));
     CHECK(request.getCookie("session") == "abc");
     CHECK(request.getCookie("theme") == "dark");
+    // Quotes do not protect ';' in the Cookie header (RFC 6265, 5.4).
     CHECK(request.addHeader("Cookie: quoted=\"a;b\"; ignored; count=2"));
-    CHECK(request.getCookie("quoted") == "\"a;b\"");
+    CHECK(request.getCookie("quoted") == "\"a");
     CHECK(request.getCookie("count") == "2");
+    CHECK(request.addHeader("Cookie: x=\"; session=victim"));
+    CHECK(request.getCookie("session") == "victim");
     CHECK(!request.addHeader(""));
     CHECK(!request.addHeader("invalid"));
 
