@@ -192,7 +192,7 @@ static const std::unordered_map<
         {CT_VIDEO_X_M4V, {{"video/x-m4v"}, ""}},
         {CT_VIDEO_MATROSKA, {{"video/matroska", "video/x-matroska"}, ""}},
         {CT_VIDEO_X_MSVIDEO, {{"video/x-msvideo"}, ""}},
-};
+    };
 
 static const std::unordered_map<std::string_view,
                                 std::pair<FileType, ContentType>>
@@ -296,7 +296,7 @@ static const std::unordered_map<std::string_view,
         {"xz", {FT_ARCHIVE, CT_APPLICATION_X_XZ}},
         {"zip", {FT_ARCHIVE, CT_APPLICATION_ZIP}},
         {"7z", {FT_ARCHIVE, CT_APPLICATION_X_7Z}},
-};
+    };
 
 const std::string_view &statusCodeToString(int code)
 {

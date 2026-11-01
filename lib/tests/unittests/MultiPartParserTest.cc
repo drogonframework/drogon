@@ -229,7 +229,7 @@ DROGON_TEST(MultiPartStreamParserBoundaryPrefixInBody)
         size_t endCount = 0;
         for (size_t i = 0; i < body.size(); i += step)
         {
-            const auto length = std::min(step, body.size() - i);
+            const auto length = (std::min)(step, body.size() - i);
             parser.parse(
                 body.data() + i,
                 length,
