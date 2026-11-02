@@ -26,6 +26,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <atomic>
 #include <unordered_map>
 
@@ -216,7 +217,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         headers_[std::move(field)] = std::move(value);
     }
 
-    void addHeader(const char *start, const char *colon, const char *end);
+    bool addHeader(std::string_view line);
 
     void addCookie(const std::string &key, const std::string &value) override
     {
@@ -492,17 +493,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             }
             else
             {
-                auto pos = contentTypeString.find(';');
-                if (pos != std::string::npos)
-                {
-                    contentType_ = parseContentType(
-                        std::string_view(contentTypeString.data(), pos));
-                }
-                else
-                {
-                    contentType_ =
-                        parseContentType(std::string_view(contentTypeString));
-                }
+                contentType_ = parseContentType(
+                    internal::headerValueBeforeParameters(contentTypeString));
 
                 if (contentType_ == CT_NONE)
                     contentType_ = CT_CUSTOM;

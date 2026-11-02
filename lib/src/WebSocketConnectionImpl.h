@@ -36,14 +36,17 @@ class WebSocketMessageParser
         assert(message.empty());
         if (!gotAll_)
             return false;
-        message.swap(message_);
-        type = type_;
+        message.swap(completedMessage_);
+        type = completedType_;
         return true;
     }
 
   private:
     std::string message_;
-    WebSocketMessageType type_;
+    WebSocketMessageType type_{WebSocketMessageType::Unknown};
+    bool fragmented_{false};
+    std::string completedMessage_;
+    WebSocketMessageType completedType_{WebSocketMessageType::Unknown};
     bool gotAll_{false};
 };
 
@@ -112,6 +115,7 @@ class WebSocketConnectionImpl final
     trantor::InetAddress localAddr_;
     trantor::InetAddress peerAddr_;
     bool isServer_{true};
+    bool closeReceived_{false};
     WebSocketMessageParser parser_;
     trantor::TimerId pingTimerId_{trantor::InvalidTimerId};
     std::vector<uint32_t> masks_;

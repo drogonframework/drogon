@@ -16,12 +16,81 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/Cookie.h>
 #include <trantor/utils/Logger.h>
+#include <filesystem>
 #include <map>
 #include <unordered_map>
 #include <mutex>
 
 namespace drogon
 {
+std::optional<std::string_view> internal::HttpHeaderFieldIterator::next()
+{
+    if (done_)
+        return std::nullopt;
+
+    bool quoted = false;
+    size_t end = 0;
+    for (; end < remaining_.size(); ++end)
+    {
+        if (remaining_[end] == '\\' && quoted && end + 1 < remaining_.size())
+        {
+            ++end;
+        }
+        else if (remaining_[end] == '"')
+        {
+            quoted = !quoted;
+        }
+        else if (remaining_[end] == delimiter_ && !quoted)
+        {
+            break;
+        }
+    }
+    auto field = utils::trim(remaining_.substr(0, end));
+    if (end == remaining_.size())
+        done_ = true;
+    else
+        remaining_.remove_prefix(end + 1);
+    return field;
+}
+
+std::optional<std::pair<std::string_view, std::string_view>> internal::
+    HttpHeaderParameterIterator::next()
+{
+    auto field = fields_.next();
+    if (!field)
+        return std::nullopt;
+    auto equal = field->find('=');
+    if (equal == std::string_view::npos)
+        return std::pair<std::string_view, std::string_view>{*field, {}};
+    return std::pair<std::string_view, std::string_view>{
+        utils::trim(field->substr(0, equal)),
+        utils::trim(field->substr(equal + 1))};
+}
+
+internal::HttpHeaderFieldIterator iterateHeaderField(std::string_view value)
+{
+    return {value, ','};
+}
+
+std::pair<std::string_view, internal::HttpHeaderParameterIterator>
+iterateHeaderParameters(std::string_view value)
+{
+    internal::HttpHeaderFieldIterator fields(value, ';');
+    auto master = fields.next().value_or(std::string_view{});
+    return {master, internal::HttpHeaderParameterIterator(fields)};
+}
+
+bool containsHttpToken(std::string_view value, std::string_view token)
+{
+    auto fields = iterateHeaderField(value);
+    while (auto field = fields.next())
+    {
+        if (utils::ci_equals(*field, token))
+            return true;
+    }
+    return false;
+}
+
 static std::unordered_map<std::string, std::string> customMime;
 
 // https://en.wikipedia.org/wiki/List_of_file_formats
@@ -612,9 +681,9 @@ ContentType parseContentType(const std::string_view &contentType)
                 contentTypeMap_[type] = e.first;
         }
     });
-    auto ext = contentType.find(';');
-    if (ext != std::string_view::npos)
-        return parseContentType(contentType.substr(0, ext));
+    const auto mediaType = internal::headerValueBeforeParameters(contentType);
+    if (mediaType.size() != contentType.size())
+        return parseContentType(mediaType);
     if (contentType == "application/x-www-form-urlencoded")
         return CT_APPLICATION_X_FORM;
     if (contentType == "multipart/form-data")
@@ -744,6 +813,57 @@ const std::vector<std::string_view> &getFileExtensions(ContentType contentType)
 bool containsCRLF(std::string_view str)
 {
     return str.find_first_of("\r\n") != std::string_view::npos;
+}
+
+std::optional<std::string> canonicalizePath(std::string_view path)
+{
+    // Single scan; stop at the first byte that needs normalizing.
+    bool isCanonical = !path.empty() && path[0] == '/';
+    size_t segmentStart = 1;
+    for (size_t i = 1; isCanonical && i <= path.size(); ++i)
+    {
+        const char c = i < path.size() ? path[i] : '/';
+        if (c == '\0')
+            return std::nullopt;
+#ifdef _WIN32
+        // '\' is a separator and ':' can start a drive there; let
+        // std::filesystem decide.
+        if (c == '\\' || c == ':')
+        {
+            isCanonical = false;
+            break;
+        }
+#endif
+        if (c != '/')
+            continue;
+        const auto segment = path.substr(segmentStart, i - segmentStart);
+        if ((segment.empty() && i != path.size()) || segment == "." ||
+            segment == "..")
+            isCanonical = false;
+        segmentStart = i + 1;
+    }
+    if (isCanonical)
+        return std::string(path);
+
+    if (path.find('\0') != std::string_view::npos)
+        return std::nullopt;
+    // Strip the leading slashes so "//x" is not taken as a root name (UNC on
+    // Windows), then normalize as a relative path.
+    const auto first = path.find_first_not_of('/');
+    if (first == std::string_view::npos)
+        return std::string("/");
+    const auto normalized =
+        std::filesystem::path(
+            utils::toNativePath(std::string(path.substr(first))))
+            .lexically_normal();
+    if (normalized.has_root_path() ||
+        (!normalized.empty() && *normalized.begin() == ".."))
+        return std::nullopt;
+    std::string canonical = "/";
+    if (normalized != ".")
+        canonical += utils::fromNativePath(
+            normalized.generic_string<std::filesystem::path::value_type>());
+    return canonical;
 }
 
 bool isValidHeader(std::string_view field, std::string_view value)

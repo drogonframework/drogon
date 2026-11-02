@@ -68,9 +68,13 @@ int HttpFileImpl::save(const std::string &path) const noexcept
     std::filesystem::path fsSaveToPath(std::filesystem::weakly_canonical(
         fsUploadDir / utils::toNativePath(fileName_)));
     LOG_TRACE << "save to path:" << fsSaveToPath;
-    if (!std::equal(fsUploadDir.begin(),
-                    fsUploadDir.end(),
-                    fsSaveToPath.begin()))
+    // fsSaveToPath can be shorter than fsUploadDir (e.g. a file name of ".."),
+    // so bound both ranges and require fsUploadDir to be a prefix.
+    if (std::mismatch(fsUploadDir.begin(),
+                      fsUploadDir.end(),
+                      fsSaveToPath.begin(),
+                      fsSaveToPath.end())
+            .first != fsUploadDir.end())
     {
         LOG_ERROR
             << "Attempt writing outside of upload directory detected. Path: "

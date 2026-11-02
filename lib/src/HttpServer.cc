@@ -24,6 +24,7 @@
 #include "HttpAppFrameworkImpl.h"
 #include "HttpConnectionLimit.h"
 #include "HttpControllerBinder.h"
+#include "HttpUtils.h"
 #include "HttpRequestImpl.h"
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
@@ -1166,18 +1167,8 @@ static inline bool isWebSocket(const HttpRequestImplPtr &req)
         headers.find("connection") == headers.end())
         return false;
 
-    auto connectionField = req->getHeaderBy("connection");
-    std::transform(connectionField.begin(),
-                   connectionField.end(),
-                   connectionField.begin(),
-                   [](unsigned char c) { return tolower(c); });
-    auto upgradeField = req->getHeaderBy("upgrade");
-    std::transform(upgradeField.begin(),
-                   upgradeField.end(),
-                   upgradeField.begin(),
-                   [](unsigned char c) { return tolower(c); });
-    if (connectionField.find("upgrade") != std::string::npos &&
-        upgradeField == "websocket")
+    if (containsHttpToken(req->getHeaderBy("connection"), "upgrade") &&
+        drogon::utils::ci_equals(req->getHeaderBy("upgrade"), "websocket"))
     {
         LOG_TRACE << "new websocket request";
         return true;
@@ -1220,6 +1211,16 @@ static inline HttpResponsePtr tryDecompressRequest(
     return resp;
 }
 
+static inline HttpResponsePtr canonicalizeRequestPath(
+    const HttpRequestImplPtr &req)
+{
+    auto canonical = canonicalizePath(req->path());
+    if (!canonical)
+        return app().getCustomErrorHandler()(k403Forbidden, req);
+    req->setPath(std::move(*canonical));
+    return nullptr;
+}
+
 /**
  * @brief Check request against each sync advice, generate response if request
  * is rejected by any one of them.
@@ -1233,9 +1234,12 @@ static inline bool passSyncAdvices(
     bool shouldBePipelined,
     bool isHeadMethod)
 {
-    if (auto resp = AopAdvice::instance().passSyncAdvices(req))
+    auto resp = canonicalizeRequestPath(req);
+    if (!resp)
+        resp = AopAdvice::instance().passSyncAdvices(req);
+    if (resp)
     {
-        // Rejected by sync advice
+        // Rejected by path canonicalization or sync advice
         applyConnectionDecision(req, resp);
         if (!shouldBePipelined)
         {

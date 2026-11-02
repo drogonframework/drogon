@@ -20,6 +20,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <limits>
+#include <string_view>
 
 using namespace trantor;
 using namespace drogon;
@@ -31,6 +32,7 @@ void HttpResponseParser::reset()
     parseResponseForHeadMethod_ = false;
     leftBodyLength_ = 0;
     currentChunkLength_ = 0;
+    headerSize_ = 0;
 }
 
 HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
@@ -42,38 +44,36 @@ HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
 
 bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
 {
-    const char *start = begin;
-    const char *space = std::find(start, end, ' ');
-    if (space != end)
-    {
-        LOG_TRACE << *(space - 1);
-        if (*(space - 1) == '1')
-        {
-            responsePtr_->setVersion(Version::kHttp11);
-        }
-        else if (*(space - 1) == '0')
-        {
-            responsePtr_->setVersion(Version::kHttp10);
-        }
-        else
-        {
-            return false;
-        }
-    }
+    std::string_view remain(begin, static_cast<size_t>(end - begin));
+    const auto versionEnd = remain.find(' ');
+    if (versionEnd == std::string_view::npos)
+        return false;
 
-    start = space + 1;
-    space = std::find(start, end, ' ');
-    if (space != end)
-    {
-        std::string status_code(start, space - start);
-        std::string status_message(space + 1, end - space - 1);
-        LOG_TRACE << status_code << " " << status_message;
-        auto code = atoi(status_code.c_str());
-        responsePtr_->setStatusCode(HttpStatusCode(code));
+    const auto version = remain.substr(0, versionEnd);
+    if (version == "HTTP/1.1")
+        responsePtr_->setVersion(Version::kHttp11);
+    else if (version == "HTTP/1.0")
+        responsePtr_->setVersion(Version::kHttp10);
+    else
+        return false;
 
-        return true;
-    }
-    return false;
+    remain.remove_prefix(versionEnd + 1);
+    // RFC 9112 requires a SP after the status code even when the reason
+    // phrase is empty, but servers commonly send "HTTP/1.1 200" with no
+    // trailing space. We deliberately accept that form for interoperability.
+    if (remain.size() < 3 || (remain.size() > 3 && remain[3] != ' '))
+        return false;
+
+    const auto statusCode = remain.substr(0, 3);
+    if (!std::all_of(statusCode.begin(), statusCode.end(), [](char c) {
+            return c >= '0' && c <= '9';
+        }))
+        return false;
+
+    const int code = (statusCode[0] - '0') * 100 + (statusCode[1] - '0') * 10 +
+                     (statusCode[2] - '0');
+    responsePtr_->setStatusCode(static_cast<HttpStatusCode>(code));
+    return true;
 }
 
 bool HttpResponseParser::parseResponseOnClose()
@@ -96,6 +96,15 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         if (status_ == HttpResponseParseStatus::kExpectResponseLine)
         {
             const char *crlf = buf->findCRLF();
+            if (maxHeaderSize_ != 0)
+            {
+                const size_t lineSize =
+                    crlf ? crlf - buf->peek() + 2 : buf->readableBytes();
+                if (lineSize > maxHeaderSize_ - headerSize_)
+                    return false;
+                if (crlf)
+                    headerSize_ += lineSize;
+            }
             if (crlf)
             {
                 ok = processResponseLine(buf->peek(), crlf);
@@ -118,20 +127,30 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         else if (status_ == HttpResponseParseStatus::kExpectHeaders)
         {
             const char *crlf = buf->findCRLF();
+            if (maxHeaderSize_ != 0)
+            {
+                const size_t lineSize =
+                    crlf ? crlf - buf->peek() + 2 : buf->readableBytes();
+                if (lineSize > maxHeaderSize_ - headerSize_)
+                    return false;
+                if (crlf)
+                    headerSize_ += lineSize;
+            }
             if (crlf)
             {
-                const char *colon = std::find(buf->peek(), crlf, ':');
-                if (colon != crlf)
-                {
-                    responsePtr_->addHeader(buf->peek(), colon, crlf);
-                }
-                else
+                const std::string_view line(buf->peek(), crlf - buf->peek());
+                if (!responsePtr_->addHeader(line))
                 {
                     const std::string &len =
                         responsePtr_->getHeaderBy("content-length");
                     // LOG_INFO << "content len=" << len;
                     if (!len.empty())
                     {
+                        // std::stoull accepts a sign and wraps "-1" to the
+                        // maximum value; Content-Length must start with a
+                        // digit.
+                        if (len[0] < '0' || len[0] > '9')
+                            return false;
                         try
                         {
                             leftBodyLength_ =

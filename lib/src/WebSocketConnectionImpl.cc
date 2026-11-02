@@ -14,6 +14,7 @@
 
 #include "WebSocketConnectionImpl.h"
 #include "HttpAppFrameworkImpl.h"
+#include <drogon/utils/Utilities.h>
 #include <json/value.h>
 #include <json/writer.h>
 #include <thread>
@@ -271,35 +272,46 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer, bool isServer)
     gotAll_ = false;
     while (buffer->readableBytes() >= 2)
     {
+        if (((*buffer)[0] & 0x70) != 0)
+        {
+            LOG_ERROR << "Bad frame: reserved bits set without an extension";
+            return false;
+        }
         unsigned char opcode = (*buffer)[0] & 0x0f;
         bool isControlFrame = false;
+        WebSocketMessageType frameType = WebSocketMessageType::Unknown;
         switch (opcode)
         {
             case 0:
                 LOG_TRACE << "continuation frame";
                 break;
             case 1:
-                type_ = WebSocketMessageType::Text;
+                frameType = WebSocketMessageType::Text;
                 break;
             case 2:
-                type_ = WebSocketMessageType::Binary;
+                frameType = WebSocketMessageType::Binary;
                 break;
             case 8:
-                type_ = WebSocketMessageType::Close;
+                frameType = WebSocketMessageType::Close;
                 isControlFrame = true;
                 break;
             case 9:
-                type_ = WebSocketMessageType::Ping;
+                frameType = WebSocketMessageType::Ping;
                 isControlFrame = true;
                 break;
             case 10:
-                type_ = WebSocketMessageType::Pong;
+                frameType = WebSocketMessageType::Pong;
                 isControlFrame = true;
                 break;
             default:
                 LOG_ERROR << "Unknown frame type";
                 return false;
                 break;
+        }
+        if (!isControlFrame && ((opcode == 0) != fragmented_))
+        {
+            LOG_ERROR << "Bad frame: invalid continuation sequence";
+            return false;
         }
 
         bool isFin = (((*buffer)[0] & 0x80) == 0x80);
@@ -378,7 +390,7 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer, bool isServer)
                 return false;
             }
         }
-        if (isServer)
+        if (isServer && !isControlFrame)
         {
             // The message is sent by the client, check the length (including
             // the data already accumulated from previous frames)
@@ -391,53 +403,71 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer, bool isServer)
                 return false;
             }
         }
+        if (frameType == WebSocketMessageType::Close && length == 1)
+        {
+            LOG_ERROR << "Bad frame: Close payload has only one byte";
+            return false;
+        }
+        size_t headerLen = indexFirstMask + (isMasked != 0 ? 4 : 0);
+        if (buffer->readableBytes() < headerLen ||
+            length > buffer->readableBytes() - headerLen)
+        {
+            // Not enough data yet, wait for more.
+            return true;
+        }
+
+        std::string &payload = isControlFrame ? completedMessage_ : message_;
+        if (isControlFrame)
+        {
+            payload.clear();
+        }
+        auto rawData = buffer->peek() + headerLen;
         if (isMasked != 0)
         {
-            // length is bounded on the server; compare without overflow
-            size_t headerLen = indexFirstMask + 4;
-            if (buffer->readableBytes() >= headerLen &&
-                length <= buffer->readableBytes() - headerLen)
+            auto masks = buffer->peek() + indexFirstMask;
+            auto oldLen = payload.length();
+            payload.resize(oldLen + length);
+            for (size_t i = 0; i < length; ++i)
             {
-                auto masks = buffer->peek() + indexFirstMask;
-                auto indexFirstDataByte = indexFirstMask + 4;
-                auto rawData = buffer->peek() + indexFirstDataByte;
-                auto oldLen = message_.length();
-                message_.resize(oldLen + length);
-                for (size_t i = 0; i < length; ++i)
-                {
-                    message_[oldLen + i] = (rawData[i] ^ masks[i % 4]);
-                }
-                buffer->retrieve(indexFirstMask + 4 + length);
-                if (isFin)
-                {
-                    gotAll_ = true;
-                    return true;
-                }
-            }
-            else
-            {
-                // Not enough data yet, wait for more.
-                return true;
+                payload[oldLen + i] = (rawData[i] ^ masks[i % 4]);
             }
         }
         else
         {
-            if (length <= buffer->readableBytes() - indexFirstMask)
+            payload.append(rawData, length);
+        }
+        buffer->retrieve(headerLen + length);
+
+        if (isControlFrame)
+        {
+            if (frameType == WebSocketMessageType::Close &&
+                payload.size() > 2 &&
+                !utils::isValidUTF8(std::string_view(payload).substr(2)))
             {
-                auto rawData = buffer->peek() + indexFirstMask;
-                message_.append(rawData, length);
-                buffer->retrieve(indexFirstMask + length);
-                if (isFin)
-                {
-                    gotAll_ = true;
-                    return true;
-                }
+                LOG_ERROR << "Bad frame: invalid UTF-8 in Close reason";
+                return false;
             }
-            else
+            completedType_ = frameType;
+            gotAll_ = true;
+            return true;
+        }
+        if (opcode != 0)
+        {
+            type_ = frameType;
+        }
+        fragmented_ = !isFin;
+        if (isFin)
+        {
+            if (type_ == WebSocketMessageType::Text &&
+                !utils::isValidUTF8(message_))
             {
-                // Not enough data yet, wait for more.
-                return true;
+                LOG_ERROR << "Bad frame: invalid UTF-8 in text message";
+                return false;
             }
+            completedMessage_.swap(message_);
+            completedType_ = type_;
+            gotAll_ = true;
+            return true;
         }
     }
     return true;
@@ -448,6 +478,11 @@ void WebSocketConnectionImpl::onNewMessage(
     trantor::MsgBuffer *buffer)
 {
     auto self = shared_from_this();
+    if (closeReceived_)
+    {
+        buffer->retrieveAll();
+        return;
+    }
     while (buffer->readableBytes() > 0)
     {
         auto success = parser_.parse(buffer, isServer_);
@@ -464,6 +499,7 @@ void WebSocketConnectionImpl::onNewMessage(
                 }
                 else if (type == WebSocketMessageType::Close)
                 {
+                    closeReceived_ = true;
                     // rfc6455-5.5.1: reply with the received close frame so
                     // the peer sees the status code it sent instead of an
                     // abnormal closure (1006). Skip the reply when this side
@@ -482,6 +518,11 @@ void WebSocketConnectionImpl::onNewMessage(
                 // LOG_TRACE << "new message received: " << message
                 //           << "\n(type=" << (int)type << ")";
                 messageCallback_(std::move(message), self, type);
+                if (type == WebSocketMessageType::Close)
+                {
+                    buffer->retrieveAll();
+                    return;
+                }
             }
             else
             {

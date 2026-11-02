@@ -80,3 +80,18 @@ DROGON_TEST(HttpFile)
         filesystem::remove(fileName.string());
     }
 }
+
+DROGON_TEST(HttpFileSaveRejectsParentDirectoryName)
+{
+    // weakly_canonical() makes the target shorter than the upload directory
+    // here; the prefix check must not read past the end of the target path.
+    auto uploadPath = filesystem::current_path() / "test_uploads_dir";
+    for (const auto *name : {"..", "a/../.."})
+    {
+        HttpFileImpl file;
+        file.setFileName(name);
+        file.setFile("test", 4);
+        CHECK(file.save(uploadPath.string()) == -1);
+    }
+    filesystem::remove_all(uploadPath);
+}

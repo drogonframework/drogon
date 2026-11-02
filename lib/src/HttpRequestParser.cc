@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <string_view>
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -209,11 +210,9 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return 0;
                 }
 
-                const char *colon = std::find(buf->peek(), crlf, ':');
-                // found colon
-                if (colon != crlf)
+                const std::string_view line(buf->peek(), crlf - buf->peek());
+                if (request_->addHeader(line))
                 {
-                    request_->addHeader(buf->peek(), colon, crlf);
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
                 }

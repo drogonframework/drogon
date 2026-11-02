@@ -14,6 +14,9 @@
 
 #include <drogon/orm/Criteria.h>
 #include <json/json.h>
+#include <algorithm>
+#include <cctype>
+#include <vector>
 
 namespace drogon
 {
@@ -97,61 +100,70 @@ Criteria::Criteria(const Json::Value &json) noexcept(false)
     {
         throw std::runtime_error("Json format error");
     }
-    conditionString_ = json[0].asString();
-    if (!json[2].isNull() && !json[2].isArray())
+    auto op = json[1].asString();
+    auto first = std::find_if_not(op.begin(), op.end(), [](unsigned char c) {
+        return std::isspace(c);
+    });
+    auto last = std::find_if_not(op.rbegin(), op.rend(), [](unsigned char c) {
+                    return std::isspace(c);
+                }).base();
+    op = first < last ? std::string(first, last) : std::string{};
+    std::transform(op.begin(), op.end(), op.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+
+    const auto column = json[0].asString();
+    if (json[2].isNull())
     {
-        if (json[1].asString() == "in")
+        if (op == "=")
         {
-            throw std::runtime_error("Json format error");
+            *this = Criteria(column, CompareOperator::IsNull);
         }
-        conditionString_.append(json[1].asString());
-        conditionString_.append("$?");
-        outputArgumentsFunc_ =
-            [arg = json[2].asString()](internal::SqlBinder &binder) {
-                binder << arg;
-            };
-    }
-    else if (json[2].isNull())
-    {
-        if (json[1].asString() == "=")
+        else if (op == "!=" || op == "<>")
         {
-            conditionString_.append(" is null");
-        }
-        else if (json[1].asString() == "!=")
-        {
-            conditionString_.append(" is not null");
+            *this = Criteria(column, CompareOperator::IsNotNull);
         }
         else
         {
             throw std::runtime_error("Json format error");
         }
     }
-    else
+    else if (json[2].isArray())
     {
-        assert(json[2].isArray());
-        if (json[1].asString() != "in")
+        if (op != "in" || json[2].empty())
         {
             throw std::runtime_error("Json format error");
         }
-        conditionString_.append(" in (");
-        for (size_t i = 0; i < json[2].size(); ++i)
+        std::vector<std::string> values;
+        values.reserve(json[2].size());
+        for (const auto &value : json[2])
         {
-            if (i < json[2].size() - 1)
-            {
-                conditionString_.append("$?,");
-            }
-            else
-            {
-                conditionString_.append("$?");
-            }
+            values.push_back(value.asString());
         }
-        conditionString_.append(1, ')');
-        outputArgumentsFunc_ = [args = json[2]](internal::SqlBinder &binder) {
-            for (auto &arg : args)
-            {
-                binder << arg.asString();
-            }
-        };
+        *this = Criteria(column, CompareOperator::In, std::move(values));
+    }
+    else
+    {
+        CompareOperator compare;
+        if (op == "=")
+            compare = CompareOperator::EQ;
+        else if (op == "!=" || op == "<>")
+            compare = CompareOperator::NE;
+        else if (op == "<")
+            compare = CompareOperator::LT;
+        else if (op == "<=")
+            compare = CompareOperator::LE;
+        else if (op == ">")
+            compare = CompareOperator::GT;
+        else if (op == ">=")
+            compare = CompareOperator::GE;
+        else if (op == "like")
+            compare = CompareOperator::Like;
+        else if (op == "not like")
+            compare = CompareOperator::NotLike;
+        else
+            throw std::runtime_error("Json format error");
+        *this = Criteria(column, compare, json[2].asString());
     }
 }
 

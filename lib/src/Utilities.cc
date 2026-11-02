@@ -181,6 +181,49 @@ bool isBase64(std::string_view str)
     return true;
 }
 
+bool isValidUTF8(std::string_view str)
+{
+    for (size_t i = 0; i < str.size();)
+    {
+        const auto first = static_cast<unsigned char>(str[i]);
+        if (first <= 0x7f)
+        {
+            ++i;
+            continue;
+        }
+
+        size_t continuationCount;
+        if (first >= 0xc2 && first <= 0xdf)
+            continuationCount = 1;
+        else if (first >= 0xe0 && first <= 0xef)
+            continuationCount = 2;
+        else if (first >= 0xf0 && first <= 0xf4)
+            continuationCount = 3;
+        else
+            return false;
+
+        if (continuationCount > str.size() - i - 1)
+            return false;
+
+        const auto second = static_cast<unsigned char>(str[i + 1]);
+        if (second < 0x80 || second > 0xbf ||
+            (first == 0xe0 && second < 0xa0) ||
+            (first == 0xed && second > 0x9f) ||
+            (first == 0xf0 && second < 0x90) ||
+            (first == 0xf4 && second > 0x8f))
+            return false;
+
+        for (size_t j = 2; j <= continuationCount; ++j)
+        {
+            const auto byte = static_cast<unsigned char>(str[i + j]);
+            if (byte < 0x80 || byte > 0xbf)
+                return false;
+        }
+        i += continuationCount + 1;
+    }
+    return true;
+}
+
 std::string genRandomString(int length)
 {
     static const std::string_view char_space =

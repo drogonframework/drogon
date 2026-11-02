@@ -18,8 +18,10 @@
 #include "HttpUtils.h"
 #include <drogon/HttpViewData.h>
 #include <drogon/IOThreadStorage.h>
+#include <charconv>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <cstdio>
 #include <string>
@@ -147,15 +149,12 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(const HttpRequestPtr &req)
     auto &resp = HttpAppFrameworkImpl::instance().getCustom404Page();
     if (resp)
     {
-        if (loop && loop->index() < app().getThreadNum())
-        {
-            return resp;
-        }
-        else
-        {
-            return HttpResponsePtr{new HttpResponseImpl(
-                *static_cast<HttpResponseImpl *>(resp.get()))};
-        }
+        // Always hand out a copy. The custom page keeps expiredTime -1, so
+        // later stages (session cookie, connection headers, compression)
+        // modify the response in place; sharing it would leak one client's
+        // Set-Cookie into other clients' 404 responses.
+        return HttpResponsePtr{
+            new HttpResponseImpl(*static_cast<HttpResponseImpl *>(resp.get()))};
     }
     else
     {
@@ -974,62 +973,40 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
     return httpString;
 }
 
-void HttpResponseImpl::addHeader(const char *start,
-                                 const char *colon,
-                                 const char *end)
+bool HttpResponseImpl::addHeader(std::string_view line)
 {
+    auto [fieldView, valueView] =
+        internal::parseLine(line.data(), line.data() + line.size());
+    if (valueView.data() == nullptr)
+        return false;
     fullHeaderString_.reset();
-    std::string field(start, colon);
+    std::string field(fieldView);
     transform(field.begin(), field.end(), field.begin(), [](unsigned char c) {
         return tolower(c);
     });
-    ++colon;
-    while (colon < end && isspace(static_cast<unsigned char>(*colon)))
-    {
-        ++colon;
-    }
-    std::string value(colon, end);
-    while (!value.empty() &&
-           isspace(static_cast<unsigned char>(value[value.size() - 1])))
-    {
-        value.resize(value.size() - 1);
-    }
+    while (!valueView.empty() &&
+           isspace(static_cast<unsigned char>(valueView.front())))
+        valueView.remove_prefix(1);
+    while (!valueView.empty() &&
+           isspace(static_cast<unsigned char>(valueView.back())))
+        valueView.remove_suffix(1);
+    std::string value(valueView);
 
     if (field == "set-cookie")
     {
         // LOG_INFO<<"cookies!!!:"<<value;
-        auto values = utils::splitString(value, ";");
         Cookie cookie;
         cookie.setHttpOnly(false);
-        for (size_t i = 0; i < values.size(); ++i)
+        std::string_view remaining = value;
+        internal::HeaderParameter parameter;
+        size_t i = 0;
+        while (internal::nextHeaderParameter(remaining, parameter))
         {
-            std::string &coo = values[i];
-            std::string cookie_name;
-            std::string cookie_value;
-            auto epos = coo.find('=');
-            if (epos != std::string::npos)
-            {
-                cookie_name = coo.substr(0, epos);
-                std::string::size_type cpos = 0;
-                while (cpos < cookie_name.length() &&
-                       isspace(static_cast<unsigned char>(cookie_name[cpos])))
-                    ++cpos;
-                cookie_name = cookie_name.substr(cpos);
-                ++epos;
-                while (epos < coo.length() &&
-                       isspace(static_cast<unsigned char>(coo[epos])))
-                    ++epos;
-                cookie_value = coo.substr(epos);
-            }
-            else
-            {
-                std::string::size_type cpos = 0;
-                while (cpos < coo.length() &&
-                       isspace(static_cast<unsigned char>(coo[cpos])))
-                    ++cpos;
-                cookie_name = coo.substr(cpos);
-            }
-            if (i == 0)
+            if (parameter.name.empty() && !parameter.hasValue)
+                continue;
+            std::string cookie_name(parameter.name);
+            std::string cookie_value(parameter.value);
+            if (i++ == 0)
             {
                 cookie.setKey(cookie_name);
                 cookie.setValue(cookie_value);
@@ -1067,7 +1044,26 @@ void HttpResponseImpl::addHeader(const char *start,
                 }
                 else if (cookie_name == "max-age")
                 {
-                    cookie.setMaxAge(std::stoi(cookie_value));
+                    const std::string_view maxAgeValue =
+                        utils::trim(std::string_view(cookie_value));
+                    int maxAge;
+                    const char *begin = maxAgeValue.data();
+                    const char *valueEnd = begin + maxAgeValue.size();
+                    auto result = std::from_chars(begin, valueEnd, maxAge);
+                    if (result.ptr == valueEnd)
+                    {
+                        if (result.ec == std::errc{})
+                        {
+                            cookie.setMaxAge(maxAge);
+                        }
+                        else if (result.ec == std::errc::result_out_of_range)
+                        {
+                            cookie.setMaxAge(
+                                maxAgeValue.front() == '-'
+                                    ? (std::numeric_limits<int>::min)()
+                                    : (std::numeric_limits<int>::max)());
+                        }
+                    }
                 }
             }
         }
@@ -1079,9 +1075,10 @@ void HttpResponseImpl::addHeader(const char *start,
     else
     {
         if (!isValidHeader(field, value))
-            return;
+            return true;
         headers_[std::move(field)] = std::move(value);
     }
+    return true;
 }
 
 // Every data member must be listed here, in declaration order. Leaving one out

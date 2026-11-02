@@ -248,20 +248,25 @@ void [[className]]Base::get(const HttpRequestPtr &req,
         {
             if(field.empty())
                 continue;
+            auto order = SortOrder::ASC;
             if(field[0] == '+')
             {
                 field = field.substr(1);
-                mapper.orderBy(field, SortOrder::ASC);
             }
             else if(field[0] == '-')
             {
                 field = field.substr(1);
-                mapper.orderBy(field, SortOrder::DESC);
+                order = SortOrder::DESC;
             }
-            else
+            auto index = columnIndexForField(field);
+            if(!index)
             {
-                mapper.orderBy(field, SortOrder::ASC);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k400BadRequest);
+                callback(resp);
+                return;
             }
+            mapper.orderBy(*index, order);
         }
     }
     iter = parameters.find("offset");

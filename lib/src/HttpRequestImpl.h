@@ -32,6 +32,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <future>
 #include <unordered_map>
 #include <assert.h>
@@ -340,7 +341,7 @@ class HttpRequestImpl : public HttpRequest
         connPtr_ = ptr;
     }
 
-    void addHeader(const char *start, const char *colon, const char *end);
+    bool addHeader(std::string_view line);
 
     void removeHeader(std::string key) override
     {
@@ -696,17 +697,8 @@ class HttpRequestImpl : public HttpRequest
             }
             else
             {
-                auto pos = contentTypeString.find(';');
-                if (pos != std::string::npos)
-                {
-                    contentType_ = parseContentType(
-                        std::string_view(contentTypeString.data(), pos));
-                }
-                else
-                {
-                    contentType_ =
-                        parseContentType(std::string_view(contentTypeString));
-                }
+                contentType_ = parseContentType(
+                    internal::headerValueBeforeParameters(contentTypeString));
 
                 if (contentType_ == CT_NONE)
                     contentType_ = CT_CUSTOM;

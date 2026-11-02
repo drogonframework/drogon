@@ -2,8 +2,25 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include "../../lib/src/HttpResponseImpl.h"
+#include "../../src/HttpUtils.h"
 
 using namespace drogon;
+
+DROGON_TEST(HeaderParameterIterator)
+{
+    std::string_view contentType = "text/html; charset=utf-8; boundary=\"a;b\"";
+    internal::HeaderParameter item;
+    MANDATE(internal::nextHeaderParameter(contentType, item));
+    CHECK(item.name == "text/html");
+    CHECK(!item.hasValue);
+    MANDATE(internal::nextHeaderParameter(contentType, item));
+    CHECK(item.name == "charset");
+    CHECK(item.value == "utf-8");
+    MANDATE(internal::nextHeaderParameter(contentType, item));
+    CHECK(item.name == "boundary");
+    CHECK(item.value == "\"a;b\"");
+    CHECK(!internal::nextHeaderParameter(contentType, item));
+}
 
 DROGON_TEST(HttpHeaderRequest)
 {

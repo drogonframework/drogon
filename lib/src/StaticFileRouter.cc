@@ -132,12 +132,9 @@ void StaticFileRouter::route(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
+    // HttpServer has canonicalized path as this point. We are safe to use
+    // the provided path as is
     const std::string &path = req->path();
-    if (path.find('\0') != std::string::npos)
-    {
-        callback(app().getCustomErrorHandler()(k403Forbidden, req));
-        return;
-    }
 
     auto lPath = path;
     std::transform(lPath.begin(),

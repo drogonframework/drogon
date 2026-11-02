@@ -81,6 +81,9 @@ DROGON_EXPORT bool isInteger(std::string_view str);
 /// Determine if the string is base64 encoded
 DROGON_EXPORT bool isBase64(std::string_view str);
 
+/// Determine if the string is well-formed UTF-8
+DROGON_EXPORT bool isValidUTF8(std::string_view str);
+
 /// Generate random a string
 /**
  * @param length The string length

@@ -29,7 +29,8 @@ set(UNITTEST_SOURCES
     unittests/StringOpsTest.cc
     unittests/ControllerCreationTest.cc
     unittests/MultiPartParserTest.cc
-    unittests/SlashRemoverTest.cc
+    unittests/OrmParameterSafetyTest.cc
+    unittests/RestfulControllerSqlTest.cc
     unittests/UtilitiesTest.cc
     unittests/UuidUnittest.cc
 )
@@ -44,12 +45,26 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS)
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc)
+  # HttpUtils.cc supplies private helpers to the tests. It also defines public
+  # functions exported by drogon, so don't import those declarations here.
+  set_source_files_properties(../src/HttpUtils.cc
+                              PROPERTIES COMPILE_DEFINITIONS DROGON_STATIC_DEFINE)
 else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
                        unittests/HttpFileTest.cc
                        unittests/HttpMethodTest.cc
                        unittests/HttpRequestForwardCacheBodyTest.cc
                        unittests/WebsocketResponseTest.cc)
+endif()
+
+# These tests call private Drogon symbols that are unavailable from a Windows
+# DLL. Keep them in builds where the test executable can link those symbols.
+if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS))
+  set(UNITTEST_SOURCES ${UNITTEST_SOURCES}
+                       unittests/HttpHeaderLineViewTest.cc
+                       unittests/HttpResponseParserTest.cc
+                       unittests/WebSocketMessageParserTest.cc
+                       unittests/SlashRemoverTest.cc)
 endif()
 
 add_executable(unittest ${UNITTEST_SOURCES})

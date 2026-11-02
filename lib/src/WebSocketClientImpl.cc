@@ -38,7 +38,7 @@ WebSocketConnectionPtr WebSocketClientImpl::getConnection()
 
 void WebSocketClientImpl::stop()
 {
-    stop_ = true;
+    stop_.store(true, std::memory_order_relaxed);
     if (websockConnPtr_)
     {
         websockConnPtr_->shutdown();
@@ -73,8 +73,10 @@ void WebSocketClientImpl::createTcpClient()
                 return;
             if (connPtr->connected())
             {
-                connPtr->setContext(
-                    std::make_shared<HttpResponseParser>(connPtr));
+                auto parser = std::make_shared<HttpResponseParser>(connPtr);
+                parser->setForHeadMethod();
+                parser->setMaxHeaderSize(64 * 1024);
+                connPtr->setContext(std::move(parser));
                 // send request;
                 LOG_TRACE << "Connection established!";
                 thisPtr->sendReq(connPtr);
@@ -84,7 +86,7 @@ void WebSocketClientImpl::createTcpClient()
                 LOG_TRACE << "connection disconnect";
                 thisPtr->connectionClosedCallback_(thisPtr);
                 thisPtr->websockConnPtr_.reset();
-                if (!thisPtr->stop_)
+                if (!thisPtr->stop_.load(std::memory_order_relaxed))
                 {
                     thisPtr->loop_->runAfter(1.0, [thisPtr]() {
                         thisPtr->reconnect();
@@ -99,7 +101,7 @@ void WebSocketClientImpl::createTcpClient()
         // can't connect to server
         LOG_TRACE << "error connecting to server";
         thisPtr->requestCallback_(ReqResult::NetworkFailure, nullptr, thisPtr);
-        if (!thisPtr->stop_)
+        if (!thisPtr->stop_.load(std::memory_order_relaxed))
         {
             thisPtr->loop_->runAfter(1.0,
                                      [thisPtr]() { thisPtr->reconnect(); });
@@ -120,6 +122,8 @@ void WebSocketClientImpl::createTcpClient()
 void WebSocketClientImpl::connectToServerInLoop()
 {
     loop_->assertInLoopThread();
+    if (stop_.load(std::memory_order_relaxed))
+        return;
     upgradeRequest_->addHeader("Connection", "Upgrade");
     upgradeRequest_->addHeader("Upgrade", "websocket");
     bool usePort = ((serverAddr_.toPort() != 80 && !useSSL_) ||
@@ -174,6 +178,8 @@ void WebSocketClientImpl::connectToServerInLoop()
             [thisPtr = shared_from_this(),
              hasIpv6Address](const trantor::InetAddress &addr) {
                 thisPtr->loop_->runInLoop([thisPtr, addr, hasIpv6Address]() {
+                    if (thisPtr->stop_.load(std::memory_order_relaxed))
+                        return;
                     auto port = thisPtr->serverAddr_.portNetEndian();
                     thisPtr->serverAddr_ = addr;
                     thisPtr->serverAddr_.setPortNetEndian(port);
@@ -306,6 +312,8 @@ void WebSocketClientImpl::onRecvMessage(
 
 void WebSocketClientImpl::reconnect()
 {
+    if (stop_.load(std::memory_order_relaxed))
+        return;
     tcpClientPtr_.reset();
     websockConnPtr_.reset();
     upgraded_ = false;

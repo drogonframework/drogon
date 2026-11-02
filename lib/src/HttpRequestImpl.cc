@@ -440,73 +440,41 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         output->append(cachedBody.data(), cachedBody.length());
 }
 
-void HttpRequestImpl::addHeader(const char *start,
-                                const char *colon,
-                                const char *end)
+bool HttpRequestImpl::addHeader(std::string_view line)
 {
-    std::string field(start, colon);
+    auto [fieldView, valueView] =
+        internal::parseLine(line.data(), line.data() + line.size());
+    if (valueView.data() == nullptr)
+        return false;
+    std::string field(fieldView);
     // Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
     std::transform(field.begin(),
                    field.end(),
                    field.begin(),
                    [](unsigned char c) { return tolower(c); });
-    ++colon;
-    while (colon < end && isspace(static_cast<unsigned char>(*colon)))
-    {
-        ++colon;
-    }
-    std::string value(colon, end);
-    while (!value.empty() &&
-           isspace(static_cast<unsigned char>(value[value.size() - 1])))
-    {
-        value.resize(value.size() - 1);
-    }
+    while (!valueView.empty() &&
+           isspace(static_cast<unsigned char>(valueView.front())))
+        valueView.remove_prefix(1);
+    while (!valueView.empty() &&
+           isspace(static_cast<unsigned char>(valueView.back())))
+        valueView.remove_suffix(1);
+    std::string value(valueView);
     if (field.length() == 6 && field == "cookie")
     {
         LOG_TRACE << "cookies!!!:" << value;
-        std::string::size_type pos;
-        while ((pos = value.find(';')) != std::string::npos)
+        std::string_view remaining = value;
+        while (!remaining.empty())
         {
-            std::string coo = value.substr(0, pos);
-            auto epos = coo.find('=');
-            if (epos != std::string::npos)
-            {
-                std::string cookie_name = coo.substr(0, epos);
-                std::string::size_type cpos = 0;
-                while (cpos < cookie_name.length() &&
-                       isspace(static_cast<unsigned char>(cookie_name[cpos])))
-                    ++cpos;
-                cookie_name = cookie_name.substr(cpos);
-                std::string cookie_value = coo.substr(epos + 1);
-                cpos = 0;
-                while (cpos < cookie_value.length() &&
-                       isspace(static_cast<unsigned char>(cookie_value[cpos])))
-                    ++cpos;
-                cookie_value = cookie_value.substr(cpos);
-                cookies_[std::move(cookie_name)] = std::move(cookie_value);
-            }
-            value = value.substr(pos + 1);
-        }
-        if (value.length() > 0)
-        {
-            std::string &coo = value;
-            auto epos = coo.find('=');
-            if (epos != std::string::npos)
-            {
-                std::string cookie_name = coo.substr(0, epos);
-                std::string::size_type cpos = 0;
-                while (cpos < cookie_name.length() &&
-                       isspace(static_cast<unsigned char>(cookie_name[cpos])))
-                    ++cpos;
-                cookie_name = cookie_name.substr(cpos);
-                std::string cookie_value = coo.substr(epos + 1);
-                cpos = 0;
-                while (cpos < cookie_value.length() &&
-                       isspace(static_cast<unsigned char>(cookie_value[cpos])))
-                    ++cpos;
-                cookie_value = cookie_value.substr(cpos);
-                cookies_[std::move(cookie_name)] = std::move(cookie_value);
-            }
+            const auto semi = remaining.find(';');
+            const auto pair = remaining.substr(0, semi);
+            remaining = semi == std::string_view::npos
+                            ? std::string_view{}
+                            : remaining.substr(semi + 1);
+            const auto equal = pair.find('=');
+            if (equal == std::string_view::npos)
+                continue;
+            cookies_[std::string(utils::trim(pair.substr(0, equal)))] =
+                std::string(utils::trim(pair.substr(equal + 1)));
         }
     }
     else
@@ -542,6 +510,7 @@ void HttpRequestImpl::addHeader(const char *start,
         }
         headers_.emplace(std::move(field), std::move(value));
     }
+    return true;
 }
 
 HttpRequestPtr HttpRequest::newHttpRequest()
@@ -980,7 +949,7 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli() noexcept
         }
     }
     BrotliDecoderDestroyInstance(s);
-    return StreamDecompressStatus::Ok;
+    return status;
 }
 #endif
 

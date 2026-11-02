@@ -18,7 +18,6 @@
 #include "HttpFileImpl.h"
 #include <drogon/MultiPart.h>
 #include <drogon/utils/Utilities.h>
-#include "utils/ParsingUtils.h"
 #include <drogon/config.h>
 #include <algorithm>
 #include <fcntl.h>
@@ -30,8 +29,9 @@
 #endif
 
 using namespace drogon;
-using drogon::utils::parseHeaderParameter;
-using drogon::utils::parseLine;
+using drogon::internal::parseHeaderParameter;
+using drogon::internal::parseLine;
+using drogon::internal::parseMultipartBoundary;
 
 const std::vector<HttpFile> &MultiPartParser::getFiles() const
 {
@@ -71,23 +71,12 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     {
         return -1;
     }
-    std::string::size_type pos = contentType.find(';');
-    if (pos == std::string::npos)
+    std::string_view boundary;
+    if (!parseMultipartBoundary(contentType, boundary))
+    {
         return -1;
-
-    std::string type = contentType.substr(0, pos);
-    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
-    if (type != "multipart/form-data")
-        return -1;
-    pos = contentType.find("boundary=");
-    if (pos == std::string::npos)
-        return -1;
-    auto pos2 = contentType.find(';', pos);
-    if (pos2 == std::string::npos)
-        pos2 = contentType.size();
-    return parse(req, contentType.data() + (pos + 9), pos2 - (pos + 9));
+    }
+    return parse(req, boundary.data(), boundary.size());
 }
 
 int MultiPartParser::parseEntity(const HttpRequestPtr &req,
@@ -145,21 +134,15 @@ int MultiPartParser::parseEntity(const HttpRequestPtr &req,
         }
         else if (key == "content-type")
         {
-            auto value = keyAndValue.second;
-            auto semiColonPos =
-                std::find(value.data(), value.data() + value.length(), ';');
-            std::string_view contentType(value.data(),
-                                         semiColonPos - value.data());
-            filePtr->setContentType(parseContentType(contentType));
+            filePtr->setContentType(
+                parseContentType(drogon::internal::headerValueBeforeParameters(
+                    keyAndValue.second)));
         }
         else if (key == "content-transfer-encoding")
         {
-            auto value = keyAndValue.second;
-            auto semiColonPos =
-                std::find(value.data(), value.data() + value.length(), ';');
-
             filePtr->setContentTransferEncoding(
-                std::string{value.data(), semiColonPos});
+                std::string(drogon::internal::headerValueBeforeParameters(
+                    keyAndValue.second)));
         }
     }
     if (!filePtr->getFileName().empty())
@@ -178,40 +161,69 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
                            size_t boundaryLen)
 {
     std::string_view boundary{boundaryData, boundaryLen};
-    if (boundary.size() > 2 && boundary[0] == '\"')
-        boundary = boundary.substr(1, boundary.size() - 2);
     if (boundary.empty())
         return -1;
-    std::string_view::size_type pos1, pos2;
-    pos1 = 0;
-    auto content = static_cast<HttpRequestImpl *>(req.get())->bodyView();
-    pos2 = content.find(boundary);
+
+    const std::string firstBoundary = "--" + std::string(boundary);
+    const std::string delimiter = "\r\n" + firstBoundary;
+    const std::string_view content =
+        static_cast<HttpRequestImpl *>(req.get())->bodyView();
+    std::string_view remain = content;
+    std::string_view part;
+
+    // The first delimiter starts at the beginning of the body or after a
+    // preamble line. A bare occurrence of the boundary is not a delimiter.
     while (true)
     {
-        pos1 = pos2;
-        if (pos1 == std::string_view::npos)
-            break;
-        pos1 += boundary.length();
-        if (content.size() - pos1 < 2)
-            return -1;
-        if (content[pos1] == '\r' && content[pos1 + 1] == '\n')
-            pos1 += 2;
-        pos2 = content.find(boundary, pos1);
-        if (pos2 == std::string_view::npos)
-            break;
-        if (pos2 - pos1 < 4)
-            return -1;
-        bool flag = false;
-        if (content[pos2 - 4] == '\r' && content[pos2 - 3] == '\n' &&
-            content[pos2 - 2] == '-' && content[pos2 - 1] == '-')
+        const auto pos = remain.find(firstBoundary);
+        if (pos == std::string_view::npos)
         {
-            pos2 -= 4;
-            flag = true;
-        }
-        if (parseEntity(req, content.data() + pos1, content.data() + pos2) != 0)
             return -1;
-        if (flag)
-            pos2 += 4;
+        }
+        const auto offset = content.size() - remain.size() + pos;
+        const auto suffix = remain.substr(pos + firstBoundary.size());
+        if ((offset == 0 ||
+             (offset >= 2 && content.substr(offset - 2, 2) == "\r\n")) &&
+            (internal::startsWith(suffix, "\r\n") ||
+             internal::startsWith(suffix, "--")))
+        {
+            if (internal::startsWith(suffix, "--"))
+            {
+                return 0;  // empty multipart body
+            }
+            part = suffix.substr(2);
+            break;
+        }
+        remain = remain.substr(pos + 1);
     }
-    return 0;
+
+    while (true)
+    {
+        remain = part;
+        while (true)
+        {
+            const auto pos = remain.find(delimiter);
+            if (pos == std::string_view::npos)
+            {
+                return -1;
+            }
+            const auto suffix = remain.substr(pos + delimiter.size());
+            if (internal::startsWith(suffix, "\r\n") ||
+                internal::startsWith(suffix, "--"))
+            {
+                const auto length = part.size() - remain.size() + pos;
+                if (parseEntity(req, part.data(), part.data() + length) != 0)
+                {
+                    return -1;
+                }
+                if (internal::startsWith(suffix, "--"))
+                {
+                    return 0;
+                }
+                part = suffix.substr(2);
+                break;
+            }
+            remain = remain.substr(pos + 1);
+        }
+    }
 }

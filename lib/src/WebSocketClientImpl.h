@@ -21,6 +21,7 @@
 #include <trantor/utils/NonCopyable.h>
 
 #include <memory>
+#include <atomic>
 #include <string>
 
 namespace drogon
@@ -85,7 +86,7 @@ class WebSocketClientImpl
     bool useOldTLS_{false};
     bool validateCert_{true};
     bool upgraded_{false};
-    bool stop_{false};
+    std::atomic<bool> stop_{false};
     std::string wsKey_;
     std::string wsAccept_;
     std::string clientCertPath_;
