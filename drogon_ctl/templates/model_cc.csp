@@ -1068,6 +1068,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
     {
         $$<<"void "<<className<<"::updateId(const uint64_t id)\n";
         $$<<"{\n";
+        $$<<"    (void)id;\n";
         $$<<"}\n";
     }
     else if(@@.get<std::string>("rdbms")=="mysql"||@@.get<std::string>("rdbms")=="sqlite3")
@@ -1075,6 +1076,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
         auto primaryKeyTypeString=@@.get<std::string>("primaryKeyType");
         $$<<"void "<<className<<"::updateId(const uint64_t id)\n";
         $$<<"{\n";
+        $$<<"    (void)id;\n";
         for(auto col:cols)
         {
             if(col.isAutoVal_)
@@ -1435,6 +1437,7 @@ bool [[className]]::validJsonOfField(size_t index,
      {%indentStr%}                   std::string &err,
      {%indentStr%}                   bool isForCreation)
 {
+    (void)isForCreation;
     switch(index)
     {
 <%c++
