@@ -35,6 +35,7 @@ int HttpFileImpl::save(const std::string &path) const noexcept
         return -1;
     std::filesystem::path fsUploadDir(utils::toNativePath(path));
 
+    std::error_code ec;
     if (fsUploadDir.is_absolute())
     {  // do nothing
     }
@@ -48,25 +49,48 @@ int HttpFileImpl::save(const std::string &path) const noexcept
     }
     else
     {
-        fsUploadDir = std::filesystem::current_path() / fsUploadDir;
+        auto curPath = std::filesystem::current_path(ec);
+        if (ec)
+        {
+            LOG_ERROR << "Failed to get current path: " << ec.message();
+            return -1;
+        }
+        fsUploadDir = curPath / fsUploadDir;
     }
 
-    fsUploadDir = std::filesystem::weakly_canonical(fsUploadDir);
+    fsUploadDir = std::filesystem::weakly_canonical(fsUploadDir, ec);
+    if (ec)
+    {
+        LOG_ERROR << "Failed to canonicalize upload directory: "
+                  << ec.message();
+        return -1;
+    }
 
-    if (!std::filesystem::exists(fsUploadDir))
+    const bool directoryExists = std::filesystem::exists(fsUploadDir, ec);
+    if (ec)
+    {
+        LOG_ERROR << "Failed to check upload directory: " << ec.message();
+        return -1;
+    }
+
+    if (!directoryExists)
     {
         LOG_TRACE << "create path:" << fsUploadDir;
-        std::error_code err;
-        std::filesystem::create_directories(fsUploadDir, err);
-        if (err)
+        std::filesystem::create_directories(fsUploadDir, ec);
+        if (ec)
         {
-            LOG_SYSERR;
+            LOG_ERROR << "Failed to create upload directory: " << ec.message();
             return -1;
         }
     }
 
-    std::filesystem::path fsSaveToPath(std::filesystem::weakly_canonical(
-        fsUploadDir / utils::toNativePath(fileName_)));
+    std::filesystem::path fsSaveToPath = std::filesystem::weakly_canonical(
+        fsUploadDir / utils::toNativePath(fileName_), ec);
+    if (ec)
+    {
+        LOG_ERROR << "Failed to canonicalize save path: " << ec.message();
+        return -1;
+    }
     LOG_TRACE << "save to path:" << fsSaveToPath;
     // fsSaveToPath can be shorter than fsUploadDir (e.g. a file name of ".."),
     // so bound both ranges and require fsUploadDir to be a prefix.
@@ -97,16 +121,25 @@ int HttpFileImpl::saveAs(const std::string &fileName) const noexcept
             HttpAppFrameworkImpl::instance().getUploadPath()));
         fsFileName = fsUploadPath / fsFileName;
     }
-    if (fsFileName.has_parent_path() &&
-        !std::filesystem::exists(fsFileName.parent_path()))
+    if (fsFileName.has_parent_path())
     {
-        LOG_TRACE << "create path:" << fsFileName.parent_path();
-        std::error_code err;
-        std::filesystem::create_directories(fsFileName.parent_path(), err);
-        if (err)
+        std::error_code ec;
+        const bool parentExists =
+            std::filesystem::exists(fsFileName.parent_path(), ec);
+        if (ec)
         {
-            LOG_SYSERR;
+            LOG_ERROR << "Failed to check parent directory: " << ec.message();
             return -1;
+        }
+        if (!parentExists)
+        {
+            LOG_TRACE << "create path:" << fsFileName.parent_path();
+            std::filesystem::create_directories(fsFileName.parent_path(), ec);
+            if (ec)
+            {
+                LOG_ERROR << "Failed to create directory: " << ec.message();
+                return -1;
+            }
         }
     }
     return saveTo(fsFileName);
