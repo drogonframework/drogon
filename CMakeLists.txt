@@ -701,6 +701,20 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
 if (BUILD_TESTING)
     message(STATUS "Building tests")
     enable_testing()
+    foreach(standard unset 14 17 cache17)
+        file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/cmake/tests/filesystem-${standard}")
+        add_test(NAME FilesystemStandard.${standard}
+            COMMAND ${CMAKE_COMMAND}
+                -G "${CMAKE_GENERATOR}"
+                "-DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+                "-DCMAKE_GENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
+                "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+                "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
+                -DTEST_STANDARD=${standard}
+                "${PROJECT_SOURCE_DIR}/cmake/tests/filesystem")
+        set_tests_properties(FilesystemStandard.${standard} PROPERTIES
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/cmake/tests/filesystem-${standard}")
+    endforeach()
     add_subdirectory(lib/tests)
     if (pg_FOUND)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
