@@ -26,6 +26,7 @@ set(UNITTEST_SOURCES
     unittests/HttpFullDateTest.cc
     unittests/MainLoopTest.cc
     unittests/CacheMapTest.cc
+    unittests/SessionManagerTest.cc
     unittests/StringOpsTest.cc
     unittests/ControllerCreationTest.cc
     unittests/MultiPartParserTest.cc
