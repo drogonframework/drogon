@@ -3,6 +3,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
@@ -170,6 +171,7 @@ DROGON_TEST(HttpFileExceptionSafety)
 
     SUBSECTION(FilenameExceedingNameMax)
     {
+        std::cerr << "BEGIN FilenameExceedingNameMax" << std::endl;
         // Filename exceeding filesystem NAME_MAX (typically 255 bytes).
         // weakly_canonical() must not throw std::filesystem_error or terminate
         // the process.
@@ -178,10 +180,12 @@ DROGON_TEST(HttpFileExceptionSafety)
         file.setFileName(longFileName);
         file.setFile("test", 4);
         CHECK(file.save(uploadPath.string()) == -1);
+        std::cerr << "END FilenameExceedingNameMax" << std::endl;
     }
 
     SUBSECTION(SaveAsWithExcessiveParentDirectory)
     {
+        std::cerr << "BEGIN SaveAsWithExcessiveParentDirectory" << std::endl;
         // Excessive component in parent_path exercises exists(parent, ec)
         std::string longDirName(nameLimit + 50, 'y');
         HttpFileImpl file;
@@ -189,10 +193,12 @@ DROGON_TEST(HttpFileExceptionSafety)
         file.setFile("test", 4);
         const auto target = uploadPath / longDirName / "upload.bin";
         CHECK(file.saveAs(target.string()) == -1);
+        std::cerr << "END SaveAsWithExcessiveParentDirectory" << std::endl;
     }
 
     SUBSECTION(SavePathWithNormalRelativePath)
     {
+        std::cerr << "BEGIN SavePathWithNormalRelativePath" << std::endl;
         // Normal relative paths (not starting with "." or "..") must resolve
         // against the configured upload directory (app().getUploadPath()).
         struct UploadPathGuard
@@ -219,10 +225,12 @@ DROGON_TEST(HttpFileExceptionSafety)
         CHECK(filesystem::exists(expectedPath));
 
         filesystem::remove_all(customUploadDir);
+        std::cerr << "END SavePathWithNormalRelativePath" << std::endl;
     }
 
     SUBSECTION(RelativePathCurrentPathBranch)
     {
+        std::cerr << "BEGIN RelativePathCurrentPathBranch" << std::endl;
         // Path beginning with "." or ".." takes the current_path() branch
         HttpFileImpl file;
         file.setFileName("test_rel.txt");
@@ -231,10 +239,12 @@ DROGON_TEST(HttpFileExceptionSafety)
         CHECK(res == 0);
         CHECK(filesystem::exists(uploadPath / "rel_subdir" / "test_rel.txt"));
         filesystem::remove_all(uploadPath);
+        std::cerr << "END RelativePathCurrentPathBranch" << std::endl;
     }
 
     SUBSECTION(SaveAsInaccessibleParentDirectory)
     {
+        std::cerr << "BEGIN SaveAsInaccessibleParentDirectory" << std::endl;
         // Uses a destination whose parent path traverses through an existing
         // regular file. Verifies that the resulting ENOTDIR filesystem error is
         // handled gracefully and saveAs() returns -1.
@@ -244,20 +254,24 @@ DROGON_TEST(HttpFileExceptionSafety)
         auto blocker = filesystem::current_path() / "test_blocker_file.tmp";
         {
             std::ofstream f(blocker);
+            REQUIRE(f.is_open());
             f.put('x');
         }
         const auto target = blocker / "child" / "upload.bin";
         int res = file.saveAs(target.string());
         CHECK(res == -1);
         filesystem::remove(blocker);
+        std::cerr << "END SaveAsInaccessibleParentDirectory" << std::endl;
     }
 
     SUBSECTION(UploadPathIsRegularFile)
     {
+        std::cerr << "BEGIN UploadPathIsRegularFile" << std::endl;
         // Passing an existing regular file as upload directory fails gracefully
         auto dummyFile = filesystem::current_path() / "test_file_dir.tmp";
         {
             std::ofstream f(dummyFile);
+            REQUIRE(f.is_open());
             f << "dummy";
         }
         HttpFileImpl file;
@@ -265,5 +279,6 @@ DROGON_TEST(HttpFileExceptionSafety)
         file.setFile("test", 4);
         CHECK(file.save(dummyFile.string()) == -1);
         filesystem::remove(dummyFile);
+        std::cerr << "END UploadPathIsRegularFile" << std::endl;
     }
 }
