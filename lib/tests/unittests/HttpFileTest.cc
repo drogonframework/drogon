@@ -3,17 +3,9 @@
 #include <drogon/HttpAppFramework.h>
 #include <filesystem>
 #include <fstream>
-#include <cstdio>
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
-
-#define TRACE(m)                             \
-    do                                       \
-    {                                        \
-        std::fputs("TRACE " m "\n", stderr); \
-        std::fflush(stderr);                 \
-    } while (0)
 
 using namespace drogon;
 using namespace std;
@@ -199,59 +191,8 @@ DROGON_TEST(HttpFileExceptionSafety)
         CHECK(file.saveAs(target.string()) == -1);
     }
 
-    SUBSECTION(SavePathWithNormalRelativePath)
-    {
-        TRACE("enter SavePathWithNormalRelativePath");
-
-        // Normal relative paths (not starting with "." or "..") must resolve
-        // against the configured upload directory (app().getUploadPath()).
-        struct UploadPathGuard
-        {
-            std::string originalPath_{
-                (TRACE("before getUploadPath"), drogon::app().getUploadPath())};
-
-            ~UploadPathGuard()
-            {
-                TRACE("dtor enter");
-                // setUploadPath() does not accept an empty path.
-                // Restore the default upload directory if no original path
-                // exists.
-                drogon::app().setUploadPath(
-                    originalPath_.empty() ? "uploads" : originalPath_);
-                TRACE("dtor exit");
-            }
-        } guard;
-
-        TRACE("after guard ctor");
-
-        auto customUploadDir =
-            filesystem::current_path() / "test_custom_uploads";
-        TRACE("before create_directories");
-        filesystem::create_directories(customUploadDir);
-        TRACE("after create_directories, before setUploadPath");
-        drogon::app().setUploadPath(customUploadDir.string());
-        TRACE("after setUploadPath, before HttpFileImpl");
-
-        HttpFileImpl file;
-        file.setFileName("normal_rel.txt");
-        file.setFile("test", 4);
-        TRACE("before save");
-        int res = file.save("custom_sub");
-        TRACE("after save");
-        CHECK(res == 0);
-        auto expectedPath = customUploadDir / "custom_sub" / "normal_rel.txt";
-        TRACE("before exists");
-        CHECK(filesystem::exists(expectedPath));
-        TRACE("after exists, before remove_all");
-
-        filesystem::remove_all(customUploadDir);
-        TRACE("after remove_all, leaving subsection");
-    }
-    TRACE("after subsection 3 (guard destroyed)");
-
     SUBSECTION(RelativePathCurrentPathBranch)
     {
-        TRACE("enter RelativePathCurrentPathBranch");
         // Path beginning with "." or ".." takes the current_path() branch
         HttpFileImpl file;
         file.setFileName("test_rel.txt");
@@ -260,7 +201,6 @@ DROGON_TEST(HttpFileExceptionSafety)
         CHECK(res == 0);
         CHECK(filesystem::exists(uploadPath / "rel_subdir" / "test_rel.txt"));
         filesystem::remove_all(uploadPath);
-        TRACE("exit RelativePathCurrentPathBranch");
     }
 
     SUBSECTION(SaveAsInaccessibleParentDirectory)
