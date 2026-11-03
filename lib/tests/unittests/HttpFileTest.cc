@@ -199,6 +199,7 @@ DROGON_TEST(HttpFileExceptionSafety)
     SUBSECTION(SavePathWithNormalRelativePath)
     {
         std::cerr << "BEGIN SavePathWithNormalRelativePath" << std::endl;
+
         // Normal relative paths (not starting with "." or "..") must resolve
         // against the configured upload directory (app().getUploadPath()).
         struct UploadPathGuard
