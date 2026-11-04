@@ -2,6 +2,7 @@
 #include <drogon/drogon_test.h>
 #include <drogon/HttpAppFramework.h>
 #include <filesystem>
+#include <fstream>
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
