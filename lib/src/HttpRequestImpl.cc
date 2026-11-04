@@ -869,13 +869,27 @@ StreamDecompressStatus HttpRequestImpl::decompressBody()
     else if (contentEncoding == "br")
     {
         removeHeaderBy("content-encoding");
-        return decompressBodyBrotli();
+        auto status = decompressBodyBrotli();
+        if (status == StreamDecompressStatus::Ok)
+        {
+            const auto length = bodyLength();
+            addHeader("content-length", std::to_string(length));
+            contentLengthHeaderValue_ = length;
+        }
+        return status;
     }
 #endif
     else if (contentEncoding == "gzip")
     {
         removeHeaderBy("content-encoding");
-        return decompressBodyGzip();
+        auto status = decompressBodyGzip();
+        if (status == StreamDecompressStatus::Ok)
+        {
+            const auto length = bodyLength();
+            addHeader("content-length", std::to_string(length));
+            contentLengthHeaderValue_ = length;
+        }
+        return status;
     }
     return StreamDecompressStatus::NotSupported;
 }
