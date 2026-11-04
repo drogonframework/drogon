@@ -17,6 +17,7 @@
 #include <drogon/Cookie.h>
 #include <trantor/utils/Logger.h>
 #include <filesystem>
+#include <limits>
 #include <map>
 #include <unordered_map>
 #include <mutex>
@@ -874,6 +875,24 @@ bool isValidHeader(std::string_view field, std::string_view value)
                      "ignored";
         return false;
     }
+    return true;
+}
+
+bool parseContentLength(std::string_view value, size_t &length)
+{
+    if (value.empty())
+        return false;
+    size_t result = 0;
+    for (const unsigned char ch : value)
+    {
+        if (ch < '0' || ch > '9')
+            return false;
+        const size_t digit = ch - '0';
+        if (result > ((std::numeric_limits<size_t>::max)() - digit) / 10)
+            return false;
+        result = result * 10 + digit;
+    }
+    length = result;
     return true;
 }
 

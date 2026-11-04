@@ -15,6 +15,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpFileUploadRequest.h"
 #include "HttpAppFrameworkImpl.h"
+#include "HttpUtils.h"
 
 #include <drogon/utils/Utilities.h>
 #include <fstream>
@@ -446,6 +447,12 @@ bool HttpRequestImpl::addHeader(std::string_view line)
         internal::parseLine(line.data(), line.data() + line.size());
     if (valueView.data() == nullptr)
         return false;
+    // RFC 9112 section 5.1: whitespace is not allowed between the field name
+    // and the colon, and a server must reject such a request. Intermediaries
+    // disagree on how to parse the line, which is a request smuggling vector.
+    if (fieldView.empty() ||
+        fieldView.find_first_of(" \t") != std::string_view::npos)
+        return false;
     std::string field(fieldView);
     // Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
     std::transform(field.begin(),
@@ -476,6 +483,29 @@ bool HttpRequestImpl::addHeader(std::string_view line)
             cookies_[std::string(utils::trim(pair.substr(0, equal)))] =
                 std::string(utils::trim(pair.substr(equal + 1)));
         }
+    }
+    else if (field == "content-length")
+    {
+        // RFC 9110 section 8.6: Content-Length = 1*DIGIT. RFC 9112 section
+        // 6.3: an invalid value is an unrecoverable framing error, and a
+        // repeated field is only acceptable when every value is the same,
+        // which means a differing repeat must be rejected rather than
+        // resolved silently, or messaging peers can disagree on where the
+        // body ends.
+        size_t parsedLength = 0;
+        if (!parseContentLength(value, parsedLength))
+            return false;
+        const auto it = headers_.find(field);
+        if (it != headers_.end())
+        {
+            // The first field cached its parsed value; compare that instead
+            // of scanning the stored string again on every duplicate.
+            return contentLengthHeaderValue_.has_value() &&
+                   *contentLengthHeaderValue_ == parsedLength;
+        }
+        contentLengthHeaderValue_ = parsedLength;
+        headers_.emplace(std::move(field), std::move(value));
+        return true;
     }
     else
     {
