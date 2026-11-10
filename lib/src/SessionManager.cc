@@ -94,6 +94,19 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
 {
     assert(!sessionID.empty());
     SessionPtr sessionPtr;
+    if (!needToSet)
+    {
+        // The ID came from the request's cookie. Only reuse it when it names a
+        // live session; otherwise start a new session under a server-generated
+        // ID. Adopting the client's value would let anyone choose session keys
+        // (session fixation, unbounded cache growth, and chosen keys that all
+        // land in the same hash bucket).
+        if (sessionMapPtr_->findAndFetch(sessionID, sessionPtr) && sessionPtr)
+        {
+            return sessionPtr;
+        }
+        return getSession(idGeneratorCallback_(), true);
+    }
     sessionMapPtr_->modify(
         sessionID,
         [&sessionPtr, &sessionID, needToSet](SessionPtr &sessionInCache) {
