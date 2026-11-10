@@ -161,7 +161,7 @@ add_custom_command(
           copy_if_different
           ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.crt
           ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.key
-          $<TARGET_FILE_DIR:cookie_same_site>)
+          ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(real_ip_resolver RealIpResolverTest.cc)
 
