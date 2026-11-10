@@ -119,10 +119,5 @@ void SessionManager::changeSessionId(const SessionPtr &sessionPtr)
     auto newId = idGeneratorCallback_();
     sessionPtr->setSessionId(newId);
     sessionMapPtr_->insert(newId, sessionPtr, timeout_);
-    // For requests sent before setting the new session ID to the client, we
-    // reserve the old session slot for a period of time.
-    sessionMapPtr_->runAfter(10, [this, oldId = std::move(oldId)]() {
-        LOG_TRACE << "remove the old slot of the session";
-        sessionMapPtr_->erase(oldId);
-    });
+    sessionMapPtr_->erase(oldId);
 }

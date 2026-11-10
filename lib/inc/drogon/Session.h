@@ -215,7 +215,9 @@ class Session
     /**
      * @brief Let the framework create a new session ID for this session and set
      * it to the client.
-     * @note This method does not change the session ID now.
+     * @note The ID is changed when the framework handles the response, not
+     * when this method is called. At that point the old ID is invalidated;
+     * concurrent requests using it may no longer access the original session.
      */
     void changeSessionIdToClient()
     {
