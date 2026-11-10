@@ -154,6 +154,14 @@ set(COOKIE_SAME_SITE
   CookieSameSite.cc
 )
 add_executable(cookie_same_site ${COOKIE_SAME_SITE})
+add_custom_command(
+  TARGET cookie_same_site POST_BUILD
+  COMMAND ${CMAKE_COMMAND}
+          -E
+          copy_if_different
+          ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.crt
+          ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.key
+          $<TARGET_FILE_DIR:cookie_same_site>)
 
 add_executable(real_ip_resolver RealIpResolverTest.cc)
 
