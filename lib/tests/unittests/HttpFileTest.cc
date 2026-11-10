@@ -1,6 +1,7 @@
 #include "../../lib/src/HttpFileImpl.h"
 #include <drogon/drogon_test.h>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/utils/Utilities.h>
 #include <filesystem>
 #include <fstream>
 #if !defined(_WIN32)
@@ -147,27 +148,16 @@ DROGON_TEST(HttpFileExceptionSafety)
     {
         // Normal relative paths (not starting with "." or "..") must resolve
         // against the configured upload directory (app().getUploadPath()).
-        struct UploadPathGuard
-        {
-            std::string originalPath_{drogon::app().getUploadPath()};
-
-            ~UploadPathGuard()
-            {
-                drogon::app().setUploadPath(originalPath_);
-            }
-        } guard;
-
-        auto customUploadDir =
-            filesystem::current_path() / "test_custom_uploads";
-        filesystem::create_directories(customUploadDir);
-        drogon::app().setUploadPath(customUploadDir.string());
+        const auto subdir = "test_relative_upload_" + utils::getUuid();
+        const auto customUploadDir =
+            filesystem::path(drogon::app().getUploadPath()) / subdir;
 
         HttpFileImpl file;
         file.setFileName("normal_rel.txt");
         file.setFile("test", 4);
-        int res = file.save("custom_sub");
+        int res = file.save(subdir);
         CHECK(res == 0);
-        auto expectedPath = customUploadDir / "custom_sub" / "normal_rel.txt";
+        auto expectedPath = customUploadDir / "normal_rel.txt";
         CHECK(filesystem::exists(expectedPath));
 
         filesystem::remove_all(customUploadDir);
