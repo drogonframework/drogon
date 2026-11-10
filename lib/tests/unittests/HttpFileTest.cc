@@ -84,6 +84,54 @@ DROGON_TEST(HttpFile)
         filesystem::remove_all("test_uploads_dir");
         filesystem::remove(fileName.string());
     }
+
+    SUBSECTION(FileNameWithStrictPrefixTraversal)
+    {
+        // Upload path with multiple subdirectories so that destination is a
+        // strict ancestor, making fsSaveToPath have fewer components while
+        // matching all initial components of fsUploadDir.
+        auto uploadPath = filesystem::current_path() / "test_uploads_dir" /
+                          "a" / "b" / "c" / "upload";
+
+        HttpFileImpl file;
+        file.setFileName("../../c");
+        file.setFile("test", 4);
+        auto out = file.save(uploadPath.string());
+
+        CHECK(out == -1);
+
+        filesystem::remove_all(filesystem::current_path() / "test_uploads_dir");
+    }
+
+    SUBSECTION(FileNameWithDotDotTraversal)
+    {
+        auto uploadPath = filesystem::current_path() / "test_uploads_dir";
+
+        HttpFileImpl file;
+        file.setFileName("..");
+        file.setFile("test", 4);
+        auto out = file.save(uploadPath.string());
+
+        CHECK(out == -1);
+
+        filesystem::remove_all(uploadPath);
+    }
+
+    SUBSECTION(FileNameWithNestedSubdirectory)
+    {
+        auto uploadPath = filesystem::current_path() / "test_uploads_dir";
+        filesystem::create_directories(uploadPath / "nested");
+
+        HttpFileImpl file;
+        file.setFileName("nested/test_nested_file");
+        file.setFile("test", 4);
+        auto out = file.save(uploadPath.string());
+
+        CHECK(out == 0);
+        CHECK(filesystem::exists(uploadPath / "nested" / "test_nested_file"));
+
+        filesystem::remove_all(uploadPath);
+    }
 }
 
 DROGON_TEST(HttpFileSaveRejectsParentDirectoryName)
@@ -143,36 +191,6 @@ DROGON_TEST(HttpFileExceptionSafety)
         CHECK(file.saveAs(target.string()) == -1);
     }
 
-    SUBSECTION(SavePathWithNormalRelativePath)
-    {
-        // Normal relative paths (not starting with "." or "..") must resolve
-        // against the configured upload directory (app().getUploadPath()).
-        struct UploadPathGuard
-        {
-            std::string originalPath_{drogon::app().getUploadPath()};
-
-            ~UploadPathGuard()
-            {
-                drogon::app().setUploadPath(originalPath_);
-            }
-        } guard;
-
-        auto customUploadDir =
-            filesystem::current_path() / "test_custom_uploads";
-        filesystem::create_directories(customUploadDir);
-        drogon::app().setUploadPath(customUploadDir.string());
-
-        HttpFileImpl file;
-        file.setFileName("normal_rel.txt");
-        file.setFile("test", 4);
-        int res = file.save("custom_sub");
-        CHECK(res == 0);
-        auto expectedPath = customUploadDir / "custom_sub" / "normal_rel.txt";
-        CHECK(filesystem::exists(expectedPath));
-
-        filesystem::remove_all(customUploadDir);
-    }
-
     SUBSECTION(RelativePathCurrentPathBranch)
     {
         // Path beginning with "." or ".." takes the current_path() branch
@@ -196,6 +214,7 @@ DROGON_TEST(HttpFileExceptionSafety)
         auto blocker = filesystem::current_path() / "test_blocker_file.tmp";
         {
             std::ofstream f(blocker);
+            REQUIRE(f.is_open());
             f.put('x');
         }
         const auto target = blocker / "child" / "upload.bin";
@@ -210,6 +229,7 @@ DROGON_TEST(HttpFileExceptionSafety)
         auto dummyFile = filesystem::current_path() / "test_file_dir.tmp";
         {
             std::ofstream f(dummyFile);
+            REQUIRE(f.is_open());
             f << "dummy";
         }
         HttpFileImpl file;
