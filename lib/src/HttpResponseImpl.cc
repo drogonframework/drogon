@@ -1078,7 +1078,7 @@ bool HttpResponseImpl::addHeader(std::string_view line)
             return true;
         if (field == "content-length" && headers_.find(field) != headers_.end())
         {
-            // RFC 9110 section 8.6 permits rejecting a repeated
+            // RFC 9112 section 6.3 permits rejecting a repeated
             // Content-Length outright. This map keeps only one value, so
             // reject the repeat instead of letting the last one silently
             // win, which is a response smuggling vector.

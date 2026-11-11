@@ -488,21 +488,14 @@ bool HttpRequestImpl::addHeader(std::string_view line)
     {
         // RFC 9110 section 8.6: Content-Length = 1*DIGIT. RFC 9112 section
         // 6.3: an invalid value is an unrecoverable framing error, and a
-        // repeated field is only acceptable when every value is the same,
-        // which means a differing repeat must be rejected rather than
-        // resolved silently, or messaging peers can disagree on where the
-        // body ends.
+        // repeated field must be rejected or folded into a single value.
+        // Reject the repeat outright so requests and responses share one
+        // unambiguous policy.
         size_t parsedLength = 0;
         if (!parseContentLength(value, parsedLength))
             return false;
-        const auto it = headers_.find(field);
-        if (it != headers_.end())
-        {
-            // The first field cached its parsed value; compare that instead
-            // of scanning the stored string again on every duplicate.
-            return contentLengthHeaderValue_.has_value() &&
-                   *contentLengthHeaderValue_ == parsedLength;
-        }
+        if (headers_.find(field) != headers_.end())
+            return false;
         contentLengthHeaderValue_ = parsedLength;
         headers_.emplace(std::move(field), std::move(value));
         return true;

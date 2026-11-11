@@ -135,8 +135,9 @@ DROGON_TEST(RejectOverflowingContentLength)
                  "HTTP/1.1 400");
 }
 
-// Repeated fields with the same value are redundant but unambiguous.
-DROGON_TEST(AcceptRepeatedIdenticalContentLength)
+// RFC 9112 section 6.3 allows folding identical repeats, but rejecting every
+// repeat is simpler and equally compliant.
+DROGON_TEST(RejectRepeatedContentLength)
 {
     auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
     expectStatus(TEST_CTX,
@@ -147,5 +148,5 @@ DROGON_TEST(AcceptRepeatedIdenticalContentLength)
                  "Content-Length: 1\r\n"
                  "Connection: close\r\n\r\n"
                  "x",
-                 "HTTP/1.1 200");
+                 "HTTP/1.1 400");
 }
