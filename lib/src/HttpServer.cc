@@ -1168,11 +1168,11 @@ void HttpServer::sendResponses(
 
 static bool isValidWebSocketKey(std::string_view key)
 {
-    if (key.size() != 24 || !utils::isBase64(key))
+    if (key.size() != 24 || !drogon::utils::isBase64(key))
         return false;
 
-    const auto decoded = utils::base64Decode(key);
-    return decoded.size() == 16 && utils::base64Encode(decoded) == key;
+    const auto decoded = drogon::utils::base64Decode(key);
+    return decoded.size() == 16 && drogon::utils::base64Encode(decoded) == key;
 }
 
 static inline bool isWebSocket(const HttpRequestImplPtr &req)

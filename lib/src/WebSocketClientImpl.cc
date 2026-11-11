@@ -256,7 +256,8 @@ void WebSocketClientImpl::onRecvMessage(
         auto acceptStr = resp->getHeaderBy("sec-websocket-accept");
 
         if (resp->statusCode() != k101SwitchingProtocols ||
-            !utils::ci_equals(resp->getHeaderBy("upgrade"), "websocket") ||
+            !drogon::utils::ci_equals(resp->getHeaderBy("upgrade"),
+                                      "websocket") ||
             !containsHttpToken(resp->getHeaderBy("connection"), "upgrade") ||
             acceptStr != wsAccept_)
         {
