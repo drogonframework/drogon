@@ -47,6 +47,7 @@ using namespace drogon;
 using namespace trantor;
 
 static inline bool isWebSocket(const HttpRequestImplPtr &req);
+static bool isValidWebSocketKey(std::string_view key);
 static inline HttpResponsePtr tryDecompressRequest(
     const HttpRequestImplPtr &req);
 static inline bool passSyncAdvices(
@@ -736,6 +737,14 @@ void HttpServer::websocketRequestRouting(
     std::function<void(const HttpResponsePtr &)> &&callback,
     WebSocketConnectionImplPtr &&wsConnPtr)
 {
+    if (!isValidWebSocketKey(req->getHeaderBy("sec-websocket-key")))
+    {
+        auto resp = HttpResponse::newHttpResponse(k400BadRequest, CT_NONE);
+        resp->setCloseConnection(true);
+        callback(resp);
+        return;
+    }
+
     RouteResult result = HttpControllersRouter::instance().routeWs(req);
 
     if (result.result == RouteResult::Success)
@@ -1155,6 +1164,15 @@ void HttpServer::sendResponses(
         COZ_PROGRESS
     }
     buffer.retrieveAll();
+}
+
+static bool isValidWebSocketKey(std::string_view key)
+{
+    if (key.size() != 24 || !drogon::utils::isBase64(key))
+        return false;
+
+    const auto decoded = drogon::utils::base64Decode(key);
+    return decoded.size() == 16 && drogon::utils::base64Encode(decoded) == key;
 }
 
 static inline bool isWebSocket(const HttpRequestImplPtr &req)

@@ -911,8 +911,9 @@ std::string urlDecode(const char *begin, const char *end)
                 result += ' ';
                 break;
             case '%':
-                if ((i + 2) < len && isxdigit(begin[i + 1]) &&
-                    isxdigit(begin[i + 2]))
+                if ((i + 2) < len &&
+                    isxdigit(static_cast<unsigned char>(begin[i + 1])) &&
+                    isxdigit(static_cast<unsigned char>(begin[i + 2])))
                 {
                     unsigned int x1 = begin[i + 1];
                     if (x1 >= '0' && x1 <= '9')
