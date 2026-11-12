@@ -19,7 +19,6 @@
 #include <cerrno>
 #include <cstdlib>
 #include <iostream>
-#include <limits>
 #include <string_view>
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
@@ -211,8 +210,10 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
 
                 const std::string_view line(buf->peek(), crlf - buf->peek());
-                if (request_->addHeader(line))
+                if (!line.empty())
                 {
+                    if (!request_->addHeader(line))
+                        return -k400BadRequest;
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
                 }
@@ -237,19 +238,9 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (!len.empty())
                 {
                     size_t contentLength = 0;
-                    for (const unsigned char ch : len)
+                    if (!parseContentLength(len, contentLength))
                     {
-                        if (ch < '0' || ch > '9')
-                        {
-                            return -k400BadRequest;
-                        }
-                        const size_t digit = ch - '0';
-                        if (contentLength >
-                            ((std::numeric_limits<size_t>::max)() - digit) / 10)
-                        {
-                            return -k400BadRequest;
-                        }
-                        contentLength = contentLength * 10 + digit;
+                        return -k400BadRequest;
                     }
                     remainContentLength_ = contentLength;
                     request_->contentLengthHeaderValue_ = remainContentLength_;
