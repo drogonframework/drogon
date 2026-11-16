@@ -18,8 +18,10 @@
 #include "HttpUtils.h"
 #include <drogon/HttpViewData.h>
 #include <drogon/IOThreadStorage.h>
+#include <charconv>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <cstdio>
 #include <string>
@@ -147,15 +149,12 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(const HttpRequestPtr &req)
     auto &resp = HttpAppFrameworkImpl::instance().getCustom404Page();
     if (resp)
     {
-        if (loop && loop->index() < app().getThreadNum())
-        {
-            return resp;
-        }
-        else
-        {
-            return HttpResponsePtr{new HttpResponseImpl(
-                *static_cast<HttpResponseImpl *>(resp.get()))};
-        }
+        // Always hand out a copy. The custom page keeps expiredTime -1, so
+        // later stages (session cookie, connection headers, compression)
+        // modify the response in place; sharing it would leak one client's
+        // Set-Cookie into other clients' 404 responses.
+        return HttpResponsePtr{
+            new HttpResponseImpl(*static_cast<HttpResponseImpl *>(resp.get()))};
     }
     else
     {
@@ -974,62 +973,40 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
     return httpString;
 }
 
-void HttpResponseImpl::addHeader(const char *start,
-                                 const char *colon,
-                                 const char *end)
+bool HttpResponseImpl::addHeader(std::string_view line)
 {
+    auto [fieldView, valueView] =
+        internal::parseLine(line.data(), line.data() + line.size());
+    if (valueView.data() == nullptr)
+        return false;
     fullHeaderString_.reset();
-    std::string field(start, colon);
+    std::string field(fieldView);
     transform(field.begin(), field.end(), field.begin(), [](unsigned char c) {
         return tolower(c);
     });
-    ++colon;
-    while (colon < end && isspace(static_cast<unsigned char>(*colon)))
-    {
-        ++colon;
-    }
-    std::string value(colon, end);
-    while (!value.empty() &&
-           isspace(static_cast<unsigned char>(value[value.size() - 1])))
-    {
-        value.resize(value.size() - 1);
-    }
+    while (!valueView.empty() &&
+           isspace(static_cast<unsigned char>(valueView.front())))
+        valueView.remove_prefix(1);
+    while (!valueView.empty() &&
+           isspace(static_cast<unsigned char>(valueView.back())))
+        valueView.remove_suffix(1);
+    std::string value(valueView);
 
     if (field == "set-cookie")
     {
         // LOG_INFO<<"cookies!!!:"<<value;
-        auto values = utils::splitString(value, ";");
         Cookie cookie;
         cookie.setHttpOnly(false);
-        for (size_t i = 0; i < values.size(); ++i)
+        std::string_view remaining = value;
+        internal::HeaderParameter parameter;
+        size_t i = 0;
+        while (internal::nextHeaderParameter(remaining, parameter))
         {
-            std::string &coo = values[i];
-            std::string cookie_name;
-            std::string cookie_value;
-            auto epos = coo.find('=');
-            if (epos != std::string::npos)
-            {
-                cookie_name = coo.substr(0, epos);
-                std::string::size_type cpos = 0;
-                while (cpos < cookie_name.length() &&
-                       isspace(static_cast<unsigned char>(cookie_name[cpos])))
-                    ++cpos;
-                cookie_name = cookie_name.substr(cpos);
-                ++epos;
-                while (epos < coo.length() &&
-                       isspace(static_cast<unsigned char>(coo[epos])))
-                    ++epos;
-                cookie_value = coo.substr(epos);
-            }
-            else
-            {
-                std::string::size_type cpos = 0;
-                while (cpos < coo.length() &&
-                       isspace(static_cast<unsigned char>(coo[cpos])))
-                    ++cpos;
-                cookie_name = coo.substr(cpos);
-            }
-            if (i == 0)
+            if (parameter.name.empty() && !parameter.hasValue)
+                continue;
+            std::string cookie_name(parameter.name);
+            std::string cookie_value(parameter.value);
+            if (i++ == 0)
             {
                 cookie.setKey(cookie_name);
                 cookie.setValue(cookie_value);
@@ -1067,46 +1044,94 @@ void HttpResponseImpl::addHeader(const char *start,
                 }
                 else if (cookie_name == "max-age")
                 {
-                    int maxAge{};
-                    if (utils::parseInteger(cookie_value, maxAge))
+                    const std::string_view maxAgeValue =
+                        utils::trim(std::string_view(cookie_value));
+                    int maxAge;
+                    const char *begin = maxAgeValue.data();
+                    const char *valueEnd = begin + maxAgeValue.size();
+                    auto result = std::from_chars(begin, valueEnd, maxAge);
+                    if (result.ptr == valueEnd)
                     {
-                        cookie.setMaxAge(maxAge);
+                        if (result.ec == std::errc{})
+                        {
+                            cookie.setMaxAge(maxAge);
+                        }
+                        else if (result.ec == std::errc::result_out_of_range)
+                        {
+                            cookie.setMaxAge(
+                                maxAgeValue.front() == '-'
+                                    ? (std::numeric_limits<int>::min)()
+                                    : (std::numeric_limits<int>::max)());
+                        }
                     }
                 }
             }
         }
-        if (!cookie.key().empty())
+        if (!cookie.key().empty() && isValidCookie(cookie))
         {
             cookies_[cookie.key()] = std::move(cookie);
         }
     }
     else
     {
+        if (!isValidHeader(field, value))
+            return true;
+        if (field == "content-length" && headers_.find(field) != headers_.end())
+        {
+            // RFC 9112 section 6.3 permits rejecting a repeated
+            // Content-Length outright. This map keeps only one value, so
+            // reject the repeat instead of letting the last one silently
+            // win, which is a response smuggling vector.
+            return false;
+        }
         headers_[std::move(field)] = std::move(value);
     }
+    return true;
 }
 
+// Every data member must be listed here, in declaration order. Leaving one out
+// splices the two responses together instead of exchanging them, and the
+// members that depend on each other make that fatal rather than merely wrong:
+//   - expriedTime_ decides whether renderToBuffer() trusts httpString_, while
+//     datePos_ indexes into it. Swapping the latter two without the former
+//     hands a response a null httpString_ alongside a valid datePos_, and the
+//     next render dereferences it.
+//   - contentType_ without contentTypeString_, or statusCode_ without
+//     customStatusCode_, renders a response that contradicts its own
+//     accessors.
 void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
 {
     using std::swap;
     headers_.swap(that.headers_);
     cookies_.swap(that.cookies_);
+    swap(customStatusCode_, that.customStatusCode_);
     swap(statusCode_, that.statusCode_);
-    swap(version_, that.version_);
     swap(statusMessage_, that.statusMessage_);
+    swap(creationDate_, that.creationDate_);
+    swap(version_, that.version_);
     swap(closeConnection_, that.closeConnection_);
+    swap(closeConnectionSetByUser_, that.closeConnectionSetByUser_);
     bodyPtr_.swap(that.bodyPtr_);
-    swap(contentType_, that.contentType_);
-    swap(flagForParsingContentType_, that.flagForParsingContentType_);
-    swap(flagForParsingJson_, that.flagForParsingJson_);
+    swap(expriedTime_, that.expriedTime_);
     swap(sendfileName_, that.sendfileName_);
+    swap(sendfileRange_, that.sendfileRange_);
     swap(streamCallback_, that.streamCallback_);
     swap(asyncStreamCallback_, that.asyncStreamCallback_);
+    swap(asyncStreamDisableKickoff_, that.asyncStreamDisableKickoff_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);
+    swap(peerCertificate_, that.peerCertificate_);
     httpString_.swap(that.httpString_);
     swap(datePos_, that.datePos_);
+    swap(httpStringDate_, that.httpStringDate_);
+    swap(flagForParsingJson_, that.flagForParsingJson_);
+    swap(flagForSerializingJson_, that.flagForSerializingJson_);
+    swap(contentType_, that.contentType_);
+    swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
+    swap(contentTypeString_, that.contentTypeString_);
+    swap(passThrough_, that.passThrough_);
+    swap(allowCompression_, that.allowCompression_);
 }
 
 void HttpResponseImpl::clear()
@@ -1114,7 +1139,9 @@ void HttpResponseImpl::clear()
     statusCode_ = kUnknown;
     version_ = Version::kHttp11;
     statusMessage_ = std::string_view{};
-    fullHeaderString_.reset();
+    closeConnection_ = false;
+    closeConnectionSetByUser_ = false;
+    invalidateRenderCache();
     jsonParsingErrorPtr_.reset();
     sendfileName_.clear();
     if (streamCallback_)
@@ -1133,7 +1160,6 @@ void HttpResponseImpl::clear()
     bodyPtr_.reset();
     jsonPtr_.reset();
     expriedTime_ = -1;
-    datePos_ = std::string::npos;
     flagForParsingContentType_ = false;
     flagForParsingJson_ = false;
 }
@@ -1198,6 +1224,11 @@ void HttpResponseImpl::setContentTypeString(const char *typeString,
                                             size_t typeStringLength)
 {
     std::string sv(typeString, typeStringLength);
+    if (containsCRLF(sv))
+    {
+        LOG_ERROR << "Invalid characters in content-type, ignored";
+        return;
+    }
     auto contentType = parseContentType(sv);
     if (contentType == CT_NONE)
         contentType = CT_CUSTOM;

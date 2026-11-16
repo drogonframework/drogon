@@ -13,6 +13,8 @@
  */
 #include <drogon/drogon_test.h>
 #include <drogon/HttpTypes.h>
+#include <drogon/utils/Utilities.h>
+#include <trantor/net/EventLoop.h>
 #include <trantor/utils/MsgBuffer.h>
 #include "../../lib/src/HttpRequestImpl.h"
 #include "../../lib/src/CacheFile.h"
@@ -255,6 +257,32 @@ DROGON_TEST(HttpRequestForwardCacheBody_PassThroughKeepsBody)
     req.appendToBuffer(&buf);
     std::string raw(buf.peek(), buf.readableBytes());
 
+    CHECK(extractBody(raw) == body);
+}
+
+DROGON_TEST(HttpRequestForwardCacheBody_DecompressedPassThroughLength)
+{
+    const std::string body = std::string(2048, 'A') + "decoded-request-tail";
+    const auto compressed = utils::gzipCompress(body.data(), body.size());
+    REQUIRE(!compressed.empty());
+
+    trantor::EventLoop loop;
+    HttpRequestImpl req(&loop);
+    req.setMethod(Post);
+    req.setVersion(Version::kHttp11);
+    req.setPath("/forward");
+    req.setBody(compressed);
+    req.addHeader("content-encoding", "gzip");
+    req.addHeader("content-length", std::to_string(compressed.size()));
+
+    REQUIRE(req.decompressBody() == StreamDecompressStatus::Ok);
+    req.setPassThrough(true);
+
+    trantor::MsgBuffer buf;
+    req.appendToBuffer(&buf);
+    std::string raw(buf.peek(), buf.readableBytes());
+
+    CHECK(findHeader(raw, "content-length") == std::to_string(body.size()));
     CHECK(extractBody(raw) == body);
 }
 

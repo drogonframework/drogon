@@ -63,14 +63,14 @@ jobs:
 
       - name: Test
         shell: bash
-        run: ./test.sh -w
+        run: ./test.sh -w -t
 
   macos:
     runs-on: macos-${{ matrix.osver }}
     strategy:
       fail-fast: false
       matrix:
-        osver: [14, 15]
+        osver: [15]
     steps:
       - name: Checkout Drogon source code
         uses: actions/checkout@v4

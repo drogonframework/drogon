@@ -161,7 +161,9 @@ const char *scan_unquoted_string(const char begin[])
     assert(*begin != '"');
 
     const char *p;
-    for (p = begin; *p != ',' && *p != ';' && *p != '}'; p++)
+    // Stop at the terminator too, so a truncated array ("{1,2") cannot make
+    // the scan run past the end of the value.
+    for (p = begin; *p != '\0' && *p != ',' && *p != ';' && *p != '}'; p++)
         ;
     return p;
 }

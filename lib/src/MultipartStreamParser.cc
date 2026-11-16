@@ -13,46 +13,25 @@
  */
 
 #include "MultipartStreamParser.h"
+#include "HttpUtils.h"
 #include <cassert>
-#include "utils/ParsingUtils.h"
 
 using namespace drogon;
-using drogon::utils::parseLine;
-using drogon::utils::startsWith;
-using drogon::utils::startsWithIgnoreCase;
+using drogon::internal::parseHeaderParameter;
+using drogon::internal::parseLine;
+using drogon::internal::parseMultipartBoundary;
+using drogon::internal::startsWith;
+using drogon::internal::startsWithIgnoreCase;
 
 MultipartStreamParser::MultipartStreamParser(const std::string &contentType)
 {
-    static const std::string_view multipart = "multipart/form-data";
-    static const std::string_view boundaryEq = "boundary=";
-
-    if (!startsWithIgnoreCase(contentType, multipart))
+    std::string_view boundary;
+    if (!parseMultipartBoundary(contentType, boundary))
     {
         isValid_ = false;
         return;
     }
-    auto pos = contentType.find(boundaryEq, multipart.size());
-    if (pos == std::string::npos)
-    {
-        isValid_ = false;
-        return;
-    }
-
-    pos += boundaryEq.size();
-    size_t pos2;
-    if (contentType[pos] == '"')
-    {
-        ++pos;
-        pos2 = contentType.find('"', pos);
-    }
-    else
-    {
-        pos2 = contentType.find(';', pos);
-    }
-    if (pos2 == std::string::npos)
-        pos2 = contentType.size();
-
-    boundary_ = contentType.substr(pos, pos2 - pos);
+    boundary_ = boundary;
     dashBoundaryCrlf_ = dash_ + boundary_ + crlf_;
     crlfDashBoundary_ = crlf_ + dash_ + boundary_;
 }
@@ -134,55 +113,20 @@ void drogon::MultipartStreamParser::parse(
                 }
                 else if (startsWithIgnoreCase(keyView, "content-disposition"))
                 {
-                    static const std::string_view nameKey = "name=";
-                    static const std::string_view fileNameKey = "filename=";
-
-                    // Extract name
-                    auto namePos = valueView.find(nameKey);
-                    if (namePos == std::string::npos)
+                    std::string_view name;
+                    if (!parseHeaderParameter(valueView, "name", name))
                     {
                         // name absent
                         isValid_ = false;
                         return;
                     }
-                    namePos += nameKey.size();
-                    size_t nameEnd;
-                    if (valueView[namePos] == '"')
-                    {
-                        ++namePos;
-                        nameEnd = valueView.find('"', namePos);
-                    }
-                    else
-                    {
-                        nameEnd = valueView.find(';', namePos);
-                    }
-                    if (nameEnd == std::string::npos)
-                    {
-                        // name end not found
-                        isValid_ = false;
-                        return;
-                    }
-                    currentHeader_.name =
-                        valueView.substr(namePos, nameEnd - namePos);
+                    currentHeader_.name = name;
 
                     // Extract filename
-                    auto fileNamePos = valueView.find(fileNameKey, nameEnd);
-                    if (fileNamePos != std::string::npos)
+                    std::string_view fileName;
+                    if (parseHeaderParameter(valueView, "filename", fileName))
                     {
-                        fileNamePos += fileNameKey.size();
-                        size_t fileNameEnd;
-                        if (valueView[fileNamePos] == '"')
-                        {
-                            ++fileNamePos;
-                            fileNameEnd = valueView.find('"', fileNamePos);
-                        }
-                        else
-                        {
-                            fileNameEnd = valueView.find(';', fileNamePos);
-                        }
-                        currentHeader_.filename =
-                            valueView.substr(fileNamePos,
-                                             fileNameEnd - fileNamePos);
+                        currentHeader_.filename = fileName;
                     }
                 }
                 // ignore other headers
@@ -191,31 +135,54 @@ void drogon::MultipartStreamParser::parse(
             }
             case Status::kExpectBody:
             {
-                if (buffer_.size() < crlfDashBoundary_.size())
-                {
-                    return;  // not enough data to check boundary
-                }
                 std::string_view v = buffer_.view();
-                auto pos = v.find(crlfDashBoundary_);
-                if (pos == std::string::npos)
+                std::string_view remain = v;
+                while (true)
                 {
-                    // boundary not found, leave potential partial boundary
-                    size_t len = v.size() - crlfDashBoundary_.size();
-                    if (len > 0)
+                    auto pos = remain.find(crlfDashBoundary_);
+                    if (pos == std::string_view::npos)
                     {
-                        dataCb(v.data(), len);
-                        buffer_.eraseFront(len);
+                        // Retain enough bytes for a delimiter split across
+                        // calls.
+                        const size_t keep = crlfDashBoundary_.size() + 1;
+                        if (v.size() > keep)
+                        {
+                            const size_t len = v.size() - keep;
+                            dataCb(v.data(), len);
+                            buffer_.eraseFront(len);
+                        }
+                        return;
                     }
-                    return;
+                    const auto body =
+                        v.substr(0, v.size() - remain.size() + pos);
+                    const auto suffix =
+                        remain.substr(pos + crlfDashBoundary_.size());
+                    if (suffix.size() < 2)
+                    {
+                        // The delimiter suffix may arrive in the next call.
+                        if (!body.empty())
+                        {
+                            dataCb(body.data(), body.size());
+                            buffer_.eraseFront(body.size());
+                        }
+                        return;
+                    }
+                    if (!startsWith(suffix, crlf_) &&
+                        !startsWith(suffix, dash_))
+                    {
+                        // A boundary prefix inside the part is ordinary data.
+                        remain.remove_prefix(pos + 1);
+                        continue;
+                    }
+                    dataCb(body.data(), body.size());
+                    if (!body.empty())
+                    {
+                        dataCb(body.data() + body.size(), 0);
+                    }
+                    buffer_.eraseFront(body.size() + crlfDashBoundary_.size());
+                    status_ = Status::kExpectEndOrNewEntry;
+                    break;
                 }
-                // found boundary
-                dataCb(v.data(), pos);
-                if (pos > 0)
-                {
-                    dataCb(v.data() + pos, 0);  // notify end of file
-                }
-                buffer_.eraseFront(pos + crlfDashBoundary_.size());
-                status_ = Status::kExpectEndOrNewEntry;
                 continue;
             }
             case Status::kExpectEndOrNewEntry:

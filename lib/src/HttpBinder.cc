@@ -25,5 +25,18 @@ void handleException(const std::exception &e,
 {
     app().getExceptionHandler()(e, req, std::move(callback));
 }
+
+void handleBadPathParameter(
+    const std::exception &e,
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    std::string pathWithQuery = req->path();
+    if (!req->query().empty())
+        pathWithQuery += "?" + req->query();
+    LOG_ERROR << "Invalid path parameter in " << pathWithQuery
+              << ", what(): " << e.what();
+    callback(app().getCustomErrorHandler()(k400BadRequest, req));
+}
 }  // namespace internal
 }  // namespace drogon

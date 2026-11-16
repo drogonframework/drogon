@@ -13,6 +13,7 @@
  */
 
 #include "create_filter.h"
+#include "extension.h"
 #include <drogon/DrTemplateBase.h>
 #include <drogon/utils/Utilities.h>
 
@@ -47,6 +48,8 @@ static void createFilterHeaderFile(std::ofstream &file,
         data.insert("className", className);
     }
     data.insert("filename", fileName);
+    data.insert("SourceExtension", sourceExtension);
+    data.insert("HeaderExtension", headerExtension);
     file << templ->genText(data);
 }
 
@@ -67,6 +70,8 @@ static void createFilterSourceFile(std::ofstream &file,
         data.insert("className", className);
     }
     data.insert("filename", fileName);
+    data.insert("SourceExtension", sourceExtension);
+    data.insert("HeaderExtension", headerExtension);
     file << templ->genText(data);
 }
 
@@ -82,8 +87,8 @@ void create_filter::handleCommand(std::vector<std::string> &parameters)
         std::string fileName =
             std::regex_replace(className, regex, std::string("_"));
 
-        std::string headFileName = fileName + ".h";
-        std::string sourceFilename = fileName + ".cc";
+        std::string headFileName = fileName + "." + headerExtension;
+        std::string sourceFilename = fileName + "." + sourceExtension;
         {
             std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
             std::ifstream iSourceFile(sourceFilename.c_str(),

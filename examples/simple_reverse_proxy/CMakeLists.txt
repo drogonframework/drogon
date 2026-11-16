@@ -44,12 +44,12 @@ foreach(cspFile ${SCP_LIST})
     message(STATUS "cspFile:" ${cspFile})
     EXEC_PROGRAM(basename ARGS "${cspFile} .csp" OUTPUT_VARIABLE classname)
     message(STATUS "view classname:" ${classname})
-    ADD_CUSTOM_COMMAND(OUTPUT ${classname}.h ${classname}.cc
+    ADD_CUSTOM_COMMAND(OUTPUT ${classname}.${DEFAULT_HEADER_EXTENSION} ${classname}.${DEFAULT_SOURCE_EXTENSION}
             COMMAND drogon_ctl
             ARGS create view ${cspFile}
             DEPENDS ${cspFile}
             VERBATIM )
-    set(VIEWSRC ${VIEWSRC} ${classname}.cc)
+    set(VIEWSRC ${VIEWSRC} ${classname}.${DEFAULT_SOURCE_EXTENSION})
 endforeach()
 
 target_include_directories(simple_reverse_proxy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/models)

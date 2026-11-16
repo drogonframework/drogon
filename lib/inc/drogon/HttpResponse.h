@@ -264,15 +264,19 @@ class DROGON_EXPORT HttpResponse
      * @param field The field parameter is transformed to lower case before
      * storing.
      * @param value The value of the header.
+     * @note The header is ignored if the field or the value contains CR or LF
+     * characters, to prevent HTTP response splitting.
      */
     virtual void addHeader(std::string field, const std::string &value) = 0;
     virtual void addHeader(std::string field, std::string &&value) = 0;
 
-    /// Add a cookie
+    /// Add a cookie. The cookie is ignored if its key or value contains CR or
+    /// LF characters.
     virtual void addCookie(const std::string &key,
                            const std::string &value) = 0;
 
-    /// Add a cookie
+    /// Add a cookie. The cookie is ignored if its key, value, domain or path
+    /// contains CR or LF characters.
     virtual void addCookie(const Cookie &cookie) = 0;
     virtual void addCookie(Cookie &&cookie) = 0;
 

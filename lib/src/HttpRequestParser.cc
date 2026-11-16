@@ -16,7 +16,10 @@
 #include <drogon/HttpTypes.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <cerrno>
+#include <cstdlib>
 #include <iostream>
+#include <string_view>
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -29,25 +32,6 @@ using namespace drogon;
 static constexpr size_t CRLF_LEN = 2;            // strlen("crlf")
 static constexpr size_t METHOD_MAX_LEN = 7;      // strlen("OPTIONS")
 static constexpr size_t TRUNK_LEN_MAX_LEN = 16;  // 0xFFFFFFFF,FFFFFFFF
-
-// NOTE: tolower is locale depent thus not ideal for parsing
-static std::string lowerAscii(const char *begin, const char *end)
-{
-    std::string value(begin, end);
-    for (auto &c : value)
-    {
-        if (c >= 'A' && c <= 'Z')
-        {
-            c += 'a' - 'A';
-        }
-    }
-    return value;
-}
-
-static bool isContentLengthHeader(const char *begin, const char *end)
-{
-    return lowerAscii(begin, end) == "content-length";
-}
 
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
     : status_(HttpRequestParseStatus::kExpectMethod),
@@ -226,19 +210,11 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return 0;
                 }
 
-                const char *colon = std::find(buf->peek(), crlf, ':');
-                // found colon
-                if (colon != crlf)
+                const std::string_view line(buf->peek(), crlf - buf->peek());
+                if (!line.empty())
                 {
-                    if (isContentLengthHeader(buf->peek(), colon) &&
-                        request_->headers().find("content-length") !=
-                            request_->headers().end())
-                    {
-                        // Reject duplicate Content-Length fields to avoid
-                        // ambiguous message framing.
+                    if (!request_->addHeader(line))
                         return -k400BadRequest;
-                    }
-                    request_->addHeader(buf->peek(), colon, crlf);
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
                 }
@@ -267,10 +243,12 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 if (!len.empty())
                 {
-                    if (!utils::parseInteger(len, remainContentLength_))
+                    size_t contentLength = 0;
+                    if (!parseContentLength(len, contentLength))
                     {
                         return -k400BadRequest;
                     }
+                    remainContentLength_ = contentLength;
                     request_->contentLengthHeaderValue_ = remainContentLength_;
                     if (remainContentLength_ == 0 &&
                         status_ != HttpRequestParseStatus::kExpectChunkLen)
@@ -313,12 +291,10 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (expect == "100-continue" &&
                     request_->getVersion() >= Version::kHttp11)
                 {
-                    if (remainContentLength_ == 0)
-                    {
-                        // error
-                        return -k400BadRequest;
-                    }
-                    else
+                    // There is nothing to negotiate when the framing indicates
+                    // that the request has no body. RFC 9110 Section 10.1.1
+                    // permits omitting the interim response in this case.
+                    if (remainContentLength_ != 0)
                     {
                         // rfc2616-8.2.3
                         // TODO: consider adding an AOP for expect header
@@ -414,11 +390,10 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 if (currentChunkLength_ != 0)
                 {
-                    const auto maxBodySize =
+                    const size_t maxBody =
                         HttpAppFrameworkImpl::instance().getClientMaxBodySize();
-                    if (currentChunkLength_ > maxBodySize ||
-                        remainContentLength_ >
-                            maxBodySize - currentChunkLength_)
+                    if (remainContentLength_ > maxBody ||
+                        currentChunkLength_ > maxBody - remainContentLength_)
                     {
                         return -k413RequestEntityTooLarge;
                     }
@@ -434,8 +409,7 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
             case HttpRequestParseStatus::kExpectChunkBody:
             {
                 if (buf->readableBytes() < CRLF_LEN ||
-                    currentChunkLength_ >
-                        buf->readableBytes() - CRLF_LEN)
+                    currentChunkLength_ > buf->readableBytes() - CRLF_LEN)
                 {
                     return 0;
                 }

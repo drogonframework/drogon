@@ -36,9 +36,11 @@ class DbClientImpl : public DbClient,
                  size_t connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                  ClientType type,
-                 bool autoBatch);
+                 bool autoBatch,
+                 const std::vector<std::string> &initializationQueries = {});
 #else
-                 ClientType type);
+                 ClientType type,
+                 const std::vector<std::string> &initializationQueries = {});
 #endif
     ~DbClientImpl() noexcept override;
     void execSql(const char *sql,
@@ -66,6 +68,11 @@ class DbClientImpl : public DbClient,
         timeout_ = timeout;
     }
 
+    void setReconnectInterval(double interval) override
+    {
+        reconnectInterval_ = interval;
+    }
+
     void init();
     void closeAll() override;
 
@@ -73,7 +80,9 @@ class DbClientImpl : public DbClient,
     size_t numberOfConnections_;
     trantor::EventLoopThreadPool loops_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
+    std::vector<std::string> initializationQueries_;
     double timeout_{-1.0};
+    double reconnectInterval_{1.0};
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool autoBatch_{false};
 #endif
@@ -86,8 +95,14 @@ class DbClientImpl : public DbClient,
 
     mutable std::mutex connectionsMutex_;
     std::unordered_set<DbConnectionPtr> connections_;
+    // Set by closeAll() (under connectionsMutex_) so that newConnection()
+    // cannot start a connection after the pool has been closed.
+    bool closed_{false};
     std::unordered_set<DbConnectionPtr> readyConnections_;
     std::unordered_set<DbConnectionPtr> busyConnections_;
+    // Retired SQLite connections stay owned until closeAll(), so their threads
+    // are not destroyed from inside a connection callback.
+    size_t failedSqliteConnections_{0};
 
     using TransCallbackEntry =
         std::pair<std::shared_ptr<std::function<void(

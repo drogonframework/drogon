@@ -1,0 +1,2 @@
+# Keep the static HTML fixture byte-identical to its precompressed gzip copy.
+/lib/tests/integration_test/server/index.html text eol=lf

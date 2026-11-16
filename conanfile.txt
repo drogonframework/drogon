@@ -1,6 +1,6 @@
 [requires]
 jsoncpp/1.9.4
-zlib/1.2.11
+zlib/1.2.13
 gtest/1.10.0
 sqlite3/3.40.1
 #libpq/13.2

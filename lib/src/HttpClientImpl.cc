@@ -22,6 +22,7 @@
 #include <drogon/utils/Utilities.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <utility>
 
 using namespace trantor;
 using namespace drogon;
@@ -80,10 +81,7 @@ void HttpClientImpl::createTcpClient()
                                      thisPtr->requestsBuffer_.front().first);
                     thisPtr->pipeliningCallbacks_.push(
                         std::move(thisPtr->requestsBuffer_.front()));
-                    thisPtr->pipeliningCallbacksSize_.fetch_add(
-                        1, std::memory_order_relaxed);
-
-                    thisPtr->popFrontRequest();
+                    (thisPtr->popFrontRequest());
                 }
             }
             else
@@ -302,8 +300,8 @@ struct RequestCallbackParams
     {
     }
 
-    const drogon::HttpReqCallback callback;
-    const HttpClientImplPtr clientPtr;
+    drogon::HttpReqCallback callback;
+    HttpClientImplPtr clientPtr;
     const HttpRequestPtr requestPtr;
     bool timeoutFlag{false};
 };
@@ -314,7 +312,13 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
 {
     if (timeout <= 0)
     {
-        sendRequestInLoop(req, std::move(callback));
+        auto callbackWithClient =
+            [thisPtr = shared_from_this(),
+             callback = std::move(callback)](ReqResult result,
+                                             const HttpResponsePtr &response) {
+                callback(result, response);
+            };
+        sendRequestInLoop(req, std::move(callbackWithClient));
         return;
     }
 
@@ -330,13 +334,16 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
             auto callbackParamsPtr = weakCallbackBackPtr.lock();
             if (callbackParamsPtr != nullptr)
             {
-                auto &thisPtr = callbackParamsPtr->clientPtr;
                 if (callbackParamsPtr->timeoutFlag)
                 {
                     return;
                 }
 
                 callbackParamsPtr->timeoutFlag = true;
+                // Release ownership after completion, even if no response ever
+                // arrives. Keep the client alive while invoking the callback.
+                auto thisPtr = std::move(callbackParamsPtr->clientPtr);
+                auto callback = std::exchange(callbackParamsPtr->callback, {});
 
                 for (auto iter = thisPtr->requestsBuffer_.begin();
                      iter != thisPtr->requestsBuffer_.end();
@@ -345,23 +352,28 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                     if (iter->first == callbackParamsPtr->requestPtr)
                     {
                         thisPtr->eraseRequest(iter);
+                        thisPtr->outstandingRequests_.fetch_sub(
+                            1, std::memory_order_relaxed);
                         break;
                     }
                 }
 
-                (callbackParamsPtr->callback)(ReqResult::Timeout, nullptr);
+                // An already sent request must stay in the response queue so
+                // a late response cannot be mistaken for the next request's.
+                callback(ReqResult::Timeout, nullptr);
             }
         });
-    sendRequestInLoop(req,
-                      [callbackParamsPtr](ReqResult r,
-                                          const HttpResponsePtr &resp) {
-                          if (callbackParamsPtr->timeoutFlag)
-                          {
-                              return;
-                          }
-                          callbackParamsPtr->timeoutFlag = true;
-                          (callbackParamsPtr->callback)(r, resp);
-                      });
+    sendRequestInLoop(
+        req, [callbackParamsPtr](ReqResult r, const HttpResponsePtr &resp) {
+            if (callbackParamsPtr->timeoutFlag)
+            {
+                return;
+            }
+            callbackParamsPtr->timeoutFlag = true;
+            auto thisPtr = std::move(callbackParamsPtr->clientPtr);
+            auto callback = std::exchange(callbackParamsPtr->callback, {});
+            callback(r, resp);
+        });
 }
 
 static bool isValidIpAddr(const trantor::InetAddress &addr)
@@ -389,11 +401,23 @@ static bool isValidIpAddr(const trantor::InetAddress &addr)
 void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                        drogon::HttpReqCallback &&callback)
 {
+    outstandingRequests_.fetch_add(1, std::memory_order_relaxed);
+
     loop_->assertInLoopThread();
+    // The completion wrapper owns the client until completion or timeout.
+    // Queue entries must not add another client reference that outlives it.
+    for (const auto &header : headers_)
+    {
+        if (req->headers().find(header.first) == req->headers().end())
+        {
+            req->addHeader(header.first, header.second);
+        }
+    }
     if (!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
     {
-        req->addHeader("connection", "Keep-Alive");
-        if (!userAgent_.empty())
+        if (req->getHeader("connection").empty())
+            req->addHeader("connection", "Keep-Alive");
+        if (!userAgent_.empty() && req->getHeader("user-agent").empty())
             req->addHeader("user-agent", userAgent_);
     }
     // Set the host header if not already set
@@ -424,8 +448,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         auto callbackPtr =
             std::make_shared<drogon::HttpReqCallback>(std::move(callback));
         enqueueRequest(req,
-                       [thisPtr = shared_from_this(),
-                        callbackPtr](ReqResult result,
+                       [callbackPtr](ReqResult result,
                                      const HttpResponsePtr &response) {
                            (*callbackPtr)(result, response);
                        });
@@ -441,6 +464,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             else
             {
                 popFrontRequest();
+                outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
                 (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
                 assert(requestsBuffer_.empty());
             }
@@ -485,7 +509,9 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                         auto &reqAndCb = (thisPtr->requestsBuffer_).front();
                         reqAndCb.second(ReqResult::BadServerAddress, nullptr);
 
-                        thisPtr->popFrontRequest();
+                        (thisPtr->popFrontRequest());
+                        (thisPtr->outstandingRequests_)
+                            .fetch_sub(1, std::memory_order_relaxed);
                     }
                 });
             });
@@ -495,16 +521,10 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
     // send request;
     auto connPtr = tcpClientPtr_->connection();
-    auto thisPtr = shared_from_this();
-
     // Not connected, push request to buffer and wait for connection
     if (!connPtr || connPtr->disconnected())
     {
-        enqueueRequest(req,
-                       [thisPtr, callback = std::move(callback)](
-                           ReqResult result, const HttpResponsePtr &response) {
-                           callback(result, response);
-                       });
+        enqueueRequest(req, callback);
         return;
     }
 
@@ -513,22 +533,11 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         requestsBuffer_.empty())
     {
         sendReq(connPtr, req);
-        pipeliningCallbacks_.push(
-            {req,
-             [thisPtr,
-              callback = std::move(callback)](ReqResult result,
-                                              const HttpResponsePtr &response) {
-                 callback(result, response);
-             }});
-        pipeliningCallbacksSize_.fetch_add(1, std::memory_order_relaxed);
+        pipeliningCallbacks_.push({req, std::move(callback)});
     }
     else
     {
-        enqueueRequest(req,
-                       [thisPtr, callback = std::move(callback)](
-                           ReqResult result, const HttpResponsePtr &response) {
-                           callback(result, response);
-                       });
+        enqueueRequest(req, callback);
     }
 }
 
@@ -564,7 +573,7 @@ void HttpClientImpl::handleResponse(
 #endif
     auto cb = std::move(reqAndCb);
     pipeliningCallbacks_.pop();
-    pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+    outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
     handleCookies(resp);
     cb.second(ReqResult::Ok, resp);
 
@@ -579,7 +588,6 @@ void HttpClientImpl::handleResponse(
             auto &reqAndCallback = requestsBuffer_.front();
             sendReq(connPtr, reqAndCallback.first);
             pipeliningCallbacks_.push(std::move(reqAndCallback));
-            pipeliningCallbacksSize_.fetch_add(1, std::memory_order_relaxed);
             popFrontRequest();
         }
         else
@@ -596,7 +604,7 @@ void HttpClientImpl::handleResponse(
         {
             auto cb = std::move(pipeliningCallbacks_.front());
             pipeliningCallbacks_.pop();
-            pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+            outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
             cb.second(ReqResult::NetworkFailure, nullptr);
         }
     }
@@ -634,10 +642,11 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
             responseParser->reset();
             bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
-            if (resp->statusCode() >= k100Continue &&
-                resp->statusCode() < 200 &&
-                resp->statusCode() != k101SwitchingProtocols)
+            const auto code = static_cast<int>(resp->statusCode());
+            if (code >= 100 && code < 200 && code != k101SwitchingProtocols)
             {
+                // Informational response, not the final one. Keep waiting for
+                // the response that actually belongs to the request.
                 continue;
             }
             resp->setPeerCertificate(connPtr->peerCertificate());
@@ -685,13 +694,14 @@ void HttpClientImpl::onError(ReqResult result)
     {
         auto cb = std::move(pipeliningCallbacks_.front());
         pipeliningCallbacks_.pop();
-        pipeliningCallbacksSize_.fetch_sub(1, std::memory_order_relaxed);
+        outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
         cb.second(result, nullptr);
     }
     while (!requestsBuffer_.empty())
     {
         auto cb = std::move(requestsBuffer_.front().second);
         popFrontRequest();
+        outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
         cb(result, nullptr);
     }
     tcpClientPtr_.reset();

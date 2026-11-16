@@ -196,6 +196,11 @@ struct [[nodiscard]] Task
 
     struct promise_type
     {
+        // Make promise_type a non-aggregate so Clang >= 21 does not
+        // aggregate-initialize `value` from the first coroutine argument
+        // (crashes if the conversion throws). See issue #2579.
+        promise_type() = default;
+
         Task<T> get_return_object()
         {
             return Task<T>{handle_type::from_promise(*this)};
@@ -300,6 +305,9 @@ struct [[nodiscard]] Task<void>
 
     struct promise_type
     {
+        // Same as Task<T>::promise_type above. See issue #2579.
+        promise_type() = default;
+
         Task<> get_return_object()
         {
             return Task<>{handle_type::from_promise(*this)};
@@ -429,7 +437,7 @@ struct CallbackAwaiter : public trantor::NonCopyable
         return exception_ != nullptr;
     }
 
-    const T &await_resume() const noexcept(false)
+    T await_resume() noexcept(false)
     {
         // await_resume() should always be called after co_await
         // (await_suspend()) is called. Therefore the value should always be set
@@ -438,7 +446,7 @@ struct CallbackAwaiter : public trantor::NonCopyable
 
         if (exception_)
             std::rethrow_exception(exception_);
-        return result_.value();
+        return std::move(result_.value());
     }
 
   private:

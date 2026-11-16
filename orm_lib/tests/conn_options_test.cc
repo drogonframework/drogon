@@ -83,7 +83,8 @@ int main(int argc, char **argv)
         {
             {"statement_timeout", "3s"},
             {"lock_timeout", "0.5s"},
-        }  // connectOptions
+        },   // connectOptions
+        1.0  // reconnectInterval
     });
 #endif
     std::thread thr([&]() {

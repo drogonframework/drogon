@@ -76,3 +76,43 @@ DROGON_TEST(CookieSameSite)
         seq.i++;
     }
 }
+
+DROGON_TEST(SessionRotationInvalidatesOldId)
+{
+    auto client =
+        HttpClient::newHttpClient("https://127.0.0.1:8855",
+                                  HttpAppFramework::instance().getLoop(),
+                                  false,
+                                  false);
+    const auto request = [&client](const std::string &path,
+                                   const std::string &sessionId) {
+        auto req = HttpRequest::newHttpRequest();
+        req->setPath("/CookieSameSiteController/session/" + path);
+        if (!sessionId.empty())
+            req->addCookie("JSESSIONID", sessionId);
+        return client->sendRequest(req, 5.0);
+    };
+
+    auto seed = request("seed", "");
+    REQUIRE(seed.first == ReqResult::Ok);
+    REQUIRE(seed.second != nullptr);
+    const auto oldId = seed.second->getCookie("JSESSIONID").value();
+    REQUIRE(!oldId.empty());
+
+    auto login = request("login", oldId);
+    REQUIRE(login.first == ReqResult::Ok);
+    REQUIRE(login.second != nullptr);
+    const auto newId = login.second->getCookie("JSESSIONID").value();
+    REQUIRE(!newId.empty());
+    CHECK(newId != oldId);
+
+    auto newSession = request("read", newId);
+    REQUIRE(newSession.first == ReqResult::Ok);
+    REQUIRE(newSession.second != nullptr);
+    CHECK(newSession.second->getBody() == "user");
+
+    auto oldSession = request("read", oldId);
+    REQUIRE(oldSession.first == ReqResult::Ok);
+    REQUIRE(oldSession.second != nullptr);
+    CHECK(oldSession.second->getBody().empty());
+}

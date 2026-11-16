@@ -16,6 +16,7 @@
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/utils/Utilities.h>
+#include <cstring>
 #include <future>
 #include <regex>
 #if defined(__cpp_lib_format)
@@ -31,6 +32,33 @@ using namespace drogon::orm::internal;
 void SqlBinder::exec()
 {
     execed_ = true;
+    if (type_ == ClientType::PostgreSQL)
+    {
+        // libpq reads text-format parameters up to the first NUL and ignores
+        // the length, so "admin\0x" would silently be sent as "admin".
+        // PostgreSQL text cannot hold NUL anyway; refuse instead of truncating.
+        for (size_t i = 0; i < parameters_.size(); ++i)
+        {
+            if (formats_[i] == 0 && parameters_[i] != nullptr &&
+                std::memchr(parameters_[i], '\0', lengths_[i]) != nullptr)
+            {
+                SqlError error("Text parameter contains a NUL byte",
+                               std::string(sqlViewPtr_, sqlViewLength_));
+                if (mode_ == Mode::Blocking && !destructed_)
+                    throw error;
+                if (isExceptionPtr_)
+                {
+                    if (exceptionPtrCallback_)
+                        exceptionPtrCallback_(std::make_exception_ptr(error));
+                }
+                else if (exceptionCallback_)
+                {
+                    exceptionCallback_(error);
+                }
+                return;
+            }
+        }
+    }
     if (mode_ == Mode::NonBlocking)
     {
         // nonblocking mode,default mode

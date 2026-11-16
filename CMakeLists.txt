@@ -16,17 +16,25 @@ option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
 option(USE_STATIC_LIBS_ONLY "Use only static libraries as dependencies" OFF)
 
+# Custom file extension configuration for drogon_ctl
+if(NOT DEFINED DEFAULT_SOURCE_EXTENSION)
+    set(DEFAULT_SOURCE_EXTENSION "cc" CACHE STRING "Default source file extension for drogon_ctl (e.g., cc, cpp, cxx)")
+endif()
+if(NOT DEFINED DEFAULT_HEADER_EXTENSION)
+    set(DEFAULT_HEADER_EXTENSION "h" CACHE STRING "Default header file extension for drogon_ctl (e.g., h, hpp, hxx)")
+endif()
+
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON "BUILD_POSTGRESQL" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_MYSQL "Build with mysql support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
-CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "USE_SUBMODULE" OFF)
+option(USE_SPDLOG "Allow using the spdlog logging library" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 9)
-set(DROGON_PATCH_VERSION 13)
+set(DROGON_PATCH_VERSION 14)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
@@ -348,7 +356,6 @@ set(private_headers
     lib/src/ListenerManager.h
     lib/src/PluginsManager.h
     lib/src/SessionManager.h
-    lib/src/utils/ParsingUtils.h
     lib/src/SpinLock.h
     lib/src/StaticFileRouter.h
     lib/src/TaskTimeoutFlag.h
@@ -694,6 +701,20 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
 if (BUILD_TESTING)
     message(STATUS "Building tests")
     enable_testing()
+    foreach(standard unset 14 17 cache17)
+        file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/cmake/tests/filesystem-${standard}")
+        add_test(NAME FilesystemStandard.${standard}
+            COMMAND ${CMAKE_COMMAND}
+                -G "${CMAKE_GENERATOR}"
+                "-DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+                "-DCMAKE_GENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
+                "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+                "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
+                -DTEST_STANDARD=${standard}
+                "${PROJECT_SOURCE_DIR}/cmake/tests/filesystem")
+        set_tests_properties(FilesystemStandard.${standard} PROPERTIES
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/cmake/tests/filesystem-${standard}")
+    endforeach()
     add_subdirectory(lib/tests)
     if (pg_FOUND)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)

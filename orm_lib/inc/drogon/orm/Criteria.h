@@ -327,7 +327,10 @@ class DROGON_EXPORT Criteria
      * @note the json object must be a array of three items, the first is the
      * name of the field, the second is the comparison operator and the third is
      * the value to be compared.
-     * The valid operators are "=","<",">","<=",">=","!=","in"
+     * The field name is inserted into SQL as provided. Validate it against
+     * known columns before constructing Criteria from untrusted JSON.
+     * The valid operators are "=", "!=", "<>", "<", ">", "<=", ">=",
+     * "like", "not like", and "in" (for an array value).
      * for example:
      * ["id","=",1] means 'id = 1'
      * ["id","!=",null] means 'id is not null'

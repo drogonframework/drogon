@@ -339,6 +339,11 @@ class Relationship
         return targetTableAlias_;
     }
 
+    void setTargetTableAlias(const std::string &alias)
+    {
+        targetTableAlias_ = alias;
+    }
+
     const std::string &targetKey() const
     {
         return targetKey_;

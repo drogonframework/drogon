@@ -48,7 +48,8 @@ static void initFastDbClients(IOThreadStorage<orm::DbClientPtr> &storage,
                               ClientType dbType,
                               size_t connNum,
                               bool autoBatch,
-                              double timeout)
+                              double timeout,
+                              double reconnectInterval)
 {
     storage.init([&](orm::DbClientPtr &c, size_t idx) {
         assert(idx == ioLoops[idx]->index());
@@ -67,6 +68,7 @@ static void initFastDbClients(IOThreadStorage<orm::DbClientPtr> &storage,
         {
             c->setTimeout(timeout);
         }
+        c->setReconnectInterval(reconnectInterval);
     });
 }
 
@@ -90,7 +92,8 @@ void DbClientManager::createDbClients(
                                   ClientType::PostgreSQL,
                                   cfg.connectionNumber,
                                   cfg.autoBatch,
-                                  cfg.timeout);
+                                  cfg.timeout,
+                                  cfg.reconnectInterval);
             }
             else
             {
@@ -102,6 +105,8 @@ void DbClientManager::createDbClients(
                 {
                     dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
                 }
+                dbClientsMap_[cfg.name]->setReconnectInterval(
+                    cfg.reconnectInterval);
             }
         }
         else if (std::holds_alternative<MysqlConfig>(dbInfo.config_))
@@ -118,7 +123,8 @@ void DbClientManager::createDbClients(
                                   ClientType::Mysql,
                                   cfg.connectionNumber,
                                   false,
-                                  cfg.timeout);
+                                  cfg.timeout,
+                                  cfg.reconnectInterval);
             }
             else
             {
@@ -128,14 +134,17 @@ void DbClientManager::createDbClients(
                 {
                     dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);
                 }
+                dbClientsMap_[cfg.name]->setReconnectInterval(
+                    cfg.reconnectInterval);
             }
         }
         else if (std::holds_alternative<Sqlite3Config>(dbInfo.config_))
         {
             auto &cfg = std::get<Sqlite3Config>(dbInfo.config_);
-            dbClientsMap_[cfg.name] =
-                drogon::orm::DbClient::newSqlite3Client(dbInfo.connectionInfo_,
-                                                        cfg.connectionNumber);
+            dbClientsMap_[cfg.name] = drogon::orm::DbClient::newSqlite3Client(
+                dbInfo.connectionInfo_,
+                cfg.connectionNumber,
+                cfg.initializationQueries);
             if (cfg.timeout > 0.0)
             {
                 dbClientsMap_[cfg.name]->setTimeout(cfg.timeout);

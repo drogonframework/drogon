@@ -464,13 +464,14 @@ DbConnectionPtr DbClientLockFree::newConnection()
             thisPtr->connectionHolders_.erase(iter);
 
         thisPtr->transSet_.erase(closeConnPtr);
-        // Reconnect after 1 second
-        thisPtr->loop_->runAfter(1, [weakPtr, closeConnPtr] {
-            auto thisPtr = weakPtr.lock();
-            if (!thisPtr)
-                return;
-            thisPtr->newConnection();
-        });
+        // Reconnect after the configured interval
+        thisPtr->loop_->runAfter(thisPtr->reconnectInterval_,
+                                 [weakPtr, closeConnPtr] {
+                                     auto thisPtr = weakPtr.lock();
+                                     if (!thisPtr)
+                                         return;
+                                     thisPtr->newConnection();
+                                 });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
         LOG_TRACE << "connected!";
@@ -520,12 +521,18 @@ void DbClientLockFree::execSqlWithTimeout(
     auto ecpPtr =
         std::make_shared<std::function<void(const std::exception_ptr &)>>(
             std::move(ecb));
+    std::weak_ptr<DbClientLockFree> weakThis = shared_from_this();
     auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
         loop_,
         std::chrono::duration<double>(timeout_),
-        [commandPtr, ecpPtr, thisPtr = shared_from_this()]() {
+        [commandPtr, ecpPtr, weakThis]() {
             auto cbPtr = (*commandPtr).lock();
-            if (cbPtr)
+            // Do not keep the client alive here: the command owns this timer
+            // through its callbacks, so removing the command below can drop the
+            // last reference to the client and destroy it from its own timer
+            // callback. Only touch the buffer while the client still exists.
+            auto thisPtr = weakThis.lock();
+            if (cbPtr && thisPtr)
             {
                 for (auto iter = thisPtr->sqlCmdBuffer_.begin();
                      iter != thisPtr->sqlCmdBuffer_.end();

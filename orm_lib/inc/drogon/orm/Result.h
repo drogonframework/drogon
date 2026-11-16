@@ -23,6 +23,7 @@
 #include <future>
 #include <algorithm>
 #include <assert.h>
+#include <optional>
 
 namespace drogon
 {
@@ -34,10 +35,81 @@ class Row;
 class ResultImpl;
 using ResultImplPtr = std::shared_ptr<ResultImpl>;
 
+enum class SqlType : uint8_t
+{
+    Unknown = 0,
+
+    Bool,
+    Int,
+    Bit,
+    Float,
+    Double,
+    Decimal,
+
+    String,
+    Binary,
+
+    Json,
+
+    Date,
+    Time,
+    Year,
+    DateTime,
+    Timestamp,
+
+    Geometry
+};
+
 enum class SqlStatus
 {
     Ok,
     End
+};
+
+/**
+ * @brief Column metadata from the database.
+ *
+ * Separates:
+ * - Logical type (type): Application-level abstraction for type handling
+ * - Native type (nativeType): Actual database type name (VARCHAR, DECIMAL,
+ * etc.)
+ * - Type attributes: length, precision, scale, unsigned, nullable
+ *
+ * Examples:
+ *   DECIMAL(10,2)
+ *     type = Decimal, nativeType = "DECIMAL", precision = 10, scale = 2
+ *
+ *   VARCHAR(100)
+ *     type = VarChar, nativeType = "VARCHAR", length = 100
+ *
+ *   BIT(1)
+ *     type = Bool, nativeType = "BIT", length = 1
+ *
+ *   TINYINT(1)
+ *     type = Bool, nativeType = "TINYINT", length = 1
+ *
+ *   BIT(8)
+ *     type = Bit, nativeType = "BIT", length = 8
+ */
+struct ColumnMeta
+{
+    // Logical type.
+    SqlType type{SqlType::Unknown};
+
+    // Database-specific native type name.
+    std::string nativeType;
+
+    // Type-specific attributes.
+    // length is type-dependent: character and binary types use
+    // driver-reported byte width, while BIT uses number of bits.
+    // It is not decimal precision; DECIMAL uses precision and scale.
+    std::optional<int64_t> length;
+
+    std::optional<int> precision;
+    std::optional<int> scale;
+
+    bool nullable{false};
+    bool unsigned_{false};
 };
 
 /// Result set containing data returned by a query or command.
@@ -138,6 +210,100 @@ class DROGON_EXPORT Result
      *   insert into table_name volumn1, volumn2 values(....) returning id;
      */
     unsigned long long insertId() const noexcept;
+
+    /**
+     * @brief Get the logical SQL type of the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return The abstracted SQL field type for the given column, or
+     *         SqlType::Unknown if the type cannot be determined.
+     *
+     * @note Type metadata may only be fully populated for some database
+     *       backends (for example, MySQL). For other backends, the result
+     *       may be limited or fall back to SqlType::Unknown.
+     */
+    SqlType getSqlType(SizeType column) const;
+
+    /**
+     * @brief Get the native database type name of the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return A reference to the native type name reported by the underlying
+     *         database driver, for example, "INT", "VARCHAR", or "DECIMAL".
+     *
+     * @note Type-name metadata may only be fully populated for some database
+     *       backends. On other backends, the returned string may be empty or
+     *       use a backend-specific representation.
+     */
+    const std::string &getNativeTypeName(SizeType column) const;
+
+    /**
+     * @brief Get the defined maximum length of the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return The type-specific length, or 0 if unavailable. For MySQL,
+     *         VARCHAR, CHAR, and BLOB-family values are reported in bytes
+     *         (not characters), while BIT is reported in bits. It is not
+     *         populated for DECIMAL; use getPrecision() and getScale().
+     *
+     * @note Length metadata may only be populated for some database backends
+     *       (for example, MySQL) and for certain column types (such as
+     *       character and binary types).
+     */
+    int getColumnLength(SizeType column) const;
+
+    /**
+     * @brief Get the numeric precision for the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return The precision (total number of significant digits) for the
+     *         column, as reported by the underlying database driver, or 0 if
+     *         not applicable or not available.
+     *
+     * @note Precision is generally only meaningful for numeric types such as
+     *       DECIMAL or NUMERIC. On other types, the value may be 0 or
+     *       unspecified, and metadata may only be provided by some backends
+     *       (for example, MySQL).
+     */
+    int getPrecision(SizeType column) const;
+
+    /**
+     * @brief Get the numeric scale for the specified column.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return The scale (number of fractional digits) for the column, as
+     *         reported by the underlying database driver, or 0 if not
+     *         applicable or not available.
+     *
+     * @note Scale is generally only meaningful for numeric types such as
+     *       DECIMAL or NUMERIC. On other types, the value may be 0 or
+     *       unspecified, and metadata may only be provided by some backends
+     *       (for example, MySQL).
+     */
+    int getScale(SizeType column) const;
+
+    /**
+     * @brief Check if the specified column is nullable.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return True if the column is nullable, false otherwise.
+     */
+    bool isNullable(SizeType column) const;
+
+    /**
+     * @brief Check if the specified column is unsigned.
+     *
+     * @param column Zero-based index of the column (must be less than
+     * columns()).
+     * @return True if the column is unsigned, false otherwise.
+     */
+    bool isUnsigned(SizeType column) const;
 
 #ifdef _MSC_VER
     Result() noexcept = default;

@@ -17,6 +17,10 @@ add_executable(_drogon_ctl
                create.cc
                create_view.cc)
 target_link_libraries(_drogon_ctl ${PROJECT_NAME})
+target_compile_definitions(_drogon_ctl PRIVATE
+    DEFAULT_SOURCE_EXTENSION=${DEFAULT_SOURCE_EXTENSION}
+    DEFAULT_HEADER_EXTENSION=${DEFAULT_HEADER_EXTENSION}
+    )
 if (WIN32 AND BUILD_SHARED_LIBS)
   set(DROGON_FILE $<TARGET_FILE:drogon>)
   if (USE_SUBMODULE)
@@ -42,7 +46,7 @@ foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
   get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
-  add_custom_command(OUTPUT ${classname}.h ${classname}.cc
+  add_custom_command(OUTPUT ${classname}.${DEFAULT_HEADER_EXTENSION} ${classname}.${DEFAULT_SOURCE_EXTENSION}
                      COMMAND ${DROGON_CTL}
                              ARGS
                              create
@@ -50,9 +54,13 @@ foreach(cspFile ${SCP_LIST})
                              ${cspFile}
                      DEPENDS ${cspFile}
                      VERBATIM)
-  set(TEMPL_SRC ${TEMPL_SRC} ${classname}.cc)
+  set(TEMPL_SRC ${TEMPL_SRC} ${classname}.${DEFAULT_SOURCE_EXTENSION})
 endforeach()
 add_executable(drogon_ctl ${ctl_sources} ${TEMPL_SRC})
+target_compile_definitions(drogon_ctl PRIVATE
+    DEFAULT_SOURCE_EXTENSION=${DEFAULT_SOURCE_EXTENSION}
+    DEFAULT_HEADER_EXTENSION=${DEFAULT_HEADER_EXTENSION}
+    )
 target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
 target_include_directories(drogon_ctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(drogon_ctl _drogon_ctl)

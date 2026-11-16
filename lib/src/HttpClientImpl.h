@@ -19,6 +19,7 @@
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/TcpClient.h>
+#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <functional>
@@ -78,6 +79,15 @@ class HttpClientImpl final : public HttpClient,
         validCookies_.emplace_back(cookie);
     }
 
+    void addHeader(std::string field, const std::string &value) override
+    {
+        std::transform(field.begin(),
+                       field.end(),
+                       field.begin(),
+                       [](unsigned char c) { return tolower(c); });
+        headers_[std::move(field)] = value;
+    }
+
     size_t bytesSent() const override
     {
         return bytesSent_;
@@ -121,8 +131,7 @@ class HttpClientImpl final : public HttpClient,
 
     std::size_t outstandingRequests() const override
     {
-        return requestsBufferSize_.load(std::memory_order_relaxed) +
-               pipeliningCallbacksSize_.load(std::memory_order_relaxed);
+        return outstandingRequests_.load(std::memory_order_relaxed);
     }
 
     std::size_t requestsBufferSize() override
@@ -179,11 +188,12 @@ class HttpClientImpl final : public HttpClient,
     void onError(ReqResult result);
     std::string domain_;
     bool isDomainName_{true};  // true if domain_ is name
+    std::atomic<std::size_t> outstandingRequests_{0};
     std::atomic<std::size_t> requestsBufferSize_{0};
-    std::atomic<std::size_t> pipeliningCallbacksSize_{0};
     size_t pipeliningDepth_{0};
     bool enableCookies_{false};
     std::vector<Cookie> validCookies_;
+    SafeStringMap<std::string> headers_;
     size_t bytesSent_{0};
     size_t bytesReceived_{0};
     bool dns_{false};
