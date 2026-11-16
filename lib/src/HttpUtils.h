@@ -20,6 +20,7 @@
 #include <utility>
 #include <drogon/HttpTypes.h>
 #include <optional>
+#include <algorithm>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -155,8 +156,11 @@ inline bool nextHeaderParameter(std::string_view &remaining,
 
 inline bool parseHeaderParameter(std::string_view headerValue,
                                  std::string_view parameterName,
-                                 std::string_view &parameterValue)
+                                 std::string_view &parameterValue,
+                                 bool *parameterPresent = nullptr)
 {
+    if (parameterPresent)
+        *parameterPresent = false;
     size_t pos = 0;
     while ((pos = headerValue.find(';', pos)) != std::string_view::npos)
     {
@@ -185,6 +189,8 @@ inline bool parseHeaderParameter(std::string_view headerValue,
         if (pos == headerValue.size() || headerValue[pos] != '=')
             continue;
 
+        if (matchingName && parameterPresent)
+            *parameterPresent = true;
         ++pos;
         while (pos < headerValue.size() &&
                (headerValue[pos] == ' ' || headerValue[pos] == '\t'))
@@ -230,6 +236,9 @@ inline bool parseHeaderParameter(std::string_view headerValue,
 
         if (matchingName)
         {
+            if (valueBegin == valueEnd &&
+                (valueBegin == 0 || headerValue[valueBegin - 1] != '"'))
+                return false;
             parameterValue =
                 headerValue.substr(valueBegin, valueEnd - valueBegin);
             return true;
@@ -355,6 +364,48 @@ inline bool parseMultipartBoundary(std::string_view contentType,
 
 }  // namespace internal
 class Cookie;
+
+inline bool isHttpTokenCharacter(unsigned char c)
+{
+    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
+        (c >= 'a' && c <= 'z'))
+    {
+        return true;
+    }
+    switch (c)
+    {
+        case '!':
+        case '#':
+        case '$':
+        case '%':
+        case '&':
+        case '\'':
+        case '*':
+        case '+':
+        case '-':
+        case '.':
+        case '^':
+        case '_':
+        case '`':
+        case '|':
+        case '~':
+            return true;
+        default:
+            return false;
+    }
+}
+
+inline bool isValidHttpFieldName(const char *begin, const char *end)
+{
+    if (begin == end)
+        return false;
+    for (char ch : std::string_view(begin, static_cast<size_t>(end - begin)))
+    {
+        if (!isHttpTokenCharacter(ch))
+            return false;
+    }
+    return true;
+}
 
 const std::string_view &contentTypeToMime(ContentType contentType);
 const std::string_view &statusCodeToString(int code);

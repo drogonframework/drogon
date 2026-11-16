@@ -168,6 +168,10 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 const std::string_view line(buf->peek(), crlf - buf->peek());
                 if (!line.empty())
                 {
+                    const char *colon = std::find(buf->peek(), crlf, ':');
+                    if (!isValidHttpFieldName(buf->peek(), colon) ||
+                        colon == crlf)
+                        return false;
                     if (!responsePtr_->addHeader(line))
                     {
                         // Invalid header section, e.g. a repeated

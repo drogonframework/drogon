@@ -115,9 +115,19 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
 
 void SessionManager::changeSessionId(const SessionPtr &sessionPtr)
 {
-    auto oldId = sessionPtr->sessionId();
     auto newId = idGeneratorCallback_();
-    sessionPtr->setSessionId(newId);
-    sessionMapPtr_->insert(newId, sessionPtr, timeout_);
+    std::string oldId;
+    {
+        // A session may be handled concurrently by multiple IO loops. Claim
+        // the requested rotation and publish the new map entry as one session
+        // state transition so only one response performs it.
+        std::lock_guard<std::mutex> lock(sessionPtr->mutex_);
+        if (!sessionPtr->needToChange_)
+            return;
+        oldId = sessionPtr->sessionId_;
+        sessionPtr->sessionId_ = newId;
+        sessionPtr->needToChange_ = false;
+        sessionMapPtr_->insert(newId, sessionPtr, timeout_);
+    }
     sessionMapPtr_->erase(oldId);
 }

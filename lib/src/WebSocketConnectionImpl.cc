@@ -324,21 +324,11 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer, bool isServer)
         auto secondByte = (*buffer)[1];
         size_t length = secondByte & 127;
         int isMasked = (secondByte & 0x80);
-        if (isMasked != 0)
+        if ((isMasked != 0) != isServer)
         {
-            LOG_TRACE << "data encoded!";
-        }
-        else
-        {
-            LOG_TRACE << "plain data";
-            if (isServer)
-            {
-                // rfc6455-5.1: the server MUST close the connection upon
-                // receiving an unmasked frame from a client
-                LOG_ERROR << "Bad frame: client frames MUST be masked";
-                buffer->retrieveAll();
-                return false;
-            }
+            LOG_ERROR << "Bad frame: invalid WebSocket masking";
+            buffer->retrieveAll();
+            return false;
         }
         size_t indexFirstMask = 2;
 
@@ -372,6 +362,11 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer, bool isServer)
             }
             else if (indexFirstMask == 10)
             {
+                if ((static_cast<unsigned char>((*buffer)[2]) & 0x80) != 0)
+                {
+                    LOG_ERROR << "Payload length exceeds the RFC 6455 limit";
+                    return false;
+                }
                 length = 0;
                 for (int i = 2; i <= 9; ++i)
                 {
@@ -390,13 +385,14 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer, bool isServer)
                 return false;
             }
         }
-        if (isServer && !isControlFrame)
+        if (!isControlFrame)
         {
             // The message is sent by the client, check the length (including
             // the data already accumulated from previous frames)
             auto maxSize = HttpAppFrameworkImpl::instance()
                                .getClientMaxWebSocketMessageSize();
-            if (length > maxSize || message_.length() > maxSize - length)
+            if (length > maxSize || message_.length() > maxSize - length ||
+                length > message_.max_size() - message_.length())
             {
                 LOG_ERROR << "The size of the WebSocket message is too large!";
                 buffer->retrieveAll();
