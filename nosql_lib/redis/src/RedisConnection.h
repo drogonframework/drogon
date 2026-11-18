@@ -77,7 +77,8 @@ class RedisConnection : public trantor::NonCopyable,
                                            va_list ap) noexcept(false)
     {
         char *cmd{nullptr};
-        auto len = redisvFormatCommand(&cmd, command.data(), ap);
+        const std::string format(command);
+        auto len = redisvFormatCommand(&cmd, format.c_str(), ap);
         if (len == -1)
         {
             throw RedisException(RedisErrorCode::kInternalError,
