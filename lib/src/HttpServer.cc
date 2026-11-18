@@ -213,7 +213,8 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 // response. Since this path bypasses all advices and the custom
                 // error handler, add it here. The request line failed to parse,
                 // so the target resource is unknown; advertise the same
-                // framework-wide method list used by other 405/OPTIONS responses.
+                // framework-wide method list used by other 405/OPTIONS
+                // responses.
 
                 auto code = static_cast<HttpStatusCode>(-parseRes);
                 conn->send(utils::formattedString(
