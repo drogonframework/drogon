@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#include <string_view>
+#include <string>
 #include <drogon/nosql/RedisException.h>
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/utils/Utilities.h>
@@ -73,12 +73,11 @@ class RedisConnection : public trantor::NonCopyable,
         idleCallback_ = callback;
     }
 
-    static std::string getFormattedCommand(const std::string_view &command,
+    static std::string getFormattedCommand(const std::string &command,
                                            va_list ap) noexcept(false)
     {
         char *cmd{nullptr};
-        const std::string format(command);
-        auto len = redisvFormatCommand(&cmd, format.c_str(), ap);
+        auto len = redisvFormatCommand(&cmd, command.c_str(), ap);
         if (len == -1)
         {
             throw RedisException(RedisErrorCode::kInternalError,
@@ -123,7 +122,7 @@ class RedisConnection : public trantor::NonCopyable,
         }
     }
 
-    void sendvCommand(std::string_view command,
+    void sendvCommand(const std::string &command,
                       RedisResultCallback &&resultCallback,
                       RedisExceptionCallback &&exceptionCallback,
                       va_list ap)
@@ -171,7 +170,7 @@ class RedisConnection : public trantor::NonCopyable,
 
     void sendCommand(RedisResultCallback &&resultCallback,
                      RedisExceptionCallback &&exceptionCallback,
-                     std::string_view command,
+                     std::string command,
                      ...)
     {
         va_list args;
