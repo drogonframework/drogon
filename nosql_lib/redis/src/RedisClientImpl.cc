@@ -180,7 +180,7 @@ RedisConnectionPtr RedisClientImpl::newSubscribeConnection(
 void RedisClientImpl::execCommandAsync(
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
-    std::string_view command,
+    std::string command,
     ...) noexcept
 {
     if (timeout_ > 0.0)
@@ -385,7 +385,7 @@ void RedisClientImpl::handleNextTask(const RedisConnectionPtr &connPtr)
 }
 
 void RedisClientImpl::execCommandAsyncWithTimeout(
-    std::string_view command,
+    const std::string &command,
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback,
     va_list ap)

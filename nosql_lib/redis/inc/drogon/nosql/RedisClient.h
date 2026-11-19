@@ -17,7 +17,7 @@
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/nosql/RedisException.h>
 #include <drogon/nosql/RedisSubscriber.h>
-#include <string_view>
+#include <string>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
 #include <memory>
@@ -127,7 +127,7 @@ class DROGON_EXPORT RedisClient
      */
     virtual void execCommandAsync(RedisResultCallback &&resultCallback,
                                   RedisExceptionCallback &&exceptionCallback,
-                                  std::string_view command,
+                                  std::string command,
                                   ...) noexcept = 0;
 
     /**
@@ -161,7 +161,7 @@ class DROGON_EXPORT RedisClient
      */
     template <typename T, typename... Args>
     T execCommandSync(std::function<T(const RedisResult &)> &&processFunc,
-                      std::string_view command,
+                      const std::string &command,
                       Args &&...args)
     {
         return execCommandSync<std::decay_t<decltype(processFunc)>>(
@@ -175,7 +175,7 @@ class DROGON_EXPORT RedisClient
     template <typename F, typename... Args>
     std::invoke_result_t<F, const RedisResult &> execCommandSync(
         F &&processFunc,
-        std::string_view command,
+        const std::string &command,
         Args &&...args)
     {
         using Ret = std::invoke_result_t<F, const RedisResult &>;
@@ -272,17 +272,17 @@ class DROGON_EXPORT RedisClient
        @endcode
      */
     template <typename... Arguments>
-    internal::RedisAwaiter execCommandCoro(std::string_view command,
+    internal::RedisAwaiter execCommandCoro(std::string command,
                                            Arguments... args)
     {
         return internal::RedisAwaiter(
-            [command,
+            [command = std::move(command),
              this,
              args...](RedisResultCallback &&commandCallback,
-                      RedisExceptionCallback &&exceptionCallback) {
+                      RedisExceptionCallback &&exceptionCallback) mutable {
                 execCommandAsync(std::move(commandCallback),
                                  std::move(exceptionCallback),
-                                 command,
+                                 std::move(command),
                                  args...);
             });
     }
