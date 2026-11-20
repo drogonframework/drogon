@@ -485,8 +485,13 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         }
         auto thisPtr = shared_from_this();
         resolverPtr_->resolve(
-            domain_, [thisPtr](const trantor::InetAddress &addr) {
-                thisPtr->loop_->runInLoop([thisPtr, addr]() {
+            domain_, [thisPtr](const trantor::InetAddress &addr) mutable {
+                // The resolver may call back on a thread of its own and
+                // destroy this callback there. Move the client to its loop,
+                // so that its last reference is never dropped elsewhere:
+                // ~HttpClientImpl() would then use a loop that may be gone.
+                auto loop = thisPtr->loop_;
+                loop->runInLoop([thisPtr = std::move(thisPtr), addr]() {
                     // Retrieve port from old serverAddr_
                     auto port = thisPtr->serverAddr_.portNetEndian();
                     thisPtr->serverAddr_ = addr;
