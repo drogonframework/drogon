@@ -208,11 +208,22 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 // parsed. To keep the old behavior, we send response directly
                 // through conn. (This response won't go through pre-sending
                 // aop, maybe we should change this behavior).
+
+                // RFC 9110 section 15.5.6 requires an Allow header on every 405
+                // response. Since this path bypasses all advices and the custom
+                // error handler, add it here. The request line failed to parse,
+                // so the target resource is unknown; advertise the same
+                // framework-wide method list used by other 405/OPTIONS
+                // responses.
+
                 auto code = static_cast<HttpStatusCode>(-parseRes);
                 conn->send(utils::formattedString(
-                    "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
+                    "HTTP/1.1 %d %s\r\n%sConnection: close\r\n\r\n",
                     code,
-                    statusCodeToString(code).data()));
+                    statusCodeToString(code).data(),
+                    code == k405MethodNotAllowed
+                        ? "Allow: GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH\r\n"
+                        : ""));
             }
             buf->retrieveAll();
             // stop parser to ignore following illegal data from client
