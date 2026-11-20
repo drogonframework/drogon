@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/Session.h>
 #include <drogon/drogon_callbacks.h>
 #include <drogon/CacheMap.h>
@@ -27,7 +28,7 @@
 
 namespace drogon
 {
-class SessionManager : public trantor::NonCopyable
+class DROGON_EXPORT SessionManager : public trantor::NonCopyable
 {
   public:
     using IdGeneratorCallback = std::function<std::string()>;
