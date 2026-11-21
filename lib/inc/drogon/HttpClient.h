@@ -73,14 +73,41 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 {
   public:
     /**
+     * @brief Time limits in seconds for each request made by this client.
+     *
+     * A nonpositive value disables the corresponding phase timeout. The
+     * optional total timeout on sendRequest() or sendRequestCoro() spans both
+     * phases. The first deadline to expire determines the result. If the total
+     * timeout expires first, the result is ReqResult::Timeout.
+     */
+    struct Timeouts
+    {
+        constexpr Timeouts(double connectTimeout, double responseTimeout)
+            : connectTimeout(connectTimeout), responseTimeout(responseTimeout)
+        {
+        }
+
+        /// Time waiting for a connection on which the request can be sent.
+        /// This includes DNS lookup, TCP connection,
+        /// TLS handshake and waiting for a pipeline slot on a busy connection.
+        /// Expiry completes the request with ReqResult::ConnectTimeout.
+        double connectTimeout;
+
+        /// Time from handoff to the transport until the complete final HTTP
+        /// response arrives. Expiry completes the request with
+        /// ReqResult::ResponseTimeout.
+        double responseTimeout;
+    };
+
+    /**
      * @brief Send a request asynchronously to the server
      *
      * @param req The request sent to the server.
      * @param callback The callback is called when the response is received from
      * the server.
-     * @param timeout In seconds. If the response is not received within the
-     * timeout, the callback is called with `ReqResult::Timeout` and an empty
-     * response. The zero value by default disables the timeout.
+     * @param timeout Total timeout in seconds. If it expires first, the
+     * callback receives `ReqResult::Timeout` and an empty response. Zero
+     * disables the total timeout. See Timeouts for the client phase limits.
      *
      * @note
      * The request object is altered(some headers are added to it) before it is
@@ -98,9 +125,9 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * @param req The request sent to the server.
      * @param callback The callback is called when the response is received from
      * the server.
-     * @param timeout In seconds. If the response is not received within
-     * the timeout, the callback is called with `ReqResult::Timeout` and an
-     * empty response. The zero value by default disables the timeout.
+     * @param timeout Total timeout in seconds. If it expires first, the
+     * callback receives `ReqResult::Timeout` and an empty response. Zero
+     * disables the total timeout. See Timeouts for the client phase limits.
      *
      * @note
      * The request object is altered(some headers are added to it) before it is
@@ -117,9 +144,9 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * response.
      *
      * @param req
-     * @param timeout In seconds. If the response is not received within the
-     * timeout, the `ReqResult::Timeout` and an empty response is returned. The
-     * zero value by default disables the timeout.
+     * @param timeout Total timeout in seconds. If it expires first, the
+     * function returns `ReqResult::Timeout` and an empty response. Zero
+     * disables the total timeout. See Timeouts for the client phase limits.
      *
      * @return std::pair<ReqResult, HttpResponsePtr>
      * @note Never call this function in the event loop thread of the
@@ -151,9 +178,10 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * (HttpResponsePtr)
      *
      * @param req
-     * @param timeout In seconds. If the response is not received within the
-     * timeout, A `drogon::HttpException` with `ReqResult::Timeout` is thrown.
-     * The zero value by default disables the timeout.
+     * @param timeout Total timeout in seconds. If it expires first, awaiting
+     * the response throws a `drogon::HttpException` with `ReqResult::Timeout`.
+     * Zero disables the total timeout. See Timeouts for the client phase
+     * limits.
      *
      * @return internal::HttpRespAwaiter. Await on it to get the response
      */
@@ -270,6 +298,16 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
                                        bool useOldTLS = false,
                                        bool validateCert = true);
 
+    /// Create an HTTP client for an IP address and port with per-phase
+    /// timeouts.
+    static HttpClientPtr newHttpClient(const std::string &ip,
+                                       uint16_t port,
+                                       Timeouts timeouts,
+                                       bool useSSL = false,
+                                       trantor::EventLoop *loop = nullptr,
+                                       bool useOldTLS = false,
+                                       bool validateCert = true);
+
     /// Get the event loop of the client;
     virtual trantor::EventLoop *getLoop() = 0;
 
@@ -357,6 +395,14 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      *
      */
     static HttpClientPtr newHttpClient(const std::string &hostString,
+                                       trantor::EventLoop *loop = nullptr,
+                                       bool useOldTLS = false,
+                                       bool validateCert = true);
+
+    /// Create an HTTP client for an http:// or https:// host with per-phase
+    /// timeouts.
+    static HttpClientPtr newHttpClient(const std::string &hostString,
+                                       Timeouts timeouts,
                                        trantor::EventLoop *loop = nullptr,
                                        bool useOldTLS = false,
                                        bool validateCert = true);

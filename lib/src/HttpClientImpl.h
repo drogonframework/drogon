@@ -40,11 +40,13 @@ class HttpClientImpl final : public HttpClient,
                    const trantor::InetAddress &addr,
                    bool useSSL = false,
                    bool useOldTLS = false,
-                   bool validateCert = true);
+                   bool validateCert = true,
+                   Timeouts timeouts = {0, 0});
     HttpClientImpl(trantor::EventLoop *loop,
                    const std::string &hostString,
                    bool useOldTLS = false,
-                   bool validateCert = true);
+                   bool validateCert = true,
+                   Timeouts timeouts = {0, 0});
     void sendRequest(const HttpRequestPtr &req,
                      const HttpReqCallback &callback,
                      double timeout = 0) override;
@@ -139,51 +141,48 @@ class HttpClientImpl final : public HttpClient,
         return requestsBufferSize_.load(std::memory_order_relaxed);
     }
 
-    void enqueueRequest(const HttpRequestPtr &req,
-                        const HttpReqCallback &callback)
-    {
-        requestsBuffer_.push_back({req, callback});
-        requestsBufferSize_.fetch_add(1, std::memory_order_relaxed);
-    }
-
-    void popFrontRequest()
-    {
-        if (!requestsBuffer_.empty())
-        {
-            requestsBuffer_.pop_front();
-            requestsBufferSize_.fetch_sub(1, std::memory_order_relaxed);
-        }
-    }
-
-    using RequestBufferIter =
-        std::list<std::pair<HttpRequestPtr, HttpReqCallback>>::iterator;
-
-    void eraseRequest(RequestBufferIter iter)
-    {
-        requestsBuffer_.erase(iter);
-        requestsBufferSize_.fetch_sub(1, std::memory_order_relaxed);
-    }
-
   private:
+    struct PendingRequest;
+    using PendingRequestPtr = std::shared_ptr<PendingRequest>;
+    using RequestBuffer = std::list<PendingRequestPtr>;
+
+    struct PendingRequest
+    {
+        HttpRequestPtr request;
+        HttpReqCallback callback;
+        std::shared_ptr<HttpClientImpl> client;
+        // An iterator to this submission while queued, or end() once sent.
+        RequestBuffer::iterator bufferPosition;
+        bool isHead{false};
+
+        void complete(ReqResult result, const HttpResponsePtr &response);
+    };
+
+    void startTimeout(const PendingRequestPtr &pending,
+                      double seconds,
+                      ReqResult result);
+    void enqueueRequest(const PendingRequestPtr &pending);
+    void failBufferedRequest(PendingRequestPtr pending, ReqResult result);
+    void removeBufferedRequest(const PendingRequestPtr &pending);
+    void sendBufferedRequest(const trantor::TcpConnectionPtr &connPtr);
+    void completeSentRequest(ReqResult result, const HttpResponsePtr &response);
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
     trantor::InetAddress serverAddr_;
     bool useSSL_;
     bool validateCert_;
     void sendReq(const trantor::TcpConnectionPtr &connPtr,
-                 const HttpRequestPtr &req);
-    void sendRequestInLoop(const HttpRequestPtr &req,
-                           HttpReqCallback &&callback);
+                 const PendingRequestPtr &pending);
     void sendRequestInLoop(const HttpRequestPtr &req,
                            HttpReqCallback &&callback,
                            double timeout);
     void handleCookies(const HttpResponseImplPtr &resp);
     void handleResponse(const HttpResponseImplPtr &resp,
-                        std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
                         const trantor::TcpConnectionPtr &connPtr);
     void createTcpClient();
-    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
-    std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
+    std::queue<PendingRequestPtr> pipeliningCallbacks_;
+    RequestBuffer requestsBuffer_;
+    const Timeouts timeouts_;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
     std::string domain_;
