@@ -333,7 +333,7 @@ void HttpServer::onRequests(
     }
 
     if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
-        requestParser->numberOfRequestsParsed() >=
+        requestParser->numberOfRequestsParsed() >
             HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
     {
         requestParser->stop();
@@ -341,7 +341,7 @@ void HttpServer::onRequests(
         return;
     }
     if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
-        requestParser->numberOfRequestsInPipelining() + requests.size() >=
+        requestParser->numberOfRequestsInPipelining() + requests.size() >
             HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
     {
         requestParser->stop();

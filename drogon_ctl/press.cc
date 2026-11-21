@@ -15,6 +15,7 @@
 #include "press.h"
 #include "cmd.h"
 #include <drogon/DrClassMap.h>
+#include <drogon/utils/Utilities.h>
 #include <iostream>
 #include <memory>
 #include <iomanip>
@@ -66,7 +67,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto &num = *iter;
                 try
                 {
-                    numOfRequests_ = std::stoll(num);
+                    numOfRequests_ = drogon::utils::fromString<size_t>(num);
                 }
                 catch (...)
                 {
@@ -79,7 +80,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto num = param.substr(2);
                 try
                 {
-                    numOfRequests_ = std::stoll(num);
+                    numOfRequests_ = drogon::utils::fromString<size_t>(num);
                 }
                 catch (...)
                 {
@@ -100,7 +101,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto &num = *iter;
                 try
                 {
-                    numOfThreads_ = std::stoll(num);
+                    numOfThreads_ = drogon::utils::fromString<size_t>(num);
                 }
                 catch (...)
                 {
@@ -113,7 +114,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto num = param.substr(2);
                 try
                 {
-                    numOfThreads_ = std::stoll(num);
+                    numOfThreads_ = drogon::utils::fromString<size_t>(num);
                 }
                 catch (...)
                 {
@@ -134,7 +135,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto &num = *iter;
                 try
                 {
-                    numOfConnections_ = std::stoll(num);
+                    numOfConnections_ = drogon::utils::fromString<size_t>(num);
                 }
                 catch (...)
                 {
@@ -147,7 +148,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto num = param.substr(2);
                 try
                 {
-                    numOfConnections_ = std::stoll(num);
+                    numOfConnections_ = drogon::utils::fromString<size_t>(num);
                 }
                 catch (...)
                 {

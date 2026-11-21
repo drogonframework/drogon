@@ -124,9 +124,16 @@ void drogon::MultipartStreamParser::parse(
 
                     // Extract filename
                     std::string_view fileName;
-                    if (parseHeaderParameter(valueView, "filename", fileName))
+                    bool fileNamePresent = false;
+                    if (parseHeaderParameter(
+                            valueView, "filename", fileName, &fileNamePresent))
                     {
                         currentHeader_.filename = fileName;
+                    }
+                    else if (fileNamePresent)
+                    {
+                        isValid_ = false;
+                        return;
                     }
                 }
                 // ignore other headers

@@ -168,6 +168,10 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 const std::string_view line(buf->peek(), crlf - buf->peek());
                 if (!line.empty())
                 {
+                    const char *colon = std::find(buf->peek(), crlf, ':');
+                    if (!isValidHttpFieldName(buf->peek(), colon) ||
+                        colon == crlf)
+                        return false;
                     if (!responsePtr_->addHeader(line))
                     {
                         // Invalid header section, e.g. a repeated
@@ -334,18 +338,16 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
             const char *crlf = buf->findCRLF();
             if (crlf)
             {
-                std::string len(buf->peek(), crlf - buf->peek());
-                errno = 0;
-                char *end = nullptr;
-                unsigned long long parsed =
-                    std::strtoull(len.c_str(), &end, 16);
-                if (errno == ERANGE ||
-                    parsed > (std::numeric_limits<size_t>::max)() - 2 ||
-                    end == len.c_str() || (*end != '\0' && *end != ';'))
+                std::string_view len(buf->peek(), crlf - buf->peek());
+                const auto extension = len.find(';');
+                if (extension != std::string_view::npos)
+                {
+                    len = len.substr(0, extension);
+                }
+                if (!utils::parseInteger(len, currentChunkLength_, 16))
                 {
                     return false;
                 }
-                currentChunkLength_ = static_cast<size_t>(parsed);
                 if (currentChunkLength_ != 0)
                 {
                     status_ = HttpResponseParseStatus::kExpectChunkBody;
@@ -365,7 +367,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         {
             // LOG_TRACE<<"expect chunk
             // len="<<currentChunkLength_;
-            if (buf->readableBytes() >= (currentChunkLength_ + 2))
+            if (buf->readableBytes() >= 2 &&
+                currentChunkLength_ <= buf->readableBytes() - 2)
             {
                 if (*(buf->peek() + currentChunkLength_) == '\r' &&
                     *(buf->peek() + currentChunkLength_ + 1) == '\n')
@@ -395,28 +398,32 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         }
         else if (status_ == HttpResponseParseStatus::kExpectLastEmptyChunk)
         {
-            // The last chunk may be followed by a trailer section that is
-            // always terminated by an empty line (RFC 9112 section 7.1).
-            // Skip it line by line; consuming a single line would leave the
-            // rest in the buffer to be parsed as the next response.
             const char *crlf = buf->findCRLF();
-            if (crlf)
+            if (!crlf)
             {
-                const bool emptyLine = (crlf == buf->peek());
-                buf->retrieveUntil(crlf + 2);
-                if (emptyLine)
-                {
-                    status_ = HttpResponseParseStatus::kGotAll;
-                    responsePtr_->addHeader(
-                        "content-length",
-                        std::to_string(responsePtr_->getBody().length()));
-                    responsePtr_->removeHeaderBy("transfer-encoding");
-                    break;
-                }
+                hasMore = false;
             }
             else
             {
-                hasMore = false;
+                if (crlf != buf->peek())
+                {
+                    const char *colon = std::find(buf->peek(), crlf, ':');
+                    if (colon == buf->peek() || colon == crlf)
+                    {
+                        return false;
+                    }
+                    // Trailers are not represented separately by
+                    // HttpResponse, so validate and discard them.
+                    buf->retrieveUntil(crlf + 2);
+                    continue;
+                }
+                buf->retrieveUntil(crlf + 2);
+                status_ = HttpResponseParseStatus::kGotAll;
+                responsePtr_->addHeader("content-length",
+                                        std::to_string(
+                                            responsePtr_->getBody().length()));
+                responsePtr_->removeHeaderBy("transfer-encoding");
+                break;
             }
         }
     }

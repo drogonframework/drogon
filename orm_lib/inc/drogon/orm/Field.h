@@ -18,6 +18,7 @@
 #pragma once
 
 #include <drogon/exports.h>
+#include <drogon/utils/Utilities.h>
 #include <string_view>
 #include <drogon/orm/ArrayParser.h>
 #include <drogon/orm/Result.h>
@@ -253,7 +254,7 @@ inline int Field::as<int>() const
 {
     if (isNull())
         return 0;
-    return std::stoi(result_.getValue(row_, column_));
+    return utils::fromString<int>(result_.getValue(row_, column_));
 }
 
 template <>
@@ -261,7 +262,7 @@ inline long Field::as<long>() const
 {
     if (isNull())
         return 0;
-    return std::stol(result_.getValue(row_, column_));
+    return utils::fromString<long>(result_.getValue(row_, column_));
 }
 
 template <>
@@ -269,7 +270,7 @@ inline int8_t Field::as<int8_t>() const
 {
     if (isNull())
         return 0;
-    return static_cast<int8_t>(atoi(result_.getValue(row_, column_)));
+    return utils::fromString<int8_t>(result_.getValue(row_, column_));
 }
 
 template <>
@@ -277,7 +278,7 @@ inline long long Field::as<long long>() const
 {
     if (isNull())
         return 0;
-    return atoll(result_.getValue(row_, column_));
+    return utils::fromString<long long>(result_.getValue(row_, column_));
 }
 
 template <>
@@ -285,8 +286,7 @@ inline unsigned int Field::as<unsigned int>() const
 {
     if (isNull())
         return 0;
-    return static_cast<unsigned int>(
-        std::stoul(result_.getValue(row_, column_)));
+    return utils::fromString<unsigned int>(result_.getValue(row_, column_));
 }
 
 template <>
@@ -294,7 +294,7 @@ inline unsigned long Field::as<unsigned long>() const
 {
     if (isNull())
         return 0;
-    return std::stoul(result_.getValue(row_, column_));
+    return utils::fromString<unsigned long>(result_.getValue(row_, column_));
 }
 
 template <>
@@ -302,7 +302,7 @@ inline uint8_t Field::as<uint8_t>() const
 {
     if (isNull())
         return 0;
-    return static_cast<uint8_t>(atoi(result_.getValue(row_, column_)));
+    return utils::fromString<uint8_t>(result_.getValue(row_, column_));
 }
 
 template <>
@@ -310,7 +310,8 @@ inline unsigned long long Field::as<unsigned long long>() const
 {
     if (isNull())
         return 0;
-    return std::stoull(result_.getValue(row_, column_));
+    return utils::fromString<unsigned long long>(
+        result_.getValue(row_, column_));
 }
 
 // std::vector<int32_t> Field::as<std::vector<int32_t>>() const;

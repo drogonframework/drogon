@@ -114,6 +114,19 @@ void MysqlConnection::init()
             return;
         MYSQL *ret;
         thisPtr->status_ = ConnectStatus::Connecting;
+        unsigned int port = 3306;
+        if (!thisPtr->port_.empty() &&
+            (!drogon::utils::parseInteger(thisPtr->port_, port) || port == 0 ||
+             port > 65535))
+        {
+            LOG_ERROR << "Invalid MySQL port: " << thisPtr->port_;
+            thisPtr->status_ = ConnectStatus::Bad;
+            if (thisPtr->closeCallback_)
+            {
+                thisPtr->closeCallback_(thisPtr);
+            }
+            return;
+        }
         thisPtr->waitStatus_ = mysql_real_connect_start(
             &ret,
             thisPtr->mysqlPtr_.get(),
@@ -121,7 +134,7 @@ void MysqlConnection::init()
             thisPtr->user_.empty() ? nullptr : thisPtr->user_.c_str(),
             thisPtr->passwd_.empty() ? nullptr : thisPtr->passwd_.c_str(),
             thisPtr->dbname_.empty() ? nullptr : thisPtr->dbname_.c_str(),
-            thisPtr->port_.empty() ? 3306 : atol(thisPtr->port_.c_str()),
+            port,
             nullptr,
             0);
         // LOG_DEBUG << ret;

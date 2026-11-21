@@ -93,8 +93,12 @@ static trantor::InetAddress parseAddress(const std::string &addr)
         std::string host = ip.substr(1, close - 1);
         if (close + 1 < ip.size() && ip[close + 1] == ':')
         {
-            port = static_cast<uint16_t>(
-                std::strtoul(ip.c_str() + close + 2, nullptr, 10));
+            if (!utils::parseInteger(std::string_view(ip).substr(close + 2),
+                                     port))
+            {
+                LOG_ERROR << "Invalid port in address: " << addr;
+                port = 0;
+            }
         }
         return trantor::InetAddress(host, port, true);
     }
@@ -104,8 +108,12 @@ static trantor::InetAddress parseAddress(const std::string &addr)
     {
         // Exactly one colon - this can only be "ipv4:port", because a valid
         // ipv6 address always contains at least two colons.
-        port = static_cast<uint16_t>(
-            std::strtoul(ip.c_str() + firstColon + 1, nullptr, 10));
+        if (!utils::parseInteger(std::string_view(ip).substr(firstColon + 1),
+                                 port))
+        {
+            LOG_ERROR << "Invalid port in address: " << addr;
+            port = 0;
+        }
         ip.resize(firstColon);
     }
     else if (firstColon != std::string::npos)
@@ -277,7 +285,11 @@ RealIpResolver::CIDR::CIDR(const std::string &ipOrCidr)
     {
         // parameter is a CIDR block
         ip = ipOrCidr.substr(0, pos);
-        prefixLen_ = static_cast<uint16_t>(std::stoi(ipOrCidr.substr(pos + 1)));
+        if (!utils::parseInteger(std::string_view(ipOrCidr).substr(pos + 1),
+                                 prefixLen_))
+        {
+            throw std::runtime_error("Bad CIDR block: " + ipOrCidr);
+        }
     }
 
     trantor::InetAddress addr(ip, 0);

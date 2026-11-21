@@ -992,6 +992,17 @@ bool HttpResponseImpl::addHeader(std::string_view line)
         valueView.remove_suffix(1);
     std::string value(valueView);
 
+    if (field == "connection")
+    {
+        const auto options = utils::splitStringView(value, ",");
+        if (std::find_if(options.begin(), options.end(), [](const auto option) {
+                return utils::ci_equals(option, "close");
+            }) != options.end())
+        {
+            setCloseConnection(true);
+        }
+    }
+
     if (field == "set-cookie")
     {
         // LOG_INFO<<"cookies!!!:"<<value;

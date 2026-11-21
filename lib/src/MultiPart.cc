@@ -117,8 +117,12 @@ int MultiPartParser::parseEntity(const HttpRequestPtr &req,
             std::string name{nameValue};
 
             std::string_view fileNameValue;
-            if (!parseHeaderParameter(value, "filename", fileNameValue))
+            bool fileNamePresent = false;
+            if (!parseHeaderParameter(
+                    value, "filename", fileNameValue, &fileNamePresent))
             {
+                if (fileNamePresent)
+                    return -1;
                 parameters_.emplace(name, std::string(headEnd + 2, end));
                 return 0;
             }

@@ -19,9 +19,11 @@
 #include "HttpResponseParser.h"
 
 #include <drogon/config.h>
+#include <drogon/utils/Utilities.h>
 #include <stdlib.h>
 #include <algorithm>
 #include <utility>
+#include <stdexcept>
 
 using namespace trantor;
 using namespace drogon;
@@ -34,6 +36,7 @@ static const size_t kDefaultDNSTimeout{600};
 
 void HttpClientImpl::createTcpClient()
 {
+    const auto tcpClientGeneration = ++tcpClientGeneration_;
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
     tcpClientPtr_ =
         std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
@@ -51,6 +54,15 @@ void HttpClientImpl::createTcpClient()
             .setKeyPath(clientKeyPath_);
         tcpClientPtr_->enableSSL(std::move(policy));
     }
+    else if (useSSL_ && !utils::supportsTls())
+    {
+        LOG_ERROR << "HTTP Client wants to create HTTPS connection "
+                     "but TLS is disabled in Trantor. Please rebuild with TLS "
+                     "support";
+        throw std::runtime_error(
+            "HTTP Client wants to create HTTPS connection "
+            "but TLS is disabled in Trantor");
+    }
 
     auto thisPtr = shared_from_this();
     std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
@@ -62,7 +74,8 @@ void HttpClientImpl::createTcpClient()
             thisPtr->sockOptCallback_(fd);
     });
     tcpClientPtr_->setConnectionCallback(
-        [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
+        [weakPtr,
+         tcpClientGeneration](const trantor::TcpConnectionPtr &connPtr) {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
@@ -85,9 +98,16 @@ void HttpClientImpl::createTcpClient()
             }
             else
             {
+                // A response carrying Connection: close can cause a new
+                // TcpClient to be created before the old connection's close
+                // callback runs.  Do not let the stale callback tear down the
+                // replacement connection or its request queue.
+                if (tcpClientGeneration != thisPtr->tcpClientGeneration_)
+                    return;
                 LOG_TRACE << "connection disconnect";
                 auto responseParser = connPtr->getContext<HttpResponseParser>();
-                if (responseParser && responseParser->parseResponseOnClose() &&
+                if (responseParser && !thisPtr->pipeliningCallbacks_.empty() &&
+                    responseParser->parseResponseOnClose() &&
                     responseParser->gotAll())
                 {
                     auto &firstReq = thisPtr->pipeliningCallbacks_.front();
@@ -101,7 +121,8 @@ void HttpClientImpl::createTcpClient()
                     // TODO: fix HttpResponseParser when content-length absence
                     thisPtr->tcpClientPtr_.reset();
                     thisPtr->handleResponse(resp, std::move(firstReq), connPtr);
-                    if (!thisPtr->requestsBuffer_.empty())
+                    if (!thisPtr->tcpClientPtr_ &&
+                        !thisPtr->requestsBuffer_.empty())
                     {
                         thisPtr->createTcpClient();
                     }
@@ -154,6 +175,8 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
       serverAddr_(addr),
       useSSL_(useSSL),
       validateCert_(validateCert),
+      domain_(addr.toIp()),
+      isDomainName_(false),
       useOldTLS_(useOldTLS)
 {
 }
@@ -196,8 +219,8 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             {
                 portStr = portStr.substr(0, pos);
             }
-            auto port = atoi(portStr.c_str());
-            if (port > 0 && port < 65536)
+            uint16_t port{};
+            if (utils::parseInteger(portStr, port) && port != 0)
             {
                 serverAddr_ = InetAddress(domain_, port, true);
             }
@@ -226,8 +249,8 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             {
                 portStr = portStr.substr(0, pos);
             }
-            auto port = atoi(portStr.c_str());
-            if (port > 0 && port < 65536)
+            uint16_t port{};
+            if (utils::parseInteger(portStr, port) && port != 0)
             {
                 serverAddr_ = InetAddress(domain_, port);
             }
@@ -436,7 +459,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     {
         if ((cookie.expiresDate().microSecondsSinceEpoch() == 0 ||
              cookie.expiresDate() > trantor::Date::now()) &&
-            (cookie.path().empty() || req->path().find(cookie.path()) == 0))
+            internal::cookiePathMatches(req->path(), cookie.path()))
         {
             req->addCookie(cookie.key(), cookie.value());
         }
@@ -573,7 +596,38 @@ void HttpClientImpl::handleResponse(
     auto cb = std::move(reqAndCb);
     pipeliningCallbacks_.pop();
     outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
-    handleCookies(resp);
+    handleCookies(resp, cb.first);
+
+    if (resp->ifCloseConnection())
+    {
+        // Make the old connection unavailable before callbacks run.  A
+        // callback may immediately submit another request, which must use a
+        // fresh connection.
+        auto closingClient = std::move(tcpClientPtr_);
+        decltype(pipeliningCallbacks_) failedRequests;
+        failedRequests.swap(pipeliningCallbacks_);
+        outstandingRequests_.fetch_sub(failedRequests.size(),
+                                       std::memory_order_relaxed);
+        cb.second(ReqResult::Ok, resp);
+
+        // Requests already pipelined on this connection have an ambiguous
+        // outcome. Keep them separate from requests submitted by callbacks.
+        while (!failedRequests.empty())
+        {
+            auto pending = std::move(failedRequests.front());
+            failedRequests.pop();
+            pending.second(ReqResult::NetworkFailure, nullptr);
+        }
+
+        // Requests which have not been written are safe to send over a new
+        // connection.  A response callback above may already have created it.
+        if (!tcpClientPtr_ && !requestsBuffer_.empty())
+            createTcpClient();
+
+        connPtr->forceClose();
+        return;
+    }
+
     cb.second(ReqResult::Ok, resp);
 
     // LOG_TRACE << "pipelining buffer size=" <<
@@ -588,13 +642,6 @@ void HttpClientImpl::handleResponse(
             sendReq(connPtr, reqAndCallback.first);
             pipeliningCallbacks_.push(std::move(reqAndCallback));
             popFrontRequest();
-        }
-        else
-        {
-            if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
-            {
-                tcpClientPtr_.reset();
-            }
         }
     }
     else
@@ -638,7 +685,6 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         if (responseParser->gotAll())
         {
             auto resp = responseParser->responseImpl();
-            resp->setPeerCertificate(connPtr->peerCertificate());
             responseParser->reset();
             bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
@@ -649,6 +695,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
                 // the response that actually belongs to the request.
                 continue;
             }
+            resp->setPeerCertificate(connPtr->peerCertificate());
             handleResponse(resp, std::move(firstReq), connPtr);
         }
         else
@@ -706,17 +753,22 @@ void HttpClientImpl::onError(ReqResult result)
     tcpClientPtr_.reset();
 }
 
-void HttpClientImpl::handleCookies(const HttpResponseImplPtr &resp)
+void HttpClientImpl::handleCookies(const HttpResponseImplPtr &resp,
+                                   const HttpRequestPtr &req)
 {
     loop_->assertInLoopThread();
     if (!enableCookies_)
         return;
     for (auto &iter : resp->getCookies())
     {
-        auto &cookie = iter.second;
+        auto cookie = iter.second;
         if (!cookie.domain().empty() && cookie.domain() != domain_)
         {
             continue;
+        }
+        if (cookie.path().empty() || cookie.path().front() != '/')
+        {
+            cookie.setPath(internal::defaultCookiePath(req->path()));
         }
         if (cookie.isSecure())
         {
