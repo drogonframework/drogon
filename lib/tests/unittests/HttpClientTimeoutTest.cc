@@ -1,6 +1,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpClient.h>
 #include <drogon/drogon_test.h>
+#include <drogon/utils/Utilities.h>
 #include <trantor/net/TcpServer.h>
 #include <atomic>
 #include <chrono>
@@ -28,34 +29,35 @@ struct ReceivedRequest
 class TimeoutTestServer
 {
   public:
-    TimeoutTestServer()
+    explicit TimeoutTestServer(bool readRawData = false)
     {
         std::promise<void> ready;
-        app().getLoop()->queueInLoop([this, &ready]() {
+        app().getLoop()->queueInLoop([this, &ready, readRawData]() {
             server_ = std::make_unique<trantor::TcpServer>(
                 app().getLoop(),
                 trantor::InetAddress("127.0.0.1", 0),
                 "http-client-timeout-test");
             port_ = server_->address().toPort();
-            server_->setRecvMessageCallback(
-                [this](const trantor::TcpConnectionPtr &connection,
-                       trantor::MsgBuffer *buffer) {
-                    while (buffer->readableBytes() != 0)
+            server_->setRecvMessageCallback([this, readRawData](
+                                                const trantor::TcpConnectionPtr
+                                                    &connection,
+                                                trantor::MsgBuffer *buffer) {
+                while (buffer->readableBytes() != 0)
+                {
+                    const std::string data(buffer->peek(),
+                                           buffer->readableBytes());
+                    const auto end = data.find("\r\n\r\n");
+                    if (!readRawData && end == std::string::npos)
+                        return;
+                    const auto size = readRawData ? data.size() : end + 4;
                     {
-                        const std::string data(buffer->peek(),
-                                               buffer->readableBytes());
-                        const auto end = data.find("\r\n\r\n");
-                        if (end == std::string::npos)
-                            return;
-                        {
-                            std::lock_guard<std::mutex> lock(mutex_);
-                            requests_.push_back(
-                                {connection, data.substr(0, end + 4)});
-                        }
-                        buffer->retrieve(end + 4);
-                        received_.notify_one();
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        requests_.push_back({connection, data.substr(0, size)});
                     }
-                });
+                    buffer->retrieve(size);
+                    received_.notify_one();
+                }
+            });
             server_->start();
             ready.set_value();
         });
@@ -76,6 +78,17 @@ class TimeoutTestServer
     HttpClientPtr client() const
     {
         return HttpClient::newHttpClient("127.0.0.1", port_);
+    }
+
+    HttpClientPtr client(HttpClient::Timeouts timeouts,
+                         bool useSSL = false) const
+    {
+        return HttpClient::newHttpClient("127.0.0.1", port_, timeouts, useSSL);
+    }
+
+    std::string url() const
+    {
+        return "http://127.0.0.1:" + std::to_string(port_);
     }
 
     ReceivedRequest receive()
@@ -119,18 +132,27 @@ HttpRequestPtr requestFor(const std::string &path, HttpMethod method = Get)
 }
 
 std::future<Response> send(const HttpClientPtr &client,
-                           const std::string &path,
-                           double timeout = 5.0)
+                           const HttpRequestPtr &request,
+                           double timeout,
+                           std::shared_ptr<std::atomic<size_t>> calls = nullptr)
 {
     auto completed = std::make_shared<std::promise<Response>>();
     auto future = completed->get_future();
     client->sendRequest(
-        requestFor(path),
-        [completed](ReqResult result, const HttpResponsePtr &response) {
-            completed->set_value({result, response});
+        request,
+        [completed, calls](ReqResult result, const HttpResponsePtr &response) {
+            if (!calls || ++*calls == 1)
+                completed->set_value({result, response});
         },
         timeout);
     return future;
+}
+
+std::future<Response> send(const HttpClientPtr &client,
+                           const std::string &path,
+                           double timeout = 5.0)
+{
+    return send(client, requestFor(path), timeout);
 }
 
 // Wait until the current callback and its timeout handler have returned.
@@ -194,16 +216,25 @@ DROGON_TEST(HttpClientTimeoutPreservesLateHeadResponseAndReentrancy)
     std::atomic<size_t> callbacks{0};
     std::promise<void> timedOut;
     std::promise<Response> completed;
+    auto request = requestFor("/late-head", Head);
     client->sendRequest(
-        requestFor("/late-head", Head),
-        [TEST_CTX, client, captured, &callbacks, &timedOut, &completed](
-            ReqResult result, const HttpResponsePtr &response) {
+        request,
+        [TEST_CTX,
+         client,
+         request,
+         captured,
+         &callbacks,
+         &timedOut,
+         &completed](ReqResult result, const HttpResponsePtr &response) {
             CHECK(result == ReqResult::Timeout);
             CHECK(response == nullptr);
             if (++callbacks != 1)
                 return;
+            // The response parser must use the method that was sent.
+            request->setMethod(Get);
+            request->setPath("/next");
             client->sendRequest(
-                requestFor("/next"),
+                request,
                 [&completed](ReqResult result,
                              const HttpResponsePtr &response) {
                     completed.set_value({result, response});
@@ -214,6 +245,7 @@ DROGON_TEST(HttpClientTimeoutPreservesLateHeadResponseAndReentrancy)
         0.1);
     captured.reset();
     const auto first = server.receive();
+    CHECK(first.headers.find("HEAD /late-head ") == 0);
     timedOut.get_future().get();
     drainLoop();
     CHECK(weakCaptured.expired());
@@ -310,4 +342,128 @@ DROGON_TEST(HttpClientWithoutTimeoutKeepsClientUntilResponse)
     CHECK(response.second->body() == "ok");
     drainLoop();
     CHECK(weakClient.expired());
+}
+
+DROGON_TEST(HttpClientConnectTimeoutWhileAwaitingHandshake)
+{
+    if (!utils::supportsTls())
+        return;
+
+    // Read the ClientHello without completing TLS. TCP is connected, but the
+    // client cannot dispatch an HTTP request yet.
+    TimeoutTestServer server(true);
+    auto client = server.client(HttpClient::Timeouts{0.2, 0.1}, true);
+    for (const bool retry : {false, true})
+    {
+        auto pending = send(client, retry ? "/retry" : "/first");
+        if (!retry)
+        {
+            const auto hello = server.receive();
+            REQUIRE(static_cast<unsigned char>(hello.headers.front()) == 0x16);
+        }
+        const auto result = pending.get();
+        CHECK(result.first == ReqResult::ConnectTimeout);
+        CHECK(result.second == nullptr);
+        CHECK(client->requestsBufferSize() == 0);
+        CHECK(client->outstandingRequests() == 0);
+    }
+    CHECK(client->bytesSent() == 0);
+}
+
+DROGON_TEST(HttpClientConnectBudgetEndsAtDispatch)
+{
+    TimeoutTestServer server;
+    auto client = server.client(HttpClient::Timeouts{0.2, 5.0});
+    auto slow = send(client, "/slow");
+    const auto first = server.receive();
+
+    // With pipelining disabled, the queued request expires while the first
+    // request stays in its response phase on the very same connection.
+    auto queued = send(client, "/never-sent").get();
+    CHECK(queued.first == ReqResult::ConnectTimeout);
+    CHECK(queued.second == nullptr);
+    CHECK(client->requestsBufferSize() == 0);
+    CHECK(client->outstandingRequests() == 1);
+    server.respond(first, "slow response");
+    const auto result = slow.get();
+    REQUIRE(result.first == ReqResult::Ok);
+    CHECK(result.second->body() == "slow response");
+
+    auto capped = send(client, "/total", 0.1);
+    const auto reused = server.receive();
+    CHECK(reused.connection == first.connection);
+    CHECK(reused.headers.find("GET /total ") == 0);
+    const auto timeout = capped.get();
+    CHECK(timeout.first == ReqResult::Timeout);
+    CHECK(timeout.second == nullptr);
+    server.respond(reused, "late");
+}
+
+DROGON_TEST(HttpClientResponseTimeoutPreservesRepeatedRequests)
+{
+    TimeoutTestServer server;
+    auto client = server.client(HttpClient::Timeouts{0, 0.2});
+    auto request = requestFor("/repeat");
+    auto calls = std::make_shared<std::atomic<size_t>>(0);
+    auto first = send(client, request, 5.0, calls);
+    const auto original = server.receive();
+
+    // The same request object has three distinct submissions. The first
+    // times out in flight, the last in the buffer on its shorter total budget.
+    // The middle submission waits longer than its entire response budget.
+    auto middle = send(client, request, 5.0);
+    auto last = send(client, request, 0.5);
+    const auto responseTimeout = first.get();
+    CHECK(responseTimeout.first == ReqResult::ResponseTimeout);
+    CHECK(responseTimeout.second == nullptr);
+    const auto totalTimeout = last.get();
+    CHECK(totalTimeout.first == ReqResult::Timeout);
+    CHECK(totalTimeout.second == nullptr);
+    CHECK(client->requestsBufferSize() == 1);
+    CHECK(client->outstandingRequests() == 2);
+    server.respond(original, "late");
+    const auto repeated = server.receive();
+    CHECK(repeated.connection == original.connection);
+    server.respond(repeated, "middle");
+    const auto response = middle.get();
+    REQUIRE(response.first == ReqResult::Ok);
+    CHECK(response.second->body() == "middle");
+    CHECK(*calls == 1);
+    CHECK(client->outstandingRequests() == 0);
+}
+
+DROGON_TEST(HttpClientResponseTimeoutWithPartialPipelinedResponse)
+{
+    TimeoutTestServer server;
+    auto client =
+        HttpClient::newHttpClient(server.url(), HttpClient::Timeouts{0, 0.5});
+    client->setPipeliningDepth(1);
+    auto warmup = send(client, "/warmup");
+    const auto warm = server.receive();
+    server.respond(warm, "warm");
+    REQUIRE(warmup.get().first == ReqResult::Ok);
+
+    auto calls = std::make_shared<std::atomic<size_t>>(0);
+    auto first = send(client, requestFor("/partial"), 5.0, calls);
+    const auto partial = server.receive();
+    CHECK(partial.connection == warm.connection);
+    partial.connection->send("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nla");
+    const auto timeout = first.get();
+    CHECK(timeout.first == ReqResult::ResponseTimeout);
+    CHECK(timeout.second == nullptr);
+    CHECK(client->outstandingRequests() == 1);
+
+    // Both requests are on the wire before the first response is complete.
+    auto next = send(client, "/next");
+    const auto second = server.receive();
+    CHECK(second.connection == partial.connection);
+    CHECK(second.headers.find("GET /next ") == 0);
+    CHECK(client->outstandingRequests() == 2);
+    partial.connection->send("te");
+    server.respond(second, "next");
+    const auto response = next.get();
+    REQUIRE(response.first == ReqResult::Ok);
+    CHECK(response.second->body() == "next");
+    CHECK(*calls == 1);
+    CHECK(client->outstandingRequests() == 0);
 }

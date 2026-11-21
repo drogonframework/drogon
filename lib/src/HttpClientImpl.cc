@@ -76,11 +76,7 @@ void HttpClientImpl::createTcpClient()
                            thisPtr->pipeliningDepth_ &&
                        !thisPtr->requestsBuffer_.empty())
                 {
-                    thisPtr->sendReq(connPtr,
-                                     thisPtr->requestsBuffer_.front().first);
-                    thisPtr->pipeliningCallbacks_.push(
-                        std::move(thisPtr->requestsBuffer_.front()));
-                    (thisPtr->popFrontRequest());
+                    thisPtr->sendBufferedRequest(connPtr);
                 }
             }
             else
@@ -91,7 +87,7 @@ void HttpClientImpl::createTcpClient()
                     responseParser->gotAll())
                 {
                     auto &firstReq = thisPtr->pipeliningCallbacks_.front();
-                    if (firstReq.first->method() == Head)
+                    if (firstReq->isHead)
                     {
                         responseParser->setForHeadMethod();
                     }
@@ -100,7 +96,7 @@ void HttpClientImpl::createTcpClient()
                     // temporary fix of dead tcpClientPtr_
                     // TODO: fix HttpResponseParser when content-length absence
                     thisPtr->tcpClientPtr_.reset();
-                    thisPtr->handleResponse(resp, std::move(firstReq), connPtr);
+                    thisPtr->handleResponse(resp, connPtr);
                     if (!thisPtr->requestsBuffer_.empty())
                     {
                         thisPtr->createTcpClient();
@@ -149,11 +145,13 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL,
                                bool useOldTLS,
-                               bool validateCert)
+                               bool validateCert,
+                               Timeouts timeouts)
     : loop_(loop),
       serverAddr_(addr),
       useSSL_(useSSL),
       validateCert_(validateCert),
+      timeouts_(timeouts),
       useOldTLS_(useOldTLS)
 {
 }
@@ -161,8 +159,12 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString,
                                bool useOldTLS,
-                               bool validateCert)
-    : loop_(loop), validateCert_(validateCert), useOldTLS_(useOldTLS)
+                               bool validateCert,
+                               Timeouts timeouts)
+    : loop_(loop),
+      validateCert_(validateCert),
+      timeouts_(timeouts),
+      useOldTLS_(useOldTLS)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -288,91 +290,65 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
         });
 }
 
-struct RequestCallbackParams
+void HttpClientImpl::PendingRequest::complete(ReqResult result,
+                                              const HttpResponsePtr &response)
 {
-    RequestCallbackParams(HttpReqCallback &&cb,
-                          HttpClientImplPtr client,
-                          HttpRequestPtr req)
-        : callback(std::move(cb)),
-          clientPtr(std::move(client)),
-          requestPtr(std::move(req))
-    {
-    }
-
-    drogon::HttpReqCallback callback;
-    HttpClientImplPtr clientPtr;
-    const HttpRequestPtr requestPtr;
-    bool timeoutFlag{false};
-};
-
-void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
-                                       HttpReqCallback &&callback,
-                                       double timeout)
-{
-    if (timeout <= 0)
-    {
-        auto callbackWithClient =
-            [thisPtr = shared_from_this(),
-             callback = std::move(callback)](ReqResult result,
-                                             const HttpResponsePtr &response) {
-                callback(result, response);
-            };
-        sendRequestInLoop(req, std::move(callbackWithClient));
+    if (!client)
         return;
-    }
+    // Release both owners even when this slot must wait for a late response.
+    auto keepAlive = std::move(client);
+    auto cb = std::exchange(callback, {});
+    cb(result, response);
+}
 
-    auto callbackParamsPtr =
-        std::make_shared<RequestCallbackParams>(std::move(callback),
-                                                shared_from_this(),
-                                                req);
+void HttpClientImpl::startTimeout(const PendingRequestPtr &pending,
+                                  double seconds,
+                                  ReqResult result)
+{
+    if (seconds <= 0)
+        return;
 
-    loop_->runAfter(
-        timeout,
-        [weakCallbackBackPtr =
-             std::weak_ptr<RequestCallbackParams>(callbackParamsPtr)] {
-            auto callbackParamsPtr = weakCallbackBackPtr.lock();
-            if (callbackParamsPtr != nullptr)
-            {
-                if (callbackParamsPtr->timeoutFlag)
-                {
-                    return;
-                }
+    loop_->runAfter(seconds,
+                    [weak = std::weak_ptr<PendingRequest>(pending), result]() {
+                        auto pending = weak.lock();
+                        if (!pending || !pending->client)
+                            return;
+                        auto &client = *pending->client;
+                        if (pending->bufferPosition !=
+                            client.requestsBuffer_.end())
+                        {
+                            client.failBufferedRequest(pending, result);
+                        }
+                        else if (result != ReqResult::ConnectTimeout)
+                        {
+                            // Keep the FIFO slot for a late response to this
+                            // submission.
+                            pending->complete(result, nullptr);
+                        }
+                    });
+}
 
-                callbackParamsPtr->timeoutFlag = true;
-                // Release ownership after completion, even if no response ever
-                // arrives. Keep the client alive while invoking the callback.
-                auto thisPtr = std::move(callbackParamsPtr->clientPtr);
-                auto callback = std::exchange(callbackParamsPtr->callback, {});
+void HttpClientImpl::enqueueRequest(const PendingRequestPtr &pending)
+{
+    pending->bufferPosition =
+        requestsBuffer_.insert(requestsBuffer_.end(), pending);
+    requestsBufferSize_.fetch_add(1, std::memory_order_relaxed);
+    startTimeout(pending, timeouts_.connectTimeout, ReqResult::ConnectTimeout);
+}
 
-                for (auto iter = thisPtr->requestsBuffer_.begin();
-                     iter != thisPtr->requestsBuffer_.end();
-                     ++iter)
-                {
-                    if (iter->first == callbackParamsPtr->requestPtr)
-                    {
-                        thisPtr->eraseRequest(iter);
-                        thisPtr->outstandingRequests_.fetch_sub(
-                            1, std::memory_order_relaxed);
-                        break;
-                    }
-                }
+void HttpClientImpl::removeBufferedRequest(const PendingRequestPtr &pending)
+{
+    requestsBuffer_.erase(pending->bufferPosition);
+    pending->bufferPosition = requestsBuffer_.end();
+    requestsBufferSize_.fetch_sub(1, std::memory_order_relaxed);
+}
 
-                // An already sent request must stay in the response queue so
-                // a late response cannot be mistaken for the next request's.
-                callback(ReqResult::Timeout, nullptr);
-            }
-        });
-    sendRequestInLoop(
-        req, [callbackParamsPtr](ReqResult r, const HttpResponsePtr &resp) {
-            if (callbackParamsPtr->timeoutFlag)
-            {
-                return;
-            }
-            callbackParamsPtr->timeoutFlag = true;
-            auto thisPtr = std::move(callbackParamsPtr->clientPtr);
-            auto callback = std::exchange(callbackParamsPtr->callback, {});
-            callback(r, resp);
-        });
+void HttpClientImpl::failBufferedRequest(PendingRequestPtr pending,
+                                         ReqResult result)
+{
+    removeBufferedRequest(pending);
+    outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
+    pending->complete(result, nullptr);
 }
 
 static bool isValidIpAddr(const trantor::InetAddress &addr)
@@ -398,13 +374,15 @@ static bool isValidIpAddr(const trantor::InetAddress &addr)
 }
 
 void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
-                                       drogon::HttpReqCallback &&callback)
+                                       drogon::HttpReqCallback &&callback,
+                                       double timeout)
 {
     outstandingRequests_.fetch_add(1, std::memory_order_relaxed);
 
     loop_->assertInLoopThread();
-    // The completion wrapper owns the client until completion or timeout.
-    // Queue entries must not add another client reference that outlives it.
+    auto pending = std::make_shared<PendingRequest>(PendingRequest{
+        req, std::move(callback), shared_from_this(), requestsBuffer_.end()});
+    startTimeout(pending, timeout, ReqResult::Timeout);
     for (const auto &header : headers_)
     {
         if (req->headers().find(header.first) == req->headers().end())
@@ -444,14 +422,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
     if (!tcpClientPtr_)
     {
-        auto callbackPtr =
-            std::make_shared<drogon::HttpReqCallback>(std::move(callback));
-        enqueueRequest(req,
-                       [callbackPtr](ReqResult result,
-                                     const HttpResponsePtr &response) {
-                           (*callbackPtr)(result, response);
-                       });
-
+        enqueueRequest(pending);
         if (domain_.empty() || !isDomainName_)
         {
             // Valid ip address, no domain, connect directly
@@ -462,10 +433,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             // No ip address and no domain, respond with BadServerAddress
             else
             {
-                popFrontRequest();
-                outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
-                (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
-                assert(requestsBuffer_.empty());
+                failBufferedRequest(pending, ReqResult::BadServerAddress);
             }
             return;
         }
@@ -503,60 +471,60 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
                     // DNS fail to get valid ip address,
                     // respond all requests with BadServerAddress
-                    while (!(thisPtr->requestsBuffer_).empty())
+                    while (!thisPtr->requestsBuffer_.empty())
                     {
-                        auto &reqAndCb = (thisPtr->requestsBuffer_).front();
-                        reqAndCb.second(ReqResult::BadServerAddress, nullptr);
-
-                        (thisPtr->popFrontRequest());
-                        (thisPtr->outstandingRequests_)
-                            .fetch_sub(1, std::memory_order_relaxed);
+                        thisPtr->failBufferedRequest(
+                            thisPtr->requestsBuffer_.front(),
+                            ReqResult::BadServerAddress);
                     }
                 });
             });
-
         return;
     }
 
-    // send request;
     auto connPtr = tcpClientPtr_->connection();
-    // Not connected, push request to buffer and wait for connection
-    if (!connPtr || connPtr->disconnected())
+    // Trantor can expose the TCP connection while TLS is still negotiating.
+    // The response parser is installed once the connection is ready for HTTP.
+    if (connPtr && connPtr->connected() && connPtr->hasContext() &&
+        requestsBuffer_.empty() &&
+        pipeliningCallbacks_.size() <= pipeliningDepth_)
     {
-        enqueueRequest(req, callback);
-        return;
-    }
-
-    // Connected, send request now
-    if (pipeliningCallbacks_.size() <= pipeliningDepth_ &&
-        requestsBuffer_.empty())
-    {
-        sendReq(connPtr, req);
-        pipeliningCallbacks_.push({req, std::move(callback)});
+        sendReq(connPtr, pending);
     }
     else
     {
-        enqueueRequest(req, callback);
+        enqueueRequest(pending);
     }
 }
 
+void HttpClientImpl::sendBufferedRequest(
+    const trantor::TcpConnectionPtr &connPtr)
+{
+    auto pending = requestsBuffer_.front();
+    removeBufferedRequest(pending);
+    sendReq(connPtr, pending);
+}
+
 void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
-                             const HttpRequestPtr &req)
+                             const PendingRequestPtr &pending)
 {
     trantor::MsgBuffer buffer;
-    assert(req);
-    auto implPtr = static_cast<HttpRequestImpl *>(req.get());
+    auto implPtr = static_cast<HttpRequestImpl *>(pending->request.get());
     implPtr->appendToBuffer(&buffer);
     LOG_TRACE << "Send request:"
               << std::string(buffer.peek(), buffer.readableBytes());
     bytesSent_ += buffer.readableBytes();
+    // The caller may reuse and change the request after a timeout.
+    pending->isHead = implPtr->method() == Head;
+    pipeliningCallbacks_.push(pending);
+    startTimeout(pending,
+                 timeouts_.responseTimeout,
+                 ReqResult::ResponseTimeout);
     connPtr->send(std::move(buffer));
 }
 
-void HttpClientImpl::handleResponse(
-    const HttpResponseImplPtr &resp,
-    std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
-    const trantor::TcpConnectionPtr &connPtr)
+void HttpClientImpl::handleResponse(const HttpResponseImplPtr &resp,
+                                    const trantor::TcpConnectionPtr &connPtr)
 {
     assert(!pipeliningCallbacks_.empty());
     auto &coding = resp->getHeaderBy("content-encoding");
@@ -570,11 +538,8 @@ void HttpClientImpl::handleResponse(
         resp->brDecompress();
     }
 #endif
-    auto cb = std::move(reqAndCb);
-    pipeliningCallbacks_.pop();
-    outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
     handleCookies(resp);
-    cb.second(ReqResult::Ok, resp);
+    completeSentRequest(ReqResult::Ok, resp);
 
     // LOG_TRACE << "pipelining buffer size=" <<
     // pipeliningCallbacks_.size(); LOG_TRACE << "requests buffer size="
@@ -582,29 +547,21 @@ void HttpClientImpl::handleResponse(
 
     if (connPtr->connected())
     {
-        if (!requestsBuffer_.empty())
+        if (!requestsBuffer_.empty() &&
+            pipeliningCallbacks_.size() <= pipeliningDepth_)
         {
-            auto &reqAndCallback = requestsBuffer_.front();
-            sendReq(connPtr, reqAndCallback.first);
-            pipeliningCallbacks_.push(std::move(reqAndCallback));
-            popFrontRequest();
+            sendBufferedRequest(connPtr);
         }
-        else
+        else if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
         {
-            if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
-            {
-                tcpClientPtr_.reset();
-            }
+            tcpClientPtr_.reset();
         }
     }
     else
     {
         while (!pipeliningCallbacks_.empty())
         {
-            auto cb = std::move(pipeliningCallbacks_.front());
-            pipeliningCallbacks_.pop();
-            outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
-            cb.second(ReqResult::NetworkFailure, nullptr);
+            completeSentRequest(ReqResult::NetworkFailure, nullptr);
         }
     }
 }
@@ -625,7 +582,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
             return;
         }
         auto &firstReq = pipeliningCallbacks_.front();
-        if (firstReq.first->method() == Head)
+        if (firstReq->isHead)
         {
             responseParser->setForHeadMethod();
         }
@@ -649,7 +606,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
                 // the response that actually belongs to the request.
                 continue;
             }
-            handleResponse(resp, std::move(firstReq), connPtr);
+            handleResponse(resp, connPtr);
         }
         else
         {
@@ -666,16 +623,38 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         bool useOldTLS,
                                         bool validateCert)
 {
+    return newHttpClient(
+        ip, port, {0, 0}, useSSL, loop, useOldTLS, validateCert);
+}
+
+HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
+                                        uint16_t port,
+                                        Timeouts timeouts,
+                                        bool useSSL,
+                                        trantor::EventLoop *loop,
+                                        bool useOldTLS,
+                                        bool validateCert)
+{
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
         useOldTLS,
-        validateCert);
+        validateCert,
+        timeouts);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
+                                        trantor::EventLoop *loop,
+                                        bool useOldTLS,
+                                        bool validateCert)
+{
+    return newHttpClient(hostString, {0, 0}, loop, useOldTLS, validateCert);
+}
+
+HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
+                                        Timeouts timeouts,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS,
                                         bool validateCert)
@@ -684,24 +663,28 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         hostString,
         useOldTLS,
-        validateCert);
+        validateCert,
+        timeouts);
+}
+
+void HttpClientImpl::completeSentRequest(ReqResult result,
+                                         const HttpResponsePtr &response)
+{
+    auto pending = std::move(pipeliningCallbacks_.front());
+    pipeliningCallbacks_.pop();
+    outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
+    pending->complete(result, response);
 }
 
 void HttpClientImpl::onError(ReqResult result)
 {
     while (!pipeliningCallbacks_.empty())
     {
-        auto cb = std::move(pipeliningCallbacks_.front());
-        pipeliningCallbacks_.pop();
-        outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
-        cb.second(result, nullptr);
+        completeSentRequest(result, nullptr);
     }
     while (!requestsBuffer_.empty())
     {
-        auto cb = std::move(requestsBuffer_.front().second);
-        popFrontRequest();
-        outstandingRequests_.fetch_sub(1, std::memory_order_relaxed);
-        cb(result, nullptr);
+        failBufferedRequest(requestsBuffer_.front(), result);
     }
     tcpClientPtr_.reset();
 }
