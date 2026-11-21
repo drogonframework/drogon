@@ -712,11 +712,24 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
         bool needSetSessionid = false;
         if (sessionId.empty())
         {
+            if (sessionMode_ != SessionMode::kAuto)
+            {
+                return;
+            }
             sessionId = sessionIdGeneratorCallback_();
             needSetSessionid = true;
         }
         req->setSession(
             sessionManagerPtr_->getSession(sessionId, needSetSessionid));
+    }
+}
+
+void HttpAppFrameworkImpl::createSessionForRequest(HttpRequestImpl *req)
+{
+    if (useSession_)
+    {
+        std::string sessionId = sessionIdGeneratorCallback_();
+        req->setSession(sessionManagerPtr_->getSession(sessionId, true));
     }
 }
 
