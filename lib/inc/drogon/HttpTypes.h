@@ -93,7 +93,8 @@ enum class Version
 {
     kUnknown = 0,
     kHttp10,
-    kHttp11
+    kHttp11,
+    kHttp3
 };
 
 enum ContentType
