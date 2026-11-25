@@ -31,16 +31,14 @@ class TimeoutTestServer
     explicit TimeoutTestServer(trantor::ConnectionCallback callback = {})
     {
         std::promise<void> ready;
-        app().getLoop()->queueInLoop([this,
-                                      &ready,
-                                      callback = std::move(callback)]() {
+        app().getLoop()->queueInLoop([this, &ready, &callback]() {
             server_ = std::make_unique<trantor::TcpServer>(
                 app().getLoop(),
                 trantor::InetAddress("127.0.0.1", 0),
                 "http-client-timeout-test");
             port_ = server_->address().toPort();
             if (callback)
-                server_->setConnectionCallback(callback);
+                server_->setConnectionCallback(std::move(callback));
             server_->setRecvMessageCallback(
                 [this](const trantor::TcpConnectionPtr &connection,
                        trantor::MsgBuffer *buffer) {
