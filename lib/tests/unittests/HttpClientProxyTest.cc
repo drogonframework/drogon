@@ -254,10 +254,8 @@ DROGON_TEST(HttpClientProxyEstablishesTlsTunnel)
         client->connect();
     });
 
-    auto direct = HttpClient::newHttpClient("https://" + destination,
-                                            nullptr,
-                                            false,
-                                            false);
+    auto direct = HttpClient::newHttpClient(
+        "127.0.0.1", origin.port(), true, nullptr, false, false);
     REQUIRE(send(direct).get().first == ReqResult::Ok);
     CHECK(tunnels.load() == 0);
 
