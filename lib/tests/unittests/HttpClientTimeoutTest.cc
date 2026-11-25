@@ -28,15 +28,19 @@ struct ReceivedRequest
 class TimeoutTestServer
 {
   public:
-    TimeoutTestServer()
+    explicit TimeoutTestServer(trantor::ConnectionCallback callback = {})
     {
         std::promise<void> ready;
-        app().getLoop()->queueInLoop([this, &ready]() {
+        app().getLoop()->queueInLoop([this,
+                                      &ready,
+                                      callback = std::move(callback)]() {
             server_ = std::make_unique<trantor::TcpServer>(
                 app().getLoop(),
                 trantor::InetAddress("127.0.0.1", 0),
                 "http-client-timeout-test");
             port_ = server_->address().toPort();
+            if (callback)
+                server_->setConnectionCallback(callback);
             server_->setRecvMessageCallback(
                 [this](const trantor::TcpConnectionPtr &connection,
                        trantor::MsgBuffer *buffer) {
@@ -141,6 +145,46 @@ void drainLoop()
     drained.get_future().get();
 }
 }  // namespace
+
+DROGON_TEST(HttpClientBuffersNewRequestDuringCloseDelimitedResponse)
+{
+    HttpClientPtr client;
+    std::promise<std::future<Response>> submitted;
+    bool submittedDuringClose = false;
+    TimeoutTestServer server([&](const trantor::TcpConnectionPtr &connection) {
+        if (connection->disconnected() && !submittedDuringClose)
+        {
+            submittedDuringClose = true;
+            submitted.set_value(send(client, "/next"));
+        }
+    });
+    client = server.client();
+    client->setPipeliningDepth(1);
+    auto first = send(client, "/first");
+    auto firstRequest = server.receive();
+
+    // The client half-closes after seeing a response delimited by EOF.
+    // Holding the server connection delays EOF until the next request is
+    // queued.
+    firstRequest.connection->send("HTTP/1.1 200 OK\r\n\r\nfirst");
+    auto pending = submitted.get_future();
+    REQUIRE(pending.wait_for(std::chrono::seconds(5)) ==
+            std::future_status::ready);
+    auto next = pending.get();
+    CHECK(client->requestsBufferSize() == 1);
+    firstRequest.connection.reset();
+
+    const auto firstResponse = first.get();
+    REQUIRE(firstResponse.first == ReqResult::Ok);
+    CHECK(firstResponse.second->body() == "first");
+    const auto nextRequest = server.receive();
+    CHECK(nextRequest.headers.find("GET /next ") == 0);
+    server.respond(nextRequest, "next");
+    const auto nextResponse = next.get();
+    REQUIRE(nextResponse.first == ReqResult::Ok);
+    CHECK(nextResponse.second->body() == "next");
+    CHECK(client->outstandingRequests() == 0);
+}
 
 DROGON_TEST(HttpClientTimeoutReleasesClientAndCallback)
 {
