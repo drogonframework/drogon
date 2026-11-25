@@ -290,19 +290,30 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
 
 struct RequestCallbackParams
 {
-    RequestCallbackParams(HttpReqCallback &&cb,
-                          HttpClientImplPtr client,
-                          HttpRequestPtr req)
-        : callback(std::move(cb)),
-          clientPtr(std::move(client)),
-          requestPtr(std::move(req))
+    RequestCallbackParams(HttpReqCallback &&cb, HttpClientImplPtr client)
+        : callback(std::move(cb)), clientPtr(std::move(client))
     {
     }
 
     drogon::HttpReqCallback callback;
     HttpClientImplPtr clientPtr;
-    const HttpRequestPtr requestPtr;
     bool timeoutFlag{false};
+};
+
+struct TimedRequestCallback
+{
+    std::shared_ptr<RequestCallbackParams> params;
+
+    void operator()(ReqResult result, const HttpResponsePtr &response) const
+    {
+        if (params->timeoutFlag)
+            return;
+
+        params->timeoutFlag = true;
+        auto client = std::move(params->clientPtr);
+        auto callback = std::exchange(params->callback, {});
+        callback(result, response);
+    }
 };
 
 void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
@@ -323,8 +334,7 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
 
     auto callbackParamsPtr =
         std::make_shared<RequestCallbackParams>(std::move(callback),
-                                                shared_from_this(),
-                                                req);
+                                                shared_from_this());
 
     loop_->runAfter(
         timeout,
@@ -348,7 +358,10 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                      iter != thisPtr->requestsBuffer_.end();
                      ++iter)
                 {
-                    if (iter->first == callbackParamsPtr->requestPtr)
+                    // A request object can be submitted more than once.
+                    const auto *queued =
+                        iter->second.target<TimedRequestCallback>();
+                    if (queued && queued->params == callbackParamsPtr)
                     {
                         thisPtr->eraseRequest(iter);
                         thisPtr->outstandingRequests_.fetch_sub(
@@ -362,17 +375,7 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                 callback(ReqResult::Timeout, nullptr);
             }
         });
-    sendRequestInLoop(
-        req, [callbackParamsPtr](ReqResult r, const HttpResponsePtr &resp) {
-            if (callbackParamsPtr->timeoutFlag)
-            {
-                return;
-            }
-            callbackParamsPtr->timeoutFlag = true;
-            auto thisPtr = std::move(callbackParamsPtr->clientPtr);
-            auto callback = std::exchange(callbackParamsPtr->callback, {});
-            callback(r, resp);
-        });
+    sendRequestInLoop(req, TimedRequestCallback{std::move(callbackParamsPtr)});
 }
 
 static bool isValidIpAddr(const trantor::InetAddress &addr)

@@ -119,18 +119,25 @@ HttpRequestPtr requestFor(const std::string &path, HttpMethod method = Get)
 }
 
 std::future<Response> send(const HttpClientPtr &client,
-                           const std::string &path,
+                           const HttpRequestPtr &request,
                            double timeout = 5.0)
 {
     auto completed = std::make_shared<std::promise<Response>>();
     auto future = completed->get_future();
     client->sendRequest(
-        requestFor(path),
+        request,
         [completed](ReqResult result, const HttpResponsePtr &response) {
             completed->set_value({result, response});
         },
         timeout);
     return future;
+}
+
+std::future<Response> send(const HttpClientPtr &client,
+                           const std::string &path,
+                           double timeout = 5.0)
+{
+    return send(client, requestFor(path), timeout);
 }
 
 // Wait until the current callback and its timeout handler have returned.
@@ -292,6 +299,31 @@ DROGON_TEST(HttpClientTimeoutRemovesUnsentRequest)
     const auto response = third.get();
     REQUIRE(response.first == ReqResult::Ok);
     CHECK(response.second->body() == "third");
+    CHECK(client->outstandingRequests() == 0);
+}
+
+DROGON_TEST(HttpClientTimeoutRemovesOnlyTheExpiredSubmission)
+{
+    TimeoutTestServer server;
+    auto client = server.client();
+    auto blocker = send(client, "/blocker");
+    const auto blockerRequest = server.receive();
+
+    auto request = requestFor("/reused");
+    auto retained = send(client, request);
+    auto expired = send(client, request, 0.1);
+    CHECK(expired.get().first == ReqResult::Timeout);
+    CHECK(client->requestsBufferSize() == 1);
+    CHECK(client->outstandingRequests() == 2);
+
+    server.respond(blockerRequest, "blocker");
+    REQUIRE(blocker.get().first == ReqResult::Ok);
+    const auto remainingRequest = server.receive();
+    CHECK(remainingRequest.headers.find("GET /reused ") == 0);
+    server.respond(remainingRequest, "retained");
+    const auto response = retained.get();
+    REQUIRE(response.first == ReqResult::Ok);
+    CHECK(response.second->body() == "retained");
     CHECK(client->outstandingRequests() == 0);
 }
 
