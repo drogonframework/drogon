@@ -1084,6 +1084,15 @@ bool HttpResponseImpl::addHeader(std::string_view line)
             // win, which is a response smuggling vector.
             return false;
         }
+        if (field == "connection")
+        {
+            auto it = headers_.find(field);
+            if (it != headers_.end())
+            {
+                it->second.append(", ").append(value);
+                return true;
+            }
+        }
         headers_[std::move(field)] = std::move(value);
     }
     return true;

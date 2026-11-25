@@ -113,8 +113,16 @@ bool HttpResponseParser::parseResponseOnClose()
     return false;
 }
 
+bool HttpResponseParser::shouldCloseConnection() const
+{
+    return status_ == HttpResponseParseStatus::kExpectClose ||
+           (status_ != HttpResponseParseStatus::kExpectResponseLine &&
+            status_ != HttpResponseParseStatus::kExpectHeaders &&
+            responsePtr_->ifCloseConnection());
+}
+
 // return false if any error
-bool HttpResponseParser::parseResponse(MsgBuffer *buf)
+bool HttpResponseParser::parseResponse(MsgBuffer *buf, bool forConnect)
 {
     bool ok = true;
     bool hasMore = true;
@@ -168,6 +176,22 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 const std::string_view line(buf->peek(), crlf - buf->peek());
                 if (!line.empty())
                 {
+                    if (forConnect)
+                    {
+                        const auto code =
+                            static_cast<int>(responsePtr_->statusCode());
+                        // Ignore framing fields on a successful CONNECT
+                        // before normal header validation (RFC 9110).
+                        if (code >= 200 && code < 300 &&
+                            (internal::startsWithIgnoreCase(
+                                 line, "content-length:") ||
+                             internal::startsWithIgnoreCase(
+                                 line, "transfer-encoding:")))
+                        {
+                            buf->retrieveUntil(crlf + 2);
+                            continue;
+                        }
+                    }
                     if (!responsePtr_->addHeader(line))
                     {
                         // Invalid header section, e.g. a repeated
@@ -184,14 +208,20 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     const auto &headers = responsePtr_->headers();
                     const auto lenIt = headers.find("content-length");
                     const auto encodeIt = headers.find("transfer-encoding");
+                    const auto &connection =
+                        responsePtr_->getHeaderBy("connection");
+                    responsePtr_->setCloseConnectionInternal(
+                        containsHttpToken(connection, "close") ||
+                        (responsePtr_->version() == Version::kHttp10 &&
+                         !containsHttpToken(connection, "keep-alive")));
                     const bool hasLen = lenIt != headers.end();
                     const bool hasEncode =
                         encodeIt != headers.end() && !encodeIt->second.empty();
 
-                    if (parseResponseForHeadMethod_)
+                    if (forConnect || parseResponseForHeadMethod_)
                     {
-                        // A response to HEAD never has a body, regardless of
-                        // the framing fields it carries.
+                        // Stop at the end of the headers for HEAD and when
+                        // the caller only needs the CONNECT response headers.
                         leftBodyLength_ = 0;
                         status_ = HttpResponseParseStatus::kGotAll;
                         hasMore = false;

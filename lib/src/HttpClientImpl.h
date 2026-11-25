@@ -26,7 +26,9 @@
 #include <future>
 #include <list>
 #include <mutex>
+#include <optional>
 #include <queue>
+#include <utility>
 #include <vector>
 #include "impl_forwards.h"
 
@@ -45,6 +47,11 @@ class HttpClientImpl final : public HttpClient,
                    const std::string &hostString,
                    bool useOldTLS = false,
                    bool validateCert = true);
+    HttpClientImpl(trantor::EventLoop *loop,
+                   const std::string &hostString,
+                   const std::string &proxyUrl,
+                   bool useOldTLS,
+                   bool validateCert);
     void sendRequest(const HttpRequestPtr &req,
                      const HttpReqCallback &callback,
                      double timeout = 0) override;
@@ -139,10 +146,9 @@ class HttpClientImpl final : public HttpClient,
         return requestsBufferSize_.load(std::memory_order_relaxed);
     }
 
-    void enqueueRequest(const HttpRequestPtr &req,
-                        const HttpReqCallback &callback)
+    void enqueueRequest(const HttpRequestPtr &req, HttpReqCallback callback)
     {
-        requestsBuffer_.push_back({req, callback});
+        requestsBuffer_.emplace_back(req, std::move(callback));
         requestsBufferSize_.fetch_add(1, std::memory_order_relaxed);
     }
 
@@ -165,11 +171,36 @@ class HttpClientImpl final : public HttpClient,
     }
 
   private:
+    struct Proxy
+    {
+        std::string host;
+        trantor::InetAddress address;
+        std::string targetAuthority;
+    };
+
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
     trantor::InetAddress serverAddr_;
     bool useSSL_;
     bool validateCert_;
+    std::optional<Proxy> proxy_;
+    bool tunnelReady_{false};
+    bool connectionClosing_{false};
+
+    bool usesTunnel() const
+    {
+        return proxy_ && useSSL_;
+    }
+
+    const trantor::InetAddress &connectAddress() const
+    {
+        return proxy_ ? proxy_->address : serverAddr_;
+    }
+
+    trantor::TLSPolicyPtr makeTlsPolicy() const;
+    void sendBufferedRequests(const trantor::TcpConnectionPtr &connPtr);
+    void onProxyConnectResponse(const trantor::TcpConnectionPtr &connPtr,
+                                trantor::MsgBuffer *msg);
     void sendReq(const trantor::TcpConnectionPtr &connPtr,
                  const HttpRequestPtr &req);
     void sendRequestInLoop(const HttpRequestPtr &req,
@@ -178,10 +209,11 @@ class HttpClientImpl final : public HttpClient,
                            HttpReqCallback &&callback,
                            double timeout);
     void handleCookies(const HttpResponseImplPtr &resp);
-    void handleResponse(const HttpResponseImplPtr &resp,
+    bool handleResponse(const HttpResponseImplPtr &resp,
                         std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
                         const trantor::TcpConnectionPtr &connPtr);
-    void createTcpClient();
+    void createTcpClient(const trantor::InetAddress &address);
+    void connectToEndpoint();
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
     std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);

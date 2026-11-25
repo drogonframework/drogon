@@ -500,7 +500,10 @@ class HttpRequestImpl : public HttpRequest
         return passThrough_;
     }
 
-    void appendToBuffer(trantor::MsgBuffer *output) const;
+    void appendToBuffer(trantor::MsgBuffer *output,
+                        std::string_view proxyTargetAuthority = {},
+                        bool tunneled = false,
+                        const std::string *proxyAuthorization = nullptr) const;
 
     const SessionPtr &session() const override
     {

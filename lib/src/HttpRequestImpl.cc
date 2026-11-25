@@ -191,7 +191,11 @@ void HttpRequestImpl::parseParameters() const
     }
 }
 
-void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
+void HttpRequestImpl::appendToBuffer(
+    trantor::MsgBuffer *output,
+    std::string_view proxyTargetAuthority,
+    bool tunneled,
+    const std::string *proxyAuthorization) const
 {
     switch (method_)
     {
@@ -232,8 +236,21 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             return;
     }
 
-    if (!path_.empty())
+    if (!proxyTargetAuthority.empty())
     {
+        output->append("http://");
+        output->append(proxyTargetAuthority.data(),
+                       proxyTargetAuthority.size());
+    }
+
+    if (path_.empty())
+    {
+        output->append("/");
+    }
+    else if (proxyTargetAuthority.empty() || method_ != Options || path_ != "*")
+    {
+        if (!proxyTargetAuthority.empty() && path_.front() != '/')
+            output->append("/");
         if (pathEncode_)
         {
             output->append(utils::urlEncode(path_));
@@ -242,10 +259,6 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         {
             output->append(path_);
         }
-    }
-    else
-    {
-        output->append("/");
     }
 
     std::string content;
@@ -413,9 +426,23 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
+        if (tunneled && it->first == "proxy-authorization")
+            continue;
         output->append(it->first);
         output->append(": ");
-        output->append(it->second);
+        if (!proxyTargetAuthority.empty() && it->first == "host")
+            output->append(proxyTargetAuthority.data(),
+                           proxyTargetAuthority.size());
+        else
+            output->append(it->second);
+        output->append("\r\n");
+    }
+    if (proxyAuthorization &&
+        headers_.find("proxy-authorization") == headers_.end() &&
+        isValidHeader("proxy-authorization", *proxyAuthorization))
+    {
+        output->append("proxy-authorization: ");
+        output->append(*proxyAuthorization);
         output->append("\r\n");
     }
     if (cookies_.size() > 0)

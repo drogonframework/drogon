@@ -70,6 +70,62 @@ DROGON_TEST(HttpResponseParserUpgradeLeavesFrameInBuffer)
     CHECK(buffer.readableBytes() == 100);
 }
 
+DROGON_TEST(HttpResponseParserConnectPreservesTunnelBytes)
+{
+    HttpResponseParser parser(nullptr);
+    trantor::MsgBuffer buffer;
+    buffer.append("HTTP/1.1 200 OK\r\nContent-Length: 8\r\ncontent-len");
+    REQUIRE(parser.parseResponse(&buffer, true));
+    CHECK(!parser.gotAll());
+
+    buffer.append("gth: 16\r\nTransfer-Encoding: chunked\r\n\r\ntunnel");
+    REQUIRE(parser.parseResponse(&buffer, true));
+    CHECK(parser.gotAll());
+    CHECK(std::string_view(buffer.peek(), buffer.readableBytes()) == "tunnel");
+}
+
+DROGON_TEST(HttpResponseParserHonorsConnectionClose)
+{
+    HttpResponseParser parser(nullptr);
+    trantor::MsgBuffer buffer;
+    buffer.append(
+        "HTTP/1.1 200 OK\r\nConnection: upgrade, cLoSe\r\n"
+        "Connection: keep-alive\r\nContent-Length: 2\r\n\r\n");
+    REQUIRE(parser.parseResponse(&buffer));
+    CHECK(!parser.gotAll());
+    CHECK(parser.responseImpl()->ifCloseConnection());
+    CHECK(parser.shouldCloseConnection());
+    buffer.append("ok");
+    REQUIRE(parser.parseResponse(&buffer));
+    CHECK(parser.gotAll());
+}
+
+DROGON_TEST(HttpResponseParserRecognizesCloseDelimitedBody)
+{
+    HttpResponseParser parser(nullptr);
+    trantor::MsgBuffer buffer;
+    buffer.append("HTTP/1.1 200 OK\r\n\r\npartial");
+    REQUIRE(parser.parseResponse(&buffer));
+    CHECK(!parser.gotAll());
+    CHECK(parser.shouldCloseConnection());
+    REQUIRE(parser.parseResponseOnClose());
+    CHECK(parser.responseImpl()->getBody() == "partial");
+}
+
+DROGON_TEST(HttpResponseParserHonorsHttp10KeepAlive)
+{
+    HttpResponseParser parser(nullptr);
+    trantor::MsgBuffer buffer;
+    buffer.append("HTTP/1.0 200 OK\r\n");
+    REQUIRE(parser.parseResponse(&buffer));
+    CHECK(!parser.shouldCloseConnection());
+
+    buffer.append("Connection: kEeP-aLiVe\r\nContent-Length: 2\r\n\r\nok");
+    REQUIRE(parser.parseResponse(&buffer));
+    CHECK(parser.gotAll());
+    CHECK(!parser.shouldCloseConnection());
+}
+
 DROGON_TEST(HttpResponseParserRejectsSignedContentLength)
 {
     for (std::string_view len : {"-1", "+1"})

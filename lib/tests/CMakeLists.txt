@@ -15,6 +15,7 @@ set(UNITTEST_SOURCES
     unittests/HttpHeaderTest.cc
     unittests/HttpUtilsTest.cc
     unittests/HttpResponseSwapTest.cc
+    unittests/HttpClientProxyTest.cc
     unittests/HttpClientTimeoutTest.cc
     unittests/MD5Test.cc
     unittests/MsgBufferTest.cc
@@ -68,6 +69,8 @@ if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS))
 endif()
 
 add_executable(unittest ${UNITTEST_SOURCES})
+set_source_files_properties(unittests/HttpClientProxyTest.cc PROPERTIES
+  COMPILE_DEFINITIONS "DROGON_TEST_CERT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/unittests/fixtures\"")
 
 if (BUILD_CTL)
   set(INTEGRATION_TEST_CLIENT_SOURCES
