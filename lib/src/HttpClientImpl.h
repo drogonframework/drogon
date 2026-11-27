@@ -27,6 +27,7 @@
 #include <list>
 #include <mutex>
 #include <queue>
+#include <utility>
 #include <vector>
 #include "impl_forwards.h"
 
@@ -139,10 +140,9 @@ class HttpClientImpl final : public HttpClient,
         return requestsBufferSize_.load(std::memory_order_relaxed);
     }
 
-    void enqueueRequest(const HttpRequestPtr &req,
-                        const HttpReqCallback &callback)
+    void enqueueRequest(const HttpRequestPtr &req, HttpReqCallback callback)
     {
-        requestsBuffer_.push_back({req, callback});
+        requestsBuffer_.emplace_back(req, std::move(callback));
         requestsBufferSize_.fetch_add(1, std::memory_order_relaxed);
     }
 
