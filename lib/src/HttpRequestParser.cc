@@ -16,7 +16,9 @@
 #include <drogon/HttpTypes.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <algorithm>
 #include <cerrno>
+#include <cctype>
 #include <cstdlib>
 #include <iostream>
 #include <string_view>
@@ -281,13 +283,26 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
 
                 // Check expect:100-continue
                 auto &expect = request_->expect();
-                if (expect == "100-continue" &&
+                // RFC 9110 Section 10.1.1: expectation names are
+                // case-insensitive.
+                constexpr std::string_view kContinue{"100-continue"};
+                if (std::equal(expect.begin(),
+                               expect.end(),
+                               kContinue.begin(),
+                               kContinue.end(),
+                               [](char a, char b) {
+                                   return tolower(static_cast<unsigned char>(
+                                              a)) == b;
+                               }) &&
                     request_->getVersion() >= Version::kHttp11)
                 {
                     // There is nothing to negotiate when the framing indicates
                     // that the request has no body. RFC 9110 Section 10.1.1
-                    // permits omitting the interim response in this case.
-                    if (remainContentLength_ != 0)
+                    // permits omitting the interim response in this case. A
+                    // chunked body has no Content-Length yet, so it counts as
+                    // a body.
+                    if (remainContentLength_ != 0 ||
+                        status_ == HttpRequestParseStatus::kExpectChunkLen)
                     {
                         // rfc2616-8.2.3
                         // TODO: consider adding an AOP for expect header

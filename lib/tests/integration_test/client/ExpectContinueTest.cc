@@ -70,6 +70,53 @@ DROGON_TEST(NonEmptyBodyWithExpectContinue)
     CHECK(response.find("HTTP/1.1 200 OK\r\n") != std::string::npos);
 }
 
+DROGON_TEST(ChunkedBodyWithExpectContinue)
+{
+    auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
+    const auto response =
+        sendRawRequest(client->getLoop(),
+                       "PUT /api/v1/apitest/static HTTP/1.1\r\n"
+                       "Host: localhost\r\n"
+                       "Transfer-Encoding: chunked\r\n"
+                       "Expect: 100-continue\r\n"
+                       "Connection: close\r\n\r\n"
+                       "1\r\nx\r\n0\r\n\r\n");
+
+    CHECK(response.rfind("HTTP/1.1 100 Continue\r\n", 0) == 0);
+    CHECK(response.find("HTTP/1.1 200 OK\r\n") != std::string::npos);
+}
+
+DROGON_TEST(ExpectContinueIsCaseInsensitive)
+{
+    auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
+    const auto response =
+        sendRawRequest(client->getLoop(),
+                       "PUT /api/v1/apitest/static HTTP/1.1\r\n"
+                       "Host: localhost\r\n"
+                       "Content-Length: 1\r\n"
+                       "Expect: 100-Continue\r\n"
+                       "Connection: close\r\n\r\n"
+                       "x");
+
+    CHECK(response.rfind("HTTP/1.1 100 Continue\r\n", 0) == 0);
+    CHECK(response.find("HTTP/1.1 200 OK\r\n") != std::string::npos);
+}
+
+DROGON_TEST(RejectUnknownExpectation)
+{
+    auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
+    const auto response =
+        sendRawRequest(client->getLoop(),
+                       "PUT /api/v1/apitest/static HTTP/1.1\r\n"
+                       "Host: localhost\r\n"
+                       "Content-Length: 1\r\n"
+                       "Expect: 100-continued\r\n"
+                       "Connection: close\r\n\r\n"
+                       "x");
+
+    CHECK(response.rfind("HTTP/1.1 417 Expectation Failed\r\n", 0) == 0);
+}
+
 DROGON_TEST(RejectInvalidContentLength)
 {
     auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
