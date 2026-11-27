@@ -102,9 +102,12 @@ void HttpClientImpl::createTcpClient(const InetAddress &address)
                 if (thisPtr->usesTunnel())
                 {
                     parser->setMaxHeaderSize(64 * 1024);
-                    const auto &target = thisPtr->proxy_->targetAuthority;
-                    auto request = "CONNECT " + target +
-                                   " HTTP/1.1\r\nHost: " + target + "\r\n\r\n";
+                    const auto &proxy = *thisPtr->proxy_;
+                    auto request = "CONNECT " + proxy.targetAuthority;
+                    if (!proxy.targetPortSpecified)
+                        request += ":" + std::to_string(thisPtr->port());
+                    request += " HTTP/1.1\r\nHost: " + proxy.targetAuthority +
+                               "\r\n\r\n";
                     thisPtr->bytesSent_ += request.size();
                     connPtr->send(std::move(request));
                 }
@@ -326,6 +329,7 @@ struct HttpEndpoint
     std::string host;
     InetAddress address;
     bool secure;
+    bool portSpecified;
 };
 
 HttpEndpoint parseHttpEndpoint(std::string url, bool allowHttps)
@@ -363,7 +367,8 @@ HttpEndpoint parseHttpEndpoint(std::string url, bool allowHttps)
         throw std::invalid_argument("Invalid HTTP endpoint host");
 
     uint16_t port = secure ? 443 : 80;
-    if (!authority.empty())
+    const bool portSpecified = !authority.empty();
+    if (portSpecified)
     {
         const auto end = authority.data() + authority.size();
         const auto parsed = std::from_chars(authority.data() + 1, end, port);
@@ -376,7 +381,7 @@ HttpEndpoint parseHttpEndpoint(std::string url, bool allowHttps)
     const InetAddress address(hostname, port, ipv6);
     if (ipv6 && address.isUnspecified())
         throw std::invalid_argument("Invalid IPv6 endpoint");
-    return {hostname, address, secure};
+    return {hostname, address, secure, portSpecified};
 }
 }  // namespace
 
@@ -394,10 +399,12 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     useSSL_ = destination.secure;
 
     auto authority = serverAddr_.isIpV6() ? "[" + domain_ + "]" : domain_;
-    if (useSSL_ || !onDefaultPort())
+    if (destination.portSpecified)
         authority += ":" + std::to_string(port());
-    proxy_.emplace(
-        Proxy{std::move(proxy.host), proxy.address, std::move(authority)});
+    proxy_.emplace(Proxy{std::move(proxy.host),
+                         proxy.address,
+                         std::move(authority),
+                         destination.portSpecified});
 }
 
 HttpClientImpl::~HttpClientImpl()
@@ -509,8 +516,12 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                         thisPtr->eraseRequest(iter);
                         thisPtr->outstandingRequests_.fetch_sub(
                             1, std::memory_order_relaxed);
-                        if (thisPtr->usesTunnel() && !thisPtr->tunnelReady_ &&
-                            thisPtr->requestsBuffer_.empty())
+                        if (thisPtr->proxy_ && thisPtr->tcpClientPtr_ &&
+                            thisPtr->requestsBuffer_.empty() &&
+                            thisPtr->pipeliningCallbacks_.empty() &&
+                            ((thisPtr->usesTunnel() &&
+                              !thisPtr->tunnelReady_) ||
+                             !thisPtr->tcpClientPtr_->connection()))
                             thisPtr->tcpClientPtr_.reset();
                         break;
                     }
@@ -674,7 +685,7 @@ void HttpClientImpl::connectToEndpoint()
                 LOG_TRACE << "dns:ip=" << address.toIp();
                 thisPtr->dns_ = false;
 
-                if (thisPtr->usesTunnel() && thisPtr->requestsBuffer_.empty())
+                if (thisPtr->requestsBuffer_.empty())
                     return;
 
                 if (isValidIpAddr(address))
@@ -895,7 +906,9 @@ void HttpClientImpl::onError(ReqResult result)
 void HttpClientImpl::handleCookies(const HttpResponseImplPtr &resp)
 {
     loop_->assertInLoopThread();
-    if (!enableCookies_)
+    if (!enableCookies_ ||
+        (proxy_ && !useSSL_ &&
+         resp->statusCode() == k407ProxyAuthenticationRequired))
         return;
     for (auto &iter : resp->getCookies())
     {

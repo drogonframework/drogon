@@ -176,6 +176,7 @@ class HttpClientImpl final : public HttpClient,
         std::string host;
         trantor::InetAddress address;
         std::string targetAuthority;
+        bool targetPortSpecified;
     };
 
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;

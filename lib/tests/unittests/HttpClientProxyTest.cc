@@ -161,6 +161,51 @@ DROGON_TEST(HttpClientProxyUsesAbsoluteRequestTarget)
     CHECK(client->port() == 8080);
 }
 
+DROGON_TEST(HttpClientProxyDoesNotStoreAuthenticationCookies)
+{
+    size_t requests = 0;
+    LocalServer proxy(
+        [&requests](const TcpConnectionPtr &connection, MsgBuffer *buffer) {
+            if (requests == 2)
+            {
+                echoRequest(connection, buffer);
+                return;
+            }
+            if (takeHeaders(buffer).empty())
+                return;
+            if (++requests == 1)
+            {
+                connection->send(
+                    "HTTP/1.1 407 Proxy Authentication Required\r\n"
+                    "Proxy-Authenticate: Basic realm=\"test\"\r\n"
+                    "Set-Cookie: proxy_session=proxy; Path=/\r\n"
+                    "Content-Length: 0\r\n\r\n");
+            }
+            else
+            {
+                connection->send(
+                    "HTTP/1.1 200 OK\r\n"
+                    "Set-Cookie: origin_session=origin; Path=/\r\n"
+                    "Content-Length: 0\r\n\r\n");
+            }
+        });
+    auto client = HttpClient::newHttpClientWithProxy("http://origin.invalid",
+                                                     proxy.url());
+    client->enableCookies();
+
+    const auto [challengeResult, challenge] = send(client).get();
+    REQUIRE(challengeResult == ReqResult::Ok);
+    CHECK(challenge->statusCode() == k407ProxyAuthenticationRequired);
+    CHECK(challenge->cookies().count("proxy_session") == 1);
+    REQUIRE(send(client).get().first == ReqResult::Ok);
+
+    const auto [result, response] = send(client).get();
+    REQUIRE(result == ReqResult::Ok);
+    CHECK(response->body().find("proxy_session=") == std::string_view::npos);
+    CHECK(response->body().find("origin_session=origin") !=
+          std::string_view::npos);
+}
+
 DROGON_TEST(HttpClientProxyReusesHttp10KeepAlive)
 {
     size_t connections = 0;
@@ -214,8 +259,17 @@ DROGON_TEST(HttpClientProxyEstablishesTlsTunnel)
         const auto headers = takeHeaders(buffer);
         if (headers.empty())
             return;
-        CHECK(headers == "CONNECT " + destination +
-                             " HTTP/1.1\r\nHost: " + destination + "\r\n\r\n");
+        if (headers.find("CONNECT localhost:443 ") == 0)
+        {
+            CHECK(headers ==
+                  "CONNECT localhost:443 HTTP/1.1\r\n"
+                  "Host: localhost\r\n\r\n");
+        }
+        else
+        {
+            CHECK(headers == "CONNECT " + destination + " HTTP/1.1\r\nHost: " +
+                                 destination + "\r\n\r\n");
+        }
         CHECK(buffer->readableBytes() == 0);
         ++tunnels;
 
@@ -282,6 +336,16 @@ DROGON_TEST(HttpClientProxyEstablishesTlsTunnel)
         CHECK(requests[i]->headers().count("proxy-authorization") == 0);
     }
     CHECK(tunnels.load() == requests.size());
+
+    // The proxy forwards to the loopback listener even when the destination
+    // uses the default HTTPS port.
+    auto defaultPort = HttpClient::newHttpClientWithProxy(
+        "https://localhost", proxy.url(), nullptr, false, false);
+    const auto [defaultResult, defaultResponse] = send(defaultPort).get();
+    REQUIRE(defaultResult == ReqResult::Ok);
+    CHECK(defaultResponse->body().find("\r\nhost: localhost\r\n") !=
+          std::string_view::npos);
+    CHECK(tunnels.load() == requests.size() + 1);
 
     auto validating =
         HttpClient::newHttpClientWithProxy("https://" + destination,
