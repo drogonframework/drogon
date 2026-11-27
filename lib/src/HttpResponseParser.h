@@ -43,8 +43,9 @@ class HttpResponseParser : public trantor::NonCopyable
     // default copy-ctor, dtor and assignment are fine
 
     // return false if any error
-    bool parseResponse(trantor::MsgBuffer *buf);
+    bool parseResponse(trantor::MsgBuffer *buf, bool forConnect = false);
     bool parseResponseOnClose();
+    bool shouldCloseConnection() const;
 
     bool gotAll() const
     {
