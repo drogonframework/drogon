@@ -32,7 +32,7 @@ class RedisTransactionImpl final
                  RedisExceptionCallback &&exceptionCallback) override;
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
-                          std::string_view command,
+                          std::string command,
                           ...) noexcept override;
 
     std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override

@@ -57,6 +57,12 @@ struct SqlCmd
     std::string preparingStatement_;
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool isChanging_{false};
+    // Internal commands (e.g. DEALLOCATE issued when the prepared statement
+    // cache evicts an entry). Their results are consumed internally and never
+    // delivered to a user callback. maintenanceSql_ owns the SQL text that
+    // sql_ points to for such commands.
+    bool isMaintenance_{false};
+    std::string maintenanceSql_;
 #endif
     SqlCmd(std::string_view &&sql,
            size_t paraNum,

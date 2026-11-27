@@ -19,12 +19,16 @@
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/TcpClient.h>
+#include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <functional>
 #include <future>
 #include <list>
 #include <mutex>
+#include <optional>
 #include <queue>
+#include <utility>
 #include <vector>
 #include "impl_forwards.h"
 
@@ -43,6 +47,11 @@ class HttpClientImpl final : public HttpClient,
                    const std::string &hostString,
                    bool useOldTLS = false,
                    bool validateCert = true);
+    HttpClientImpl(trantor::EventLoop *loop,
+                   const std::string &hostString,
+                   const std::string &proxyUrl,
+                   bool useOldTLS,
+                   bool validateCert);
     void sendRequest(const HttpRequestPtr &req,
                      const HttpReqCallback &callback,
                      double timeout = 0) override;
@@ -75,6 +84,15 @@ class HttpClientImpl final : public HttpClient,
     void addCookie(const Cookie &cookie) override
     {
         validCookies_.emplace_back(cookie);
+    }
+
+    void addHeader(std::string field, const std::string &value) override
+    {
+        std::transform(field.begin(),
+                       field.end(),
+                       field.begin(),
+                       [](unsigned char c) { return tolower(c); });
+        headers_[std::move(field)] = value;
     }
 
     size_t bytesSent() const override
@@ -118,27 +136,72 @@ class HttpClientImpl final : public HttpClient,
         sockOptCallback_ = std::move(cb);
     }
 
+    std::size_t outstandingRequests() const override
+    {
+        return outstandingRequests_.load(std::memory_order_relaxed);
+    }
+
     std::size_t requestsBufferSize() override
     {
-        if (loop_->isInLoopThread())
+        return requestsBufferSize_.load(std::memory_order_relaxed);
+    }
+
+    void enqueueRequest(const HttpRequestPtr &req, HttpReqCallback callback)
+    {
+        requestsBuffer_.emplace_back(req, std::move(callback));
+        requestsBufferSize_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void popFrontRequest()
+    {
+        if (!requestsBuffer_.empty())
         {
-            return requestsBuffer_.size();
-        }
-        else
-        {
-            std::promise<std::size_t> bufferSize;
-            loop_->queueInLoop(
-                [&] { bufferSize.set_value(requestsBuffer_.size()); });
-            return bufferSize.get_future().get();
+            requestsBuffer_.pop_front();
+            requestsBufferSize_.fetch_sub(1, std::memory_order_relaxed);
         }
     }
 
+    using RequestBufferIter =
+        std::list<std::pair<HttpRequestPtr, HttpReqCallback>>::iterator;
+
+    void eraseRequest(RequestBufferIter iter)
+    {
+        requestsBuffer_.erase(iter);
+        requestsBufferSize_.fetch_sub(1, std::memory_order_relaxed);
+    }
+
   private:
+    struct Proxy
+    {
+        std::string host;
+        trantor::InetAddress address;
+        std::string targetAuthority;
+        bool targetPortSpecified;
+    };
+
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
     trantor::InetAddress serverAddr_;
     bool useSSL_;
     bool validateCert_;
+    std::optional<Proxy> proxy_;
+    bool tunnelReady_{false};
+    bool connectionClosing_{false};
+
+    bool usesTunnel() const
+    {
+        return proxy_ && useSSL_;
+    }
+
+    const trantor::InetAddress &connectAddress() const
+    {
+        return proxy_ ? proxy_->address : serverAddr_;
+    }
+
+    trantor::TLSPolicyPtr makeTlsPolicy() const;
+    void sendBufferedRequests(const trantor::TcpConnectionPtr &connPtr);
+    void onProxyConnectResponse(const trantor::TcpConnectionPtr &connPtr,
+                                trantor::MsgBuffer *msg);
     void sendReq(const trantor::TcpConnectionPtr &connPtr,
                  const HttpRequestPtr &req);
     void sendRequestInLoop(const HttpRequestPtr &req,
@@ -147,19 +210,23 @@ class HttpClientImpl final : public HttpClient,
                            HttpReqCallback &&callback,
                            double timeout);
     void handleCookies(const HttpResponseImplPtr &resp);
-    void handleResponse(const HttpResponseImplPtr &resp,
+    bool handleResponse(const HttpResponseImplPtr &resp,
                         std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
                         const trantor::TcpConnectionPtr &connPtr);
-    void createTcpClient();
+    void createTcpClient(const trantor::InetAddress &address);
+    void connectToEndpoint();
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
     std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
     std::string domain_;
     bool isDomainName_{true};  // true if domain_ is name
+    std::atomic<std::size_t> outstandingRequests_{0};
+    std::atomic<std::size_t> requestsBufferSize_{0};
     size_t pipeliningDepth_{0};
     bool enableCookies_{false};
     std::vector<Cookie> validCookies_;
+    SafeStringMap<std::string> headers_;
     size_t bytesSent_{0};
     size_t bytesReceived_{0};
     bool dns_{false};

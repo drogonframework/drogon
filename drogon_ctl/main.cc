@@ -12,6 +12,7 @@
  *
  */
 
+#include "extension.h"
 #include "cmd.h"
 #include <string>
 #include <vector>
@@ -40,6 +41,36 @@ int main(int argc, char *argv[])
         else if (arg == "-v" || arg == "--version")
         {
             arg = "version";
+        }
+        else
+        {
+            for (auto iter = args.begin(); iter != args.end();)
+            {
+                auto &flag = *iter;
+                if (flag == "-se" || flag == "--source-ext" ||
+                    flag == "--source-extension")
+                {
+                    iter = args.erase(iter);
+                    if (iter != args.end())
+                    {
+                        sourceExtension = *iter;
+                        iter = args.erase(iter);
+                    }
+                    continue;
+                }
+                else if (flag == "-he" || flag == "--header-ext" ||
+                         flag == "--header-extension")
+                {
+                    iter = args.erase(iter);
+                    if (iter != args.end())
+                    {
+                        headerExtension = *iter;
+                        iter = args.erase(iter);
+                    }
+                    continue;
+                }
+                ++iter;
+            }
         }
     }
 

@@ -6,10 +6,25 @@
 using namespace drogon;
 using namespace trantor;
 
+namespace
+{
+const std::string_view makeConstStringView()
+{
+    return "value";
+}
+
+[[maybe_unused]] void bindConstStringViewRvalue(orm::DbClient &client)
+{
+    client.execSqlSync("SELECT $1", makeConstStringView());
+}
+}  // namespace
+
 DROGON_TEST(DbApiTest)
 {
 #if USE_POSTGRESQL
     {
+        CHECK(app().hasDbClient("pg_non_fast"));
+        CHECK(app().hasFastDbClient("pg_fast"));
         auto client = app().getDbClient("pg_non_fast");
         CHECK(client != nullptr);
         client->closeAll();
@@ -28,6 +43,8 @@ DROGON_TEST(DbApiTest)
 
 #if USE_MYSQL
     {
+        CHECK(app().hasDbClient("mysql_non_fast"));
+        CHECK(app().hasFastDbClient("mysql_fast"));
         auto client = app().getDbClient("mysql_non_fast");
         CHECK(client != nullptr);
         client->closeAll();
@@ -46,11 +63,18 @@ DROGON_TEST(DbApiTest)
 
 #if USE_SQLITE3
     {
+        CHECK(app().hasDbClient("sqlite3_non_fast"));
         auto client = app().getDbClient("sqlite3_non_fast");
         CHECK(client != nullptr);
+        const auto result = client->execSqlSync("PRAGMA foreign_keys");
+        REQUIRE(result.size() == 1);
+        CHECK(result[0][0].as<int>() == 1);
         client->closeAll();
     }
 #endif
+
+    CHECK(!app().hasDbClient("this_client_does_not_exist"));
+    CHECK(!app().hasFastDbClient("this_client_does_not_exist"));
 
     app().getLoop()->runAfter(5, [TEST_CTX]() {});  // wait for some time
 }
@@ -103,7 +127,8 @@ const std::string_view sqlite3_non_fast_config = R"({
     "name": "sqlite3_non_fast",
     "rdbms": "sqlite3",
     "filename": "test.db",
-    "is_fast": false
+    "is_fast": false,
+    "initialization_queries": ["PRAGMA foreign_keys = ON"]
 })";
 
 bool parseJson(std::string_view str, Json::Value *root, Json::String *errs)

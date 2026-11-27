@@ -190,6 +190,10 @@ void ListenerManager::createListeners(
                 serverPtr->enableSSL(std::move(policy));
             }
             serverPtr->setIoLoops(ioLoops);
+            if (connectionCallback_)
+            {
+                serverPtr->setConnectionCallback(connectionCallback_);
+            }
             servers_.push_back(serverPtr);
         }
     }

@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <chrono>
+#include <future>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -650,6 +651,43 @@ DROGON_TEST(PostgreTest)
               e.base().what());
     }
 
+    const std::string uniqueQuery =
+        "insert into users (user_id, org_name) values ('pg', 'default')";
+    try
+    {
+        clientPtr->execSqlSync(uniqueQuery);
+        FAULT("postgresql - unique violation should throw");
+    }
+    catch (const DrogonDbException &e)
+    {
+        MANDATE(dynamic_cast<const UniqueViolation *>(&e.base()) != nullptr);
+        const auto *sqlError = dynamic_cast<const SqlError *>(&e.base());
+        MANDATE(sqlError != nullptr);
+        if (sqlError)
+        {
+            MANDATE(sqlError->query() == uniqueQuery);
+            MANDATE(sqlError->sqlState() == "23505");
+        }
+    }
+
+    const std::string dataQuery = "select 'abc'::int";
+    try
+    {
+        clientPtr->execSqlSync(dataQuery);
+        FAULT("postgresql - data exception should throw");
+    }
+    catch (const DrogonDbException &e)
+    {
+        MANDATE(dynamic_cast<const DataException *>(&e.base()) != nullptr);
+        const auto *sqlError = dynamic_cast<const SqlError *>(&e.base());
+        MANDATE(sqlError != nullptr);
+        if (sqlError)
+        {
+            MANDATE(sqlError->query() == dataQuery);
+            MANDATE(sqlError->sqlState() == "22P02");
+        }
+    }
+
     // 5.3 try to access nonexistent column by name
     try
     {
@@ -891,6 +929,40 @@ DROGON_TEST(PostgreTest)
     catch (const DrogonDbException &e)
     {
         FAULT("postgresql - ORM QueryBuilder synchronous interface(3) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Users user =
+            QueryBuilder<Users>{}
+                .from("users")
+                .selectAll()
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .eq("user_name", "postgres")
+                .single()
+                .execSync(clientPtr);
+        MANDATE(user.getValueOfUserName() == "postgres");
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM QueryBuilder JOIN + single() model what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row wallet =
+            QueryBuilder<Users>{}
+                .from("users")
+                .select("wallets.amount")
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .limit(1)
+                .single()
+                .execSync(clientPtr);
+        MANDATE(wallet["amount"].isNull());
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM QueryBuilder JOIN + single() row what():",
               e.base().what());
     }
 
@@ -1484,6 +1556,43 @@ DROGON_TEST(PostgreTest)
             FAULT(
                 "postgresql - ORM mapper related sync many-to-many(0) what():",
                 e.base().what());
+        }
+    }
+
+    /// 9 Prepared statement cache stays bounded (#2533)
+    /// More distinct SQL texts than the cache holds forces LRU eviction and
+    /// re-preparation; every result must stay correct and the server-side
+    /// statement count must stay bounded on the single test connection.
+    {
+        constexpr int distinctSqlCount = 300;
+        auto makeSql = [](int i) {
+            return "select $1::int + " + std::to_string(i);
+        };
+        bool allCorrect = true;
+        try
+        {
+            for (int i = 0; i < distinctSqlCount; ++i)
+            {
+                auto r = clientPtr->execSqlSync(makeSql(i), 1000);
+                allCorrect = allCorrect && r[0][0].as<int>() == 1000 + i;
+            }
+            // The first statements have been evicted; they must re-prepare.
+            for (int i = 0; i < 10; ++i)
+            {
+                auto r = clientPtr->execSqlSync(makeSql(i), 2000);
+                allCorrect = allCorrect && r[0][0].as<int>() == 2000 + i;
+            }
+            MANDATE(allCorrect);
+            auto r = clientPtr->execSqlSync(
+                "select count(*) from pg_prepared_statements");
+            // The cache limit plus one statement whose DEALLOCATE may still
+            // be queued behind this query.
+            MANDATE(r[0][0].as<int64_t>() <= 257);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("postgresql - bounded prepared statement cache what():",
+                  e.base().what());
         }
     }
 }
@@ -2272,6 +2381,40 @@ DROGON_TEST(MySQLTest)
         FAULT("mysql - ORM QueryBuilder synchronous interface(3) what():",
               e.base().what());
     }
+    try
+    {
+        const Users user =
+            QueryBuilder<Users>{}
+                .from("users")
+                .selectAll()
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .eq("user_name", "postgres")
+                .single()
+                .execSync(clientPtr);
+        MANDATE(user.getValueOfUserName() == "postgres");
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM QueryBuilder JOIN + single() model what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row wallet =
+            QueryBuilder<Users>{}
+                .from("users")
+                .select("wallets.amount")
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .limit(1)
+                .single()
+                .execSync(clientPtr);
+        MANDATE(wallet["amount"].isNull());
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM QueryBuilder JOIN + single() row what():",
+              e.base().what());
+    }
 
     /// execAsyncFuture
     {
@@ -2741,11 +2884,38 @@ DROGON_TEST(MySQLTest)
 #endif
 
 #if USE_SQLITE3
-DbClientPtr sqlite3Client;
+DROGON_TEST(SQLite3InitializationQueriesTest)
+{
+    auto client = DbClient::newSqlite3Client(
+        "filename=:memory:",
+        2,
+        {"PRAGMA foreign_keys = ON",
+         "CREATE TEMP TABLE initialized(value INTEGER)",
+         "INSERT INTO initialized VALUES (42)"});
+    REQUIRE(client != nullptr);
+
+    auto transaction1 = client->newTransaction();
+    auto transaction2 = client->newTransaction();
+    REQUIRE(transaction1 != nullptr);
+    REQUIRE(transaction2 != nullptr);
+
+    for (const auto &transaction : {transaction1, transaction2})
+    {
+        const auto foreignKeys =
+            transaction->execSqlSync("PRAGMA foreign_keys");
+        REQUIRE(foreignKeys.size() == 1);
+        CHECK(foreignKeys[0][0].as<int>() == 1);
+
+        const auto initialized =
+            transaction->execSqlSync("SELECT value FROM initialized");
+        REQUIRE(initialized.size() == 1);
+        CHECK(initialized[0][0].as<int>() == 42);
+    }
+}
 
 DROGON_TEST(SQLite3Test)
 {
-    auto &clientPtr = sqlite3Client;
+    auto clientPtr = DbClient::newSqlite3Client("filename=:memory:", 1);
     REQUIRE(clientPtr != nullptr);
 
     // Prepare the test environment
@@ -3551,6 +3721,40 @@ DROGON_TEST(SQLite3Test)
         FAULT("sqlite3 - ORM QueryBuilder synchronous interface(3) what():",
               e.base().what());
     }
+    try
+    {
+        const Users user =
+            QueryBuilder<Users>{}
+                .from("users")
+                .selectAll()
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .eq("user_name", "postgres")
+                .single()
+                .execSync(clientPtr);
+        MANDATE(user.getValueOfUserName() == "postgres");
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - ORM QueryBuilder JOIN + single() model what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row wallet =
+            QueryBuilder<Users>{}
+                .from("users")
+                .select("wallets.amount")
+                .leftJoin("wallets", "users.user_id", "wallets.user_id")
+                .limit(1)
+                .single()
+                .execSync(clientPtr);
+        MANDATE(wallet["amount"].isNull());
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - ORM QueryBuilder JOIN + single() row what():",
+              e.base().what());
+    }
 
     /// execAsyncFuture
     {
@@ -4064,9 +4268,70 @@ DROGON_TEST(SQLite3Test)
 #endif
 
 #if USE_SQLITE3
+DROGON_TEST(SQLite3FailedCommitRollbackTest)
+{
+    // One connection makes reuse of a failed transaction deterministic.
+    auto client = DbClient::newSqlite3Client("filename=:memory:", 1);
+    client->execSqlSync("PRAGMA foreign_keys = ON");
+    client->execSqlSync("CREATE TABLE parents(id INTEGER PRIMARY KEY)");
+    client->execSqlSync(
+        "CREATE TABLE children(parent_id INTEGER REFERENCES parents(id)"
+        " DEFERRABLE INITIALLY DEFERRED)");
+
+    for (bool withCallback : {true, false})
+    {
+        auto committed = std::make_shared<std::promise<bool>>();
+        auto commitResult = committed->get_future();
+        auto trans = client->newTransaction();
+        if (withCallback)
+        {
+            trans->setCommitCallback(
+                [committed](bool success) { committed->set_value(success); });
+        }
+        trans->execSqlSync("INSERT INTO parents VALUES(1)");
+        // INSERT succeeds, but COMMIT fails and SQLite leaves the transaction
+        // open until it is explicitly rolled back.
+        trans->execSqlSync("INSERT INTO children VALUES(2)");
+
+        // This query must not see the uncommitted rows when the connection is
+        // returned to the pool, even without a commit callback.
+        auto queuedRead = client->execSqlAsyncFuture(
+            "SELECT (SELECT count(*) FROM parents),"
+            " (SELECT count(*) FROM children)");
+        trans.reset();
+        if (withCallback)
+        {
+            REQUIRE(commitResult.wait_for(5s) == std::future_status::ready);
+            CHECK(!commitResult.get());
+        }
+        REQUIRE(queuedRead.wait_for(5s) == std::future_status::ready);
+        auto rows = queuedRead.get();
+        REQUIRE(rows[0][0].as<int>() == 0);
+        REQUIRE(rows[0][1].as<int>() == 0);
+
+        // A subsequent transaction on the same connection must begin and
+        // commit normally, with no writes left over from the failed commit.
+        auto nextCommitted = std::make_shared<std::promise<bool>>();
+        auto nextCommitResult = nextCommitted->get_future();
+        trans = client->newTransaction([nextCommitted](bool success) {
+            nextCommitted->set_value(success);
+        });
+        trans->execSqlSync("INSERT INTO parents VALUES(2)");
+        trans->execSqlSync("INSERT INTO children VALUES(2)");
+        trans.reset();
+        REQUIRE(nextCommitResult.wait_for(5s) == std::future_status::ready);
+        CHECK(nextCommitResult.get());
+        rows = client->execSqlSync("SELECT parent_id FROM children");
+        REQUIRE(rows.size() == 1);
+        CHECK(rows[0][0].as<int>() == 2);
+        client->execSqlSync("DELETE FROM children");
+        client->execSqlSync("DELETE FROM parents");
+    }
+}
+
 DROGON_TEST(SQLite3TransactionTypeTest)
 {
-    auto &clientPtr = sqlite3Client;
+    auto clientPtr = DbClient::newSqlite3Client("filename=:memory:", 1);
     REQUIRE(clientPtr != nullptr);
 
     // Ensure the test table exists
@@ -4177,37 +4442,59 @@ DROGON_TEST(SQLite3TransactionTypeTest)
 // write).
 DROGON_TEST(SQLite3TransactionTypeLockingTest)
 {
-    // A pool of 2 connections to a shared file-based database gives us two
-    // independent SQLite connections that observe each other's locks.
-    const std::string dbPath = "/tmp/drogon_trans_type_lock_test.db";
+    // Two pools (one connection each) to a shared file-based database give us
+    // deterministic connection ownership for lock checks.
+    const auto nonce =
+        std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto dbPath =
+        "drogon_trans_type_lock_test_" + std::to_string(nonce) + ".db";
     std::remove(dbPath.c_str());
 
-    auto pool = DbClient::newSqlite3Client("filename=" + dbPath, 2);
+    {
+        auto setupClient = DbClient::newSqlite3Client("filename=" + dbPath, 1);
+        setupClient->execSqlSync("PRAGMA journal_mode=WAL");
+        setupClient->execSqlSync(
+            "CREATE TABLE IF NOT EXISTS lock_test (id INTEGER PRIMARY KEY)");
+    }
+
+    auto poolA = DbClient::newSqlite3Client("filename=" + dbPath, 1);
+    auto poolB = DbClient::newSqlite3Client("filename=" + dbPath, 1);
+
     // WAL mode is required: it changes BEGIN IMMEDIATE from acquiring a
     // RESERVED lock to acquiring the WAL write lock. This matches production
     // usage and makes the busy semantics more predictable — only one writer
     // is ever permitted and SQLITE_BUSY is returned immediately (no timeout
     // retry) when a second BEGIN IMMEDIATE is attempted.
-    pool->execSqlSync("PRAGMA journal_mode=WAL");
-    // No retry delay: SQLITE_BUSY must surface as an exception immediately.
-    pool->execSqlSync("PRAGMA busy_timeout=0");
-    pool->execSqlSync(
-        "CREATE TABLE IF NOT EXISTS lock_test (id INTEGER PRIMARY KEY)");
+    poolA->execSqlSync("PRAGMA journal_mode=WAL");
 
+    std::shared_ptr<Transaction> transA;
     // Hold an IMMEDIATE transaction on connection A.
-    auto transA = pool->newTransaction(TransactionType::Immediate);
-    // doBegin() is asynchronous — the BEGIN IMMEDIATE is queued to the
-    // connection's event loop. Run a synchronous query through the transaction
-    // to flush the queue; once execSqlSync returns, the RESERVED lock is
-    // definitely held.
-    transA->execSqlSync("SELECT 1");
+    try
+    {
+        transA = poolA->newTransaction(TransactionType::Immediate);
+        // doBegin() is asynchronous — the BEGIN IMMEDIATE is queued to the
+        // connection's event loop. Run a synchronous query through the
+        // transaction to flush the queue; once execSqlSync returns, the
+        // RESERVED lock is definitely held.
+        transA->execSqlSync("SELECT 1");
+    }
+    catch (const DrogonDbException &e)
+    {
+        std::remove(dbPath.c_str());
+        FAULT("sqlite3 - TransactionType::Immediate locking setup what():",
+              e.base().what());
+        return;
+    }
+
+    // Disable retry on B so SQLITE_BUSY surfaces immediately.
+    poolB->execSqlSync("PRAGMA busy_timeout=0");
 
     // Connection B attempting BEGIN IMMEDIATE must fail because A already
-    // holds the RESERVED lock. SQLite's default busy_timeout is 0.
+    // holds the RESERVED lock.
     bool gotBusy = false;
     try
     {
-        auto transB = pool->newTransaction(TransactionType::Immediate);
+        auto transB = poolB->newTransaction(TransactionType::Immediate);
         transB->execSqlSync("SELECT 1");
         transB->rollback();
     }
@@ -4217,6 +4504,7 @@ DROGON_TEST(SQLite3TransactionTypeLockingTest)
     }
 
     transA->rollback();
+    poolA->execSqlSync("SELECT 1");
     std::remove(dbPath.c_str());
 
     if (gotBusy)
@@ -4249,9 +4537,6 @@ int main(int argc, char **argv)
         "client_encoding=utf8",
         1,
         true);
-#endif
-#if USE_SQLITE3
-    sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
 #endif
     const int testStatus = test::run(argc, argv);
     return testStatus;

@@ -39,6 +39,18 @@ DROGON_TEST(OStringStreamTest)
         CHECK(ss.str() == "3.143.1416");
     }
 
+    SUBSECTION(float_number_lvalues)
+    {
+        float f = 3.14f;
+        double d = 3.1416;
+        const float cf = f;
+        const double cd = d;
+        drogon::OStringStream ss;
+        ss << f << "/" << cf << "/" << 3.14f;
+        ss << "/" << d << "/" << cd << "/" << 3.1416;
+        CHECK(ss.str() == "3.14/3.14/3.14/3.1416/3.1416/3.1416");
+    }
+
     SUBSECTION(literal_string)
     {
         drogon::OStringStream ss;

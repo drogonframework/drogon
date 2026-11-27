@@ -17,7 +17,32 @@ class CookieSameSiteController
 
     METHOD_LIST_BEGIN
     METHOD_ADD(CookieSameSiteController::set, "/set/{newSameSite}", Get);
+    METHOD_ADD(CookieSameSiteController::seedSession, "/session/seed", Get);
+    METHOD_ADD(CookieSameSiteController::loginSession, "/session/login", Get);
+    METHOD_ADD(CookieSameSiteController::readSession, "/session/read", Get);
     METHOD_LIST_END
+
+    void seedSession(const HttpRequestPtr &,
+                     std::function<void(const HttpResponsePtr &)> &&callback)
+    {
+        callback(HttpResponse::newHttpResponse());
+    }
+
+    void loginSession(const HttpRequestPtr &req,
+                      std::function<void(const HttpResponsePtr &)> &&callback)
+    {
+        req->session()->insert("rotation_test_user", std::string("user"));
+        req->session()->changeSessionIdToClient();
+        callback(HttpResponse::newHttpResponse());
+    }
+
+    void readSession(const HttpRequestPtr &req,
+                     std::function<void(const HttpResponsePtr &)> &&callback)
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setBody(req->session()->get<std::string>("rotation_test_user"));
+        callback(resp);
+    }
 
     void set(const HttpRequestPtr &req,
              std::function<void(const HttpResponsePtr &)> &&callback,
@@ -62,7 +87,7 @@ int main(int argc, char **argv)
         app()
             .setSSLFiles("server.crt", "server.key")
             .addListener("0.0.0.0", 8855, true)
-            .enableSession();
+            .enableSession(60);
         app().getLoop()->queueInLoop([&p1]() { p1.set_value(); });
         app().run();
     });

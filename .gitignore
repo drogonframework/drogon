@@ -48,3 +48,4 @@ install
 trace.json
 .cache/
 build_examples/
+.kiro

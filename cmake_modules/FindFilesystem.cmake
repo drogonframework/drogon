@@ -133,6 +133,10 @@ set(CMAKE_REQUIRED_QUIET ${Filesystem_FIND_QUIETLY})
 
 # All of our tests required C++17 or later
 set(BACKUP_CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+set(BACKUP_CXX_STANDARD_DEFINED FALSE)
+if(DEFINED CMAKE_CXX_STANDARD)
+    set(BACKUP_CXX_STANDARD_DEFINED TRUE)
+endif()
 set(CMAKE_CXX_STANDARD 17)
 
 # Normalize and check the component list we were given
@@ -258,4 +262,8 @@ if(Filesystem_FIND_REQUIRED AND NOT Filesystem_FOUND)
     message(FATAL_ERROR "Cannot run simple program using std::filesystem")
 endif()
 
-set(CMAKE_CXX_STANDARD "${BACKUP_CXX_STANDARD}")
+if(BACKUP_CXX_STANDARD_DEFINED)
+    set(CMAKE_CXX_STANDARD "${BACKUP_CXX_STANDARD}")
+else()
+    unset(CMAKE_CXX_STANDARD)
+endif()

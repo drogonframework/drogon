@@ -21,10 +21,12 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <atomic>
 #include <unordered_map>
 
@@ -72,10 +74,15 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void setVersion(const Version v) override
     {
-        version_ = v;
+        if (version_ != v)
+        {
+            version_ = v;
+            // The version is part of the rendered status line.
+            invalidateRenderCache();
+        }
         if (version_ == Version::kHttp10)
         {
-            closeConnection_ = true;
+            setCloseConnectionInternal(true);
         }
     }
 
@@ -88,12 +95,43 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void setCloseConnection(bool on) override
     {
-        closeConnection_ = on;
+        closeConnectionSetByUser_ = true;
+        setCloseConnectionInternal(on);
     }
 
     bool ifCloseConnection() const override
     {
         return closeConnection_;
+    }
+
+    /**
+     * @brief Set the close-connection flag without marking it as an explicit
+     * application decision.
+     *
+     * Used by the framework to apply the client's keep-alive preference. Kept
+     * off the public HttpResponse interface so that the ABI is unchanged.
+     */
+    void setCloseConnectionInternal(bool on)
+    {
+        if (closeConnection_ == on)
+            return;
+        closeConnection_ = on;
+        // The flag is emitted as a "connection" header, so anything rendered
+        // earlier is now stale. This matters most for responses with an
+        // expired time, whose entire rendering is memoized in httpString_ and
+        // would otherwise keep sending the previous header forever.
+        invalidateRenderCache();
+    }
+
+    /**
+     * @brief Whether the application explicitly called setCloseConnection().
+     *
+     * Distinguishes a deliberate handler decision from a side effect of
+     * setVersion(), so that the framework only overrides the latter.
+     */
+    bool closeConnectionSetByUser() const
+    {
+        return closeConnectionSetByUser_;
     }
 
     void setContentTypeCode(ContentType type) override
@@ -157,6 +195,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void addHeader(std::string field, const std::string &value) override
     {
+        if (!isValidHeader(field, value))
+            return;
         fullHeaderString_.reset();
         transform(field.begin(),
                   field.end(),
@@ -167,6 +207,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void addHeader(std::string field, std::string &&value) override
     {
+        if (!isValidHeader(field, value))
+            return;
         fullHeaderString_.reset();
         transform(field.begin(),
                   field.end(),
@@ -175,20 +217,26 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         headers_[std::move(field)] = std::move(value);
     }
 
-    void addHeader(const char *start, const char *colon, const char *end);
+    bool addHeader(std::string_view line);
 
     void addCookie(const std::string &key, const std::string &value) override
     {
+        if (!isValidCookie(key, value))
+            return;
         cookies_[key] = Cookie(key, value);
     }
 
     void addCookie(const Cookie &cookie) override
     {
+        if (!isValidCookie(cookie))
+            return;
         cookies_[cookie.key()] = cookie;
     }
 
     void addCookie(Cookie &&cookie) override
     {
+        if (!isValidCookie(cookie))
+            return;
         cookies_[cookie.key()] = std::move(cookie);
     }
 
@@ -233,6 +281,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void redirect(const std::string &url)
     {
+        if (!isValidHeader("location", url))
+            return;
         headers_["location"] = url;
     }
 
@@ -443,17 +493,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             }
             else
             {
-                auto pos = contentTypeString.find(';');
-                if (pos != std::string::npos)
-                {
-                    contentType_ = parseContentType(
-                        std::string_view(contentTypeString.data(), pos));
-                }
-                else
-                {
-                    contentType_ =
-                        parseContentType(std::string_view(contentTypeString));
-                }
+                contentType_ = parseContentType(
+                    internal::headerValueBeforeParameters(contentTypeString));
 
                 if (contentType_ == CT_NONE)
                     contentType_ = CT_CUSTOM;
@@ -507,7 +548,31 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         assert(code >= 0);
         customStatusCode_ = code;
+        if (messageLength != 0 &&
+            containsCRLF(std::string_view{message, messageLength}))
+        {
+            LOG_ERROR << "Invalid characters in status message, ignored";
+            return;
+        }
         statusMessage_ = std::string_view{message, messageLength};
+    }
+
+    /**
+     * @brief Drop every memoized rendering of this response.
+     *
+     * Must be called after changing anything that is baked into the rendered
+     * bytes but is not covered by the fullHeaderString_ resets scattered
+     * through the header setters -- notably the status line and the
+     * "connection" header. Responses with an expired time memoize their whole
+     * rendering in httpString_, so for them a stale cache means the wrong
+     * bytes go out on every subsequent send.
+     */
+    void invalidateRenderCache()
+    {
+        fullHeaderString_.reset();
+        httpString_.reset();
+        datePos_ = static_cast<size_t>(-1);
+        httpStringDate_ = -1;
     }
 
     SafeStringMap<std::string> headers_;
@@ -520,6 +585,10 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     trantor::Date creationDate_;
     Version version_{Version::kHttp11};
     bool closeConnection_{false};
+    // True only when the application called setCloseConnection() itself, as
+    // opposed to the flag being set by setVersion() or by the framework
+    // applying the client's keep-alive preference.
+    bool closeConnectionSetByUser_{false};
     mutable std::shared_ptr<HttpMessageBody> bodyPtr_;
     ssize_t expriedTime_{-1};
     std::string sendfileName_;
@@ -545,12 +614,22 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void setContentType(const std::string_view &contentType)
     {
+        if (containsCRLF(contentType))
+        {
+            LOG_ERROR << "Invalid characters in content-type, ignored";
+            return;
+        }
         contentTypeString_ =
             std::string(contentType.data(), contentType.size());
     }
 
     void setStatusMessage(const std::string_view &message)
     {
+        if (containsCRLF(message))
+        {
+            LOG_ERROR << "Invalid characters in status message, ignored";
+            return;
+        }
         statusMessage_ = message;
     }
 };

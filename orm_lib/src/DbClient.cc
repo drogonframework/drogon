@@ -79,14 +79,24 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     const std::string &connInfo,
     size_t connNum)
 {
+    return newSqlite3Client(connInfo, connNum, {});
+}
+
+std::shared_ptr<DbClient> DbClient::newSqlite3Client(
+    const std::string &connInfo,
+    size_t connNum,
+    const std::vector<std::string> &initializationQueries)
+{
 #if USE_SQLITE3
     auto client = std::make_shared<DbClientImpl>(connInfo,
                                                  connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                                                  ClientType::Sqlite3,
-                                                 false);
+                                                 false,
+                                                 initializationQueries);
 #else
-                                                 ClientType::Sqlite3);
+                                                 ClientType::Sqlite3,
+                                                 initializationQueries);
 #endif
     client->init();
     return client;
@@ -95,5 +105,6 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     exit(1);
     (void)(connInfo);
     (void)(connNum);
+    (void)(initializationQueries);
 #endif
 }

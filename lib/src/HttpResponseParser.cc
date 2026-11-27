@@ -14,14 +14,43 @@
 
 #include "HttpResponseParser.h"
 #include "HttpResponseImpl.h"
+#include "HttpUtils.h"
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <algorithm>
+#include <cctype>
 #include <cerrno>
 #include <cstdlib>
+#include <limits>
+#include <string_view>
 
 using namespace trantor;
 using namespace drogon;
+
+static bool lastTransferCodingIsChunked(const std::string &value)
+{
+    // Transfer-Encoding is a comma-separated list of codings; the final one
+    // determines the framing. Coding names are case-insensitive tokens.
+    const auto lastEnd = value.find_last_not_of(" \t");
+    if (lastEnd == std::string::npos)
+        return false;
+    const auto comma = value.rfind(',', lastEnd);
+    auto begin = (comma == std::string::npos) ? 0 : comma + 1;
+    while (begin <= lastEnd && (value[begin] == ' ' || value[begin] == '\t'))
+        ++begin;
+    std::string coding(value, begin, lastEnd - begin + 1);
+    // Drop any transfer parameters, e.g. "chunked;foo=bar".
+    const auto semicolon = coding.find(';');
+    if (semicolon != std::string::npos)
+        coding.resize(semicolon);
+    while (!coding.empty() && (coding.back() == ' ' || coding.back() == '\t'))
+        coding.pop_back();
+    std::transform(coding.begin(),
+                   coding.end(),
+                   coding.begin(),
+                   [](unsigned char c) { return tolower(c); });
+    return coding == "chunked";
+}
 
 void HttpResponseParser::reset()
 {
@@ -30,6 +59,7 @@ void HttpResponseParser::reset()
     parseResponseForHeadMethod_ = false;
     leftBodyLength_ = 0;
     currentChunkLength_ = 0;
+    headerSize_ = 0;
 }
 
 HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
@@ -41,38 +71,36 @@ HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
 
 bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
 {
-    const char *start = begin;
-    const char *space = std::find(start, end, ' ');
-    if (space != end)
-    {
-        LOG_TRACE << *(space - 1);
-        if (*(space - 1) == '1')
-        {
-            responsePtr_->setVersion(Version::kHttp11);
-        }
-        else if (*(space - 1) == '0')
-        {
-            responsePtr_->setVersion(Version::kHttp10);
-        }
-        else
-        {
-            return false;
-        }
-    }
+    std::string_view remain(begin, static_cast<size_t>(end - begin));
+    const auto versionEnd = remain.find(' ');
+    if (versionEnd == std::string_view::npos)
+        return false;
 
-    start = space + 1;
-    space = std::find(start, end, ' ');
-    if (space != end)
-    {
-        std::string status_code(start, space - start);
-        std::string status_message(space + 1, end - space - 1);
-        LOG_TRACE << status_code << " " << status_message;
-        auto code = atoi(status_code.c_str());
-        responsePtr_->setStatusCode(HttpStatusCode(code));
+    const auto version = remain.substr(0, versionEnd);
+    if (version == "HTTP/1.1")
+        responsePtr_->setVersion(Version::kHttp11);
+    else if (version == "HTTP/1.0")
+        responsePtr_->setVersion(Version::kHttp10);
+    else
+        return false;
 
-        return true;
-    }
-    return false;
+    remain.remove_prefix(versionEnd + 1);
+    // RFC 9112 requires a SP after the status code even when the reason
+    // phrase is empty, but servers commonly send "HTTP/1.1 200" with no
+    // trailing space. We deliberately accept that form for interoperability.
+    if (remain.size() < 3 || (remain.size() > 3 && remain[3] != ' '))
+        return false;
+
+    const auto statusCode = remain.substr(0, 3);
+    if (!std::all_of(statusCode.begin(), statusCode.end(), [](char c) {
+            return c >= '0' && c <= '9';
+        }))
+        return false;
+
+    const int code = (statusCode[0] - '0') * 100 + (statusCode[1] - '0') * 10 +
+                     (statusCode[2] - '0');
+    responsePtr_->setStatusCode(static_cast<HttpStatusCode>(code));
+    return true;
 }
 
 bool HttpResponseParser::parseResponseOnClose()
@@ -85,8 +113,16 @@ bool HttpResponseParser::parseResponseOnClose()
     return false;
 }
 
+bool HttpResponseParser::shouldCloseConnection() const
+{
+    return status_ == HttpResponseParseStatus::kExpectClose ||
+           (status_ != HttpResponseParseStatus::kExpectResponseLine &&
+            status_ != HttpResponseParseStatus::kExpectHeaders &&
+            responsePtr_->ifCloseConnection());
+}
+
 // return false if any error
-bool HttpResponseParser::parseResponse(MsgBuffer *buf)
+bool HttpResponseParser::parseResponse(MsgBuffer *buf, bool forConnect)
 {
     bool ok = true;
     bool hasMore = true;
@@ -95,6 +131,15 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         if (status_ == HttpResponseParseStatus::kExpectResponseLine)
         {
             const char *crlf = buf->findCRLF();
+            if (maxHeaderSize_ != 0)
+            {
+                const size_t lineSize =
+                    crlf ? crlf - buf->peek() + 2 : buf->readableBytes();
+                if (lineSize > maxHeaderSize_ - headerSize_)
+                    return false;
+                if (crlf)
+                    headerSize_ += lineSize;
+            }
             if (crlf)
             {
                 ok = processResponseLine(buf->peek(), crlf);
@@ -117,26 +162,132 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         else if (status_ == HttpResponseParseStatus::kExpectHeaders)
         {
             const char *crlf = buf->findCRLF();
+            if (maxHeaderSize_ != 0)
+            {
+                const size_t lineSize =
+                    crlf ? crlf - buf->peek() + 2 : buf->readableBytes();
+                if (lineSize > maxHeaderSize_ - headerSize_)
+                    return false;
+                if (crlf)
+                    headerSize_ += lineSize;
+            }
             if (crlf)
             {
-                const char *colon = std::find(buf->peek(), crlf, ':');
-                if (colon != crlf)
+                const std::string_view line(buf->peek(), crlf - buf->peek());
+                if (!line.empty())
                 {
-                    responsePtr_->addHeader(buf->peek(), colon, crlf);
+                    if (forConnect)
+                    {
+                        const auto code =
+                            static_cast<int>(responsePtr_->statusCode());
+                        // Ignore framing fields on a successful CONNECT
+                        // before normal header validation (RFC 9110).
+                        if (code >= 200 && code < 300 &&
+                            (internal::startsWithIgnoreCase(
+                                 line, "content-length:") ||
+                             internal::startsWithIgnoreCase(
+                                 line, "transfer-encoding:")))
+                        {
+                            buf->retrieveUntil(crlf + 2);
+                            continue;
+                        }
+                    }
+                    if (!responsePtr_->addHeader(line))
+                    {
+                        // Invalid header section, e.g. a repeated
+                        // Content-Length field.
+                        return false;
+                    }
                 }
                 else
                 {
-                    const std::string &len =
-                        responsePtr_->getHeaderBy("content-length");
-                    // LOG_INFO << "content len=" << len;
-                    if (!len.empty())
+                    // End of the header section. Decide how the body is
+                    // delimited (RFC 9112 section 6.3).
+                    const auto code =
+                        static_cast<int>(responsePtr_->statusCode());
+                    const auto &headers = responsePtr_->headers();
+                    const auto lenIt = headers.find("content-length");
+                    const auto encodeIt = headers.find("transfer-encoding");
+                    const auto &connection =
+                        responsePtr_->getHeaderBy("connection");
+                    responsePtr_->setCloseConnectionInternal(
+                        containsHttpToken(connection, "close") ||
+                        (responsePtr_->version() == Version::kHttp10 &&
+                         !containsHttpToken(connection, "keep-alive")));
+                    const bool hasLen = lenIt != headers.end();
+                    const bool hasEncode =
+                        encodeIt != headers.end() && !encodeIt->second.empty();
+
+                    if (forConnect || parseResponseForHeadMethod_)
                     {
-                        try
+                        // Stop at the end of the headers for HEAD and when
+                        // the caller only needs the CONNECT response headers.
+                        leftBodyLength_ = 0;
+                        status_ = HttpResponseParseStatus::kGotAll;
+                        hasMore = false;
+                    }
+                    else if (code == k204NoContent || code == k304NotModified ||
+                             (code >= 100 && code < 200 &&
+                              code != k101SwitchingProtocols))
+                    {
+                        // RFC 9112 section 6.3: these responses are always
+                        // terminated by the empty line after the header
+                        // section. A Content-Length is allowed on 304 but
+                        // does not describe a body. Informational responses
+                        // are skipped by the caller.
+                        status_ = HttpResponseParseStatus::kGotAll;
+                        hasMore = false;
+                    }
+                    else if (code == k101SwitchingProtocols)
+                    {
+                        std::string upgradeValue =
+                            responsePtr_->getHeaderBy("upgrade");
+                        std::transform(upgradeValue.begin(),
+                                       upgradeValue.end(),
+                                       upgradeValue.begin(),
+                                       [](unsigned char c) {
+                                           return tolower(c);
+                                       });
+                        if (upgradeValue == "websocket")
                         {
-                            leftBodyLength_ =
-                                static_cast<size_t>(std::stoull(len));
+                            // The Websocket response may not have a
+                            // content-length header.
+                            status_ = HttpResponseParseStatus::kGotAll;
+                            hasMore = false;
                         }
-                        catch (...)
+                        else
+                        {
+                            status_ = HttpResponseParseStatus::kExpectClose;
+                            if (auto connPtr = conn_.lock())
+                                connPtr->shutdown();
+                        }
+                    }
+                    else if (hasLen && hasEncode)
+                    {
+                        // RFC 9112 section 6.3: Transfer-Encoding and
+                        // Content-Length together make the framing ambiguous,
+                        // which is a response smuggling vector. Reject rather
+                        // than trust one of them.
+                        return false;
+                    }
+                    else if (hasEncode)
+                    {
+                        if (lastTransferCodingIsChunked(encodeIt->second))
+                        {
+                            status_ = HttpResponseParseStatus::kExpectChunkLen;
+                        }
+                        else
+                        {
+                            // Unknown transfer coding: the body runs until
+                            // the connection is closed.
+                            status_ = HttpResponseParseStatus::kExpectClose;
+                            if (auto connPtr = conn_.lock())
+                                connPtr->shutdown();
+                        }
+                    }
+                    else if (hasLen)
+                    {
+                        if (!parseContentLength(lenIt->second, leftBodyLength_))
                         {
                             // Malformed Content-Length from peer.
                             return false;
@@ -145,49 +296,9 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     }
                     else
                     {
-                        const std::string &encode =
-                            responsePtr_->getHeaderBy("transfer-encoding");
-                        if (encode == "chunked")
-                        {
-                            status_ = HttpResponseParseStatus::kExpectChunkLen;
-                            hasMore = true;
-                        }
-                        else
-                        {
-                            if (responsePtr_->statusCode() == k204NoContent ||
-                                (responsePtr_->statusCode() ==
-                                         k101SwitchingProtocols &&
-                                     [this]() -> bool {
-                                    std::string upgradeValue =
-                                        responsePtr_->getHeaderBy("upgrade");
-                                    std::transform(upgradeValue.begin(),
-                                                   upgradeValue.end(),
-                                                   upgradeValue.begin(),
-                                                   [](unsigned char c) {
-                                                       return tolower(c);
-                                                   });
-                                    return upgradeValue == "websocket";
-                                }()))
-                            {
-                                // The Websocket response may not have a
-                                // content-length header.
-                                status_ = HttpResponseParseStatus::kGotAll;
-                                hasMore = false;
-                            }
-                            else
-                            {
-                                status_ = HttpResponseParseStatus::kExpectClose;
-                                auto connPtr = conn_.lock();
-                                connPtr->shutdown();
-                                hasMore = true;
-                            }
-                        }
-                    }
-                    if (parseResponseForHeadMethod_)
-                    {
-                        leftBodyLength_ = 0;
-                        status_ = HttpResponseParseStatus::kGotAll;
-                        hasMore = false;
+                        status_ = HttpResponseParseStatus::kExpectClose;
+                        if (auto connPtr = conn_.lock())
+                            connPtr->shutdown();
                     }
                 }
                 buf->retrieveUntil(crlf + 2);
@@ -258,8 +369,9 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 char *end = nullptr;
                 unsigned long long parsed =
                     std::strtoull(len.c_str(), &end, 16);
-                if (errno == ERANGE || end == len.c_str() ||
-                    (*end != '\0' && *end != ';'))
+                if (errno == ERANGE ||
+                    parsed > (std::numeric_limits<size_t>::max)() - 2 ||
+                    end == len.c_str() || (*end != '\0' && *end != ';'))
                 {
                     return false;
                 }
@@ -313,17 +425,24 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         }
         else if (status_ == HttpResponseParseStatus::kExpectLastEmptyChunk)
         {
-            // last empty chunk
+            // The last chunk may be followed by a trailer section that is
+            // always terminated by an empty line (RFC 9112 section 7.1).
+            // Skip it line by line; consuming a single line would leave the
+            // rest in the buffer to be parsed as the next response.
             const char *crlf = buf->findCRLF();
             if (crlf)
             {
+                const bool emptyLine = (crlf == buf->peek());
                 buf->retrieveUntil(crlf + 2);
-                status_ = HttpResponseParseStatus::kGotAll;
-                responsePtr_->addHeader("content-length",
-                                        std::to_string(
-                                            responsePtr_->getBody().length()));
-                responsePtr_->removeHeaderBy("transfer-encoding");
-                break;
+                if (emptyLine)
+                {
+                    status_ = HttpResponseParseStatus::kGotAll;
+                    responsePtr_->addHeader(
+                        "content-length",
+                        std::to_string(responsePtr_->getBody().length()));
+                    responsePtr_->removeHeaderBy("transfer-encoding");
+                    break;
+                }
             }
             else
             {

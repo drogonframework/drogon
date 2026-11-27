@@ -37,37 +37,24 @@ orm::Criteria RestfulController::makeCriteria(
             {
                 throw std::runtime_error("Json format error");
             }
-            if (masquerading_)
+            if (!andJson[0].isString())
             {
-                Json::Value newJson(andJson);
-                auto iter = masqueradingMap_.find(newJson[0].asString());
-                if (iter != masqueradingMap_.end())
-                {
-                    newJson[0] = masqueradingVector_[iter->second];
-                    if (!orCriteria)
-                    {
-                        orCriteria = orm::Criteria(newJson);
-                    }
-                    else
-                    {
-                        orCriteria = orCriteria && orm::Criteria(newJson);
-                    }
-                }
-                else
-                {
-                    throw std::runtime_error("Json format error");
-                }
+                throw std::runtime_error("Json format error");
+            }
+            auto index = columnIndexForField(andJson[0].asString());
+            if (!index)
+            {
+                throw std::runtime_error("Json format error");
+            }
+            Json::Value newJson(andJson);
+            newJson[0] = columnsVector_[*index];
+            if (!orCriteria)
+            {
+                orCriteria = orm::Criteria(newJson);
             }
             else
             {
-                if (!orCriteria)
-                {
-                    orCriteria = orm::Criteria(andJson);
-                }
-                else
-                {
-                    orCriteria = orCriteria && orm::Criteria(andJson);
-                }
+                orCriteria = orCriteria && orm::Criteria(newJson);
             }
         }
         if (!ret)

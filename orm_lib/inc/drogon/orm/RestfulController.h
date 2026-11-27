@@ -21,6 +21,7 @@
 #include <trantor/utils/NonCopyable.h>
 #include <string>
 #include <functional>
+#include <optional>
 #include <vector>
 
 namespace drogon
@@ -36,6 +37,7 @@ class DROGON_EXPORT RestfulController : trantor::NonCopyable
     {
         masquerading_ = true;
         masqueradingVector_ = pMasqueradingVector;
+        masqueradingMap_.clear();
         for (size_t i = 0; i < masqueradingVector_.size(); ++i)
         {
             masqueradingMap_.insert(
@@ -47,6 +49,7 @@ class DROGON_EXPORT RestfulController : trantor::NonCopyable
     {
         masquerading_ = false;
         masqueradingVector_ = columnsVector_;
+        masqueradingMap_.clear();
         for (size_t i = 0; i < masqueradingVector_.size(); ++i)
         {
             masqueradingMap_.insert(
@@ -95,6 +98,21 @@ class DROGON_EXPORT RestfulController : trantor::NonCopyable
     RestfulController(const std::vector<std::string> &columnsVector)
         : columnsVector_(columnsVector)
     {
+    }
+
+    std::optional<size_t> columnIndexForField(const std::string &field) const
+    {
+        if (field.empty())
+        {
+            return std::nullopt;
+        }
+        auto iter = masqueradingMap_.find(field);
+        if (iter == masqueradingMap_.end() ||
+            iter->second >= columnsVector_.size())
+        {
+            return std::nullopt;
+        }
+        return iter->second;
     }
 
     std::vector<std::string> fieldsSelector(const std::set<std::string> &fields)

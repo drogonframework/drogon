@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#include <string_view>
+#include <string>
 #include <drogon/nosql/RedisException.h>
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/utils/Utilities.h>
@@ -21,6 +21,7 @@
 #include <trantor/net/InetAddress.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Channel.h>
+#include <trantor/net/Resolver.h>
 #include <hiredis/async.h>
 #include <hiredis/hiredis.h>
 #include <memory>
@@ -45,6 +46,7 @@ class RedisConnection : public trantor::NonCopyable,
 {
   public:
     RedisConnection(const trantor::InetAddress &serverAddress,
+                    const std::string &hostname,
                     const std::string &username,
                     const std::string &password,
                     unsigned int db,
@@ -71,11 +73,11 @@ class RedisConnection : public trantor::NonCopyable,
         idleCallback_ = callback;
     }
 
-    static std::string getFormattedCommand(const std::string_view &command,
+    static std::string getFormattedCommand(const std::string &command,
                                            va_list ap) noexcept(false)
     {
         char *cmd{nullptr};
-        auto len = redisvFormatCommand(&cmd, command.data(), ap);
+        auto len = redisvFormatCommand(&cmd, command.c_str(), ap);
         if (len == -1)
         {
             throw RedisException(RedisErrorCode::kInternalError,
@@ -120,7 +122,7 @@ class RedisConnection : public trantor::NonCopyable,
         }
     }
 
-    void sendvCommand(std::string_view command,
+    void sendvCommand(const std::string &command,
                       RedisResultCallback &&resultCallback,
                       RedisExceptionCallback &&exceptionCallback,
                       va_list ap)
@@ -168,7 +170,7 @@ class RedisConnection : public trantor::NonCopyable,
 
     void sendCommand(RedisResultCallback &&resultCallback,
                      RedisExceptionCallback &&exceptionCallback,
-                     std::string_view command,
+                     std::string command,
                      ...)
     {
         va_list args;
@@ -188,6 +190,8 @@ class RedisConnection : public trantor::NonCopyable,
   private:
     redisAsyncContext *redisContext_{nullptr};
     const trantor::InetAddress serverAddr_;
+    const std::string hostname_;
+    std::shared_ptr<trantor::Resolver> resolver_;
     const std::string username_;
     const std::string password_;
     const unsigned int db_;
@@ -200,12 +204,14 @@ class RedisConnection : public trantor::NonCopyable,
     std::queue<RedisResultCallback> resultCallbacks_;
     std::queue<RedisExceptionCallback> exceptionCallbacks_;
     ConnectStatus status_{ConnectStatus::kNone};
+    bool unhandledErrorLogged_{false};
 
     // used to keep the lifetime of context object
     std::unordered_map<unsigned long long, std::shared_ptr<SubscribeContext>>
         subContexts_;
 
     void startConnectionInLoop();
+    void connectWithResolvedIp(const std::string &ip);
     static void addWrite(void *userData);
     static void delWrite(void *userData);
     static void addRead(void *userData);
@@ -213,6 +219,7 @@ class RedisConnection : public trantor::NonCopyable,
     static void cleanup(void *userData);
     void handleRedisRead();
     void handleRedisWrite();
+    void handleRedisError();
     void handleResult(redisReply *result);
     void sendCommandInLoop(const std::string &command,
                            RedisResultCallback &&resultCallback,

@@ -185,6 +185,12 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      */
     virtual std::size_t requestsBufferSize() = 0;
 
+    /**
+     * @brief Get the total number of outstanding requests (buffered +
+     * in-flight).
+     */
+    virtual std::size_t outstandingRequests() const = 0;
+
     /// Set the pipelining depth, which is the number of requests that are not
     /// responding.
     /**
@@ -220,6 +226,15 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * methods will be sent to the server.
      */
     virtual void addCookie(const Cookie &cookie) = 0;
+
+    /**
+     * @brief Add a default header to all client requests.
+     *
+     * @param field The header field name.
+     * @param value The header value.
+     * @note Request-specific headers take precedence over client defaults.
+     */
+    virtual void addHeader(std::string field, const std::string &value) = 0;
 
     /**
      * @brief Set the user_agent header, the default value is 'DrogonClient' if
@@ -345,6 +360,34 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
                                        trantor::EventLoop *loop = nullptr,
                                        bool useOldTLS = false,
                                        bool validateCert = true);
+
+    /**
+     * @brief Create a client that reaches its destination through an HTTP
+     * proxy.
+     *
+     * @param hostString Destination URL with an http:// or https:// scheme.
+     * @param proxyUrl Proxy URL with an http:// scheme.
+     * @param loop Event loop, or nullptr to use the application event loop.
+     * @param useOldTLS Enable TLS 1.0 and 1.1 for HTTPS destinations.
+     * @param validateCert Validate the destination certificate for HTTPS.
+     * @throws std::invalid_argument If either URL is invalid or unsupported.
+     *
+     * Both URLs contain only a scheme, host, and optional port and trailing
+     * slash. The client is bound to the destination URL. Set the request path
+     * separately. For HTTP destinations, the request target is absolute and
+     * the Host header comes from the destination URL.
+     *
+     * HTTPS destinations use a CONNECT tunnel. A rejected CONNECT, including
+     * a 407 response, is reported as ReqResult::BadResponse. Proxy
+     * authentication is unsupported for CONNECT. Proxy-Authorization is
+     * omitted from both CONNECT and the requests sent through the tunnel.
+     */
+    static HttpClientPtr newHttpClientWithProxy(
+        const std::string &hostString,
+        const std::string &proxyUrl,
+        trantor::EventLoop *loop = nullptr,
+        bool useOldTLS = false,
+        bool validateCert = true);
 
     virtual ~HttpClient()
     {

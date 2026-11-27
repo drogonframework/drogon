@@ -38,13 +38,14 @@ class RedisClientImpl final
 {
   public:
     RedisClientImpl(const trantor::InetAddress &serverAddress,
+                    std::string hostname,
                     size_t numberOfConnections,
                     std::string username = "",
                     std::string password = "",
                     unsigned int db = 0);
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
-                          std::string_view command,
+                          std::string command,
                           ...) noexcept override;
     ~RedisClientImpl() override;
     std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override;
@@ -85,6 +86,7 @@ class RedisClientImpl final
     std::vector<RedisConnectionPtr> readyConnections_;
     size_t connectionPos_{0};
     const trantor::InetAddress serverAddr_;
+    const std::string hostname_;
     const std::string username_;
     const std::string password_;
     const unsigned int db_;
@@ -101,7 +103,7 @@ class RedisClientImpl final
     std::shared_ptr<RedisTransaction> makeTransaction(
         const RedisConnectionPtr &connPtr);
     void handleNextTask(const RedisConnectionPtr &connPtr);
-    void execCommandAsyncWithTimeout(std::string_view command,
+    void execCommandAsyncWithTimeout(const std::string &command,
                                      RedisResultCallback &&resultCallback,
                                      RedisExceptionCallback &&exceptionCallback,
                                      va_list ap);

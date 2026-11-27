@@ -9,11 +9,20 @@ option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_SHARED_LIBS "Build drogon as a shared lib" OFF)
+option(DROGON_USE_BOOST_UUID "Use Boost.UUID instead of the OS uuid library" OFF)
 option(BUILD_DOC "Build Doxygen documentation" OFF)
 option(BUILD_BROTLI "Build Brotli" ON)
 option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
 option(USE_STATIC_LIBS_ONLY "Use only static libraries as dependencies" OFF)
+
+# Custom file extension configuration for drogon_ctl
+if(NOT DEFINED DEFAULT_SOURCE_EXTENSION)
+    set(DEFAULT_SOURCE_EXTENSION "cc" CACHE STRING "Default source file extension for drogon_ctl (e.g., cc, cpp, cxx)")
+endif()
+if(NOT DEFINED DEFAULT_HEADER_EXTENSION)
+    set(DEFAULT_HEADER_EXTENSION "h" CACHE STRING "Default header file extension for drogon_ctl (e.g., h, hpp, hxx)")
+endif()
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
@@ -21,11 +30,11 @@ CMAKE_DEPENDENT_OPTION(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON "BUILD_POS
 CMAKE_DEPENDENT_OPTION(BUILD_MYSQL "Build with mysql support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
-CMAKE_DEPENDENT_OPTION(USE_SPDLOG "Allow using the spdlog logging library" OFF "USE_SUBMODULE" OFF)
+option(USE_SPDLOG "Allow using the spdlog logging library" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 9)
-set(DROGON_PATCH_VERSION 12)
+set(DROGON_PATCH_VERSION 14)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
@@ -187,10 +196,19 @@ if(TARGET std::filesystem)
   endif()
 endif()
 
-
 # jsoncpp
-find_package(Jsoncpp REQUIRED)
-target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
+find_package(jsoncpp QUIET CONFIG)
+if (jsoncpp_FOUND)
+  message(STATUS "jsoncpp found by config")
+  if (USE_STATIC_LIBS_ONLY)
+    target_link_libraries(${PROJECT_NAME} PUBLIC jsoncpp_static)
+  else()
+    target_link_libraries(${PROJECT_NAME} PUBLIC jsoncpp_lib)
+  endif()
+else()
+  find_package(Jsoncpp REQUIRED MODULE)
+  target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
+endif()
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
 # yamlcpp
@@ -221,23 +239,30 @@ endif(BUILD_YAML_CONFIG)
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
     AND NOT WIN32)
-    find_package(UUID REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
-
-    try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
-        ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-        LINK_LIBRARIES UUID_lib
-        OUTPUT_VARIABLE NORMAL_UUID_COMPILE_OUTPUT)
-    try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
-        ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-        LINK_LIBRARIES UUID_lib
-        OUTPUT_VARIABLE OSSP_UUID_COMPILE_OUTPUT)
-    if (normal_uuid)
-        add_definitions(-DUSE_OSSP_UUID=0)
-    elseif (ossp_uuid)
-        add_definitions(-DUSE_OSSP_UUID=1)
+    if (DROGON_USE_BOOST_UUID)
+        find_package(Boost REQUIRED)
+        target_link_libraries(${PROJECT_NAME} PRIVATE Boost::boost)
+        add_definitions(-DUSE_BOOST_UUID=1)
     else ()
-        message(FATAL_ERROR "uuid lib error:\n${NORMAL_UUID_COMPILE_OUTPUT}\n${OSSP_UUID_COMPILE_OUTPUT}")
+        add_definitions(-DUSE_BOOST_UUID=0)
+        find_package(UUID REQUIRED)
+        target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
+
+        try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
+            ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
+            LINK_LIBRARIES UUID_lib
+            OUTPUT_VARIABLE NORMAL_UUID_COMPILE_OUTPUT)
+        try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
+            ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
+            LINK_LIBRARIES UUID_lib
+            OUTPUT_VARIABLE OSSP_UUID_COMPILE_OUTPUT)
+        if (normal_uuid)
+            add_definitions(-DUSE_OSSP_UUID=0)
+        elseif (ossp_uuid)
+            add_definitions(-DUSE_OSSP_UUID=1)
+        else ()
+            message(FATAL_ERROR "uuid lib error:\n${NORMAL_UUID_COMPILE_OUTPUT}\n${OSSP_UUID_COMPILE_OUTPUT}")
+        endif ()
     endif ()
 endif (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
@@ -331,7 +356,6 @@ set(private_headers
     lib/src/ListenerManager.h
     lib/src/PluginsManager.h
     lib/src/SessionManager.h
-    lib/src/utils/ParsingUtils.h
     lib/src/SpinLock.h
     lib/src/StaticFileRouter.h
     lib/src/TaskTimeoutFlag.h
@@ -677,6 +701,20 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
 if (BUILD_TESTING)
     message(STATUS "Building tests")
     enable_testing()
+    foreach(standard unset 14 17 cache17)
+        file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/cmake/tests/filesystem-${standard}")
+        add_test(NAME FilesystemStandard.${standard}
+            COMMAND ${CMAKE_COMMAND}
+                -G "${CMAKE_GENERATOR}"
+                "-DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+                "-DCMAKE_GENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
+                "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+                "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
+                -DTEST_STANDARD=${standard}
+                "${PROJECT_SOURCE_DIR}/cmake/tests/filesystem")
+        set_tests_properties(FilesystemStandard.${standard} PROPERTIES
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/cmake/tests/filesystem-${standard}")
+    endforeach()
     add_subdirectory(lib/tests)
     if (pg_FOUND)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)

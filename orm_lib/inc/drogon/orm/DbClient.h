@@ -26,6 +26,7 @@
 #include <functional>
 #include <future>
 #include <string>
+#include <vector>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 
@@ -129,6 +130,15 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * Only a pair of key values is valid for Sqlite3, and its keyword is
      * 'filename'.
      *
+     * Note that the value of 'filename' has to be a generic UTF-8 path with
+     * slashes as directory separators; a native path cannot be used directly
+     * on Windows because backslashes are treated as escape characters. A value
+     * built from a native path therefore loses its directory separators and is
+     * parsed as a drive-relative path instead. Convert the path with
+     * drogon::utils::fromNativePath() and escape the remaining single quotes
+     * and backslashes, e.g. `filename='C:/data/app.db'` or, for a directory
+     * that needs quoting, `filename='C:/data/My App/app.db'`.
+     *
      * @param connNum: The number of connections to database server;
      */
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
@@ -139,6 +149,12 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     static std::shared_ptr<DbClient> newSqlite3Client(
         const std::string &connInfo,
         size_t connNum);
+    /// Create a SQLite client and run the given queries on every connection
+    /// before it becomes available.
+    static std::shared_ptr<DbClient> newSqlite3Client(
+        const std::string &connInfo,
+        size_t connNum,
+        const std::vector<std::string> &initializationQueries);
 
     /// Async and nonblocking method
     /**
@@ -350,6 +366,14 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * is not called.
      */
     virtual void setTimeout(double timeout) = 0;
+    /**
+     * @brief Set the delay before a lost database connection is recreated.
+     *
+     * @param interval in seconds. The default value is 1.0 second. When the
+     * database server stays unreachable, a larger interval reduces the
+     * reconnection attempts, the CPU usage and the log noise.
+     */
+    virtual void setReconnectInterval(double interval) = 0;
     /**
      * @brief Close all connections in the client. usually used by Drogon in the
      * quit() method.

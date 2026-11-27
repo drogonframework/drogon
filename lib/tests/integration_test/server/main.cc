@@ -245,6 +245,25 @@ int main()
             throw std::runtime_error("this should fail");
         });
 
+    app().registerHandler(
+        "/api/v1/keepalive_probe",
+        [](const HttpRequestPtr &req,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody("alive");
+            callback(resp);
+        });
+
+    app().registerHandler(
+        "/api/v1/close_connection",
+        [](const HttpRequestPtr &req,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody("closed");
+            resp->setCloseConnection(true);
+            callback(resp);
+        });
+
     app().setDocumentRoot("./");
     app().enableSession(60);
 
@@ -255,6 +274,8 @@ int main()
     app().loadConfigFile("config.example.json");
     app().setImplicitPageEnable(true);
     app().setImplicitPage("page.html");
+    app().addALocation("/a-directory-alias/", "", "a-directory/");
+    app().addALocation("/flat/", "", "./", false, true, false);
     auto &json = app().getCustomConfig();
     if (json.empty())
     {

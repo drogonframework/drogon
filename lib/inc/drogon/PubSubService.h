@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/utils/Utilities.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <mutex>
@@ -49,10 +50,14 @@ class Topic : public trantor::NonCopyable
      */
     void publish(const MessageType &message) const
     {
-        std::shared_lock<SharedMutex> lock(mutex_);
-        for (auto &pair : handlersMap_)
+        std::shared_ptr<const HandlerMap> handlers;
         {
-            pair.second(message);
+            std::shared_lock<SharedMutex> lock(mutex_);
+            handlers = handlersMap_;
+        }
+        for (const auto &pair : *handlers)
+        {
+            (*pair.second)(message);
         }
     }
 
@@ -65,7 +70,9 @@ class Topic : public trantor::NonCopyable
     SubscriberID subscribe(const MessageHandler &handler)
     {
         std::unique_lock<SharedMutex> lock(mutex_);
-        handlersMap_[++id_] = handler;
+        auto handlers = std::make_shared<HandlerMap>(*handlersMap_);
+        (*handlers)[++id_] = std::make_shared<const MessageHandler>(handler);
+        handlersMap_ = std::move(handlers);
         return id_;
     }
 
@@ -78,7 +85,10 @@ class Topic : public trantor::NonCopyable
     SubscriberID subscribe(MessageHandler &&handler)
     {
         std::unique_lock<SharedMutex> lock(mutex_);
-        handlersMap_[++id_] = std::move(handler);
+        auto handlers = std::make_shared<HandlerMap>(*handlersMap_);
+        (*handlers)[++id_] =
+            std::make_shared<const MessageHandler>(std::move(handler));
+        handlersMap_ = std::move(handlers);
         return id_;
     }
 
@@ -88,7 +98,11 @@ class Topic : public trantor::NonCopyable
     void unsubscribe(SubscriberID id)
     {
         std::unique_lock<SharedMutex> lock(mutex_);
-        handlersMap_.erase(id);
+        if (handlersMap_->find(id) == handlersMap_->end())
+            return;
+        auto handlers = std::make_shared<HandlerMap>(*handlersMap_);
+        handlers->erase(id);
+        handlersMap_ = std::move(handlers);
     }
 
     /**
@@ -100,7 +114,7 @@ class Topic : public trantor::NonCopyable
     bool empty() const
     {
         std::shared_lock<SharedMutex> lock(mutex_);
-        return handlersMap_.empty();
+        return handlersMap_->empty();
     }
 
     /**
@@ -110,11 +124,14 @@ class Topic : public trantor::NonCopyable
     void clear()
     {
         std::unique_lock<SharedMutex> lock(mutex_);
-        handlersMap_.clear();
+        handlersMap_ = std::make_shared<HandlerMap>();
     }
 
   private:
-    std::unordered_map<SubscriberID, MessageHandler> handlersMap_;
+    using HandlerMap =
+        std::unordered_map<SubscriberID, std::shared_ptr<const MessageHandler>>;
+    std::shared_ptr<const HandlerMap> handlersMap_ =
+        std::make_shared<HandlerMap>();
     mutable SharedMutex mutex_;
     SubscriberID id_{0};
 };
@@ -272,8 +289,7 @@ class PubSubService : public trantor::NonCopyable
     }
 
   private:
-    std::unordered_map<std::string, std::shared_ptr<Topic<MessageType>>>
-        topicMap_;
+    SafeStringMap<std::shared_ptr<Topic<MessageType>>> topicMap_;
     mutable SharedMutex mutex_;
     SubscriberID subID_ = 0;
 

@@ -81,6 +81,7 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
             case '3':
             case '4':
             case '5':
+            case '6':
             case '7':
             case '8':
             case '9':
@@ -569,6 +570,8 @@ static void loadDbClients(const Json::Value &dbClients)
         }
         auto connectOptions = client.get("connect_options", Json::Value());
         auto timeout = client.get("timeout", -1.0).asDouble();
+        auto reconnectInterval =
+            client.get("reconnect_interval", 1.0).asDouble();
         auto autoBatch = client.get("auto_batch", false).asBool();
 
         std::unordered_map<std::string, std::string> options;
@@ -577,6 +580,26 @@ static void loadDbClients(const Json::Value &dbClients)
             for (const auto &key : connectOptions.getMemberNames())
             {
                 options[key] = connectOptions[key].asString();
+            }
+        }
+
+        std::vector<std::string> initializationQueries;
+        if (type == "sqlite3" && client.isMember("initialization_queries"))
+        {
+            const auto &queries = client["initialization_queries"];
+            if (!queries.isArray())
+            {
+                throw std::runtime_error(
+                    "initialization_queries must be an array");
+            }
+            for (const auto &query : queries)
+            {
+                if (!query.isString())
+                {
+                    throw std::runtime_error(
+                        "initialization_queries must contain strings");
+                }
+                initializationQueries.push_back(query.asString());
             }
         }
 
@@ -593,7 +616,10 @@ static void loadDbClients(const Json::Value &dbClients)
                                                      characterSet,
                                                      timeout,
                                                      autoBatch,
-                                                     std::move(options));
+                                                     std::move(options),
+                                                     std::move(
+                                                         initializationQueries),
+                                                     reconnectInterval);
     }
 }
 
@@ -603,13 +629,7 @@ static void loadRedisClients(const Json::Value &redisClients)
         return;
     for (auto const &client : redisClients)
     {
-        std::promise<std::string> promise;
-        auto future = promise.get_future();
         auto host = client.get("host", "127.0.0.1").asString();
-        trantor::Resolver::newResolver()->resolve(
-            host, [&promise](const trantor::InetAddress &address) {
-                promise.set_value(address.toIp());
-            });
         auto port = client.get("port", 6379).asUInt();
         auto username = client.get("username", "").asString();
         auto password = client.get("passwd", "").asString();
@@ -626,16 +646,8 @@ static void loadRedisClients(const Json::Value &redisClients)
         auto isFast = client.get("is_fast", false).asBool();
         auto timeout = client.get("timeout", -1.0).asDouble();
         auto db = client.get("db", 0).asUInt();
-        auto hostIp = future.get();
-        drogon::app().createRedisClient(hostIp,
-                                        port,
-                                        name,
-                                        password,
-                                        connNum,
-                                        isFast,
-                                        timeout,
-                                        db,
-                                        username);
+        drogon::app().createRedisClient(
+            host, port, name, password, connNum, isFast, timeout, db, username);
     }
 }
 

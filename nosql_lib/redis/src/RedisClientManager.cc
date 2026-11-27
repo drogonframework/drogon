@@ -38,6 +38,7 @@ void RedisClientManager::createRedisClients(
                 LOG_TRACE << "create fast redis client for the thread " << idx;
                 c = std::make_shared<RedisClientLockFree>(
                     trantor::InetAddress(redisInfo.addr_, redisInfo.port_),
+                    redisInfo.addr_,
                     redisInfo.connectionNumber_,
                     ioLoops[idx],
                     redisInfo.username_,
@@ -53,6 +54,7 @@ void RedisClientManager::createRedisClients(
         {
             auto clientPtr = std::make_shared<RedisClientImpl>(
                 trantor::InetAddress(redisInfo.addr_, redisInfo.port_),
+                redisInfo.addr_,
                 redisInfo.connectionNumber_,
                 redisInfo.username_,
                 redisInfo.password_,

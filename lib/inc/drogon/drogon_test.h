@@ -19,6 +19,14 @@ namespace drogon
 {
 namespace test
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+#define DROGON_TEST_NOINLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#define DROGON_TEST_NOINLINE __attribute__((noinline))
+#else
+#define DROGON_TEST_NOINLINE
+#endif
+
 #define TEST_CTX drogon_test_ctx_
 #define DROGON_TESTCASE_PREIX_ drtest__
 #define DROGON_TESTCASE_PREIX_STR_ "drtest__"
@@ -177,52 +185,33 @@ struct Lhs
 
     const T &ref_;
 
-    template <typename RhsType>
-    ComparsionResult operator<(const RhsType &rhs)
-    {
-        return ComparsionResult{ref_ < rhs,
-                                attemptPrint(ref_) + " < " +
-                                    attemptPrint(ref_)};
+// Expression decomposition, one out-of-line instantiation per operand type
+// pair. Two properties matter for compile time and are easy to lose:
+//   * DROGON_TEST_NOINLINE - without it the whole stringification machinery
+//     is inlined into every assertion site.
+//   * the expansion string is only built when it will actually be shown.
+//     Building it unconditionally costs a formatting pass on every passing
+//     assertion, at run time as well as compile time.
+#define DROGON_TEST_DECOMPOSE_OP(op)                                      \
+    template <typename RhsType>                                           \
+    DROGON_TEST_NOINLINE ComparsionResult operator op(const RhsType &rhs) \
+    {                                                                     \
+        const bool result = ref_ op rhs;                                  \
+        if (result && !printSuccessfulTests)                              \
+            return ComparsionResult{result, std::string()};               \
+        return ComparsionResult{result,                                   \
+                                attemptPrint(ref_) + " " #op " " +        \
+                                    attemptPrint(rhs)};                   \
     }
 
-    template <typename RhsType>
-    ComparsionResult operator>(const RhsType &rhs)
-    {
-        return ComparsionResult{ref_ > rhs,
-                                attemptPrint(ref_) + " > " + attemptPrint(rhs)};
-    }
+    DROGON_TEST_DECOMPOSE_OP(<)
+    DROGON_TEST_DECOMPOSE_OP(>)
+    DROGON_TEST_DECOMPOSE_OP(<=)
+    DROGON_TEST_DECOMPOSE_OP(>=)
+    DROGON_TEST_DECOMPOSE_OP(==)
+    DROGON_TEST_DECOMPOSE_OP(!=)
 
-    template <typename RhsType>
-    ComparsionResult operator<=(const RhsType &rhs)
-    {
-        return ComparsionResult{ref_ <= rhs,
-                                attemptPrint(ref_) +
-                                    " <= " + attemptPrint(rhs)};
-    }
-
-    template <typename RhsType>
-    ComparsionResult operator>=(const RhsType &rhs)
-    {
-        return ComparsionResult{ref_ >= rhs,
-                                attemptPrint(ref_) +
-                                    " >= " + attemptPrint(rhs)};
-    }
-
-    template <typename RhsType>
-    ComparsionResult operator==(const RhsType &rhs)
-    {
-        return ComparsionResult{ref_ == rhs,
-                                attemptPrint(ref_) +
-                                    " == " + attemptPrint(rhs)};
-    }
-
-    template <typename RhsType>
-    ComparsionResult operator!=(const RhsType &rhs)
-    {
-        return ComparsionResult{ref_ != rhs,
-                                attemptPrint(ref_) +
-                                    " != " + attemptPrint(rhs)};
-    }
+#undef DROGON_TEST_DECOMPOSE_OP
 
     template <typename RhsType>
     ComparsionResult operator&&(const RhsType &rhs)
@@ -349,6 +338,80 @@ class CaseBase : public trantor::NonCopyable
     std::string name_;
 };
 
+/// Out-of-line assertion reporting.
+///
+/// Each assertion macro would otherwise inline a cold `operator<<` message
+/// chain at every call site - up to four of them per assertion, counting the
+/// two exception handlers and the success message. In assertion-heavy test
+/// files that dominates compile time and object size.
+///
+/// Each of these acquires the output lock internally and holds it for exactly
+/// one statement, so no locked stream is ever handed across an API boundary.
+/// `funcName`/`expr` are `const char *` on purpose: taking `const std::string
+/// &` would construct two temporaries at every call site.
+DROGON_EXPORT void reportCheckFailure(const CaseBase &testCase,
+                                      const char *file,
+                                      int line,
+                                      const char *funcName,
+                                      const char *expr,
+                                      const std::string &expansion);
+DROGON_EXPORT void reportUnexpectedException(const CaseBase &testCase,
+                                             const char *file,
+                                             int line,
+                                             const char *funcName,
+                                             const char *expr,
+                                             const char *what);
+DROGON_EXPORT void reportUnknownException(const CaseBase &testCase,
+                                          const char *file,
+                                          int line,
+                                          const char *funcName,
+                                          const char *expr);
+DROGON_EXPORT void reportNoException(const CaseBase &testCase,
+                                     const char *file,
+                                     int line,
+                                     const char *funcName,
+                                     const char *expr);
+DROGON_EXPORT void reportUnwantedException(const CaseBase &testCase,
+                                           const char *file,
+                                           int line,
+                                           const char *funcName,
+                                           const char *expr);
+DROGON_EXPORT void reportBadExceptionType(const CaseBase &testCase,
+                                          const char *file,
+                                          int line,
+                                          const char *funcName,
+                                          const char *expr,
+                                          bool exceptionThrown,
+                                          const char *expectedType);
+
+/// Evaluates a decomposed comparison and reports a failure, out of line.
+/// Keeping the std::pair<bool, std::string> inside this function rather than at
+/// the call site is what stops every assertion from materialising a string (and
+/// its destructor and unwind paths) in the caller.
+template <typename CmpResult>
+DROGON_TEST_NOINLINE bool evalAndReport(const CaseBase &testCase,
+                                        const char *file,
+                                        int line,
+                                        const char *funcName,
+                                        const char *expr,
+                                        CmpResult &&cmp)
+{
+    const auto outcome = cmp.result();
+    if (!outcome.first)
+    {
+        reportCheckFailure(
+            testCase, file, line, funcName, expr, outcome.second);
+        return false;
+    }
+    return true;
+}
+
+DROGON_EXPORT void reportPassed(const CaseBase &testCase,
+                                const char *file,
+                                int line,
+                                const char *funcName,
+                                const char *expr);
+
 class Case : public CaseBase
 {
   public:
@@ -383,24 +446,6 @@ DROGON_EXPORT void printTestStats();
 DROGON_EXPORT int run(int argc, char **argv);
 }  // namespace test
 }  // namespace drogon
-
-#define ERROR_MSG(func_name, expr)                                    \
-    drogon::test::printErr()                                          \
-        << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"  \
-        << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__              \
-        << " \x1B[0;31m FAILED:\x1B[0m\n"                             \
-        << "  \033[0;34m"                                             \
-        << drogon::test::internal::stringifyFuncCall(func_name, expr) \
-        << "\x1B[0m\n"
-
-#define PASSED_MSG(func_name, expr)                                   \
-    drogon::test::print()                                             \
-        << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"  \
-        << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__              \
-        << " \x1B[0;32m PASSED:\x1B[0m\n"                             \
-        << "  \033[0;34m"                                             \
-        << drogon::test::internal::stringifyFuncCall(func_name, expr) \
-        << "\x1B[0m\n"
 
 #define SET_TEST_SUCCESS__ \
     do                     \
@@ -440,41 +485,35 @@ DROGON_EXPORT int run(int argc, char **argv);
         on_leaving;                                         \
     } while (0);
 
-#define EVAL_AND_CHECK_TRUE__(func_name, expr)                       \
-    do                                                               \
-    {                                                                \
-        bool drresult__;                                             \
-        std::string drexpansion__;                                   \
-        DROGON_TEST_START_SUPRESSION_                                \
-        DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_                    \
-        std::tie(drresult__, drexpansion__) =                        \
-            (drogon::test::internal::Decomposer() <= expr).result(); \
-        DROGON_TEST_END_SUPRESSION_                                  \
-        if (!drresult__)                                             \
-        {                                                            \
-            ERROR_MSG(func_name, #expr)                              \
-                << "With expansion\n"                                \
-                << "  \033[0;33m" << drexpansion__ << "\x1B[0m\n\n"; \
-        }                                                            \
-        else                                                         \
-            SET_TEST_SUCCESS__;                                      \
+#define EVAL_AND_CHECK_TRUE__(func_name, expr)                   \
+    do                                                           \
+    {                                                            \
+        DROGON_TEST_START_SUPRESSION_                            \
+        DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_                \
+        if (drogon::test::evalAndReport(                         \
+                *TEST_CTX,                                       \
+                __FILE__,                                        \
+                __LINE__,                                        \
+                func_name,                                       \
+                #expr,                                           \
+                (drogon::test::internal::Decomposer() <= expr))) \
+            SET_TEST_SUCCESS__;                                  \
+        DROGON_TEST_END_SUPRESSION_                              \
     } while (0);
 
-#define PRINT_UNEXPECTED_EXCEPTION__(func_name, expr)         \
-    do                                                        \
-    {                                                         \
-        ERROR_MSG(func_name, expr)                            \
-            << "An unexpected exception is thrown. what():\n" \
-            << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";   \
+#define PRINT_UNEXPECTED_EXCEPTION__(func_name, expr)                  \
+    do                                                                 \
+    {                                                                  \
+        drogon::test::reportUnexpectedException(                       \
+            *TEST_CTX, __FILE__, __LINE__, func_name, expr, e.what()); \
     } while (0);
 
 #define PRINT_PASSED__(func_name, expr)                                 \
     do                                                                  \
     {                                                                   \
         if (drogon::test::internal::printSuccessfulTests && TEST_FLAG_) \
-        {                                                               \
-            PASSED_MSG(func_name, expr) << "\n";                        \
-        }                                                               \
+            drogon::test::reportPassed(                                 \
+                *TEST_CTX, __FILE__, __LINE__, func_name, expr);        \
     } while (0);
 
 #define RETURN_ON_FAILURE__ \
@@ -503,11 +542,11 @@ DROGON_EXPORT int run(int argc, char **argv);
         }                                                               \
     } while (0);
 
-#define PRINT_NONSTANDARD_EXCEPTION__(func_name, expr)        \
-    do                                                        \
-    {                                                         \
-        ERROR_MSG(func_name, expr)                            \
-            << "Unexpected unknown exception is thrown.\n\n"; \
+#define PRINT_NONSTANDARD_EXCEPTION__(func_name, expr)       \
+    do                                                       \
+    {                                                        \
+        drogon::test::reportUnknownException(                \
+            *TEST_CTX, __FILE__, __LINE__, func_name, expr); \
     } while (0);
 
 #define EVAL__(expr) \
@@ -520,24 +559,20 @@ DROGON_EXPORT int run(int argc, char **argv);
     {             \
     }
 
-#define PRINT_ERR_NOEXCEPTION__(expr, func_name)                     \
-    do                                                               \
-    {                                                                \
-        if (!TEST_FLAG_)                                             \
-            ERROR_MSG(func_name, expr)                               \
-                << "With expecitation\n"                             \
-                << "  Expected to throw an exception. But none are " \
-                   "thrown.\n\n";                                    \
+#define PRINT_ERR_NOEXCEPTION__(expr, func_name)                 \
+    do                                                           \
+    {                                                            \
+        if (!TEST_FLAG_)                                         \
+            drogon::test::reportNoException(                     \
+                *TEST_CTX, __FILE__, __LINE__, func_name, expr); \
     } while (0);
 
-#define PRINT_ERR_WITHEXCEPTION__(expr, func_name)                   \
-    do                                                               \
-    {                                                                \
-        if (!TEST_FLAG_)                                             \
-            ERROR_MSG(func_name, expr)                               \
-                << "With expecitation\n"                             \
-                << "  Should to not throw an exception. But one is " \
-                   "thrown.\n\n";                                    \
+#define PRINT_ERR_WITHEXCEPTION__(expr, func_name)               \
+    do                                                           \
+    {                                                            \
+        if (!TEST_FLAG_)                                         \
+            drogon::test::reportUnwantedException(               \
+                *TEST_CTX, __FILE__, __LINE__, func_name, expr); \
     } while (0);
 
 #define PRINT_ERR_BAD_EXCEPTION__(                                             \
@@ -545,21 +580,14 @@ DROGON_EXPORT int run(int argc, char **argv);
     do                                                                         \
     {                                                                          \
         assert((exceptionThrown && correctExceptionType) || !exceptionThrown); \
-        if (exceptionThrown == true && correctExceptionType == false)          \
-        {                                                                      \
-            ERROR_MSG(func_name, expr)                                         \
-                << "With expecitation\n"                                       \
-                << "  Exception have been throw but not of type \033[0;33m"    \
-                << #excep_type << "\033[0m.\n\n";                              \
-        }                                                                      \
-        else if (exceptionThrown == false)                                     \
-        {                                                                      \
-            ERROR_MSG(func_name, expr)                                         \
-                << "With expecitation\n"                                       \
-                << "  A \033[0;33m" << #excep_type                             \
-                << "\033[0m exception is expected. But nothing was thrown"     \
-                << "\033[0m.\n\n";                                             \
-        }                                                                      \
+        if (!(exceptionThrown) || !(correctExceptionType))                     \
+            drogon::test::reportBadExceptionType(*TEST_CTX,                    \
+                                                 __FILE__,                     \
+                                                 __LINE__,                     \
+                                                 func_name,                    \
+                                                 expr,                         \
+                                                 (exceptionThrown),            \
+                                                 #excep_type);                 \
     } while (0);
 
 #define CHECK_INTERNAL__(expr, func_name, on_leave)                      \

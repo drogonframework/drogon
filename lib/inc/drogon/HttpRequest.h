@@ -148,6 +148,8 @@ class DROGON_EXPORT HttpRequest
      * @param field The field parameter is transformed to lower case before
      * storing.
      * @param value The value of the header.
+     * @note The header is ignored if the field or the value contains CR or LF
+     * characters, to prevent CRLF injection.
      */
     virtual void addHeader(std::string field, const std::string &value) = 0;
     virtual void addHeader(std::string field, std::string &&value) = 0;
@@ -158,6 +160,9 @@ class DROGON_EXPORT HttpRequest
      * @param key The key is case insensitive
      */
     virtual void removeHeader(std::string key) = 0;
+
+    // Clear all HTTP headers
+    virtual void clearHeaders() = 0;
 
     /// Get the cookie string identified by the field parameter
     virtual const std::string &getCookie(const std::string &field) const = 0;
@@ -465,7 +470,8 @@ class DROGON_EXPORT HttpRequest
     /// For example, "content-type: text/plain\r\n"
     virtual void setCustomContentTypeString(const std::string &type) = 0;
 
-    /// Add a cookie
+    /// Add a cookie. The cookie is ignored if its key or value contains CR or
+    /// LF characters.
     virtual void addCookie(std::string key, std::string value) = 0;
 
     /**

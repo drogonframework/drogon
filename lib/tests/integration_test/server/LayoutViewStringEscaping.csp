@@ -1,0 +1,3 @@
+<!-- just check if this file can be compiled -->
+<%layout a"bc %>
+<%view abc\ %>

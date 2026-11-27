@@ -21,6 +21,7 @@
 #include <iostream>
 #include <algorithm>
 #include <memory>
+#include <ctime>
 #include <fcntl.h>
 #ifndef _WIN32
 #include <sys/file.h>
@@ -31,11 +32,68 @@
 #endif
 #include <sys/stat.h>
 #include <filesystem>
+#include <iterator>
 
 using namespace drogon;
 
+// A trailing separator would leave an empty last element that never matches.
+static std::filesystem::path normalizedRoot(const std::string &dir)
+{
+    std::error_code err;
+    auto root = std::filesystem::absolute(utils::toNativePath(dir), err)
+                    .lexically_normal();
+    if (err)
+    {
+        return {};
+    }
+    if (!root.has_filename())
+    {
+        root = root.parent_path();
+    }
+    return root;
+}
+
+// Element-wise, so "/var/www2" is never taken as being under "/var/www".
+static bool isUnderRoot(const std::filesystem::path &root,
+                        const std::string &target)
+{
+    if (root.empty())
+    {
+        return false;
+    }
+    std::error_code err;
+    auto normalized =
+        std::filesystem::absolute(utils::toNativePath(target), err)
+            .lexically_normal();
+    if (err)
+    {
+        return false;
+    }
+    auto element = normalized.begin();
+    for (const auto &rootElement : root)
+    {
+        if (element == normalized.end() || *element != rootElement)
+        {
+            return false;
+        }
+        ++element;
+    }
+    return true;
+}
+
+// Files in sub directories are only reachable through recursive locations.
+static bool isInSubdirectory(const std::string &relativePath)
+{
+    auto normalized = std::filesystem::path(utils::toNativePath(relativePath))
+                          .lexically_normal()
+                          .relative_path();
+    return std::distance(normalized.begin(), normalized.end()) > 1;
+}
+
 void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
 {
+    documentRootPath_ =
+        normalizedRoot(HttpAppFrameworkImpl::instance().getDocumentRoot());
     // Max timeout up to about 70 days;
     staticFilesCacheMap_ = std::make_unique<
         IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>>();
@@ -67,36 +125,16 @@ void StaticFileRouter::reset()
     staticFilesCache_.reset();
     ioLocationsPtr_.reset();
     locations_.clear();
+    documentRootPath_.clear();
 }
 
 void StaticFileRouter::route(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
+    // HttpServer has canonicalized path as this point. We are safe to use
+    // the provided path as is
     const std::string &path = req->path();
-    if (path.find("..") != std::string::npos)
-    {
-        auto directories = utils::splitString(path, "/");
-        int traversalDepth = 0;
-        for (const auto &dir : directories)
-        {
-            if (dir == "..")
-            {
-                traversalDepth--;
-            }
-            else if (dir != ".")
-            {
-                traversalDepth++;
-            }
-
-            if (traversalDepth < 0)
-            {
-                // Downloading files from the parent folder is forbidden.
-                callback(app().getCustomErrorHandler()(k403Forbidden, req));
-                return;
-            }
-        }
-    }
 
     auto lPath = path;
     std::transform(lPath.begin(),
@@ -133,6 +171,7 @@ void StaticFileRouter::route(
             {
                 location.realLocation_.append(1, '/');
             }
+            location.rootPath_ = normalizedRoot(location.realLocation_);
             if (!location.isCaseSensitive_)
             {
                 std::transform(URI.begin(),
@@ -149,16 +188,19 @@ void StaticFileRouter::route(
         {
             std::string_view restOfThePath{path.data() + URI.length(),
                                            path.length() - URI.length()};
-            auto pos = restOfThePath.rfind('/');
-            if (pos != 0 && pos != std::string_view::npos &&
-                !location.isRecursive_)
+            std::string relativePath{restOfThePath.data(),
+                                     restOfThePath.length()};
+            std::string filePath = location.realLocation_ + relativePath;
+            if (!isUnderRoot(location.rootPath_, filePath))
             {
                 callback(app().getCustomErrorHandler()(k403Forbidden, req));
                 return;
             }
-            std::string filePath =
-                location.realLocation_ +
-                std::string{restOfThePath.data(), restOfThePath.length()};
+            if (!location.isRecursive_ && isInSubdirectory(relativePath))
+            {
+                callback(app().getCustomErrorHandler()(k403Forbidden, req));
+                return;
+            }
             std::filesystem::path fsFilePath(utils::toNativePath(filePath));
             std::error_code err;
             if (!std::filesystem::exists(fsFilePath, err))
@@ -183,7 +225,7 @@ void StaticFileRouter::route(
             {
                 if (!location.allowAll_)
                 {
-                    pos = restOfThePath.rfind('.');
+                    auto pos = restOfThePath.rfind('.');
                     if (pos == std::string_view::npos)
                     {
                         callback(
@@ -237,6 +279,11 @@ void StaticFileRouter::route(
     }
     std::string directoryPath =
         HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
+    if (!isUnderRoot(documentRootPath_, directoryPath))
+    {
+        callback(app().getCustomErrorHandler()(k403Forbidden, req));
+        return;
+    }
     std::filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));
     std::error_code err;
     if (std::filesystem::exists(fsDirectoryPath, err))
@@ -332,6 +379,32 @@ void StaticFileRouter::sendStaticFileResponse(
         return;
     }
 
+    const auto addVary = [this](const HttpResponsePtr &response) {
+        for (const auto &header : headers_)
+        {
+            if (header.first.size() == 4 &&
+                std::equal(header.first.begin(),
+                           header.first.end(),
+                           "vary",
+                           [](unsigned char c, char expected) {
+                               return std::tolower(c) == expected;
+                           }))
+            {
+                response->addHeader(header.first, header.second);
+            }
+        }
+        if (brStaticFlag_ || gzipStaticFlag_)
+        {
+            const auto &vary = response->getHeader("vary");
+            if (vary != "*")
+            {
+                response->addHeader("Vary",
+                                    vary.empty() ? "Accept-Encoding"
+                                                 : vary + ", Accept-Encoding");
+            }
+        }
+    };
+
     FileStat fileStat;
     bool fileExists = false;
     const std::string &rangeStr = req->getHeaderBy("range");
@@ -354,6 +427,7 @@ void StaticFileRouter::sendStaticFileResponse(
                 std::make_shared<HttpResponseImpl>();
             resp->setStatusCode(k304NotModified);
             resp->setContentTypeCode(CT_NONE);
+            addVary(resp);
             callback(resp);
             return;
         }
@@ -385,8 +459,24 @@ void StaticFileRouter::sendStaticFileResponse(
                     {
                         resp->addHeader("Last-Modified",
                                         fileStat.modifiedTimeStr_);
-                        resp->addHeader("Expires",
-                                        "Thu, 01 Jan 1970 00:00:00 GMT");
+                        if (staticFilesCacheTime_ > 0)
+                        {
+                            time_t expiry =
+                                time(nullptr) +
+                                static_cast<time_t>(staticFilesCacheTime_);
+                            struct tm expiryTm;
+#ifdef _WIN32
+                            gmtime_s(&expiryTm, &expiry);
+#else
+                            gmtime_r(&expiry, &expiryTm);
+#endif
+                            char buf[64];
+                            size_t len = strftime(buf,
+                                                  sizeof(buf),
+                                                  "%a, %d %b %Y %H:%M:%S GMT",
+                                                  &expiryTm);
+                            resp->addHeader("Expires", std::string(buf, len));
+                        }
                     }
                     callback(resp);
                     return;
@@ -421,14 +511,50 @@ void StaticFileRouter::sendStaticFileResponse(
         }
     }
 
-    // find cached response
+    auto selectedFilePath = filePath;
+    std::string contentEncoding;
     HttpResponsePtr cachedResp;
     auto &cacheMap = staticFilesCache_->getThreadData();
-    auto iter = cacheMap.find(filePath);
-    if (iter != cacheMap.end())
-    {
+    const auto findCachedResponse = [&](const std::string &encoding) {
+        auto iter = cacheMap.find(encoding + '|' + filePath);
+        if (iter == cacheMap.end())
+        {
+            return false;
+        }
         cachedResp = iter->second;
+        return true;
+    };
+    const auto &acceptEncoding = req->getHeaderBy("accept-encoding");
+    const auto selectCompressedFile = [&](const char *encoding,
+                                          const char *extension) {
+        if (acceptEncoding.find(encoding) == std::string::npos)
+        {
+            return false;
+        }
+        // Only probe the filesystem when this representation is not cached.
+        if (findCachedResponse(encoding))
+        {
+            contentEncoding = encoding;
+            return true;
+        }
+        auto compressedFilePath = filePath + extension;
+        std::error_code err;
+        if (!std::filesystem::is_regular_file(
+                utils::toNativePath(compressedFilePath), err))
+        {
+            return false;
+        }
+        selectedFilePath = std::move(compressedFilePath);
+        contentEncoding = encoding;
+        return true;
+    };
+    if (!(brStaticFlag_ && selectCompressedFile("br", ".br")) &&
+        !(gzipStaticFlag_ && selectCompressedFile("gzip", ".gz")))
+    {
+        findCachedResponse("");
     }
+    // Prefixing is safe here
+    const auto cacheKey = contentEncoding + '|' + filePath;
 
     if (enableLastModify_)
     {
@@ -442,6 +568,7 @@ void StaticFileRouter::sendStaticFileResponse(
                     std::make_shared<HttpResponseImpl>();
                 resp->setStatusCode(k304NotModified);
                 resp->setContentTypeCode(CT_NONE);
+                addVary(resp);
                 callback(resp);
                 return;
             }
@@ -463,6 +590,7 @@ void StaticFileRouter::sendStaticFileResponse(
                     std::make_shared<HttpResponseImpl>();
                 resp->setStatusCode(k304NotModified);
                 resp->setContentTypeCode(CT_NONE);
+                addVary(resp);
                 callback(resp);
                 return;
             }
@@ -487,45 +615,12 @@ void StaticFileRouter::sendStaticFileResponse(
         }
     }
 
-    HttpResponsePtr resp;
-    auto &acceptEncoding = req->getHeaderBy("accept-encoding");
-
-    if (brStaticFlag_ && acceptEncoding.find("br") != std::string::npos)
+    auto ct = fileNameToContentTypeAndMime(filePath);
+    auto resp = HttpResponse::newFileResponse(
+        selectedFilePath, "", ct.first, std::string(ct.second), req);
+    if (!contentEncoding.empty())
     {
-        // Find compressed file first.
-        auto brFileName = filePath + ".br";
-        std::filesystem::path fsBrFile(utils::toNativePath(brFileName));
-        std::error_code err;
-        if (std::filesystem::exists(fsBrFile, err) &&
-            std::filesystem::is_regular_file(fsBrFile, err))
-        {
-            auto ct = fileNameToContentTypeAndMime(filePath);
-            resp = HttpResponse::newFileResponse(
-                brFileName, "", ct.first, std::string(ct.second), req);
-            resp->addHeader("Content-Encoding", "br");
-        }
-    }
-    if (!resp && gzipStaticFlag_ &&
-        acceptEncoding.find("gzip") != std::string::npos)
-    {
-        // Find compressed file first.
-        auto gzipFileName = filePath + ".gz";
-        std::filesystem::path fsGzipFile(utils::toNativePath(gzipFileName));
-        std::error_code err;
-        if (std::filesystem::exists(fsGzipFile, err) &&
-            std::filesystem::is_regular_file(fsGzipFile, err))
-        {
-            auto ct = fileNameToContentTypeAndMime(filePath);
-            resp = HttpResponse::newFileResponse(
-                gzipFileName, "", ct.first, std::string(ct.second), req);
-            resp->addHeader("Content-Encoding", "gzip");
-        }
-    }
-    if (!resp)
-    {
-        auto ct = fileNameToContentTypeAndMime(filePath);
-        resp = HttpResponse::newFileResponse(
-            filePath, "", ct.first, std::string(ct.second), req);
+        resp->addHeader("Content-Encoding", contentEncoding);
     }
     if (resp->statusCode() != k404NotFound)
     {
@@ -538,7 +633,23 @@ void StaticFileRouter::sendStaticFileResponse(
         if (!fileStat.modifiedTimeStr_.empty())
         {
             resp->addHeader("Last-Modified", fileStat.modifiedTimeStr_);
-            resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+            if (staticFilesCacheTime_ > 0)
+            {
+                time_t expiry =
+                    time(nullptr) + static_cast<time_t>(staticFilesCacheTime_);
+                struct tm expiryTm;
+#ifdef _WIN32
+                gmtime_s(&expiryTm, &expiry);
+#else
+                gmtime_r(&expiry, &expiryTm);
+#endif
+                char buf[64];
+                size_t len = strftime(buf,
+                                      sizeof(buf),
+                                      "%a, %d %b %Y %H:%M:%S GMT",
+                                      &expiryTm);
+                resp->addHeader("Expires", std::string(buf, len));
+            }
         }
         if (enableRange_)
         {
@@ -551,19 +662,20 @@ void StaticFileRouter::sendStaticFileResponse(
                 resp->addHeader(header.first, header.second);
             }
         }
+        addVary(resp);
         // cache the response for 5 seconds by default
         if (staticFilesCacheTime_ >= 0)
         {
             LOG_TRACE << "Save in cache for " << staticFilesCacheTime_
                       << " seconds";
             resp->setExpiredTime(staticFilesCacheTime_);
-            staticFilesCache_->getThreadData()[filePath] = resp;
+            staticFilesCache_->getThreadData()[cacheKey] = resp;
             staticFilesCacheMap_->getThreadData()->insert(
-                filePath, 0, staticFilesCacheTime_, [this, filePath]() {
+                cacheKey, 0, staticFilesCacheTime_, [this, cacheKey]() {
                     LOG_TRACE << "Erase cache";
-                    assert(staticFilesCache_->getThreadData().find(filePath) !=
+                    assert(staticFilesCache_->getThreadData().find(cacheKey) !=
                            staticFilesCache_->getThreadData().end());
-                    staticFilesCache_->getThreadData().erase(filePath);
+                    staticFilesCache_->getThreadData().erase(cacheKey);
                 });
         }
         callback(resp);

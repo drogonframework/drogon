@@ -43,16 +43,16 @@ find_package_handle_standard_args(SQLite3
                                   SQLITE3_INCLUDE_DIRS)
 
 # Copy the results to the output variables.
-if(SQLite3_FOUND)
+if(SQLite3_FOUND AND NOT TARGET SQLite3_lib)
   add_library(SQLite3_lib INTERFACE IMPORTED)
   set_target_properties(SQLite3_lib
                         PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                    "${SQLITE3_INCLUDE_DIRS}"
                                    INTERFACE_LINK_LIBRARIES
                                    "${SQLITE3_LIBRARIES}")
-else(SQLite3_FOUND)
+elseif(NOT SQLite3_FOUND)
   set(SQLITE3_LIBRARIES)
   set(SQLITE3_INCLUDE_DIRS)
-endif(SQLite3_FOUND)
+endif()
 
 mark_as_advanced(SQLITE3_INCLUDE_DIRS SQLITE3_LIBRARIES)

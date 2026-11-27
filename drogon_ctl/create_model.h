@@ -339,6 +339,11 @@ class Relationship
         return targetTableAlias_;
     }
 
+    void setTargetTableAlias(const std::string &alias)
+    {
+        targetTableAlias_ = alias;
+    }
+
     const std::string &targetKey() const
     {
         return targetKey_;
@@ -428,6 +433,8 @@ class create_model : public DrObject<create_model>, public CommandHandler
     void createRestfulAPIController(const DrTemplateData &tableInfo,
                                     const Json::Value &restfulApiConfig);
     std::string dbname_;
+    std::string namespaceName_;
+    bool namespaceOverridden_{false};
     bool forceOverwrite_{false};
     std::string outputPath_;
     bool cleanupDirectory_{false};

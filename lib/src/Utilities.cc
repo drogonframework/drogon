@@ -26,7 +26,12 @@
 #include <io.h>
 #include <iomanip>
 #else
+#if USE_BOOST_UUID
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#else
 #include <uuid.h>
+#endif
 #include <unistd.h>
 #endif
 #include <zlib.h>
@@ -173,6 +178,49 @@ bool isBase64(std::string_view str)
     if (padding > 0 && (str.size() % 4 != 0))
         return false;
 
+    return true;
+}
+
+bool isValidUTF8(std::string_view str)
+{
+    for (size_t i = 0; i < str.size();)
+    {
+        const auto first = static_cast<unsigned char>(str[i]);
+        if (first <= 0x7f)
+        {
+            ++i;
+            continue;
+        }
+
+        size_t continuationCount;
+        if (first >= 0xc2 && first <= 0xdf)
+            continuationCount = 1;
+        else if (first >= 0xe0 && first <= 0xef)
+            continuationCount = 2;
+        else if (first >= 0xf0 && first <= 0xf4)
+            continuationCount = 3;
+        else
+            return false;
+
+        if (continuationCount > str.size() - i - 1)
+            return false;
+
+        const auto second = static_cast<unsigned char>(str[i + 1]);
+        if (second < 0x80 || second > 0xbf ||
+            (first == 0xe0 && second < 0xa0) ||
+            (first == 0xed && second > 0x9f) ||
+            (first == 0xf0 && second < 0x90) ||
+            (first == 0xf4 && second > 0x8f))
+            return false;
+
+        for (size_t j = 2; j <= continuationCount; ++j)
+        {
+            const auto byte = static_cast<unsigned char>(str[i + j]);
+            if (byte < 0x80 || byte > 0xbf)
+                return false;
+        }
+        i += continuationCount + 1;
+    }
     return true;
 }
 
@@ -388,7 +436,13 @@ inline std::string createUuidString(const char *str, size_t len, bool lowercase)
 
 std::string getUuid(bool lowercase)
 {
-#if USE_OSSP_UUID
+#if USE_BOOST_UUID
+    static thread_local boost::uuids::random_generator generator;
+    boost::uuids::uuid uuid = generator();
+    char bytes[16];
+    std::copy(uuid.begin(), uuid.end(), bytes);
+    return createUuidString(bytes, 16, lowercase);
+#elif USE_OSSP_UUID
     uuid_t *uuid;
     uuid_create(&uuid);
     uuid_make(uuid, UUID_MAKE_V4);
@@ -857,8 +911,9 @@ std::string urlDecode(const char *begin, const char *end)
                 result += ' ';
                 break;
             case '%':
-                if ((i + 2) < len && isxdigit(begin[i + 1]) &&
-                    isxdigit(begin[i + 2]))
+                if ((i + 2) < len &&
+                    isxdigit(static_cast<unsigned char>(begin[i + 1])) &&
+                    isxdigit(static_cast<unsigned char>(begin[i + 2])))
                 {
                     unsigned int x1 = begin[i + 1];
                     if (x1 >= '0' && x1 <= '9')
@@ -1333,9 +1388,9 @@ std::string secureRandomString(size_t size)
 
     // batch up to 32 bytes of random data for efficiency. Calling
     // secureRandomBytes can be expensive.
+    thread_local trantor::utils::Hash256 hash;
+    thread_local size_t i = 0;
     auto randByte = []() {
-        thread_local trantor::utils::Hash256 hash;
-        thread_local size_t i = 0;
         if (i == 0)
         {
             bool ok = trantor::utils::secureRandomBytes(&hash, sizeof(hash));

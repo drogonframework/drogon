@@ -1082,9 +1082,10 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
         binder.exec();  // exec may be throw exception;
     }
     std::vector<T> ret;
+    ret.reserve(r.size());
     for (auto const &row : r)
     {
-        ret.push_back(T(row));
+        ret.emplace_back(row);
     }
     return ret;
 }
@@ -1131,6 +1132,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
     clear();
     binder >> [rcb](const Result &r) {
         std::vector<T> ret;
+        ret.reserve(r.size());
         for (auto const &row : r)
         {
             ret.emplace_back(row);
@@ -1183,11 +1185,12 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
         std::make_shared<std::promise<std::vector<T>>>();
     binder >> [prom](const Result &r) {
         std::vector<T> ret;
+        ret.reserve(r.size());
         for (auto const &row : r)
         {
-            ret.push_back(T(row));
+            ret.emplace_back(row);
         }
-        prom->set_value(ret);
+        prom->set_value(std::move(ret));
     };
     binder >> [prom](const std::exception_ptr &e) { prom->set_exception(e); };
     binder.exec();

@@ -195,6 +195,10 @@ enum HttpMethod
     Delete,
     Options,
     Patch,
+    Propfind,
+    Mkcol,
+    Copy,
+    Move,
     Invalid
 };
 
@@ -280,6 +284,14 @@ inline std::string_view to_string_view(drogon::HttpMethod method)
             return "OPTIONS";
         case drogon::HttpMethod::Patch:
             return "PATCH";
+        case drogon::HttpMethod::Propfind:
+            return "PROPFIND";
+        case drogon::HttpMethod::Mkcol:
+            return "MKCOL";
+        case drogon::HttpMethod::Copy:
+            return "COPY";
+        case drogon::HttpMethod::Move:
+            return "MOVE";
         default:
             return "INVALID";
     }

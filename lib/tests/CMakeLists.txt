@@ -2,9 +2,12 @@ link_libraries(${PROJECT_NAME})
 if(WIN32)
   link_libraries(iphlpapi)
 endif(WIN32)
+set_source_files_properties(unittests/HttpClientTimeoutTest.cc PROPERTIES
+  COMPILE_DEFINITIONS "DROGON_TEST_CERT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/unittests/fixtures\"")
 set(UNITTEST_SOURCES
     unittests/main.cc
     unittests/Base64Test.cc
+    unittests/DrogonTestExpansionTest.cc
     unittests/UrlCodecTest.cc
     unittests/GzipTest.cc
     unittests/HttpViewDataTest.cc
@@ -12,6 +15,10 @@ set(UNITTEST_SOURCES
     unittests/ClassNameTest.cc
     unittests/HttpDateTest.cc
     unittests/HttpHeaderTest.cc
+    unittests/HttpUtilsTest.cc
+    unittests/HttpResponseSwapTest.cc
+    unittests/HttpClientProxyTest.cc
+    unittests/HttpClientTimeoutTest.cc
     unittests/MD5Test.cc
     unittests/MsgBufferTest.cc
     unittests/OStringStreamTest.cc
@@ -25,7 +32,8 @@ set(UNITTEST_SOURCES
     unittests/StringOpsTest.cc
     unittests/ControllerCreationTest.cc
     unittests/MultiPartParserTest.cc
-    unittests/SlashRemoverTest.cc
+    unittests/OrmParameterSafetyTest.cc
+    unittests/RestfulControllerSqlTest.cc
     unittests/UtilitiesTest.cc
     unittests/UuidUnittest.cc
 )
@@ -40,28 +48,51 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS)
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc)
+  # HttpUtils.cc supplies private helpers to the tests. It also defines public
+  # functions exported by drogon, so don't import those declarations here.
+  set_source_files_properties(../src/HttpUtils.cc
+                              PROPERTIES COMPILE_DEFINITIONS DROGON_STATIC_DEFINE)
 else()
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
                        unittests/HttpFileTest.cc
+                       unittests/HttpMethodTest.cc
+                       unittests/HttpRequestForwardCacheBodyTest.cc
                        unittests/WebsocketResponseTest.cc)
 endif()
 
+# These tests call private Drogon symbols that are unavailable from a Windows
+# DLL. Keep them in builds where the test executable can link those symbols.
+if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_SHARED_LIBS))
+  set(UNITTEST_SOURCES ${UNITTEST_SOURCES}
+                       unittests/HttpHeaderLineViewTest.cc
+                       unittests/HttpResponseParserTest.cc
+                       unittests/WebSocketMessageParserTest.cc
+                       unittests/SlashRemoverTest.cc)
+endif()
+
 add_executable(unittest ${UNITTEST_SOURCES})
+set_source_files_properties(unittests/HttpClientProxyTest.cc PROPERTIES
+  COMPILE_DEFINITIONS "DROGON_TEST_CERT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/unittests/fixtures\"")
 
 if (BUILD_CTL)
   set(INTEGRATION_TEST_CLIENT_SOURCES
       integration_test/client/main.cc
       integration_test/client/WebSocketTest.cc
+      integration_test/client/WebSocketKeepAliveUpgradeTest.cc
+      integration_test/client/CloseConnectionTest.cc
       integration_test/client/MultipleWsTest.cc
       integration_test/client/HttpPipeliningTest.cc
-      integration_test/client/RequestStreamTest.cc)
-  add_executable(integration_test_client ${INTEGRATION_TEST_CLIENT_SOURCES})
+      integration_test/client/ExpectContinueTest.cc
+      integration_test/client/RequestStreamTest.cc
+      integration_test/client/ContentLengthFramingTest.cc
+      integration_test/client/StaticFileTraversalTest.cc)
 
   set(INTEGRATION_TEST_SERVER_SOURCES
       integration_test/server/CustomCtrl.cc
       integration_test/server/CustomHeaderFilter.cc
       integration_test/server/DoNothingPlugin.cc
       integration_test/server/ForwardCtrl.cc
+      integration_test/server/HttpClientOutstandingRequests.cc
       integration_test/server/JsonTestController.cc
       integration_test/server/ListParaCtl.cc
       integration_test/server/PipeliningTest.cc
@@ -78,17 +109,23 @@ if (BUILD_CTL)
       integration_test/server/BeginAdviceTest.cc
       integration_test/server/MiddlewareTest.cc
       integration_test/server/RequestStreamTestCtrl.cc
+      integration_test/server/CspBasicTest.cc
       integration_test/server/main.cc)
 
   if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     set(INTEGRATION_TEST_SERVER_SOURCES
         ${INTEGRATION_TEST_SERVER_SOURCES}
         integration_test/server/CoroFilter.cpp
-        integration_test/server/api_v1_CoroTest.cc)
+        integration_test/server/api_v1_CoroTest.cc
+        integration_test/server/WebSocketCoroTest.cc)
+    set(INTEGRATION_TEST_CLIENT_SOURCES
+        ${INTEGRATION_TEST_CLIENT_SOURCES}
+        integration_test/client/WebSocketCoroTest.cc)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
   endif(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
 
+  add_executable(integration_test_client ${INTEGRATION_TEST_CLIENT_SOURCES})
   add_executable(integration_test_server ${INTEGRATION_TEST_SERVER_SOURCES})
   drogon_create_views(integration_test_server
                       ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server
@@ -123,6 +160,14 @@ set(COOKIE_SAME_SITE
   CookieSameSite.cc
 )
 add_executable(cookie_same_site ${COOKIE_SAME_SITE})
+add_custom_command(
+  TARGET cookie_same_site POST_BUILD
+  COMMAND ${CMAKE_COMMAND}
+          -E
+          copy_if_different
+          ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.crt
+          ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.key
+          ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(real_ip_resolver RealIpResolverTest.cc)
 
@@ -137,3 +182,9 @@ set_property(TARGET ${tests} PROPERTY CXX_EXTENSIONS OFF)
 ParseAndAddDrogonTests(unittest)
 ParseAndAddDrogonTests(cookie_same_site)
 ParseAndAddDrogonTests(real_ip_resolver)
+
+add_test(
+  NAME drogon_test_runner_cli
+  COMMAND ${CMAKE_COMMAND}
+          -DTEST_RUNNER=$<TARGET_FILE:unittest>
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/DrogonTestRunnerCliTest.cmake)

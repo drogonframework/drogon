@@ -16,7 +16,10 @@
 #include <drogon/HttpTypes.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <cerrno>
+#include <cstdlib>
 #include <iostream>
+#include <string_view>
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -206,11 +209,11 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return 0;
                 }
 
-                const char *colon = std::find(buf->peek(), crlf, ':');
-                // found colon
-                if (colon != crlf)
+                const std::string_view line(buf->peek(), crlf - buf->peek());
+                if (!line.empty())
                 {
-                    request_->addHeader(buf->peek(), colon, crlf);
+                    if (!request_->addHeader(line))
+                        return -k400BadRequest;
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
                 }
@@ -222,17 +225,24 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
 
                 // process header information
                 auto &len = request_->getHeaderBy("content-length");
+                auto &encode = request_->getHeaderBy("transfer-encoding");
+                if (!len.empty() && !encode.empty())
+                {
+                    // RFC 9112 Section 6.3:
+                    // Messages containing both Content-Length and
+                    // Transfer-Encoding are ambiguous and might indicate
+                    // request smuggling. Reject such requests to avoid
+                    // inconsistent message framing.
+                    return -k400BadRequest;
+                }
                 if (!len.empty())
                 {
-                    try
-                    {
-                        remainContentLength_ =
-                            static_cast<size_t>(std::stoull(len));
-                    }
-                    catch (...)
+                    size_t contentLength = 0;
+                    if (!parseContentLength(len, contentLength))
                     {
                         return -k400BadRequest;
                     }
+                    remainContentLength_ = contentLength;
                     request_->contentLengthHeaderValue_ = remainContentLength_;
                     if (remainContentLength_ == 0)
                     {
@@ -246,8 +256,6 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 else
                 {
-                    const std::string &encode =
-                        request_->getHeaderBy("transfer-encoding");
                     if (encode.empty())
                     {
                         // no content-length and no transfer-encoding,
@@ -276,12 +284,10 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (expect == "100-continue" &&
                     request_->getVersion() >= Version::kHttp11)
                 {
-                    if (remainContentLength_ == 0)
-                    {
-                        // error
-                        return -k400BadRequest;
-                    }
-                    else
+                    // There is nothing to negotiate when the framing indicates
+                    // that the request has no body. RFC 9110 Section 10.1.1
+                    // permits omitting the interim response in this case.
+                    if (remainContentLength_ != 0)
                     {
                         // rfc2616-8.2.3
                         // TODO: consider adding an AOP for expect header
@@ -366,12 +372,30 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
                 }
                 // chunk length line
                 std::string len(buf->peek(), crlf - buf->peek());
-                char *end;
-                currentChunkLength_ = strtol(len.c_str(), &end, 16);
+                // strtoull accepts leading whitespace and signs; reject them.
+                if (len.empty() ||
+                    !isxdigit(static_cast<unsigned char>(len[0])))
+                {
+                    return -k400BadRequest;
+                }
+                char *end = nullptr;
+                errno = 0;
+                currentChunkLength_ =
+                    static_cast<size_t>(strtoull(len.c_str(), &end, 16));
+                if (errno == ERANGE)
+                {
+                    return -k413RequestEntityTooLarge;
+                }
+                if (*end != '\0' && *end != ';' && *end != ' ' && *end != '\t')
+                {
+                    return -k400BadRequest;
+                }
                 if (currentChunkLength_ != 0)
                 {
-                    if (currentChunkLength_ + remainContentLength_ >
-                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                    const size_t maxBody =
+                        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+                    if (remainContentLength_ > maxBody ||
+                        currentChunkLength_ > maxBody - remainContentLength_)
                     {
                         return -k413RequestEntityTooLarge;
                     }

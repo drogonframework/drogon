@@ -377,6 +377,13 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
                     std::forward<CallbackType>(callback)));
             return *this;
         }
+        else
+        {
+            static_assert(traits::isExceptCallback || traits::isSqlCallback,
+                          "The callback must be either an SQL result callback "
+                          "or an exception callback");
+            return *this;
+        }
     }
 
     template <typename T>
@@ -466,6 +473,11 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     self &operator<<(const std::string_view &str);
 
     self &operator<<(std::string_view &&str)
+    {
+        return operator<<((const std::string_view &)str);
+    }
+
+    self &operator<<(const std::string_view &&str)
     {
         return operator<<((const std::string_view &)str);
     }

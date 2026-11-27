@@ -22,6 +22,7 @@
 #include <set>
 #include <string>
 #include <memory>
+#include <filesystem>
 
 namespace drogon
 {
@@ -155,6 +156,7 @@ class StaticFileRouter
     bool implicitPageEnable_{true};
     std::string implicitPage_{"index.html"};
     DefaultHandler defaultHandler_ = StaticFileRouter::defaultHandler;
+    std::filesystem::path documentRootPath_;
 
     struct Location
     {
@@ -162,6 +164,7 @@ class StaticFileRouter
         std::string defaultContentType_;
         std::string alias_;
         std::string realLocation_;
+        std::filesystem::path rootPath_;
         bool isCaseSensitive_;
         bool allowAll_;
         bool isRecursive_;

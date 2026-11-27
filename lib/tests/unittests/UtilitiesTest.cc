@@ -99,3 +99,20 @@ DROGON_TEST(CanConvertFromString)
     static_assert(!CanConvertFromString<int>::value);
     static_assert(!CanConvertFromString<double>::value);
 }
+
+DROGON_TEST(IsValidUTF8)
+{
+    using drogon::utils::isValidUTF8;
+    CHECK(isValidUTF8(""));
+    CHECK(isValidUTF8("plain ASCII"));
+    CHECK(isValidUTF8("\xc2\xa2\xe2\x82\xac\xf0\x9f\x98\x80"));
+
+    CHECK(!isValidUTF8("\x80"));              // stray continuation
+    CHECK(!isValidUTF8("\xc0\xaf"));          // overlong encoding
+    CHECK(!isValidUTF8("\xe0\x80\x80"));      // overlong encoding
+    CHECK(!isValidUTF8("\xed\xa0\x80"));      // surrogate
+    CHECK(!isValidUTF8("\xf4\x90\x80\x80"));  // above U+10FFFF
+    CHECK(!isValidUTF8("\xf5\x80\x80\x80"));  // invalid lead byte
+    CHECK(!isValidUTF8("\xe2\x82"));          // truncated sequence
+    CHECK(!isValidUTF8("\xe2\x28\xa1"));      // bad continuation
+}

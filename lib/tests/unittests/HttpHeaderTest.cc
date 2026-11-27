@@ -2,8 +2,25 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include "../../lib/src/HttpResponseImpl.h"
+#include "../../src/HttpUtils.h"
 
 using namespace drogon;
+
+DROGON_TEST(HeaderParameterIterator)
+{
+    std::string_view contentType = "text/html; charset=utf-8; boundary=\"a;b\"";
+    internal::HeaderParameter item;
+    MANDATE(internal::nextHeaderParameter(contentType, item));
+    CHECK(item.name == "text/html");
+    CHECK(!item.hasValue);
+    MANDATE(internal::nextHeaderParameter(contentType, item));
+    CHECK(item.name == "charset");
+    CHECK(item.value == "utf-8");
+    MANDATE(internal::nextHeaderParameter(contentType, item));
+    CHECK(item.name == "boundary");
+    CHECK(item.value == "\"a;b\"");
+    CHECK(!internal::nextHeaderParameter(contentType, item));
+}
 
 DROGON_TEST(HttpHeaderRequest)
 {
@@ -14,6 +31,21 @@ DROGON_TEST(HttpHeaderRequest)
 
     req->removeHeader("Abc");
     CHECK(req->getHeader("abc") == "");
+}
+
+DROGON_TEST(HttpHeaderRequestCRLFInjection)
+{
+    auto req = HttpRequest::newHttpRequest();
+    req->addHeader("X-Test", "abc\r\nX-Injected: 1");
+    req->addHeader("X-Test\r\nX-Injected", "abc");
+    req->addHeader("X-Lf", std::string("abc\nX-Injected: 1"));
+    CHECK(req->getHeader("X-Test") == "");
+    CHECK(req->getHeader("X-Lf") == "");
+    CHECK(req->headers().empty());
+
+    req->addCookie("key", "value\r\nX-Injected: 1");
+    req->addCookie("key\nX-Injected: 1", "value");
+    CHECK(req->cookies().empty());
 }
 
 DROGON_TEST(HttpHeaderResponse)
@@ -35,6 +67,67 @@ DROGON_TEST(HttpHeaderResponse)
     str = std::string{buffer->peek(), buffer->readableBytes()};
     CHECK(str.find("abc") == std::string::npos);
     CHECK(resp->getHeader("abc") == "");
+}
+
+DROGON_TEST(HttpHeaderResponseCRLFInjection)
+{
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(
+        HttpResponse::newHttpResponse());
+    REQUIRE(resp != nullptr);
+    resp->addHeader("X-Test", "abc\r\nSet-Cookie: injected=1");
+    resp->addHeader("X-Test\r\nX-Injected", "abc");
+    resp->addHeader("X-Lf", std::string("abc\nX-Injected: 1"));
+    CHECK(resp->getHeader("X-Test") == "");
+    CHECK(resp->getHeader("X-Lf") == "");
+    CHECK(resp->headers().empty());
+
+    resp->addCookie("key", "value\r\nX-Injected: 1");
+    Cookie cookie("key", "value");
+    cookie.setPath("/\r\nX-Injected: 1");
+    resp->addCookie(cookie);
+    cookie.setPath("/");
+    cookie.setDomain("example.com\nX-Injected: 1");
+    resp->addCookie(std::move(cookie));
+    CHECK(resp->cookies().empty());
+
+    resp->makeHeaderString();
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("injected") == std::string::npos);
+    CHECK(str.find("X-Injected") == std::string::npos);
+}
+
+DROGON_TEST(HttpResponseContentTypeCRLFInjection)
+{
+    auto base = HttpResponse::newHttpResponse();
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(base);
+    REQUIRE(resp != nullptr);
+    base->setContentTypeString("text/html\r\nX-Injected: 1");
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("X-Injected") == std::string::npos);
+}
+
+DROGON_TEST(HttpResponseStatusMessageCRLFInjection)
+{
+    auto base = HttpResponse::newHttpResponse();
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(base);
+    REQUIRE(resp != nullptr);
+    base->setCustomStatusCode(200, "OK\r\nX-Injected: 1");
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("X-Injected") == std::string::npos);
+}
+
+DROGON_TEST(HttpResponseRedirectCRLFInjection)
+{
+    auto resp = std::dynamic_pointer_cast<HttpResponseImpl>(
+        HttpResponse::newHttpResponse());
+    REQUIRE(resp != nullptr);
+    resp->redirect("http://example.com/\r\nX-Injected: 1");
+    auto buffer = resp->renderToBuffer();
+    auto str = std::string{buffer->peek(), buffer->readableBytes()};
+    CHECK(str.find("X-Injected") == std::string::npos);
 }
 
 DROGON_TEST(ResponseSetCustomContentTypeString)
@@ -238,4 +331,23 @@ DROGON_TEST(AddHttpCorsHeaders)
     resp->addCorsHeaders(req, {}, true);
     resp->addCorsHeaders(req);
     CHECK(resp->getHeader("Access-Control-Allow-Credentials") == "true");
+}
+
+DROGON_TEST(ClearHeaders)
+{
+    auto req = HttpRequest::newHttpRequest();
+    // set a custom path to ensure it is not cleared
+    req->setPath("/api/test");
+    req->addHeader("X-Test", "value");
+    req->addHeader("Authorization", "Bearer token");
+
+    CHECK(req->headers().size() == 2);
+    CHECK(req->getHeader("X-Test") == "value");
+    CHECK(req->getHeader("Authorization") == "Bearer token");
+
+    req->clearHeaders();
+
+    CHECK(req->headers().empty());
+    // verify path unchanged
+    CHECK(req->path() == "/api/test");
 }

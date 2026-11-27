@@ -32,10 +32,14 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <future>
 #include <unordered_map>
 #include <assert.h>
 #include <stdio.h>
+
+// Forward declaration so we can befriend a global-namespace test helper.
+class HttpRequestImplCacheFileTestAccess;
 
 namespace drogon
 {
@@ -59,6 +63,7 @@ class HttpRequestImpl : public HttpRequest
 {
   public:
     friend class HttpRequestParser;
+    friend class ::HttpRequestImplCacheFileTestAccess;
 
     explicit HttpRequestImpl(trantor::EventLoop *loop)
         : creationDate_(trantor::Date::now()), loop_(loop)
@@ -336,7 +341,7 @@ class HttpRequestImpl : public HttpRequest
         connPtr_ = ptr;
     }
 
-    void addHeader(const char *start, const char *colon, const char *end);
+    bool addHeader(std::string_view line);
 
     void removeHeader(std::string key) override
     {
@@ -349,6 +354,11 @@ class HttpRequestImpl : public HttpRequest
     void removeHeaderBy(const std::string &lowerKey)
     {
         headers_.erase(lowerKey);
+    }
+
+    void clearHeaders() override
+    {
+        headers_.clear();
     }
 
     const std::string &getHeader(std::string field) const override
@@ -453,6 +463,8 @@ class HttpRequestImpl : public HttpRequest
 
     void addHeader(std::string field, const std::string &value) override
     {
+        if (!isValidHeader(field, value))
+            return;
         transform(field.begin(),
                   field.end(),
                   field.begin(),
@@ -462,6 +474,8 @@ class HttpRequestImpl : public HttpRequest
 
     void addHeader(std::string field, std::string &&value) override
     {
+        if (!isValidHeader(field, value))
+            return;
         transform(field.begin(),
                   field.end(),
                   field.begin(),
@@ -471,6 +485,8 @@ class HttpRequestImpl : public HttpRequest
 
     void addCookie(std::string key, std::string value) override
     {
+        if (!isValidCookie(key, value))
+            return;
         cookies_[std::move(key)] = std::move(value);
     }
 
@@ -484,7 +500,10 @@ class HttpRequestImpl : public HttpRequest
         return passThrough_;
     }
 
-    void appendToBuffer(trantor::MsgBuffer *output) const;
+    void appendToBuffer(trantor::MsgBuffer *output,
+                        std::string_view proxyTargetAuthority = {},
+                        bool tunneled = false,
+                        const std::string *proxyAuthorization = nullptr) const;
 
     const SessionPtr &session() const override
     {
@@ -519,8 +538,6 @@ class HttpRequestImpl : public HttpRequest
 
     void setCustomContentTypeString(const std::string &type) override
     {
-        contentType_ = CT_NONE;
-        flagForParsingContentType_ = true;
         bool haveHeader = type.find("content-type: ") == 0;
         bool haveCRLF = type.rfind("\r\n") == type.size() - 2;
 
@@ -529,8 +546,16 @@ class HttpRequestImpl : public HttpRequest
             endOffset += 14;
         if (haveCRLF)
             endOffset += 2;
-        contentTypeString_ = std::string(type.begin() + (haveHeader ? 14 : 0),
-                                         type.end() - endOffset);
+        std::string contentTypeString{type.begin() + (haveHeader ? 14 : 0),
+                                      type.end() - endOffset};
+        if (containsCRLF(contentTypeString))
+        {
+            LOG_ERROR << "Invalid characters in content-type, ignored";
+            return;
+        }
+        contentType_ = CT_NONE;
+        flagForParsingContentType_ = true;
+        contentTypeString_ = std::move(contentTypeString);
     }
 
     void setContentTypeCode(const ContentType type) override
@@ -651,11 +676,15 @@ class HttpRequestImpl : public HttpRequest
 
     void setContentType(const std::string &contentType)
     {
+        if (!isValidHeader("content-type", contentType))
+            return;
         contentTypeString_ = contentType;
     }
 
     void setContentType(std::string &&contentType)
     {
+        if (!isValidHeader("content-type", contentType))
+            return;
         contentTypeString_ = std::move(contentType);
     }
 
@@ -671,17 +700,8 @@ class HttpRequestImpl : public HttpRequest
             }
             else
             {
-                auto pos = contentTypeString.find(';');
-                if (pos != std::string::npos)
-                {
-                    contentType_ = parseContentType(
-                        std::string_view(contentTypeString.data(), pos));
-                }
-                else
-                {
-                    contentType_ =
-                        parseContentType(std::string_view(contentTypeString));
-                }
+                contentType_ = parseContentType(
+                    internal::headerValueBeforeParameters(contentTypeString));
 
                 if (contentType_ == CT_NONE)
                     contentType_ = CT_CUSTOM;

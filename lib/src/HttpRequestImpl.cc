@@ -15,6 +15,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpFileUploadRequest.h"
 #include "HttpAppFrameworkImpl.h"
+#include "HttpUtils.h"
 
 #include <drogon/utils/Utilities.h>
 #include <fstream>
@@ -78,9 +79,9 @@ void HttpRequestImpl::parseParameters() const
     if (!input.empty())
     {
         std::string_view::size_type pos = 0;
-        while ((input[pos] == '?' ||
-                isspace(static_cast<unsigned char>(input[pos]))) &&
-               pos < input.length())
+        while (pos < input.length() &&
+               (input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))))
         {
             ++pos;
         }
@@ -139,9 +140,9 @@ void HttpRequestImpl::parseParameters() const
         type.find("application/x-www-form-urlencoded") != std::string::npos)
     {
         std::string_view::size_type pos = 0;
-        while ((input[pos] == '?' ||
-                isspace(static_cast<unsigned char>(input[pos]))) &&
-               pos < input.length())
+        while (pos < input.length() &&
+               (input[pos] == '?' ||
+                isspace(static_cast<unsigned char>(input[pos]))))
         {
             ++pos;
         }
@@ -190,7 +191,11 @@ void HttpRequestImpl::parseParameters() const
     }
 }
 
-void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
+void HttpRequestImpl::appendToBuffer(
+    trantor::MsgBuffer *output,
+    std::string_view proxyTargetAuthority,
+    bool tunneled,
+    const std::string *proxyAuthorization) const
 {
     switch (method_)
     {
@@ -215,12 +220,37 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         case Patch:
             output->append("PATCH ");
             break;
+        case Propfind:
+            output->append("PROPFIND ");
+            break;
+        case Mkcol:
+            output->append("MKCOL ");
+            break;
+        case Copy:
+            output->append("COPY ");
+            break;
+        case Move:
+            output->append("MOVE ");
+            break;
         default:
             return;
     }
 
-    if (!path_.empty())
+    if (!proxyTargetAuthority.empty())
     {
+        output->append("http://");
+        output->append(proxyTargetAuthority.data(),
+                       proxyTargetAuthority.size());
+    }
+
+    if (path_.empty())
+    {
+        output->append("/");
+    }
+    else if (proxyTargetAuthority.empty() || method_ != Options || path_ != "*")
+    {
+        if (!proxyTargetAuthority.empty() && path_.front() != '/')
+            output->append("/");
         if (pathEncode_)
         {
             output->append(utils::urlEncode(path_));
@@ -229,10 +259,6 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         {
             output->append(path_);
         }
-    }
-    else
-    {
-        output->append("/");
     }
 
     std::string content;
@@ -356,17 +382,27 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             content.append("--");
         }
     }
+    // The body may be stored in either content_ or cacheFilePtr_ when the
+    // request body exceeds clientMaxMemoryBodySize_. The two storages are
+    // mutually exclusive — see appendToBody()/reserveBodySize().
+    std::string_view cachedBody;
+    if (cacheFilePtr_)
+    {
+        cachedBody = cacheFilePtr_->getStringView();
+    }
     assert(!(!content.empty() && !content_.empty()));
+    assert(!(!content.empty() && !cachedBody.empty()));
+    assert(!(!content_.empty() && !cachedBody.empty()));
     if (!passThrough_)
     {
-        if (!content.empty() || !content_.empty())
+        if (!content.empty() || !content_.empty() || !cachedBody.empty())
         {
             char buf[64];
             auto len = snprintf(
                 buf,
                 sizeof(buf),
                 contentLengthFormatString<decltype(content.length())>(),
-                content.length() + content_.length());
+                content.length() + content_.length() + cachedBody.length());
             output->append(buf, len);
             if (contentTypeString_.empty())
             {
@@ -390,9 +426,23 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
+        if (tunneled && it->first == "proxy-authorization")
+            continue;
         output->append(it->first);
         output->append(": ");
-        output->append(it->second);
+        if (!proxyTargetAuthority.empty() && it->first == "host")
+            output->append(proxyTargetAuthority.data(),
+                           proxyTargetAuthority.size());
+        else
+            output->append(it->second);
+        output->append("\r\n");
+    }
+    if (proxyAuthorization &&
+        headers_.find("proxy-authorization") == headers_.end() &&
+        isValidHeader("proxy-authorization", *proxyAuthorization))
+    {
+        output->append("proxy-authorization: ");
+        output->append(*proxyAuthorization);
         output->append("\r\n");
     }
     if (cookies_.size() > 0)
@@ -414,76 +464,68 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         output->append(content);
     if (!content_.empty())
         output->append(content_);
+    if (!cachedBody.empty())
+        output->append(cachedBody.data(), cachedBody.length());
 }
 
-void HttpRequestImpl::addHeader(const char *start,
-                                const char *colon,
-                                const char *end)
+bool HttpRequestImpl::addHeader(std::string_view line)
 {
-    std::string field(start, colon);
+    auto [fieldView, valueView] =
+        internal::parseLine(line.data(), line.data() + line.size());
+    if (valueView.data() == nullptr)
+        return false;
+    // RFC 9112 section 5.1: whitespace is not allowed between the field name
+    // and the colon, and a server must reject such a request. Intermediaries
+    // disagree on how to parse the line, which is a request smuggling vector.
+    if (fieldView.empty() ||
+        fieldView.find_first_of(" \t") != std::string_view::npos)
+        return false;
+    std::string field(fieldView);
     // Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
     std::transform(field.begin(),
                    field.end(),
                    field.begin(),
                    [](unsigned char c) { return tolower(c); });
-    ++colon;
-    while (colon < end && isspace(static_cast<unsigned char>(*colon)))
-    {
-        ++colon;
-    }
-    std::string value(colon, end);
-    while (!value.empty() &&
-           isspace(static_cast<unsigned char>(value[value.size() - 1])))
-    {
-        value.resize(value.size() - 1);
-    }
+    while (!valueView.empty() &&
+           isspace(static_cast<unsigned char>(valueView.front())))
+        valueView.remove_prefix(1);
+    while (!valueView.empty() &&
+           isspace(static_cast<unsigned char>(valueView.back())))
+        valueView.remove_suffix(1);
+    std::string value(valueView);
     if (field.length() == 6 && field == "cookie")
     {
         LOG_TRACE << "cookies!!!:" << value;
-        std::string::size_type pos;
-        while ((pos = value.find(';')) != std::string::npos)
+        std::string_view remaining = value;
+        while (!remaining.empty())
         {
-            std::string coo = value.substr(0, pos);
-            auto epos = coo.find('=');
-            if (epos != std::string::npos)
-            {
-                std::string cookie_name = coo.substr(0, epos);
-                std::string::size_type cpos = 0;
-                while (cpos < cookie_name.length() &&
-                       isspace(static_cast<unsigned char>(cookie_name[cpos])))
-                    ++cpos;
-                cookie_name = cookie_name.substr(cpos);
-                std::string cookie_value = coo.substr(epos + 1);
-                cpos = 0;
-                while (cpos < cookie_value.length() &&
-                       isspace(static_cast<unsigned char>(cookie_value[cpos])))
-                    ++cpos;
-                cookie_value = cookie_value.substr(cpos);
-                cookies_[std::move(cookie_name)] = std::move(cookie_value);
-            }
-            value = value.substr(pos + 1);
+            const auto semi = remaining.find(';');
+            const auto pair = remaining.substr(0, semi);
+            remaining = semi == std::string_view::npos
+                            ? std::string_view{}
+                            : remaining.substr(semi + 1);
+            const auto equal = pair.find('=');
+            if (equal == std::string_view::npos)
+                continue;
+            cookies_[std::string(utils::trim(pair.substr(0, equal)))] =
+                std::string(utils::trim(pair.substr(equal + 1)));
         }
-        if (value.length() > 0)
-        {
-            std::string &coo = value;
-            auto epos = coo.find('=');
-            if (epos != std::string::npos)
-            {
-                std::string cookie_name = coo.substr(0, epos);
-                std::string::size_type cpos = 0;
-                while (cpos < cookie_name.length() &&
-                       isspace(static_cast<unsigned char>(cookie_name[cpos])))
-                    ++cpos;
-                cookie_name = cookie_name.substr(cpos);
-                std::string cookie_value = coo.substr(epos + 1);
-                cpos = 0;
-                while (cpos < cookie_value.length() &&
-                       isspace(static_cast<unsigned char>(cookie_value[cpos])))
-                    ++cpos;
-                cookie_value = cookie_value.substr(cpos);
-                cookies_[std::move(cookie_name)] = std::move(cookie_value);
-            }
-        }
+    }
+    else if (field == "content-length")
+    {
+        // RFC 9110 section 8.6: Content-Length = 1*DIGIT. RFC 9112 section
+        // 6.3: an invalid value is an unrecoverable framing error, and a
+        // repeated field must be rejected or folded into a single value.
+        // Reject the repeat outright so requests and responses share one
+        // unambiguous policy.
+        size_t parsedLength = 0;
+        if (!parseContentLength(value, parsedLength))
+            return false;
+        if (headers_.find(field) != headers_.end())
+            return false;
+        contentLengthHeaderValue_ = parsedLength;
+        headers_.emplace(std::move(field), std::move(value));
+        return true;
     }
     else
     {
@@ -518,6 +560,7 @@ void HttpRequestImpl::addHeader(const char *start,
         }
         headers_.emplace(std::move(field), std::move(value));
     }
+    return true;
 }
 
 HttpRequestPtr HttpRequest::newHttpRequest()
@@ -658,6 +701,18 @@ const char *HttpRequestImpl::methodString() const
         case Patch:
             result = "PATCH";
             break;
+        case Propfind:
+            result = "PROPFIND";
+            break;
+        case Mkcol:
+            result = "MKCOL";
+            break;
+        case Copy:
+            result = "COPY";
+            break;
+        case Move:
+            result = "MOVE";
+            break;
         default:
             break;
     }
@@ -693,6 +748,14 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
             {
                 method_ = Head;
             }
+            else if (m == "COPY")
+            {
+                method_ = Copy;
+            }
+            else if (m == "MOVE")
+            {
+                method_ = Move;
+            }
             else
             {
                 method_ = Invalid;
@@ -702,6 +765,10 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
             if (m == "PATCH")
             {
                 method_ = Patch;
+            }
+            else if (m == "MKCOL")
+            {
+                method_ = Mkcol;
             }
             else
             {
@@ -722,6 +789,16 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
             if (m == "OPTIONS")
             {
                 method_ = Options;
+            }
+            else
+            {
+                method_ = Invalid;
+            }
+            break;
+        case 8:
+            if (m == "PROPFIND")
+            {
+                method_ = Propfind;
             }
             else
             {
@@ -763,6 +840,11 @@ void HttpRequestImpl::reserveBodySize(size_t length)
     {
         // Store data of body to a temporary file
         createTmpFile();
+        if (!content_.empty())
+        {
+            cacheFilePtr_->append(content_);
+            content_.clear();
+        }
     }
 }
 
@@ -812,6 +894,11 @@ void HttpRequestImpl::setContentTypeString(const char *typeString,
                                            size_t typeStringLength)
 {
     std::string sv(typeString, typeStringLength);
+    if (containsCRLF(sv))
+    {
+        LOG_ERROR << "Invalid characters in content-type, ignored";
+        return;
+    }
     auto contentType = parseContentType(sv);
     if (contentType == CT_NONE)
         contentType = CT_CUSTOM;
@@ -832,13 +919,27 @@ StreamDecompressStatus HttpRequestImpl::decompressBody()
     else if (contentEncoding == "br")
     {
         removeHeaderBy("content-encoding");
-        return decompressBodyBrotli();
+        auto status = decompressBodyBrotli();
+        if (status == StreamDecompressStatus::Ok)
+        {
+            const auto length = bodyLength();
+            addHeader("content-length", std::to_string(length));
+            contentLengthHeaderValue_ = length;
+        }
+        return status;
     }
 #endif
     else if (contentEncoding == "gzip")
     {
         removeHeaderBy("content-encoding");
-        return decompressBodyGzip();
+        auto status = decompressBodyGzip();
+        if (status == StreamDecompressStatus::Ok)
+        {
+            const auto length = bodyLength();
+            addHeader("content-length", std::to_string(length));
+            contentLengthHeaderValue_ = length;
+        }
+        return status;
     }
     return StreamDecompressStatus::NotSupported;
 }
@@ -912,7 +1013,7 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli() noexcept
         }
     }
     BrotliDecoderDestroyInstance(s);
-    return StreamDecompressStatus::Ok;
+    return status;
 }
 #endif
 

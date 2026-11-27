@@ -43,8 +43,9 @@ class HttpResponseParser : public trantor::NonCopyable
     // default copy-ctor, dtor and assignment are fine
 
     // return false if any error
-    bool parseResponse(trantor::MsgBuffer *buf);
+    bool parseResponse(trantor::MsgBuffer *buf, bool forConnect = false);
     bool parseResponseOnClose();
+    bool shouldCloseConnection() const;
 
     bool gotAll() const
     {
@@ -54,6 +55,11 @@ class HttpResponseParser : public trantor::NonCopyable
     void setForHeadMethod()
     {
         parseResponseForHeadMethod_ = true;
+    }
+
+    void setMaxHeaderSize(size_t maxSize)
+    {
+        maxHeaderSize_ = maxSize;
     }
 
     void reset();
@@ -71,6 +77,8 @@ class HttpResponseParser : public trantor::NonCopyable
     bool parseResponseForHeadMethod_{false};
     size_t leftBodyLength_{0};
     size_t currentChunkLength_{0};
+    size_t maxHeaderSize_{0};
+    size_t headerSize_{0};
     std::weak_ptr<trantor::TcpConnection> conn_;
 };
 
