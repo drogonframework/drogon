@@ -85,7 +85,8 @@ if (BUILD_CTL)
       integration_test/client/ExpectContinueTest.cc
       integration_test/client/RequestStreamTest.cc
       integration_test/client/ContentLengthFramingTest.cc
-      integration_test/client/StaticFileTraversalTest.cc)
+      integration_test/client/StaticFileTraversalTest.cc
+      integration_test/client/PathPlusSignTest.cc)
 
   set(INTEGRATION_TEST_SERVER_SOURCES
       integration_test/server/CustomCtrl.cc

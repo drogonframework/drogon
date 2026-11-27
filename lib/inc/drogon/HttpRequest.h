@@ -427,7 +427,7 @@ class DROGON_EXPORT HttpRequest
 
     /**
      * @brief The default behavior is to encode the value of setPath
-     * using urlEncode. Setting the path encode to false avoid the
+     * using urlEncodePath. Setting the path encode to false avoid the
      * value of path will be changed by the library
      *
      * @param bool true --> the path will be url encoded
