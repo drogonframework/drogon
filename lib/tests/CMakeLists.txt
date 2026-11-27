@@ -2,6 +2,8 @@ link_libraries(${PROJECT_NAME})
 if(WIN32)
   link_libraries(iphlpapi)
 endif(WIN32)
+set_source_files_properties(unittests/HttpClientTimeoutTest.cc PROPERTIES
+  COMPILE_DEFINITIONS "DROGON_TEST_CERT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/unittests/fixtures\"")
 set(UNITTEST_SOURCES
     unittests/main.cc
     unittests/Base64Test.cc
