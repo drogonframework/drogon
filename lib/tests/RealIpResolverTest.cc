@@ -10,6 +10,19 @@
 
 using namespace drogon;
 
+DROGON_TEST(RealIpResolverRejectsInvalidCidrPrefixes)
+{
+    for (const auto &cidr : {"127.0.0.1/", "127.0.0.1/abc", "127.0.0.1/-1",
+                             "127.0.0.1/33", "127.0.0.1/24extra"})
+    {
+        RealIpResolver resolver;
+        Json::Value config;
+        config["trust_ips"] = Json::arrayValue;
+        config["trust_ips"].append(cidr);
+        CHECK_THROWS_AS(resolver.initAndStart(config), std::runtime_error);
+    }
+}
+
 DROGON_TEST(RealIpResolver)
 {
     auto client =
