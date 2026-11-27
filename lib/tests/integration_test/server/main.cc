@@ -245,6 +245,19 @@ int main()
             throw std::runtime_error("this should fail");
         });
 
+    // Echoes how the server decoded the request target.
+    app().registerHandlerViaRegex(
+        "/api/v1/path_echo/(.*)",
+        [](const HttpRequestPtr &req,
+           std::function<void(const HttpResponsePtr &)> &&callback,
+           const std::string &name) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody(
+                "path=" + req->path() + "\noriginal=" + req->getOriginalPath() +
+                "\nname=" + name + "\nq=" + req->getParameter("q") + "\n");
+            callback(resp);
+        });
+
     app().registerHandler(
         "/api/v1/keepalive_probe",
         [](const HttpRequestPtr &req,

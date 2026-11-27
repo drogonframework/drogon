@@ -448,7 +448,26 @@ inline std::string urlDecode(const std::string_view &szToDecode)
     return urlDecode(begin, begin + szToDecode.length());
 }
 
+/// Decode the path component of a URL.
+/**
+ * Unlike urlDecode(), which decodes application/x-www-form-urlencoded data
+ * (query strings and form bodies) and so turns a '+' into a space, this only
+ * decodes the %XX escapes: in a path a '+' stands for itself (RFC 3986,
+ * section 3.3).
+ */
+DROGON_EXPORT std::string urlDecodePath(const char *begin, const char *end);
+
+inline std::string urlDecodePath(const std::string_view &szToDecode)
+{
+    auto begin = szToDecode.data();
+    return urlDecodePath(begin, begin + szToDecode.length());
+}
+
 DROGON_EXPORT std::string urlEncode(const std::string &);
+
+/// Encode like urlEncode(), except that a space becomes "%20" instead of '+',
+/// as a '+' in the path component of a URL does not stand for a space.
+DROGON_EXPORT std::string urlEncodePath(const std::string &);
 DROGON_EXPORT std::string urlEncodeComponent(const std::string &);
 
 /// Get the MD5 digest of a string.

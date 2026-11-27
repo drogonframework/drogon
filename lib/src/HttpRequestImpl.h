@@ -160,10 +160,12 @@ class HttpRequestImpl : public HttpRequest
 
     void setPath(const char *start, const char *end)
     {
-        if (utils::needUrlDecoding(start, end))
+        // Only the %XX escapes are decoded: a '+' is a literal character in
+        // a path, it stands for a space only in query strings and form bodies.
+        if (std::find(start, end, '%') != end)
         {
             originalPath_.append(start, end);
-            path_ = utils::urlDecode(start, end);
+            path_ = utils::urlDecodePath(start, end);
         }
         else
         {

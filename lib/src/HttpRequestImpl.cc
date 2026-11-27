@@ -253,7 +253,7 @@ void HttpRequestImpl::appendToBuffer(
             output->append("/");
         if (pathEncode_)
         {
-            output->append(utils::urlEncode(path_));
+            output->append(utils::urlEncodePath(path_));
         }
         else
         {

@@ -787,7 +787,8 @@ std::string urlEncodeComponent(const std::string &src)
     return result;
 }
 
-std::string urlEncode(const std::string &src)
+static std::string urlEncodeImpl(const std::string &src,
+                                 std::string_view encodedSpace)
 {
     std::string result;
     std::string::const_iterator iter;
@@ -797,7 +798,7 @@ std::string urlEncode(const std::string &src)
         switch (*iter)
         {
             case ' ':
-                result.append(1, '+');
+                result.append(encodedSpace);
                 break;
             // alnum
             case 'A':
@@ -890,6 +891,16 @@ std::string urlEncode(const std::string &src)
     return result;
 }
 
+std::string urlEncode(const std::string &src)
+{
+    return urlEncodeImpl(src, "+");
+}
+
+std::string urlEncodePath(const std::string &src)
+{
+    return urlEncodeImpl(src, "%20");
+}
+
 bool needUrlDecoding(const char *begin, const char *end)
 {
     return std::find_if(begin, end, [](const char c) {
@@ -897,7 +908,9 @@ bool needUrlDecoding(const char *begin, const char *end)
            }) != end;
 }
 
-std::string urlDecode(const char *begin, const char *end)
+static std::string urlDecodeImpl(const char *begin,
+                                 const char *end,
+                                 bool plusAsSpace)
 {
     std::string result;
     size_t len = end - begin;
@@ -908,7 +921,7 @@ std::string urlDecode(const char *begin, const char *end)
         switch (begin[i])
         {
             case '+':
-                result += ' ';
+                result += plusAsSpace ? ' ' : '+';
                 break;
             case '%':
                 if ((i + 2) < len &&
@@ -957,6 +970,16 @@ std::string urlDecode(const char *begin, const char *end)
         }
     }
     return result;
+}
+
+std::string urlDecode(const char *begin, const char *end)
+{
+    return urlDecodeImpl(begin, end, true);
+}
+
+std::string urlDecodePath(const char *begin, const char *end)
+{
+    return urlDecodeImpl(begin, end, false);
 }
 
 /* Compress gzip data */
