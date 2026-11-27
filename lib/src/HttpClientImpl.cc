@@ -524,7 +524,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     // send request;
     auto connPtr = tcpClientPtr_->connection();
     // Not connected, push request to buffer and wait for connection
-    if (!connPtr || connPtr->disconnected())
+    if (!connPtr || !connPtr->connected())
     {
         enqueueRequest(req, callback);
         return;
