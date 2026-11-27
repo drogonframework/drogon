@@ -1,6 +1,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpClient.h>
 #include <drogon/drogon_test.h>
+#include <drogon/utils/Utilities.h>
 #include <trantor/net/TcpServer.h>
 #include <atomic>
 #include <chrono>
@@ -28,18 +29,23 @@ struct ReceivedRequest
 class TimeoutTestServer
 {
   public:
-    TimeoutTestServer()
+    explicit TimeoutTestServer(trantor::ConnectionCallback callback = {},
+                               bool waitForTls = false)
     {
         std::promise<void> ready;
-        app().getLoop()->queueInLoop([this, &ready]() {
+        app().getLoop()->queueInLoop([this, &ready, &callback, waitForTls]() {
             server_ = std::make_unique<trantor::TcpServer>(
                 app().getLoop(),
                 trantor::InetAddress("127.0.0.1", 0),
                 "http-client-timeout-test");
             port_ = server_->address().toPort();
+            if (callback)
+                server_->setConnectionCallback(std::move(callback));
             server_->setRecvMessageCallback(
-                [this](const trantor::TcpConnectionPtr &connection,
-                       trantor::MsgBuffer *buffer) {
+                [this, waitForTls](const trantor::TcpConnectionPtr &connection,
+                                   trantor::MsgBuffer *buffer) {
+                    if (waitForTls && !connection->isSSLConnection())
+                        return;
                     while (buffer->readableBytes() != 0)
                     {
                         const std::string data(buffer->peek(),
@@ -73,9 +79,10 @@ class TimeoutTestServer
         stopped.get_future().get();
     }
 
-    HttpClientPtr client() const
+    HttpClientPtr client(bool useTls = false) const
     {
-        return HttpClient::newHttpClient("127.0.0.1", port_);
+        return HttpClient::newHttpClient(
+            "127.0.0.1", port_, useTls, nullptr, false, false);
     }
 
     ReceivedRequest receive()
@@ -119,18 +126,25 @@ HttpRequestPtr requestFor(const std::string &path, HttpMethod method = Get)
 }
 
 std::future<Response> send(const HttpClientPtr &client,
-                           const std::string &path,
+                           const HttpRequestPtr &request,
                            double timeout = 5.0)
 {
     auto completed = std::make_shared<std::promise<Response>>();
     auto future = completed->get_future();
     client->sendRequest(
-        requestFor(path),
+        request,
         [completed](ReqResult result, const HttpResponsePtr &response) {
             completed->set_value({result, response});
         },
         timeout);
     return future;
+}
+
+std::future<Response> send(const HttpClientPtr &client,
+                           const std::string &path,
+                           double timeout = 5.0)
+{
+    return send(client, requestFor(path), timeout);
 }
 
 // Wait until the current callback and its timeout handler have returned.
@@ -141,6 +155,46 @@ void drainLoop()
     drained.get_future().get();
 }
 }  // namespace
+
+DROGON_TEST(HttpClientBuffersNewRequestDuringCloseDelimitedResponse)
+{
+    HttpClientPtr client;
+    std::promise<std::future<Response>> submitted;
+    bool submittedDuringClose = false;
+    TimeoutTestServer server([&](const trantor::TcpConnectionPtr &connection) {
+        if (connection->disconnected() && !submittedDuringClose)
+        {
+            submittedDuringClose = true;
+            submitted.set_value(send(client, "/next"));
+        }
+    });
+    client = server.client();
+    client->setPipeliningDepth(1);
+    auto first = send(client, "/first");
+    auto firstRequest = server.receive();
+
+    // The client half-closes after seeing a response delimited by EOF.
+    // Holding the server connection delays EOF until the next request is
+    // queued.
+    firstRequest.connection->send("HTTP/1.1 200 OK\r\n\r\nfirst");
+    auto pending = submitted.get_future();
+    REQUIRE(pending.wait_for(std::chrono::seconds(5)) ==
+            std::future_status::ready);
+    auto next = pending.get();
+    CHECK(client->requestsBufferSize() == 1);
+    firstRequest.connection.reset();
+
+    const auto firstResponse = first.get();
+    REQUIRE(firstResponse.first == ReqResult::Ok);
+    CHECK(firstResponse.second->body() == "first");
+    const auto nextRequest = server.receive();
+    CHECK(nextRequest.headers.find("GET /next ") == 0);
+    server.respond(nextRequest, "next");
+    const auto nextResponse = next.get();
+    REQUIRE(nextResponse.first == ReqResult::Ok);
+    CHECK(nextResponse.second->body() == "next");
+    CHECK(client->outstandingRequests() == 0);
+}
 
 DROGON_TEST(HttpClientTimeoutReleasesClientAndCallback)
 {
@@ -292,6 +346,70 @@ DROGON_TEST(HttpClientTimeoutRemovesUnsentRequest)
     const auto response = third.get();
     REQUIRE(response.first == ReqResult::Ok);
     CHECK(response.second->body() == "third");
+    CHECK(client->outstandingRequests() == 0);
+}
+
+DROGON_TEST(HttpClientTimeoutRemovesFirstRequestBeforeTlsHandshake)
+{
+    if (!utils::supportsTls())
+        return;
+
+    std::promise<trantor::TcpConnectionPtr> accepted;
+    TimeoutTestServer server(
+        [&accepted](const trantor::TcpConnectionPtr &connection) {
+            if (connection->connected() && !connection->isSSLConnection())
+                accepted.set_value(connection);
+        },
+        true);
+    auto client = server.client(true);
+    auto first = send(client, "/never-sent", 0.1);
+    const auto expired = first.get();
+    CHECK(expired.first == ReqResult::Timeout);
+    CHECK(expired.second == nullptr);
+    CHECK(client->requestsBufferSize() == 0);
+    CHECK(client->outstandingRequests() == 0);
+
+    // The server holds back its TLS handshake until the first request expires.
+    auto incoming = accepted.get_future();
+    REQUIRE(incoming.wait_for(std::chrono::seconds(5)) ==
+            std::future_status::ready);
+    auto connection = incoming.get();
+    connection->startEncryption(trantor::TLSPolicy::defaultServerPolicy(
+                                    DROGON_TEST_CERT_DIR "/proxy-test.crt",
+                                    DROGON_TEST_CERT_DIR "/proxy-test.key"),
+                                true);
+    auto next = send(client, "/next");
+    const auto request = server.receive();
+    REQUIRE(request.headers.find("GET /next ") == 0);
+    server.respond(request, "next");
+    const auto response = next.get();
+    REQUIRE(response.first == ReqResult::Ok);
+    CHECK(response.second->body() == "next");
+    CHECK(client->outstandingRequests() == 0);
+}
+
+DROGON_TEST(HttpClientTimeoutRemovesOnlyTheExpiredSubmission)
+{
+    TimeoutTestServer server;
+    auto client = server.client();
+    auto blocker = send(client, "/blocker");
+    const auto blockerRequest = server.receive();
+
+    auto request = requestFor("/reused");
+    auto retained = send(client, request);
+    auto expired = send(client, request, 0.1);
+    CHECK(expired.get().first == ReqResult::Timeout);
+    CHECK(client->requestsBufferSize() == 1);
+    CHECK(client->outstandingRequests() == 2);
+
+    server.respond(blockerRequest, "blocker");
+    REQUIRE(blocker.get().first == ReqResult::Ok);
+    const auto remainingRequest = server.receive();
+    CHECK(remainingRequest.headers.find("GET /reused ") == 0);
+    server.respond(remainingRequest, "retained");
+    const auto response = retained.get();
+    REQUIRE(response.first == ReqResult::Ok);
+    CHECK(response.second->body() == "retained");
     CHECK(client->outstandingRequests() == 0);
 }
 
