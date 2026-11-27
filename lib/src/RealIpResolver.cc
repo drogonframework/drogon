@@ -12,6 +12,10 @@
  *
  */
 
+#include <charconv>
+#include <cstdint>
+#include <system_error>
+
 #include <drogon/drogon.h>
 #include <trantor/utils/Logger.h>
 #include <drogon/plugins/RealIpResolver.h>
@@ -276,8 +280,18 @@ RealIpResolver::CIDR::CIDR(const std::string &ipOrCidr)
     if (pos != std::string::npos)
     {
         // parameter is a CIDR block
-        ip = ipOrCidr.substr(0, pos);
-        prefixLen_ = static_cast<uint16_t>(std::stoi(ipOrCidr.substr(pos + 1)));
+        std::string prefixLen = ipOrCidr.substr(pos + 1);
+        ipv4 = ipOrCidr.substr(0, pos);
+        uint32_t prefix = 0;
+        const auto result = std::from_chars(prefixLen.data(),
+                                            prefixLen.data() + prefixLen.size(),
+                                            prefix);
+        if (result.ec != std::errc{} ||
+            result.ptr != prefixLen.data() + prefixLen.size() || prefix > 32)
+        {
+            throw std::runtime_error("Bad CIDR block: " + ipOrCidr);
+        }
+        mask_ = prefix == 0 ? 0 : htonl(0xffffffffu << (32 - prefix));
     }
 
     trantor::InetAddress addr(ip, 0);
